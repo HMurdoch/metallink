@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MetalLink.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ba1177980e5cdfca43ed6e6e71b14e971a36d705")]
 [assembly: System.Reflection.AssemblyProductAttribute("MetalLink.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MetalLink.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

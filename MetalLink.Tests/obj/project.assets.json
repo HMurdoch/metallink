@@ -21,6 +21,23 @@
           }
         }
       },
+      "FluentValidation.DependencyInjectionExtensions/12.1.0": {
+        "type": "package",
+        "dependencies": {
+          "FluentValidation": "12.1.0",
+          "Microsoft.Extensions.Dependencyinjection.Abstractions": "2.1.0"
+        },
+        "compile": {
+          "lib/net8.0/FluentValidation.DependencyInjectionExtensions.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/FluentValidation.DependencyInjectionExtensions.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "MediatR/13.1.0": {
         "type": "package",
         "dependencies": {
@@ -51,6 +68,19 @@
           "lib/netstandard2.0/MediatR.Contracts.dll": {
             "related": ".xml"
           }
+        }
+      },
+      "MediatR.Extensions.Microsoft.DependencyInjection/11.1.0": {
+        "type": "package",
+        "dependencies": {
+          "MediatR": "[11.0.0, 12.0.0)",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "7.0.0"
+        },
+        "compile": {
+          "lib/netstandard2.1/MediatR.Extensions.Microsoft.DependencyInjection.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.1/MediatR.Extensions.Microsoft.DependencyInjection.dll": {}
         }
       },
       "Microsoft.CodeCoverage/17.6.0": {
@@ -1860,8 +1890,11 @@
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
           "FluentValidation": "12.1.0",
+          "FluentValidation.DependencyInjectionExtensions": "12.1.0",
           "MediatR": "13.1.0",
-          "MetalLink.Domain": "1.0.0"
+          "MediatR.Extensions.Microsoft.DependencyInjection": "11.1.0",
+          "MetalLink.Domain": "1.0.0",
+          "MetalLink.Shared": "1.0.0"
         },
         "compile": {
           "bin/placeholder/MetalLink.Application.dll": {}
@@ -1878,6 +1911,16 @@
         },
         "runtime": {
           "bin/placeholder/MetalLink.Domain.dll": {}
+        }
+      },
+      "MetalLink.Shared/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/MetalLink.Shared.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/MetalLink.Shared.dll": {}
         }
       }
     }
@@ -1951,6 +1994,21 @@
         "lib/net8.0/FluentValidation.xml"
       ]
     },
+    "FluentValidation.DependencyInjectionExtensions/12.1.0": {
+      "sha512": "p9ZnpVCUvkelSfqFYZP9aMtnuRlDRkrAAPqjQGG+1mVVn8zxE0bc1/RAFRBZKsPglbMBQOx8wXOZhg2fGstacQ==",
+      "type": "package",
+      "path": "fluentvalidation.dependencyinjectionextensions/12.1.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "fluent-validation-icon.png",
+        "fluentvalidation.dependencyinjectionextensions.12.1.0.nupkg.sha512",
+        "fluentvalidation.dependencyinjectionextensions.nuspec",
+        "lib/net8.0/FluentValidation.DependencyInjectionExtensions.dll",
+        "lib/net8.0/FluentValidation.DependencyInjectionExtensions.xml"
+      ]
+    },
     "MediatR/13.1.0": {
       "sha512": "YkKqc0a5ZyZ7ccVyf+cuO2M6UYLduldVTN5oI0nvk3SnthyLD0nSy6vhpPQtf3ovcNOsPo+qjMqaUThe4wGeCA==",
       "type": "package",
@@ -1985,6 +2043,19 @@
         "lib/netstandard2.0/MediatR.Contracts.xml",
         "mediatr.contracts.2.0.1.nupkg.sha512",
         "mediatr.contracts.nuspec"
+      ]
+    },
+    "MediatR.Extensions.Microsoft.DependencyInjection/11.1.0": {
+      "sha512": "RW3etRuy6Xp63cgqfC0r/ITOtUT0f9ymJl1+1XZdzsYUsfv7WBPC2kXGOP8IYpY/6c4Q6805vbIW/88DopUs3w==",
+      "type": "package",
+      "path": "mediatr.extensions.microsoft.dependencyinjection/11.1.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "gradient_128x128.png",
+        "lib/netstandard2.1/MediatR.Extensions.Microsoft.DependencyInjection.dll",
+        "mediatr.extensions.microsoft.dependencyinjection.11.1.0.nupkg.sha512",
+        "mediatr.extensions.microsoft.dependencyinjection.nuspec"
       ]
     },
     "Microsoft.CodeCoverage/17.6.0": {
@@ -5936,6 +6007,11 @@
       "type": "project",
       "path": "../MetalLink.Domain/MetalLink.Domain.csproj",
       "msbuildProject": "../MetalLink.Domain/MetalLink.Domain.csproj"
+    },
+    "MetalLink.Shared/1.0.0": {
+      "type": "project",
+      "path": "../MetalLink.Shared/MetalLink.Shared.csproj",
+      "msbuildProject": "../MetalLink.Shared/MetalLink.Shared.csproj"
     }
   },
   "projectFileDependencyGroups": {
@@ -6032,5 +6108,17 @@
         "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/8.0.121/PortableRuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1608",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Detected package version outside of dependency constraint: MediatR.Extensions.Microsoft.DependencyInjection 11.1.0 requires MediatR (>= 11.0.0 && < 12.0.0) but version MediatR 13.1.0 was resolved.",
+      "libraryId": "MediatR",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    }
+  ]
 }

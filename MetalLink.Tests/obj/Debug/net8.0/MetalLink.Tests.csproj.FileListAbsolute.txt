@@ -110,3 +110,8 @@
 /home/quadravex/Projects/MetalLink/MetalLink.Tests/obj/Debug/net8.0/MetalLink.Tests.pdb
 /home/quadravex/Projects/MetalLink/MetalLink.Tests/obj/Debug/net8.0/MetalLink.Tests.genruntimeconfig.cache
 /home/quadravex/Projects/MetalLink/MetalLink.Tests/obj/Debug/net8.0/ref/MetalLink.Tests.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Tests/bin/Debug/net8.0/MediatR.Extensions.Microsoft.DependencyInjection.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Tests/bin/Debug/net8.0/MetalLink.Shared.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Tests/bin/Debug/net8.0/MetalLink.Shared.pdb
+/home/quadravex/Projects/MetalLink/MetalLink.Tests/obj/Debug/net8.0/MetalLink.Tests.sourcelink.json
+/home/quadravex/Projects/MetalLink/MetalLink.Tests/bin/Debug/net8.0/FluentValidation.DependencyInjectionExtensions.dll

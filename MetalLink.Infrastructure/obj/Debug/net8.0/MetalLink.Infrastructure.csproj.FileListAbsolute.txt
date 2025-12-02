@@ -19,3 +19,4 @@
 /home/quadravex/Projects/MetalLink/MetalLink.Infrastructure/obj/Debug/net8.0/ref/MetalLink.Infrastructure.dll
 /home/quadravex/Projects/MetalLink/MetalLink.Infrastructure/bin/Debug/net8.0/MetalLink.Infrastructure.runtimeconfig.json
 /home/quadravex/Projects/MetalLink/MetalLink.Infrastructure/obj/Debug/net8.0/MetalLink.Infrastructure.genruntimeconfig.cache
+/home/quadravex/Projects/MetalLink/MetalLink.Infrastructure/obj/Debug/net8.0/MetalLink.Infrastructure.sourcelink.json

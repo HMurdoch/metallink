@@ -1,20 +1,20 @@
+using MetalLink.Application;
 using MetalLink.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add controllers
 builder.Services.AddControllers();
-
-// Swagger / OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add our Infrastructure layer (DbContext + S3/MinIO, etc.)
+// Application layer (MediatR, validators)
+builder.Services.AddApplicationServices();
+
+// Infrastructure layer (DbContext, repositories, UoW)
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -22,8 +22,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-// Later:
 // app.UseAuthentication();
 // app.UseAuthorization();
 

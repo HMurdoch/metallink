@@ -1,10 +1,9 @@
-using Amazon.S3;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MetalLink.Application.Storage;
+using MetalLink.Application.Interfaces;
 using MetalLink.Infrastructure.Persistence;
-using MetalLink.Infrastructure.Storage;
+using MetalLink.Infrastructure.Persistence.Repositories;
 
 namespace MetalLink.Infrastructure;
 
@@ -14,36 +13,18 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        var connectionString = configuration.GetConnectionString("MetalLinkDatabase");
 
         services.AddDbContext<MetalLinkDbContext>(options =>
         {
-            options.UseNpgsql(connectionString, npgsql =>
-            {
-                // Put EF migrations history table inside the metal_link schema
-                npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "metal_link");
-            });
+            options.UseNpgsql(connectionString);
         });
 
-        // S3 / MinIO wiring (leave as-is)
-        var s3Section = configuration.GetSection("S3");
-        var serviceUrl = s3Section["ServiceURL"];
-        var accessKey = s3Section["AccessKey"];
-        var secretKey = s3Section["SecretKey"];
-        var forcePathStyle = bool.TryParse(s3Section["ForcePathStyle"], out var fps) && fps;
+        // Repositories
+        services.AddScoped<ICustomerRepository, CustomerRepository>();
 
-        services.AddSingleton<IAmazonS3>(_ =>
-            new AmazonS3Client(
-                accessKey,
-                secretKey,
-                new AmazonS3Config
-                {
-                    ServiceURL = serviceUrl,
-                    ForcePathStyle = forcePathStyle,
-                    AuthenticationRegion = "us-east-1"
-                }));
-
-        services.AddScoped<IObjectStorage, S3ObjectStorage>();
+        // Unit of work
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }

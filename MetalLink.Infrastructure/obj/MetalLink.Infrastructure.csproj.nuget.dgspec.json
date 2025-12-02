@@ -28,6 +28,9 @@
             "projectReferences": {
               "/home/quadravex/Projects/MetalLink/MetalLink.Domain/MetalLink.Domain.csproj": {
                 "projectPath": "/home/quadravex/Projects/MetalLink/MetalLink.Domain/MetalLink.Domain.csproj"
+              },
+              "/home/quadravex/Projects/MetalLink/MetalLink.Shared/MetalLink.Shared.csproj": {
+                "projectPath": "/home/quadravex/Projects/MetalLink/MetalLink.Shared/MetalLink.Shared.csproj"
               }
             }
           }
@@ -46,9 +49,17 @@
               "target": "Package",
               "version": "[12.1.0, )"
             },
+            "FluentValidation.DependencyInjectionExtensions": {
+              "target": "Package",
+              "version": "[12.1.0, )"
+            },
             "MediatR": {
               "target": "Package",
               "version": "[13.1.0, )"
+            },
+            "MediatR.Extensions.Microsoft.DependencyInjection": {
+              "target": "Package",
+              "version": "[11.1.0, )"
             }
           },
           "imports": [
@@ -232,14 +243,7 @@
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
-            "projectReferences": {
-              "/home/quadravex/Projects/MetalLink/MetalLink.Application/MetalLink.Application.csproj": {
-                "projectPath": "/home/quadravex/Projects/MetalLink/MetalLink.Application/MetalLink.Application.csproj"
-              },
-              "/home/quadravex/Projects/MetalLink/MetalLink.Domain/MetalLink.Domain.csproj": {
-                "projectPath": "/home/quadravex/Projects/MetalLink/MetalLink.Domain/MetalLink.Domain.csproj"
-              }
-            }
+            "projectReferences": {}
           }
         },
         "warningProperties": {

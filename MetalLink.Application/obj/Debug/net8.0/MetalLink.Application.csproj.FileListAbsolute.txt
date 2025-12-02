@@ -13,3 +13,6 @@
 /home/quadravex/Projects/MetalLink/MetalLink.Application/obj/Debug/net8.0/refint/MetalLink.Application.dll
 /home/quadravex/Projects/MetalLink/MetalLink.Application/obj/Debug/net8.0/MetalLink.Application.pdb
 /home/quadravex/Projects/MetalLink/MetalLink.Application/obj/Debug/net8.0/ref/MetalLink.Application.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Application/bin/Debug/net8.0/MetalLink.Shared.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Application/bin/Debug/net8.0/MetalLink.Shared.pdb
+/home/quadravex/Projects/MetalLink/MetalLink.Application/obj/Debug/net8.0/MetalLink.Application.sourcelink.json

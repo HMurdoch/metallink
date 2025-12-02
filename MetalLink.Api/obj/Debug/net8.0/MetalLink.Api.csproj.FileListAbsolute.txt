@@ -146,3 +146,6 @@
 /home/quadravex/Projects/MetalLink/MetalLink.Api/bin/Debug/net8.0/tr/Microsoft.CodeAnalysis.Workspaces.resources.dll
 /home/quadravex/Projects/MetalLink/MetalLink.Api/bin/Debug/net8.0/zh-Hans/Microsoft.CodeAnalysis.Workspaces.resources.dll
 /home/quadravex/Projects/MetalLink/MetalLink.Api/bin/Debug/net8.0/zh-Hant/Microsoft.CodeAnalysis.Workspaces.resources.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Api/bin/Debug/net8.0/MediatR.Extensions.Microsoft.DependencyInjection.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Api/obj/Debug/net8.0/MetalLink.Api.sourcelink.json
+/home/quadravex/Projects/MetalLink/MetalLink.Api/bin/Debug/net8.0/FluentValidation.DependencyInjectionExtensions.dll

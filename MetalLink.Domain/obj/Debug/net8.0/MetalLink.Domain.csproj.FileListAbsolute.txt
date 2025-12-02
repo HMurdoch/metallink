@@ -9,3 +9,4 @@
 /home/quadravex/Projects/MetalLink/MetalLink.Domain/obj/Debug/net8.0/refint/MetalLink.Domain.dll
 /home/quadravex/Projects/MetalLink/MetalLink.Domain/obj/Debug/net8.0/MetalLink.Domain.pdb
 /home/quadravex/Projects/MetalLink/MetalLink.Domain/obj/Debug/net8.0/ref/MetalLink.Domain.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Domain/obj/Debug/net8.0/MetalLink.Domain.sourcelink.json

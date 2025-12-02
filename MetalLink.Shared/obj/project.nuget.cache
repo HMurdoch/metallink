@@ -1,18 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "9UscBGL0KhThNwP6vkiA3KhiTDjedx0JOz5uX7gS8hyzVa/exwTeAqQJg9Mh6m19MdN8Pw37eqdPk3c38LDtgQ==",
+  "dgSpecHash": "yuitzGzwuiPy1ING2QYvPZMGj8vzMKY0ohlZZvjvnMwlsrRCde7qdaXO2lif1P6j2vZtLxaVcoxXdb4ZrKTFtg==",
   "success": true,
   "projectFilePath": "/home/quadravex/Projects/MetalLink/MetalLink.Shared/MetalLink.Shared.csproj",
-  "expectedPackageFiles": [
-    "/home/quadravex/.nuget/packages/fluentvalidation/12.1.0/fluentvalidation.12.1.0.nupkg.sha512",
-    "/home/quadravex/.nuget/packages/mediatr/13.1.0/mediatr.13.1.0.nupkg.sha512",
-    "/home/quadravex/.nuget/packages/mediatr.contracts/2.0.1/mediatr.contracts.2.0.1.nupkg.sha512",
-    "/home/quadravex/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.0/microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
-    "/home/quadravex/.nuget/packages/microsoft.extensions.logging.abstractions/8.0.0/microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512",
-    "/home/quadravex/.nuget/packages/microsoft.identitymodel.abstractions/8.14.0/microsoft.identitymodel.abstractions.8.14.0.nupkg.sha512",
-    "/home/quadravex/.nuget/packages/microsoft.identitymodel.jsonwebtokens/8.14.0/microsoft.identitymodel.jsonwebtokens.8.14.0.nupkg.sha512",
-    "/home/quadravex/.nuget/packages/microsoft.identitymodel.logging/8.14.0/microsoft.identitymodel.logging.8.14.0.nupkg.sha512",
-    "/home/quadravex/.nuget/packages/microsoft.identitymodel.tokens/8.14.0/microsoft.identitymodel.tokens.8.14.0.nupkg.sha512"
-  ],
+  "expectedPackageFiles": [],
   "logs": []
 }
