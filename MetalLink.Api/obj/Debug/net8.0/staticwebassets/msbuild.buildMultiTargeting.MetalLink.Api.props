@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../build/MetalLink.Api.props" />
-</Project>
