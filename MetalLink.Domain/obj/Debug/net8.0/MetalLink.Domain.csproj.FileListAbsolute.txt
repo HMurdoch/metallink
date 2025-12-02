@@ -1,0 +1,11 @@
+/home/quadravex/Projects/MetalLink/MetalLink.Domain/bin/Debug/net8.0/MetalLink.Domain.deps.json
+/home/quadravex/Projects/MetalLink/MetalLink.Domain/bin/Debug/net8.0/MetalLink.Domain.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Domain/bin/Debug/net8.0/MetalLink.Domain.pdb
+/home/quadravex/Projects/MetalLink/MetalLink.Domain/obj/Debug/net8.0/MetalLink.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/home/quadravex/Projects/MetalLink/MetalLink.Domain/obj/Debug/net8.0/MetalLink.Domain.AssemblyInfoInputs.cache
+/home/quadravex/Projects/MetalLink/MetalLink.Domain/obj/Debug/net8.0/MetalLink.Domain.AssemblyInfo.cs
+/home/quadravex/Projects/MetalLink/MetalLink.Domain/obj/Debug/net8.0/MetalLink.Domain.csproj.CoreCompileInputs.cache
+/home/quadravex/Projects/MetalLink/MetalLink.Domain/obj/Debug/net8.0/MetalLink.Domain.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Domain/obj/Debug/net8.0/refint/MetalLink.Domain.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Domain/obj/Debug/net8.0/MetalLink.Domain.pdb
+/home/quadravex/Projects/MetalLink/MetalLink.Domain/obj/Debug/net8.0/ref/MetalLink.Domain.dll

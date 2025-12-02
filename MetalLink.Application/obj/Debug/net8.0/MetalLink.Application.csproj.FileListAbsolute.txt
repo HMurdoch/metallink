@@ -1,0 +1,15 @@
+/home/quadravex/Projects/MetalLink/MetalLink.Application/bin/Debug/net8.0/MetalLink.Application.deps.json
+/home/quadravex/Projects/MetalLink/MetalLink.Application/bin/Debug/net8.0/MetalLink.Application.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Application/bin/Debug/net8.0/MetalLink.Application.pdb
+/home/quadravex/Projects/MetalLink/MetalLink.Application/bin/Debug/net8.0/MetalLink.Domain.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Application/bin/Debug/net8.0/MetalLink.Domain.pdb
+/home/quadravex/Projects/MetalLink/MetalLink.Application/obj/Debug/net8.0/MetalLink.Application.csproj.AssemblyReference.cache
+/home/quadravex/Projects/MetalLink/MetalLink.Application/obj/Debug/net8.0/MetalLink.Application.GeneratedMSBuildEditorConfig.editorconfig
+/home/quadravex/Projects/MetalLink/MetalLink.Application/obj/Debug/net8.0/MetalLink.Application.AssemblyInfoInputs.cache
+/home/quadravex/Projects/MetalLink/MetalLink.Application/obj/Debug/net8.0/MetalLink.Application.AssemblyInfo.cs
+/home/quadravex/Projects/MetalLink/MetalLink.Application/obj/Debug/net8.0/MetalLink.Application.csproj.CoreCompileInputs.cache
+/home/quadravex/Projects/MetalLink/MetalLink.Application/obj/Debug/net8.0/MetalLink.Application.csproj.CopyComplete
+/home/quadravex/Projects/MetalLink/MetalLink.Application/obj/Debug/net8.0/MetalLink.Application.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Application/obj/Debug/net8.0/refint/MetalLink.Application.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Application/obj/Debug/net8.0/MetalLink.Application.pdb
+/home/quadravex/Projects/MetalLink/MetalLink.Application/obj/Debug/net8.0/ref/MetalLink.Application.dll

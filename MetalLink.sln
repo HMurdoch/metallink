@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetalLink.Domain", "MetalLink.Domain\MetalLink.Domain.csproj", "{11734A13-BA31-46BA-A193-F9D7F65ABB28}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetalLink.Application", "MetalLink.Application\MetalLink.Application.csproj", "{3F3FF7A9-F12D-4CED-9797-5D2AAD386C70}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetalLink.Infrastructure", "MetalLink.Infrastructure\MetalLink.Infrastructure.csproj", "{CAF1D173-E5C2-4789-A513-360FC3C5873F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetalLink.Api", "MetalLink.Api\MetalLink.Api.csproj", "{94C6F9E6-A891-48FE-A38B-6B52B9805EBF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetalLink.Shared", "MetalLink.Shared\MetalLink.Shared.csproj", "{4B57A1AD-8BAF-4611-BF46-A3C7123E4328}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetalLink.Tests", "MetalLink.Tests\MetalLink.Tests.csproj", "{E65AF407-E5D5-48C4-8BF8-0B17F67FA456}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{11734A13-BA31-46BA-A193-F9D7F65ABB28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11734A13-BA31-46BA-A193-F9D7F65ABB28}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11734A13-BA31-46BA-A193-F9D7F65ABB28}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11734A13-BA31-46BA-A193-F9D7F65ABB28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F3FF7A9-F12D-4CED-9797-5D2AAD386C70}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F3FF7A9-F12D-4CED-9797-5D2AAD386C70}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F3FF7A9-F12D-4CED-9797-5D2AAD386C70}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F3FF7A9-F12D-4CED-9797-5D2AAD386C70}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CAF1D173-E5C2-4789-A513-360FC3C5873F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CAF1D173-E5C2-4789-A513-360FC3C5873F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CAF1D173-E5C2-4789-A513-360FC3C5873F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CAF1D173-E5C2-4789-A513-360FC3C5873F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94C6F9E6-A891-48FE-A38B-6B52B9805EBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94C6F9E6-A891-48FE-A38B-6B52B9805EBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94C6F9E6-A891-48FE-A38B-6B52B9805EBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94C6F9E6-A891-48FE-A38B-6B52B9805EBF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B57A1AD-8BAF-4611-BF46-A3C7123E4328}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B57A1AD-8BAF-4611-BF46-A3C7123E4328}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B57A1AD-8BAF-4611-BF46-A3C7123E4328}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B57A1AD-8BAF-4611-BF46-A3C7123E4328}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E65AF407-E5D5-48C4-8BF8-0B17F67FA456}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E65AF407-E5D5-48C4-8BF8-0B17F67FA456}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E65AF407-E5D5-48C4-8BF8-0B17F67FA456}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E65AF407-E5D5-48C4-8BF8-0B17F67FA456}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

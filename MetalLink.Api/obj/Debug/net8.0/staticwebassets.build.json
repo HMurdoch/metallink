@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "79paNf+QCdm7tCupvSibgDyyJl6ffc3JZuiMTEooLIQ=",
+  "Source": "MetalLink.Api",
+  "BasePath": "_content/MetalLink.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
