@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MetalLink.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+617a85d8121f3076628b61c9d3a5ec342948eae9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4bf3df66ab0a1a2f8723f99925521d042887c2f5")]
 [assembly: System.Reflection.AssemblyProductAttribute("MetalLink.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MetalLink.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
