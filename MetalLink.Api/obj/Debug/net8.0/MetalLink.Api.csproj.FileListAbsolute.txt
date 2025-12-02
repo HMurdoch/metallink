@@ -149,3 +149,7 @@
 /home/quadravex/Projects/MetalLink/MetalLink.Api/bin/Debug/net8.0/MediatR.Extensions.Microsoft.DependencyInjection.dll
 /home/quadravex/Projects/MetalLink/MetalLink.Api/obj/Debug/net8.0/MetalLink.Api.sourcelink.json
 /home/quadravex/Projects/MetalLink/MetalLink.Api/bin/Debug/net8.0/FluentValidation.DependencyInjectionExtensions.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Api/bin/Debug/net8.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Api/bin/Debug/net8.0/Microsoft.IdentityModel.Protocols.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Api/bin/Debug/net8.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+/home/quadravex/Projects/MetalLink/MetalLink.Api/bin/Debug/net8.0/System.IdentityModel.Tokens.Jwt.dll

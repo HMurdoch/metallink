@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MetalLink.Application.Interfaces;
 using MetalLink.Infrastructure.Persistence;
 using MetalLink.Infrastructure.Persistence.Repositories;
+using MetalLink.Infrastructure.Security;
 
 namespace MetalLink.Infrastructure;
 
@@ -22,9 +23,14 @@ public static class DependencyInjection
 
         // Repositories
         services.AddScoped<ICustomerRepository, CustomerRepository>();
+        services.AddScoped<IOperatorRepository, OperatorRepository>();
 
-        // Unit of work
+        // Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Security services
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddSingleton<ITokenService, TokenService>();
 
         return services;
     }

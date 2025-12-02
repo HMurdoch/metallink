@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MetalLink.Application.Customers.Commands;
 using MetalLink.Shared.Customers;
@@ -7,6 +8,7 @@ namespace MetalLink.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize] // protect all customer endpoints
 public sealed class CustomersController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -19,6 +21,7 @@ public sealed class CustomersController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [Authorize(Roles = "Admin,Operator")] // optional role restriction
     public async Task<IActionResult> CreateCustomer(
         [FromBody] CreateCustomerRequest request,
         CancellationToken cancellationToken)
@@ -49,16 +52,14 @@ public sealed class CustomersController : ControllerBase
     [HttpGet("{id:long}")]
     [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetCustomerById(
-        long id,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> GetCustomerById(long id, CancellationToken cancellationToken)
     {
-        // Placeholder: later we’ll add a proper Query + handler.
-        return Ok(new { message = "GetCustomerById not yet implemented", id });
+        // We'll implement a real query later
+        return Ok(new { message = "GetCustomerById not fully implemented yet", id });
     }
 }
 
-// HTTP request model (separate from DTO & entity)
+// API request model for creating a customer
 public sealed class CreateCustomerRequest
 {
     public long SiteId { get; set; }

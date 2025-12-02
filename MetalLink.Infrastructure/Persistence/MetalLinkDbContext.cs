@@ -11,12 +11,14 @@ public class MetalLinkDbContext : DbContext
     }
 
     public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Operator> Operators => Set<Operator>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
         ConfigureCustomer(modelBuilder);
+        ConfigureOperator(modelBuilder);
     }
 
     private static void ConfigureCustomer(ModelBuilder modelBuilder)
@@ -110,5 +112,59 @@ public class MetalLinkDbContext : DbContext
 
         entity.HasIndex(c => c.IdNumber)
               .HasDatabaseName("customers_id_number_idx");
+    }
+
+    private static void ConfigureOperator(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<Operator>();
+
+        entity.ToTable("operators", schema: "metal_link");
+
+        entity.HasKey(o => o.OperatorId)
+              .HasName("pk_operators_operator_id");
+
+        entity.Property(o => o.OperatorId)
+              .HasColumnName("operator_id")
+              .ValueGeneratedOnAdd();
+
+        entity.Property(o => o.SiteId)
+              .HasColumnName("site_id")
+              .IsRequired();
+
+        entity.Property(o => o.Username)
+              .HasColumnName("username")
+              .IsRequired()
+              .HasMaxLength(100);
+
+        entity.Property(o => o.DisplayName)
+              .HasColumnName("display_name")
+              .IsRequired()
+              .HasMaxLength(200);
+
+        entity.Property(o => o.PasswordHash)
+              .HasColumnName("password_hash")
+              .IsRequired()
+              .HasMaxLength(512);
+
+        entity.Property(o => o.Role)
+              .HasColumnName("role")
+              .IsRequired()
+              .HasMaxLength(50);
+
+        entity.Property(o => o.IsActive)
+              .HasColumnName("is_active")
+              .IsRequired();
+
+        entity.Property(o => o.CreatedTime)
+              .HasColumnName("created_time")
+              .IsRequired();
+
+        entity.Property(o => o.UpdatedTime)
+              .HasColumnName("updated_time")
+              .IsRequired();
+
+        entity.HasIndex(o => o.Username)
+              .IsUnique()
+              .HasDatabaseName("operators_username_idx");
     }
 }
