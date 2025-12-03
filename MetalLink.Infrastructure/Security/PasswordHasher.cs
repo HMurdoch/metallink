@@ -6,9 +6,6 @@ namespace MetalLink.Infrastructure.Security;
 
 public sealed class PasswordHasher : IPasswordHasher
 {
-    // Simple salt + SHA256 for now.
-    // Later you can swap this out for PBKDF2 / BCrypt / Argon2.
-
     public string HashPassword(string password, string salt)
     {
         using var sha = SHA256.Create();

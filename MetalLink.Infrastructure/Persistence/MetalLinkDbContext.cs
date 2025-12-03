@@ -12,6 +12,7 @@ public class MetalLinkDbContext : DbContext
 
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Operator> Operators => Set<Operator>();
+    public DbSet<CustomerDocument> CustomerDocuments => Set<CustomerDocument>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -19,6 +20,7 @@ public class MetalLinkDbContext : DbContext
 
         ConfigureCustomer(modelBuilder);
         ConfigureOperator(modelBuilder);
+        ConfigureCustomerDocument(modelBuilder);
     }
 
     private static void ConfigureCustomer(ModelBuilder modelBuilder)
@@ -166,5 +168,55 @@ public class MetalLinkDbContext : DbContext
         entity.HasIndex(o => o.Username)
               .IsUnique()
               .HasDatabaseName("operators_username_idx");
+    }
+
+     private static void ConfigureCustomerDocument(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<CustomerDocument>();
+
+        entity.ToTable("customer_documents", schema: "metal_link");
+
+        entity.HasKey(d => d.CustomerDocumentId)
+              .HasName("pk_customer_documents_customer_document_id");
+
+        entity.Property(d => d.CustomerDocumentId)
+              .HasColumnName("customer_document_id")
+              .ValueGeneratedOnAdd();
+
+        entity.Property(d => d.CustomerId)
+              .HasColumnName("customer_id")
+              .IsRequired();
+
+        entity.Property(d => d.DocumentType)
+              .HasColumnName("document_type")
+              .IsRequired()
+              .HasMaxLength(100);
+
+        entity.Property(d => d.FileName)
+              .HasColumnName("file_name")
+              .IsRequired()
+              .HasMaxLength(255);
+
+        entity.Property(d => d.ContentType)
+              .HasColumnName("content_type")
+              .IsRequired()
+              .HasMaxLength(100);
+
+        entity.Property(d => d.StorageKey)
+              .HasColumnName("storage_key")
+              .IsRequired()
+              .HasMaxLength(500);
+
+        entity.Property(d => d.CreatedTime)
+              .HasColumnName("created_time")
+                          .IsRequired();
+
+        entity.HasIndex(d => d.CustomerId)
+              .HasDatabaseName("customer_documents_customer_id_idx");
+
+        entity.HasOne<Customer>()
+              .WithMany()
+              .HasForeignKey(d => d.CustomerId)
+              .HasConstraintName("fk_customer_documents_customer_id_customers");
     }
 }

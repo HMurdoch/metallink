@@ -5,6 +5,7 @@ using MetalLink.Application.Interfaces;
 using MetalLink.Infrastructure.Persistence;
 using MetalLink.Infrastructure.Persistence.Repositories;
 using MetalLink.Infrastructure.Security;
+using MetalLink.Infrastructure.Storage;
 
 namespace MetalLink.Infrastructure;
 
@@ -21,16 +22,32 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString);
         });
 
+        // File storage options (your existing mapping)
+        var fileStorageSection = configuration.GetSection("FileStorage");
+        services.Configure<FileStorageOptions>(options =>
+        {
+            options.BucketName = fileStorageSection["BucketName"] ?? string.Empty;
+            options.ServiceUrl = fileStorageSection["ServiceUrl"];
+            options.UseMinio = bool.TryParse(fileStorageSection["UseMinio"], out var useMinio) && useMinio;
+            options.Region = fileStorageSection["Region"] ?? "af-south-1";
+        });
+
         // Repositories
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IOperatorRepository, OperatorRepository>();
+        services.AddScoped<ICustomerDocumentRepository, CustomerDocumentRepository>();
 
         // Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // Security services
-        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        // Token service
         services.AddSingleton<ITokenService, TokenService>();
+
+        // ✅ Password hasher
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+
+        // File storage (S3 / MinIO)
+        services.AddSingleton<IFileStorage, S3FileStorage>();
 
         return services;
     }

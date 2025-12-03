@@ -25,17 +25,13 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, LoginRes
         var op = await _operatorRepository.GetByUsernameAsync(request.Username, cancellationToken);
 
         if (op == null || !op.IsActive)
-        {
             throw new UnauthorizedAccessException("Invalid username or password.");
-        }
 
-        // Username as salt
-        var isValid = _passwordHasher.VerifyPassword(request.Password, op.Username, op.PasswordHash);
+        var expectedHash = op.PasswordHash;
+        var isValid = _passwordHasher.VerifyPassword(request.Password, op.Username, expectedHash);
 
         if (!isValid)
-        {
             throw new UnauthorizedAccessException("Invalid username or password.");
-        }
 
         var token = _tokenService.GenerateToken(op);
 

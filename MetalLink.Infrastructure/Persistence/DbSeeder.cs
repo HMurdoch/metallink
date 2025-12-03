@@ -1,5 +1,5 @@
-using MetalLink.Application.Interfaces;
 using MetalLink.Domain.Entities;
+using MetalLink.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace MetalLink.Infrastructure.Persistence;

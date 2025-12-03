@@ -2,13 +2,14 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MetalLink.Application.Customers.Commands;
+using MetalLink.Application.Customers.Queries;
 using MetalLink.Shared.Customers;
 
 namespace MetalLink.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // protect all customer endpoints
+[Authorize]
 public sealed class CustomersController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -21,7 +22,7 @@ public sealed class CustomersController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [Authorize(Roles = "Admin,Operator")] // optional role restriction
+    [Authorize(Roles = "Admin,Operator")]
     public async Task<IActionResult> CreateCustomer(
         [FromBody] CreateCustomerRequest request,
         CancellationToken cancellationToken)
@@ -46,7 +47,8 @@ public sealed class CustomersController : ControllerBase
 
         var result = await _mediator.Send(command, cancellationToken);
 
-        return CreatedAtAction(nameof(GetCustomerById), new { id = result.CustomerId }, result);
+        return CreatedAtAction(nameof(GetCustomerById),
+            new { id = result.CustomerId }, result);
     }
 
     [HttpGet("{id:long}")]
@@ -54,12 +56,19 @@ public sealed class CustomersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCustomerById(long id, CancellationToken cancellationToken)
     {
-        // We'll implement a real query later
-        return Ok(new { message = "GetCustomerById not fully implemented yet", id });
+        var query = new GetCustomerByIdQuery(id);
+        var customer = await _mediator.Send(query, cancellationToken);
+
+        if (customer is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(customer);
     }
 }
 
-// API request model for creating a customer
+// DTO used when creating customers via API
 public sealed class CreateCustomerRequest
 {
     public long SiteId { get; set; }
