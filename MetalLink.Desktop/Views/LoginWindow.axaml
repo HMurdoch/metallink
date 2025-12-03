@@ -1,0 +1,30 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:MetalLink.Desktop.ViewModels"
+        x:Class="MetalLink.Desktop.Views.LoginWindow"
+        x:DataType="vm:LoginViewModel"
+        Width="400" Height="260"
+        Title="Metal Link - Login">
+
+  <StackPanel Margin="20" Spacing="10">
+    <TextBlock Text="Metal Link Login"
+               FontSize="18"
+               HorizontalAlignment="Center" />
+
+    <TextBlock Text="Username" />
+    <TextBox Text="{Binding Username}" />
+
+    <TextBlock Text="Password" />
+    <TextBox Text="{Binding Password}"
+             PasswordChar="•" />
+
+    <Button Content="Login"
+            HorizontalAlignment="Right"
+            Width="100"
+            Command="{Binding LoginCommand}" />
+
+    <TextBlock Text="{Binding StatusMessage}"
+               Foreground="Red"
+               TextWrapping="Wrap" />
+  </StackPanel>
+</Window>

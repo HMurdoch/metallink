@@ -13,6 +13,7 @@ public class MetalLinkDbContext : DbContext
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Operator> Operators => Set<Operator>();
     public DbSet<CustomerDocument> CustomerDocuments => Set<CustomerDocument>();
+    public DbSet<Ticket> Tickets => Set<Ticket>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -21,6 +22,7 @@ public class MetalLinkDbContext : DbContext
         ConfigureCustomer(modelBuilder);
         ConfigureOperator(modelBuilder);
         ConfigureCustomerDocument(modelBuilder);
+        ConfigureTicket(modelBuilder);
     }
 
     private static void ConfigureCustomer(ModelBuilder modelBuilder)
@@ -219,4 +221,104 @@ public class MetalLinkDbContext : DbContext
               .HasForeignKey(d => d.CustomerId)
               .HasConstraintName("fk_customer_documents_customer_id_customers");
     }
+
+private static void ConfigureTicket(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<Ticket>();
+
+        entity.ToTable("tickets", schema: "metal_link");
+
+        entity.HasKey(t => t.TicketId)
+              .HasName("pk_tickets_ticket_id");
+
+        entity.Property(t => t.TicketId)
+              .HasColumnName("ticket_id")
+              .ValueGeneratedOnAdd();
+
+        entity.Property(t => t.SiteId)
+              .HasColumnName("site_id")
+              .IsRequired();
+
+        entity.Property(t => t.CustomerId)
+              .HasColumnName("customer_id")
+              .IsRequired();
+
+        entity.Property(t => t.OperatorId)
+              .HasColumnName("operator_id")
+              .IsRequired();
+
+        entity.Property(t => t.TicketNumber)
+              .HasColumnName("ticket_number")
+              .IsRequired()
+              .HasMaxLength(50);
+
+        entity.Property(t => t.TicketType)
+              .HasColumnName("ticket_type")
+              .IsRequired()
+              .HasMaxLength(50);
+
+        entity.Property(t => t.FirstWeightKg)
+              .HasColumnName("first_weight_kg")
+              .HasColumnType("numeric(18,3)");
+
+        entity.Property(t => t.SecondWeightKg)
+              .HasColumnName("second_weight_kg")
+              .HasColumnType("numeric(18,3)");
+
+        entity.Property(t => t.NetWeightKg)
+              .HasColumnName("net_weight_kg")
+              .HasColumnType("numeric(18,3)")
+              .IsRequired();
+
+        entity.Property(t => t.UnitPricePerKg)
+              .HasColumnName("unit_price_per_kg")
+              .HasColumnType("numeric(18,4)")
+              .IsRequired();
+
+        entity.Property(t => t.TotalAmount)
+              .HasColumnName("total_amount")
+              .HasColumnType("numeric(18,2)")
+              .IsRequired();
+
+        entity.Property(t => t.CurrencyCode)
+              .HasColumnName("currency_code")
+              .IsRequired()
+              .HasMaxLength(10);
+
+        entity.Property(t => t.ProductDescription)
+              .HasColumnName("product_description")
+              .HasMaxLength(200);
+
+        entity.Property(t => t.Notes)
+              .HasColumnName("notes")
+              .HasMaxLength(500);
+
+        entity.Property(t => t.CreatedTime)
+              .HasColumnName("created_time")
+              .IsRequired();
+
+        entity.Property(t => t.UpdatedTime)
+              .HasColumnName("updated_time")
+              .IsRequired();
+
+        entity.HasIndex(t => t.TicketNumber)
+              .IsUnique()
+              .HasDatabaseName("tickets_ticket_number_idx");
+
+        entity.HasIndex(t => t.CustomerId)
+              .HasDatabaseName("tickets_customer_id_idx");
+
+        entity.HasIndex(t => t.SiteId)
+              .HasDatabaseName("tickets_site_id_idx");
+
+        entity.HasOne<Customer>()
+              .WithMany()
+              .HasForeignKey(t => t.CustomerId)
+              .HasConstraintName("fk_tickets_customer_id_customers");
+
+        entity.HasOne<Operator>()
+              .WithMany()
+              .HasForeignKey(t => t.OperatorId)
+              .HasConstraintName("fk_tickets_operator_id_operators");
+    }    
 }

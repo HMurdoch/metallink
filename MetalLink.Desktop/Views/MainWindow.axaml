@@ -1,0 +1,221 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MetalLink.Desktop.Views.MainWindow"
+        x:CompileBindings="False"
+        Width="750" Height="720"
+        Title="{Binding Title}">
+
+  <DockPanel>
+
+    <!-- Top menu -->
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="_View">
+        <MenuItem Header="_System Health"
+                  Command="{Binding ShowSystemHealthSectionCommand}" />
+        <MenuItem Header="_Customers"
+                  Command="{Binding ShowCustomerSectionCommand}" />
+        <MenuItem Header="_Tickets"
+                  Command="{Binding ShowTicketSectionCommand}" />
+        <Separator />
+        <MenuItem Header="_All Sections"
+                  Command="{Binding ShowAllSectionsCommand}" />
+      </MenuItem>
+      <MenuItem Header="_Session">
+        <MenuItem Header="_Logout"
+                  Command="{Binding LogoutCommand}" />
+      </MenuItem>
+    </Menu>
+
+    <!-- Main content -->
+    <ScrollViewer>
+      <StackPanel Margin="20" Spacing="10">
+
+        <!-- Header -->
+        <TextBlock Text="Metal Link - Dashboard" FontSize="20" />
+
+        <TextBlock Text="Logged in as:" FontWeight="Bold" />
+        <TextBlock Text="{Binding LoggedInUser}" />
+
+        <!-- System Health -->
+        <Border BorderThickness="1"
+                BorderBrush="Gray"
+                Margin="0,10,0,0"
+                Padding="8"
+                IsVisible="{Binding ShowSystemHealthSection}">
+          <StackPanel Spacing="5">
+            <TextBlock Text="System Health" FontWeight="Bold" Margin="0,0,0,5" />
+            <Button Content="Check DB Health"
+                    Width="150"
+                    Command="{Binding CheckDbCommand}" />
+          </StackPanel>
+        </Border>
+
+        <!-- Customer Search -->
+        <Border BorderThickness="1"
+                BorderBrush="Gray"
+                Margin="0,10,0,0"
+                Padding="8"
+                IsVisible="{Binding ShowCustomerSection}">
+          <StackPanel Spacing="5">
+            <TextBlock Text="Customer Search (by ID)" FontWeight="Bold" Margin="0,0,0,5" />
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Customer ID:" VerticalAlignment="Center" Width="90" />
+              <TextBox Text="{Binding SearchCustomerIdText}"
+                       Width="120" />
+              <Button Content="Search"
+                      Width="80"
+                      Command="{Binding SearchCustomerCommand}" />
+            </StackPanel>
+
+            <TextBlock Text="Result:" FontWeight="Bold" Margin="0,10,0,0" />
+            <TextBlock Text="{Binding FoundCustomerSummary}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <!-- Create New Customer -->
+        <Border BorderThickness="1"
+                BorderBrush="Gray"
+                Margin="0,10,0,0"
+                Padding="8"
+                IsVisible="{Binding ShowCustomerSection}">
+          <StackPanel Spacing="5">
+            <TextBlock Text="Create New Customer" FontWeight="Bold" Margin="0,0,0,5" />
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Full Name:" Width="100" VerticalAlignment="Center" />
+              <TextBox Text="{Binding NewFullName}" Width="250" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <CheckBox IsChecked="{Binding NewIsCompany}" Content="Is Company?" />
+              <TextBlock Text="Company Name:" VerticalAlignment="Center" />
+              <TextBox Text="{Binding NewCompanyName}" Width="200" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="ID Number:" Width="100" VerticalAlignment="Center" />
+              <TextBox Text="{Binding NewIdNumber}" Width="200" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Account #:" Width="100" VerticalAlignment="Center" />
+              <TextBox Text="{Binding NewAccountNumber}" Width="200" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Price Code:" Width="100" VerticalAlignment="Center" />
+              <TextBox Text="{Binding NewPriceCode}" Width="100" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Phone:" Width="100" VerticalAlignment="Center" />
+              <TextBox Text="{Binding NewPhoneNumber}" Width="200" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Mobile:" Width="100" VerticalAlignment="Center" />
+              <TextBox Text="{Binding NewMobileNumber}" Width="200" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Email:" Width="100" VerticalAlignment="Center" />
+              <TextBox Text="{Binding NewEmail}" Width="250" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+              <Button Content="Create Customer"
+                      Width="150"
+                      Command="{Binding CreateCustomerCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- Ticket Capture -->
+        <Border BorderThickness="1"
+                BorderBrush="Gray"
+                Margin="0,10,0,0"
+                Padding="8"
+                IsVisible="{Binding ShowTicketSection}">
+          <StackPanel Spacing="5">
+            <TextBlock Text="Ticket Capture" FontWeight="Bold" Margin="0,0,0,5" />
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Customer ID:" Width="100" VerticalAlignment="Center" />
+              <TextBox Text="{Binding TicketCustomerIdText}" Width="120" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Ticket Type:" Width="100" VerticalAlignment="Center" />
+              <ComboBox Width="150"
+                        SelectedItem="{Binding TicketType}">
+                <ComboBoxItem Content="weighbridge" />
+                <ComboBoxItem Content="platform" />
+              </ComboBox>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Ticket #:" Width="100" VerticalAlignment="Center" />
+              <TextBox Text="{Binding TicketNumber}" Width="150" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="First Weight (kg):" Width="130" VerticalAlignment="Center" />
+              <TextBox Text="{Binding TicketFirstWeightText}" Width="100" />
+              <Button Content="Read Weighbridge"
+                      Width="140"
+                      Command="{Binding ReadWeighbridgeCommand}" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Second Weight (kg):" Width="130" VerticalAlignment="Center" />
+              <TextBox Text="{Binding TicketSecondWeightText}" Width="100" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Platform Weight (kg):" Width="130" VerticalAlignment="Center" />
+              <Button Content="Read Platform"
+                      Width="140"
+                      Command="{Binding ReadPlatformCommand}" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Unit Price / kg:" Width="130" VerticalAlignment="Center" />
+              <TextBox Text="{Binding TicketUnitPriceText}" Width="100" />
+              <TextBlock Text="Currency:" VerticalAlignment="Center" />
+              <TextBox Text="{Binding TicketCurrencyCode}" Width="80" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Product:" Width="100" VerticalAlignment="Center" />
+              <TextBox Text="{Binding TicketProductDescription}" Width="250" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Notes:" Width="100" VerticalAlignment="Top" />
+              <TextBox Text="{Binding TicketNotes}" Width="300" Height="60" AcceptsReturn="True" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+              <Button Content="Create Ticket"
+                      Width="150"
+                      Command="{Binding CreateTicketCommand}" />
+            </StackPanel>
+
+            <TextBlock Text="Last Ticket:" FontWeight="Bold" Margin="0,10,0,0" />
+            <TextBlock Text="{Binding LastCreatedTicketSummary}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <!-- Footer / Status -->
+        <StackPanel Orientation="Horizontal" Margin="0,20,0,0" Spacing="10">
+          <Button Content="Logout" Width="100" Command="{Binding LogoutCommand}" />
+          <TextBlock Text="{Binding StatusMessage}"
+                     TextWrapping="Wrap"
+                     VerticalAlignment="Center" />
+        </StackPanel>
+
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

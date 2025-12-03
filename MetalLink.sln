@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetalLink.Shared", "MetalLi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetalLink.Tests", "MetalLink.Tests\MetalLink.Tests.csproj", "{E65AF407-E5D5-48C4-8BF8-0B17F67FA456}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetalLink.Desktop", "MetalLink.Desktop\MetalLink.Desktop.csproj", "{A516B174-D8D4-46A3-87DC-6F91326D5A60}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +50,9 @@ Global
 		{E65AF407-E5D5-48C4-8BF8-0B17F67FA456}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E65AF407-E5D5-48C4-8BF8-0B17F67FA456}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E65AF407-E5D5-48C4-8BF8-0B17F67FA456}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A516B174-D8D4-46A3-87DC-6F91326D5A60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A516B174-D8D4-46A3-87DC-6F91326D5A60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A516B174-D8D4-46A3-87DC-6F91326D5A60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A516B174-D8D4-46A3-87DC-6F91326D5A60}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
