@@ -1,0 +1,88 @@
+<UserControl
+    x:Class="MetalLink.Desktop.Views.CameraView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Border Background="#1f2229" Padding="16">
+    <ScrollViewer>
+      <StackPanel Spacing="16">
+
+        <TextBlock
+            Text="Cameras"
+            FontSize="22"
+            FontWeight="Bold"
+            Foreground="#f5f5f5" />
+
+        <TextBlock
+            Text="Captures will upload and attach as customer documents. Make sure a Customer ID is set in the Documents section."
+            Foreground="#9fa4b2"
+            TextWrapping="Wrap" />
+
+        <Border Background="#252932" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="8">
+
+            <TextBlock Text="Weighbridge Cameras" Foreground="#f5f5f5" FontWeight="Bold" />
+            <WrapPanel>
+                <WrapPanel.Styles>
+                    <Style Selector="Button">
+                    <Setter Property="Margin" Value="0,0,8,8" />
+                    </Style>
+                </WrapPanel.Styles>
+
+                <Button
+                    Content="WB Front - Before"
+                    Command="{Binding CaptureWbFrontBeforeCommand}" />
+                <Button
+                    Content="WB Top - Before"
+                    Command="{Binding CaptureWbTopBeforeCommand}" />
+                <Button
+                    Content="WB Front - After"
+                    Command="{Binding CaptureWbFrontAfterCommand}" />
+                <Button
+                    Content="WB Top - After"
+                    Command="{Binding CaptureWbTopAfterCommand}" />
+            </WrapPanel>
+
+          </StackPanel>
+        </Border>
+
+        <Border Background="#252932" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Platform Cameras" Foreground="#f5f5f5" FontWeight="Bold" />
+            <WrapPanel>
+                <WrapPanel.Styles>
+                    <Style Selector="Button">
+                        <Setter Property="Margin" Value="0,0,8,8" />
+                    </Style>
+                </WrapPanel.Styles>
+
+                <Button
+                    Content="PF Front - Before"
+                    Command="{Binding CapturePfFrontBeforeCommand}" />
+                <Button
+                    Content="PF Top - Before"
+                    Command="{Binding CapturePfTopBeforeCommand}" />
+                <Button
+                    Content="PF Front - After"
+                    Command="{Binding CapturePfFrontAfterCommand}" />
+                <Button
+                    Content="PF Top - After"
+                    Command="{Binding CapturePfTopAfterCommand}" />
+            </WrapPanel>
+          </StackPanel>
+        </Border>
+
+        <Border Background="#252932" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="4">
+            <TextBlock Text="Last capture" Foreground="#9fa4b2" FontSize="12" />
+            <TextBlock
+                Text="{Binding LastCameraCaptureSummary}"
+                Foreground="#f5f5f5"
+                TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+      </StackPanel>
+    </ScrollViewer>
+  </Border>
+</UserControl>

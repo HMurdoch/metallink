@@ -7,6 +7,7 @@ using MetalLink.Infrastructure.Persistence;
 using MetalLink.Application.Interfaces;
 using Microsoft.OpenApi.Models;
 using System.Collections.Generic;
+using MediatR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,6 +50,13 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssemblyContaining<Program>(); 
+    //RegisterServicesFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
+});
+
 
 
 // Application (MediatR, FluentValidation)

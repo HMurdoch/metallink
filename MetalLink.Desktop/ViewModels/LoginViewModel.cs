@@ -71,7 +71,6 @@ public class LoginViewModel : INotifyPropertyChanged
 
             StatusMessage = "Login successful.";
 
-            // Switch to MainWindow
             if (Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 var mainWindow = new MainWindow
@@ -79,18 +78,14 @@ public class LoginViewModel : INotifyPropertyChanged
                     DataContext = new MainWindowViewModel(_app)
                 };
 
-                // Grab the current window (login) via the active MainWindow
-                var loginWindow = desktop.MainWindow;
+                var loginWindow = desktop.MainWindow; // should be the LoginWindow
 
-                // Switch the lifetime's main window to the new one
                 desktop.MainWindow = mainWindow;
                 mainWindow.Show();
 
-                // Hide (not close) the login window so ShutdownMode isn't triggered
-                loginWindow?.Hide();
+                // now safe to close the login window (shutdown mode will keep app alive because we changed MainWindow)
+                loginWindow?.Close();
             }
-
-
         }
         catch (HttpRequestException ex)
         {

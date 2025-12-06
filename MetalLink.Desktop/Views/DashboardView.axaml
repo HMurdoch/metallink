@@ -1,0 +1,65 @@
+<UserControl
+    x:Class="MetalLink.Desktop.Views.DashboardView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Grid Margin="8">
+    <TextBlock Text="Dashboard"
+               FontSize="20"
+               FontWeight="Bold"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center" />
+
+        <Border Background="#1f2229" Padding="16">
+            <ScrollViewer>
+            <StackPanel Spacing="12">
+
+                <TextBlock
+                    Text="Dashboard"
+                    FontSize="22"
+                    FontWeight="Bold"
+                    Foreground="#f5f5f5" />
+
+                <TextBlock
+                    Text="Quick overview"
+                    Foreground="#9fa4b2"
+                    FontSize="13" />
+
+                <Border Background="#252932" Padding="12" CornerRadius="4">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Logged in as:" Foreground="#9fa4b2" FontSize="12" />
+                    <TextBlock Text="{Binding LoggedInUser}" Foreground="#f5f5f5" />
+                </StackPanel>
+                </Border>
+
+                <Border Background="#252932" Padding="12" CornerRadius="4">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Last customer loaded:" Foreground="#9fa4b2" FontSize="12" />
+                    <TextBlock Text="{Binding FoundCustomerSummary}" Foreground="#f5f5f5" TextWrapping="Wrap" />
+                </StackPanel>
+                </Border>
+
+                <Border Background="#252932" Padding="12" CornerRadius="4">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Last ticket created:" Foreground="#9fa4b2" FontSize="12" />
+                    <TextBlock Text="{Binding LastCreatedTicketSummary}" Foreground="#f5f5f5" TextWrapping="Wrap" />
+                </StackPanel>
+                </Border>
+
+                <Border Background="#252932" Padding="12" CornerRadius="4">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Documents summary:" Foreground="#9fa4b2" FontSize="12" />
+                    <TextBox
+                        Text="{Binding DocumentsSummary}"
+                        IsReadOnly="True"
+                        AcceptsReturn="True"
+                        Height="120"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+                </Border>
+
+            </StackPanel>
+            </ScrollViewer>
+        </Border>
+  </Grid>
+</UserControl>

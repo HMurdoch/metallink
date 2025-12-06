@@ -2,7 +2,6 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using MetalLink.Desktop.Auth;
-using MetalLink.Desktop.Configuration;
 using MetalLink.Desktop.Hardware;
 using MetalLink.Desktop.Services;
 using MetalLink.Desktop.ViewModels;
@@ -12,16 +11,18 @@ namespace MetalLink.Desktop;
 
 public partial class App : Application
 {
-    // Simple manual DI container
-    public AuthState AuthState { get; } = new();
+    public AuthState AuthState { get; private set; } = new();
     public ApiClient ApiClient { get; private set; } = null!;
     public AuthService AuthService { get; private set; } = null!;
     public CustomerService CustomerService { get; private set; } = null!;
     public TicketService TicketService { get; private set; } = null!;
     public IScaleService ScaleService { get; private set; } = null!;
+    public DocumentService DocumentService { get; private set; } = null!;
+    public ICameraService CameraService { get; private set; } = null!;
 
     public override void Initialize()
     {
+        // IMPORTANT: use AvaloniaXamlLoader here, NOT InitializeComponent()
         AvaloniaXamlLoader.Load(this);
     }
 
@@ -32,26 +33,21 @@ public partial class App : Application
         AuthService = new AuthService(AuthState);
         CustomerService = new CustomerService(ApiClient, AuthState);
         TicketService = new TicketService(ApiClient, AuthState);
-
-        // Choose scale implementation
-        if (ScaleConfig.UseMockScales)
-        {
-            ScaleService = new MockScaleService();
-        }
-        else
-        {
-            ScaleService = new SerialPortScaleService();
-        }
+        ScaleService = new MockScaleService();
+        DocumentService = new DocumentService(ApiClient, AuthState);
+        CameraService = new MockCameraService(); // later swap for real impl
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            // Start at Login window
-            var loginWindow = new LoginWindow
+            // var loginVm = new LoginViewModel(this);
+            // desktop.MainWindow = new LoginWindow
+            // {
+            //     DataContext = loginVm
+            // };
+            desktop.MainWindow = new LoginWindow
             {
                 DataContext = new LoginViewModel(this)
             };
-
-            desktop.MainWindow = loginWindow;
         }
 
         base.OnFrameworkInitializationCompleted();
