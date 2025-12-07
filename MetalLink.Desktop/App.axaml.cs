@@ -47,9 +47,9 @@ public partial class App : Application
             //     DataContext = loginVm
             // };
 
-            desktop.MainWindow = new MainWindow
+            desktop.MainWindow = new LoginWindow
             {
-                DataContext = new MainWindowViewModel(this)
+                DataContext = new LoginViewModel(this)
             };
         }
 
