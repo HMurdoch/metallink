@@ -148,10 +148,11 @@ public sealed class TicketReportDocument : IDocument
     }
 
     private static IContainer HeadingCell(IContainer container)
-        => container.PaddingVertical(2)
-                   .PaddingRight(5)
-                   .AlignLeft()
-                   .TextStyle(Style.Default.SemiBold());
+        => container
+            .PaddingVertical(2)
+            .PaddingRight(5)
+            .AlignLeft()
+            .DefaultTextStyle(TextStyle.Default.SemiBold());
 
     private static IContainer ValueCell(IContainer container)
         => container.PaddingVertical(2);
