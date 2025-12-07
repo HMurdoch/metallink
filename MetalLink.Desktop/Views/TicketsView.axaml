@@ -59,15 +59,14 @@
                     Spacing="4"
                     Margin="0,2,0,6"
                     IsVisible="{Binding HasUnsavedTicket}">
-        <TextBlock Text="●"
-                    Foreground="#ffa94d"
-                    FontSize="10"
-                    VerticalAlignment="Center" />
-        <TextBlock Text="You have unsaved ticket changes."
-                    Foreground="#ffa94d"
-                    FontSize="11" />
+            <TextBlock Text="●"
+                        Foreground="#ffa94d"
+                        FontSize="10"
+                        VerticalAlignment="Center" />
+            <TextBlock Text="You have unsaved ticket changes."
+                        Foreground="#ffa94d"
+                        FontSize="11" />
         </StackPanel>
-
 
         <Border Background="#252932" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
