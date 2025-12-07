@@ -30,6 +30,8 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
     private readonly IScaleService _scaleService;
     private readonly DocumentService _documentService;
     private readonly ICameraService _cameraService;
+    private readonly TicketReportService _ticketReportService;
+
 
     private string _title = "Metal Link Desktop";
     private string _statusMessage = "Ready.";

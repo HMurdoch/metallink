@@ -6,6 +6,7 @@ using MetalLink.Infrastructure;
 using MetalLink.Infrastructure.Persistence;
 using MetalLink.Application.Interfaces;
 using Microsoft.OpenApi.Models;
+using QuestPDF.Infrastructure;
 using System.Collections.Generic;
 using MediatR;
 

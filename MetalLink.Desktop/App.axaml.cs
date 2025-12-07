@@ -19,10 +19,10 @@ public partial class App : Application
     public IScaleService ScaleService { get; private set; } = null!;
     public DocumentService DocumentService { get; private set; } = null!;
     public ICameraService CameraService { get; private set; } = null!;
+    public TicketReportService TicketReportService { get; private set; } = null!;
 
     public override void Initialize()
     {
-        // IMPORTANT: use AvaloniaXamlLoader here, NOT InitializeComponent()
         AvaloniaXamlLoader.Load(this);
     }
 
@@ -35,18 +35,21 @@ public partial class App : Application
         TicketService = new TicketService(ApiClient, AuthState);
         ScaleService = new MockScaleService();
         DocumentService = new DocumentService(ApiClient, AuthState);
-        CameraService = new MockCameraService(); // later swap for real impl
+        CameraService = new MockCameraService();
+        TicketReportService = new TicketReportService(AuthState);
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            // If you later re-enable login, switch back to LoginWindow here.
             // var loginVm = new LoginViewModel(this);
             // desktop.MainWindow = new LoginWindow
             // {
             //     DataContext = loginVm
             // };
-            desktop.MainWindow = new LoginWindow
+
+            desktop.MainWindow = new MainWindow
             {
-                DataContext = new LoginViewModel(this)
+                DataContext = new MainWindowViewModel(this)
             };
         }
 
