@@ -163,6 +163,10 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
     // --- Camera ---
     private string _lastCameraCaptureSummary = "No camera capture yet.";
 
+    // --- Ticket report ---
+    private string _ticketReportTicketIdText = string.Empty;
+    private string _lastTicketReportPath = "No ticket report downloaded yet.";
+
     public new event PropertyChangedEventHandler? PropertyChanged;
 
     public string Title
@@ -190,6 +194,8 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         get => _selectedTabIndex;
         set { _selectedTabIndex = value; OnPropertyChanged(); }
     }
+
+
 
     // --- Customer search properties ---
 
@@ -451,6 +457,11 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
             _lastCreatedTicket = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(LastCreatedTicketSummary));
+
+            if (value != null && value.TicketId > 0)
+            {
+                TicketReportTicketIdText = value.TicketId.ToString();
+            }
         }
     }
 
@@ -512,6 +523,28 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         set { _lastCameraCaptureSummary = value; OnPropertyChanged(); }
     }
 
+    // --- Ticket report properties ---
+
+    public string TicketReportTicketIdText
+    {
+        get => _ticketReportTicketIdText;
+        set
+        {
+            _ticketReportTicketIdText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string LastTicketReportPath
+    {
+        get => _lastTicketReportPath;
+        set
+        {
+            _lastTicketReportPath = value;
+            OnPropertyChanged();
+        }
+    }
+
     // Commands
     public ICommand CheckDbCommand { get; }
     public ICommand LogoutCommand { get; }
@@ -540,6 +573,10 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
     public ICommand CapturePfFrontAfterCommand { get; }
     public ICommand CapturePfTopAfterCommand { get; }
 
+    // Ticket Report commands
+    public ICommand DownloadTicketReportCommand { get; }
+
+
     // Optional tab navigation commands
     public ICommand GoDashboardCommand { get; }
     public ICommand GoCustomerCommand { get; }
@@ -557,7 +594,8 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         _scaleService = app.ScaleService;
         _documentService = app.DocumentService;
         _cameraService = app.CameraService;
-
+        _ticketReportService = app.TicketReportService;
+        
         _selectedTabIndex = 0;
 
         // Core commands
@@ -577,6 +615,7 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         ShowTicketsCommand   = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Tickets);
         ShowDocumentsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Documents);
         ShowCameraCommand    = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Camera);
+
         // Camera commands
         CaptureWbFrontBeforeCommand = new AsyncCommand(() =>
             CaptureAndUploadAsync(CameraDeviceType.WeighbridgeFront, "wb_front_before"));
@@ -595,6 +634,10 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
             CaptureAndUploadAsync(CameraDeviceType.PlatformFront, "pf_front_after"));
         CapturePfTopAfterCommand = new AsyncCommand(() =>
             CaptureAndUploadAsync(CameraDeviceType.PlatformTop, "pf_top_after"));
+
+        //Ticket Report Command
+        DownloadTicketReportCommand = new AsyncCommand(DownloadTicketReportAsync);
+
 
         // Optional tab navigation (unused in current XAML but kept for later)
         GoDashboardCommand = new AsyncCommand(() =>
@@ -1093,6 +1136,39 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         catch (Exception ex)
         {
             StatusMessage = $"Error during capture/upload: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task DownloadTicketReportAsync()
+    {
+        if (IsBusy) return;
+
+        IsBusy = true;
+        StatusMessage = "Downloading ticket PDF...";
+
+        try
+        {
+            if (!long.TryParse(TicketReportTicketIdText, out var ticketId))
+            {
+                StatusMessage = "Please enter a valid numeric Ticket ID.";
+                return;
+            }
+
+            var path = await _ticketReportService.DownloadTicketReportAsync(ticketId);
+            LastTicketReportPath = path;
+            StatusMessage = $"Ticket PDF saved to: {path}";
+        }
+        catch (HttpRequestException ex)
+        {
+            StatusMessage = $"Error calling API: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error downloading ticket report: {ex.Message}";
         }
         finally
         {
