@@ -1195,6 +1195,55 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         }
     }
 
+    private async Task CaptureSignatureAsync()
+    {
+        if (IsBusy) return;
+        IsBusy = true;
+        StatusMessage = "Capturing signature and uploading...";
+
+        try
+        {
+            // Use the same Customer ID as the Customer Documents section
+            if (!long.TryParse(DocumentsCustomerIdText, out var customerId))
+            {
+                StatusMessage =
+                    "Please enter a valid numeric Customer ID in the Customer Documents section before capturing signature.";
+                return;
+            }
+
+            const string documentType = "signature";
+
+            // Simulate pad capture (currently using MockSignaturePadService)
+            var capture = await _signaturePadService.CaptureAsync(documentType);
+            LastSignatureCaptureSummary = capture.ToString();
+
+            // Upload as a normal customer document
+            var doc = await _documentService.UploadDocumentAsync(
+                customerId,
+                capture.DocumentType,
+                capture.FilePath);
+
+            if (doc == null)
+            {
+                StatusMessage = "Signature upload failed (no response).";
+                return;
+            }
+
+            StatusMessage = "Signature captured and uploaded.";
+
+            // Refresh the documents list so the new signature appears
+            await LoadCustomerDocumentsAsync();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error during signature capture/upload: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     // --- Helpers ---
 
     protected new void OnPropertyChanged([CallerMemberName] string? name = null)
