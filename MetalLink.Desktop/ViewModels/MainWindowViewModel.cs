@@ -49,6 +49,10 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
     private EnumMainSection _currentSection = EnumMainSection.Dashboard;
     private EnumMainSection _previousSection = EnumMainSection.Dashboard;
 
+    // --- Dashboard counters ---
+    private int _customersLoadedCount;
+    private int _ticketsCreatedCount;
+
     // true = slide from left (going "back"), false = from right (going "forward")
     private bool _isSlideFromLeft;
 
@@ -577,6 +581,19 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         set { _lastSignatureCaptureSummary = value; OnPropertyChanged(); }
     }
 
+    public int CustomersLoadedCount
+    {
+        get => _customersLoadedCount;
+        set { _customersLoadedCount = value; OnPropertyChanged(); }
+    }
+
+    public int TicketsCreatedCount
+    {
+        get => _ticketsCreatedCount;
+        set { _ticketsCreatedCount = value; OnPropertyChanged(); }
+    }
+
+
     // Commands
     public ICommand CheckDbCommand { get; }
     public ICommand LogoutCommand { get; }
@@ -794,10 +811,12 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
             {
                 StatusMessage = $"Customer {id} not found.";
                 FoundCustomer = null;
+                return;
             }
             else
             {
                 FoundCustomer = customer;
+                CustomersLoadedCount++;
                 StatusMessage = $"Loaded customer {customer.FullName}.";
             }
         }
@@ -949,6 +968,7 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
             }
 
             LastCreatedTicket = ticket;
+            TicketsCreatedCount++;
             StatusMessage = $"Ticket {ticket.TicketNumber} created. Net {ticket.NetWeightKg} kg, Total {ticket.TotalAmount} {ticket.CurrencyCode}.";
 
             TicketNumber = string.Empty;
