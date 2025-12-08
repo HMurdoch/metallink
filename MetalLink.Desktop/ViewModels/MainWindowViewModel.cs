@@ -31,7 +31,8 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
     private readonly DocumentService _documentService;
     private readonly ICameraService _cameraService;
     private readonly TicketReportService _ticketReportService;
-
+    
+    private readonly ISignaturePadService _signaturePadService;
 
     private string _title = "Metal Link Desktop";
     private string _statusMessage = "Ready.";
@@ -166,6 +167,9 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
     // --- Ticket report ---
     private string _ticketReportTicketIdText = string.Empty;
     private string _lastTicketReportPath = "No ticket report downloaded yet.";
+
+    // --- Signature ---
+    private string _lastSignatureCaptureSummary = "No signature captured yet.";
 
     public new event PropertyChangedEventHandler? PropertyChanged;
 
@@ -545,6 +549,14 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         }
     }
 
+    // --- Signature properties ---
+
+    public string LastSignatureCaptureSummary
+    {
+        get => _lastSignatureCaptureSummary;
+        set { _lastSignatureCaptureSummary = value; OnPropertyChanged(); }
+    }
+
     // Commands
     public ICommand CheckDbCommand { get; }
     public ICommand LogoutCommand { get; }
@@ -584,6 +596,10 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
     public ICommand GoDocumentsCommand { get; }
     public ICommand GoCameraCommand { get; }
 
+    // Signature command
+    public ICommand CaptureSignatureCommand { get; }
+
+
     public MainWindowViewModel(App app)
     {
         _app = app;
@@ -595,6 +611,7 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         _documentService = app.DocumentService;
         _cameraService = app.CameraService;
         _ticketReportService = app.TicketReportService;
+        _signaturePadService = app.SignaturePadService;
         
         _selectedTabIndex = 0;
 
@@ -638,6 +655,8 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         //Ticket Report Command
         DownloadTicketReportCommand = new AsyncCommand(DownloadTicketReportAsync);
 
+        // Signature
+        CaptureSignatureCommand = new AsyncCommand(CaptureSignatureAsync);
 
         // Optional tab navigation (unused in current XAML but kept for later)
         GoDashboardCommand = new AsyncCommand(() =>
@@ -1169,6 +1188,55 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         catch (Exception ex)
         {
             StatusMessage = $"Error downloading ticket report: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task CaptureSignatureAsync()
+    {
+        if (IsBusy) return;
+        IsBusy = true;
+        StatusMessage = "Capturing signature and uploading...";
+
+        try
+        {
+            // Use the same Customer ID as the Customer Documents section
+            if (!long.TryParse(DocumentsCustomerIdText, out var customerId))
+            {
+                StatusMessage =
+                    "Please enter a valid numeric Customer ID in the Customer Documents section before capturing signature.";
+                return;
+            }
+
+            const string documentType = "signature";
+
+            // Simulate pad capture (currently using MockSignaturePadService)
+            var capture = await _signaturePadService.CaptureAsync(documentType);
+            LastSignatureCaptureSummary = capture.ToString();
+
+            // Upload as a normal customer document
+            var doc = await _documentService.UploadDocumentAsync(
+                customerId,
+                capture.DocumentType,
+                capture.FilePath);
+
+            if (doc == null)
+            {
+                StatusMessage = "Signature upload failed (no response).";
+                return;
+            }
+
+            StatusMessage = "Signature captured and uploaded.";
+
+            // Refresh the documents list so the new signature appears
+            await LoadCustomerDocumentsAsync();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error during signature capture/upload: {ex.Message}";
         }
         finally
         {
