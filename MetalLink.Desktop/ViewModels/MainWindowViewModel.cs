@@ -17,6 +17,12 @@ using MetalLink.Desktop.Services;
 using MetalLink.Shared.Customers;
 using MetalLink.Shared.Tickets;
 using CommunityToolkit.Mvvm.ComponentModel;
+using LiveChartsCore;
+using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore.SkiaSharpView.Avalonia;
+using LiveChartsCore.Measure;
+using LiveChartsCore.SkiaSharpView.Painting;
+
 
 namespace MetalLink.Desktop.ViewModels;
 
