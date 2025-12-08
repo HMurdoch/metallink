@@ -89,6 +89,14 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         }
     }
 
+    // Pie chart: tickets by type
+    public ISeries[] TicketsByTypeSeries { get; set; } = Array.Empty<ISeries>();
+
+    // Line chart: tickets per day
+    public ISeries[] TicketsPerDaySeries { get; set; } = Array.Empty<ISeries>();
+    public Axis[] TicketsPerDayXAxis { get; set; } = Array.Empty<Axis>();
+
+
     // Section visibility, used by XAML
     public bool IsDashboardSectionVisible => CurrentSection == EnumMainSection.Dashboard;
     public bool IsCustomerSectionVisible  => CurrentSection == EnumMainSection.Customers;
@@ -649,6 +657,33 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         _cameraService = app.CameraService;
         _ticketReportService = app.TicketReportService;
         _signaturePadService = app.SignaturePadService;
+
+        _ = LoadDashboardStatsAsync();
+        
+        // Demo – you can later wire these to API stats
+        TicketsByTypeSeries = new ISeries[]
+        {
+            new PieSeries<int> { Values = new[] { 60 }, Name = "Weighbridge" },
+            new PieSeries<int> { Values = new[] { 40 }, Name = "Platform" }
+        };
+
+        TicketsPerDaySeries = new ISeries[]
+        {
+            new LineSeries<int>
+            {
+                Name = "Tickets per day",
+                Values = new[] { 4, 7, 3, 9, 5, 2, 8 }
+            }
+        };
+
+        TicketsPerDayXAxis = new[]
+        {
+            new Axis
+            {
+                Labels = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" }
+            }
+        };
+
         
         _selectedTabIndex = 0;
 
