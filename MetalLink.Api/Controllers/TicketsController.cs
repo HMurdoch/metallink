@@ -74,7 +74,7 @@ public sealed class TicketsController : ControllerBase
     [HttpGet("{id:long}")]
     [ProducesResponseType(typeof(TicketDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetTicketById(long id, CancellationToken cancellationToken)
+    public IActionResult GetTicketById(long id)
     {
         // Proper query will come in a later chapter
         return Ok(new { message = "GetTicketById not implemented yet", id });
