@@ -137,6 +137,8 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
     // --- Customer search ---
     private string _searchCustomerIdText = string.Empty;
     private CustomerDto? _foundCustomer;
+    private int _totalCustomersInDb;
+    private int _totalTicketsInDb;
 
     // --- New customer form ---
     private string _newFullName = string.Empty;
@@ -224,6 +226,18 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(FoundCustomerSummary));
         }
+    }
+
+    public int TotalCustomersInDb
+    {
+        get => _totalCustomersInDb;
+        set { _totalCustomersInDb = value; OnPropertyChanged(); }
+    }
+
+    public int TotalTicketsInDb
+    {
+        get => _totalTicketsInDb;
+        set { _totalTicketsInDb = value; OnPropertyChanged(); }
     }
 
     public string FoundCustomerSummary
@@ -1250,12 +1264,71 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         }
     }
 
+    // animated display values
+    private int _animatedTotalCustomersInDb;
+    public int AnimatedTotalCustomersInDb
+    {
+        get => _animatedTotalCustomersInDb;
+        set { _animatedTotalCustomersInDb = value; OnPropertyChanged(); }
+    }
+
+    private int _animatedTotalTicketsInDb;
+    public int AnimatedTotalTicketsInDb
+    {
+        get => _animatedTotalTicketsInDb;
+        set { _animatedTotalTicketsInDb = value; OnPropertyChanged(); }
+    }
+
+
+    private async Task LoadDashboardStatsAsync()
+    {
+        try
+        {
+            var health = await _apiClient.GetAsync<HealthResponse>("health");
+
+            if (health != null)
+            {
+                TotalCustomersInDb = health.customersCount;
+                TotalTicketsInDb   = health.ticketsCount;
+
+                _ = AnimateCounterAsync(TotalCustomersInDb, v => AnimatedTotalCustomersInDb = v);
+                _ = AnimateCounterAsync(TotalTicketsInDb,   v => AnimatedTotalTicketsInDb   = v);            
+            }
+        }
+        catch
+        {
+            // ignore errors, keep dashboard empty
+        }
+    }
+
     // --- Helpers ---
 
     protected new void OnPropertyChanged([CallerMemberName] string? name = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
+
+    private async Task AnimateCounterAsync(int target,
+        Action<int> setValue,
+        int durationMs = 600)
+    {
+        if (target < 0) target = 0;
+
+        var frames = Math.Max(1, durationMs / 30); // ~30 fps
+        var step = (double)target / frames;
+
+        double current = 0;
+
+        for (int i = 0; i < frames; i++)
+        {
+            current += step;
+            setValue((int)Math.Round(current));
+            await Task.Delay(30);
+        }
+
+        setValue(target);
+    }
+
 
     private sealed class AsyncCommand : ICommand
     {
