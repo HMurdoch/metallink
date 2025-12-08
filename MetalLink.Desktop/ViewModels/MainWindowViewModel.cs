@@ -1265,5 +1265,6 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
     {
         public string status { get; set; } = string.Empty;
         public int customersCount { get; set; }
+        public int ticketsCount { get; set; }
     }
 }
