@@ -1,65 +1,160 @@
 <UserControl
     x:Class="MetalLink.Desktop.Views.DashboardView"
     xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia">
 
-  <Grid Margin="8">
-    <TextBlock Text="Dashboard"
-               FontSize="20"
-               FontWeight="Bold"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center" />
+  <Border Background="#1f2229" Padding="16">
+    <ScrollViewer>
+      <StackPanel Spacing="12">
 
-        <Border Background="#1f2229" Padding="16">
-            <ScrollViewer>
-            <StackPanel Spacing="12">
+        <!-- Header -->
+        <TextBlock
+            Text="Dashboard"
+            FontSize="22"
+            FontWeight="Bold"
+            Foreground="#f5f5f5" />
 
-                <TextBlock
-                    Text="Dashboard"
-                    FontSize="22"
-                    FontWeight="Bold"
-                    Foreground="#f5f5f5" />
+        <TextBlock
+            Text="Quick overview"
+            Foreground="#9fa4b2"
+            FontSize="13" />
 
-                <TextBlock
-                    Text="Quick overview"
-                    Foreground="#9fa4b2"
-                    FontSize="13" />
+        <!-- Two-column stats layout -->
+        <Grid ColumnDefinitions="*,*"
+              RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+              ColumnSpacing="12"
+              RowSpacing="12">
 
-                <Border Background="#252932" Padding="12" CornerRadius="4">
-                <StackPanel Spacing="4">
-                    <TextBlock Text="Logged in as:" Foreground="#9fa4b2" FontSize="12" />
-                    <TextBlock Text="{Binding LoggedInUser}" Foreground="#f5f5f5" />
-                </StackPanel>
-                </Border>
-
-                <Border Background="#252932" Padding="12" CornerRadius="4">
-                <StackPanel Spacing="4">
-                    <TextBlock Text="Last customer loaded:" Foreground="#9fa4b2" FontSize="12" />
-                    <TextBlock Text="{Binding FoundCustomerSummary}" Foreground="#f5f5f5" TextWrapping="Wrap" />
-                </StackPanel>
-                </Border>
-
-                <Border Background="#252932" Padding="12" CornerRadius="4">
-                <StackPanel Spacing="4">
-                    <TextBlock Text="Last ticket created:" Foreground="#9fa4b2" FontSize="12" />
-                    <TextBlock Text="{Binding LastCreatedTicketSummary}" Foreground="#f5f5f5" TextWrapping="Wrap" />
-                </StackPanel>
-                </Border>
-
-                <Border Background="#252932" Padding="12" CornerRadius="4">
-                <StackPanel Spacing="6">
-                    <TextBlock Text="Documents summary:" Foreground="#9fa4b2" FontSize="12" />
-                    <TextBox
-                        Text="{Binding DocumentsSummary}"
-                        IsReadOnly="True"
-                        AcceptsReturn="True"
-                        Height="120"
-                        TextWrapping="Wrap" />
-                </StackPanel>
-                </Border>
-
+          <!-- Row 0: Logged in as (full width) -->
+          <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+                  Background="#252932" Padding="10" CornerRadius="4">
+            <StackPanel Spacing="4">
+              <TextBlock Text="Logged in as:" Foreground="#9fa4b2" FontSize="12" />
+              <TextBlock Text="{Binding LoggedInUser}" Foreground="#f5f5f5" />
             </StackPanel>
-            </ScrollViewer>
+          </Border>
+
+          <!-- Row 1: Total customers & total tickets in DB -->
+          <Border Grid.Row="1" Grid.Column="0"
+                  Background="#252932" Padding="10" CornerRadius="4">
+            <StackPanel>
+              <TextBlock Text="Total customers in system:"
+                         Foreground="#9fa4b2" FontSize="12" />
+              <TextBlock Text="{Binding AnimatedTotalCustomersInDb}"
+                         Foreground="#f5f5f5"
+                         FontSize="18"
+                         FontWeight="Bold" />
+            </StackPanel>
+          </Border>
+
+          <Border Grid.Row="1" Grid.Column="1"
+                  Background="#252932" Padding="10" CornerRadius="4">
+            <StackPanel>
+              <TextBlock Text="Total tickets in system:"
+                         Foreground="#9fa4b2" FontSize="12" />
+              <TextBlock Text="{Binding AnimatedTotalTicketsInDb}"
+                         Foreground="#f5f5f5"
+                         FontSize="18"
+                         FontWeight="Bold" />
+            </StackPanel>
+          </Border>
+
+          <!-- Row 2: Last customer / last ticket -->
+          <Border Grid.Row="2" Grid.Column="0"
+                  Background="#252932" Padding="10" CornerRadius="4">
+            <StackPanel Spacing="4">
+              <TextBlock Text="Last customer loaded:" Foreground="#9fa4b2" FontSize="12" />
+              <TextBlock Text="{Binding FoundCustomerSummary}"
+                         Foreground="#f5f5f5"
+                         TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
+          <Border Grid.Row="2" Grid.Column="1"
+                  Background="#252932" Padding="10" CornerRadius="4">
+            <StackPanel Spacing="4">
+              <TextBlock Text="Last ticket created:" Foreground="#9fa4b2" FontSize="12" />
+              <TextBlock Text="{Binding LastCreatedTicketSummary}"
+                         Foreground="#f5f5f5"
+                         TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
+          <!-- Row 3: Session counters -->
+          <Border Grid.Row="3" Grid.Column="0"
+                  Background="#252932" Padding="10" CornerRadius="4">
+            <StackPanel>
+              <TextBlock Text="Customers loaded this session:"
+                         Foreground="#9fa4b2"
+                         FontSize="12" />
+              <TextBlock Text="{Binding CustomersLoadedCount}"
+                         Foreground="#f5f5f5"
+                         FontSize="18"
+                         FontWeight="Bold" />
+            </StackPanel>
+          </Border>
+
+          <Border Grid.Row="3" Grid.Column="1"
+                  Background="#252932" Padding="10" CornerRadius="4">
+            <StackPanel>
+              <TextBlock Text="Tickets created this session:"
+                         Foreground="#9fa4b2"
+                         FontSize="12" />
+              <TextBlock Text="{Binding TicketsCreatedCount}"
+                         Foreground="#f5f5f5"
+                         FontSize="18"
+                         FontWeight="Bold" />
+            </StackPanel>
+          </Border>
+
+          <!-- Row 4: Documents summary (full width) -->
+          <Border Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+                  Background="#252932" Padding="10" CornerRadius="4">
+            <StackPanel Spacing="6">
+              <TextBlock Text="Documents summary:" Foreground="#9fa4b2" FontSize="12" />
+              <TextBox Text="{Binding DocumentsSummary}"
+                       IsReadOnly="True"
+                       AcceptsReturn="True"
+                       Height="120"
+                       TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <!-- Visual overview title -->
+        <TextBlock Text="Visual overview"
+                   Margin="0,16,0,4"
+                   Foreground="#9fa4b2"
+                   FontSize="13" />
+
+        <!-- Tickets by type (pie) -->
+        <Border Background="#252932" Padding="10" CornerRadius="4">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Tickets by type"
+                       Foreground="#f5f5f5"
+                       FontSize="14"
+                       FontWeight="Bold" />
+            <lvc:PieChart Series="{Binding TicketsByTypeSeries}"
+                          LegendPosition="Right"
+                          Height="220" />
+          </StackPanel>
         </Border>
-  </Grid>
+
+        <!-- Tickets per day (line chart) -->
+        <Border Background="#252932" Padding="10" CornerRadius="4" Margin="0,8,0,0">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Tickets per day (last 7 days)"
+                       Foreground="#f5f5f5"
+                       FontSize="14"
+                       FontWeight="Bold" />
+            <lvc:CartesianChart Series="{Binding TicketsPerDaySeries}"
+                                XAxes="{Binding TicketsPerDayXAxis}"
+                                Height="220" />
+          </StackPanel>
+        </Border>
+
+      </StackPanel>
+    </ScrollViewer>
+  </Border>
 </UserControl>

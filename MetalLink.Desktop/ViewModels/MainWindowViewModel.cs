@@ -17,6 +17,12 @@ using MetalLink.Desktop.Services;
 using MetalLink.Shared.Customers;
 using MetalLink.Shared.Tickets;
 using CommunityToolkit.Mvvm.ComponentModel;
+using LiveChartsCore;
+using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore.SkiaSharpView.Avalonia;
+using LiveChartsCore.Measure;
+using LiveChartsCore.SkiaSharpView.Painting;
+
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -42,6 +48,10 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
 
     private EnumMainSection _currentSection = EnumMainSection.Dashboard;
     private EnumMainSection _previousSection = EnumMainSection.Dashboard;
+
+    // --- Dashboard counters ---
+    private int _customersLoadedCount;
+    private int _ticketsCreatedCount;
 
     // true = slide from left (going "back"), false = from right (going "forward")
     private bool _isSlideFromLeft;
@@ -78,6 +88,14 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
+
+    // Pie chart: tickets by type
+    public ISeries[] TicketsByTypeSeries { get; set; } = Array.Empty<ISeries>();
+
+    // Line chart: tickets per day
+    public ISeries[] TicketsPerDaySeries { get; set; } = Array.Empty<ISeries>();
+    public Axis[] TicketsPerDayXAxis { get; set; } = Array.Empty<Axis>();
+
 
     // Section visibility, used by XAML
     public bool IsDashboardSectionVisible => CurrentSection == EnumMainSection.Dashboard;
@@ -131,6 +149,8 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
     // --- Customer search ---
     private string _searchCustomerIdText = string.Empty;
     private CustomerDto? _foundCustomer;
+    private int _totalCustomersInDb;
+    private int _totalTicketsInDb;
 
     // --- New customer form ---
     private string _newFullName = string.Empty;
@@ -218,6 +238,18 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(FoundCustomerSummary));
         }
+    }
+
+    public int TotalCustomersInDb
+    {
+        get => _totalCustomersInDb;
+        set { _totalCustomersInDb = value; OnPropertyChanged(); }
+    }
+
+    public int TotalTicketsInDb
+    {
+        get => _totalTicketsInDb;
+        set { _totalTicketsInDb = value; OnPropertyChanged(); }
     }
 
     public string FoundCustomerSummary
@@ -557,6 +589,19 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         set { _lastSignatureCaptureSummary = value; OnPropertyChanged(); }
     }
 
+    public int CustomersLoadedCount
+    {
+        get => _customersLoadedCount;
+        set { _customersLoadedCount = value; OnPropertyChanged(); }
+    }
+
+    public int TicketsCreatedCount
+    {
+        get => _ticketsCreatedCount;
+        set { _ticketsCreatedCount = value; OnPropertyChanged(); }
+    }
+
+
     // Commands
     public ICommand CheckDbCommand { get; }
     public ICommand LogoutCommand { get; }
@@ -612,6 +657,33 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         _cameraService = app.CameraService;
         _ticketReportService = app.TicketReportService;
         _signaturePadService = app.SignaturePadService;
+
+        _ = LoadDashboardStatsAsync();
+        
+        // Demo – you can later wire these to API stats
+        TicketsByTypeSeries = new ISeries[]
+        {
+            new PieSeries<int> { Values = new[] { 60 }, Name = "Weighbridge" },
+            new PieSeries<int> { Values = new[] { 40 }, Name = "Platform" }
+        };
+
+        TicketsPerDaySeries = new ISeries[]
+        {
+            new LineSeries<int>
+            {
+                Name = "Tickets per day",
+                Values = new[] { 4, 7, 3, 9, 5, 2, 8 }
+            }
+        };
+
+        TicketsPerDayXAxis = new[]
+        {
+            new Axis
+            {
+                Labels = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" }
+            }
+        };
+
         
         _selectedTabIndex = 0;
 
@@ -774,10 +846,12 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
             {
                 StatusMessage = $"Customer {id} not found.";
                 FoundCustomer = null;
+                return;
             }
             else
             {
                 FoundCustomer = customer;
+                CustomersLoadedCount++;
                 StatusMessage = $"Loaded customer {customer.FullName}.";
             }
         }
@@ -929,6 +1003,7 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
             }
 
             LastCreatedTicket = ticket;
+            TicketsCreatedCount++;
             StatusMessage = $"Ticket {ticket.TicketNumber} created. Net {ticket.NetWeightKg} kg, Total {ticket.TotalAmount} {ticket.CurrencyCode}.";
 
             TicketNumber = string.Empty;
@@ -1244,12 +1319,71 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
         }
     }
 
+    // animated display values
+    private int _animatedTotalCustomersInDb;
+    public int AnimatedTotalCustomersInDb
+    {
+        get => _animatedTotalCustomersInDb;
+        set { _animatedTotalCustomersInDb = value; OnPropertyChanged(); }
+    }
+
+    private int _animatedTotalTicketsInDb;
+    public int AnimatedTotalTicketsInDb
+    {
+        get => _animatedTotalTicketsInDb;
+        set { _animatedTotalTicketsInDb = value; OnPropertyChanged(); }
+    }
+
+
+    private async Task LoadDashboardStatsAsync()
+    {
+        try
+        {
+            var health = await _apiClient.GetAsync<HealthResponse>("health");
+
+            if (health != null)
+            {
+                TotalCustomersInDb = health.customersCount;
+                TotalTicketsInDb   = health.ticketsCount;
+
+                _ = AnimateCounterAsync(TotalCustomersInDb, v => AnimatedTotalCustomersInDb = v);
+                _ = AnimateCounterAsync(TotalTicketsInDb,   v => AnimatedTotalTicketsInDb   = v);            
+            }
+        }
+        catch
+        {
+            // ignore errors, keep dashboard empty
+        }
+    }
+
     // --- Helpers ---
 
     protected new void OnPropertyChanged([CallerMemberName] string? name = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
+
+    private async Task AnimateCounterAsync(int target,
+        Action<int> setValue,
+        int durationMs = 600)
+    {
+        if (target < 0) target = 0;
+
+        var frames = Math.Max(1, durationMs / 30); // ~30 fps
+        var step = (double)target / frames;
+
+        double current = 0;
+
+        for (int i = 0; i < frames; i++)
+        {
+            current += step;
+            setValue((int)Math.Round(current));
+            await Task.Delay(30);
+        }
+
+        setValue(target);
+    }
+
 
     private sealed class AsyncCommand : ICommand
     {
@@ -1265,5 +1399,6 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
     {
         public string status { get; set; } = string.Empty;
         public int customersCount { get; set; }
+        public int ticketsCount { get; set; }
     }
 }
