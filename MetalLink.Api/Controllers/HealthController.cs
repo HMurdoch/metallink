@@ -19,12 +19,14 @@ public class HealthController : ControllerBase
     public async Task<IActionResult> CheckDatabase()
     {
         // Attempt a trivial query against Customers
-        var count = await _dbContext.Customers.CountAsync();
+        var customers = await _dbContext.Customers.CountAsync();
+        var tickets = await _dbContext.Tickets.CountAsync();
 
         return Ok(new
         {
             status = "ok",
-            customersCount = count
+            customersCount = customers,
+            ticketsCount = tickets
         });
     }
 }
