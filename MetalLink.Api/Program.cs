@@ -10,6 +10,8 @@ using QuestPDF.Infrastructure;
 using System.Collections.Generic;
 using MediatR;
 
+QuestPDF.Settings.License = LicenseType.Community;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Controllers + Swagger
