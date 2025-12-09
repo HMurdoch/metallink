@@ -27,7 +27,7 @@ using LiveChartsCore.SkiaSharpView.Painting;
 
 namespace MetalLink.Desktop.ViewModels;
 
-public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
+public class MainWindowViewModelOriginal : ObservableObject, INotifyPropertyChanged
 {
     private readonly App _app;
     private readonly AuthState _authState;
@@ -904,7 +904,7 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
     public ICommand CaptureSignatureCommand { get; }
 
 
-    public MainWindowViewModel(App app)
+    public MainWindowViewModelOriginal(App app)
     {
         _app = app;
         _authState = app.AuthState;
