@@ -107,7 +107,30 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
 
     // --- Validation flags (your originals) ---
 
-    public bool IsNewCustomerFullNameInvalid => string.IsNullOrWhiteSpace(NewFullName);
+    // Require at least a name (first/last) or a company name
+    public bool IsNewCustomerFullNameInvalid =>
+        string.IsNullOrWhiteSpace(NewFirstName)
+        && string.IsNullOrWhiteSpace(NewLastName)
+        && string.IsNullOrWhiteSpace(NewCompanyName);
+
+    public bool HasUnsavedNewCustomer =>
+        !string.IsNullOrWhiteSpace(NewFirstName)
+        || !string.IsNullOrWhiteSpace(NewLastName)
+        || NewIsCompany
+        || !string.IsNullOrWhiteSpace(NewCompanyName)
+        || !string.IsNullOrWhiteSpace(NewIdNumber)
+        || !string.IsNullOrWhiteSpace(NewAccountNumber)
+        || !string.IsNullOrWhiteSpace(NewPriceCode)
+        || !string.IsNullOrWhiteSpace(NewAddressLine1)
+        || !string.IsNullOrWhiteSpace(NewAddressLine2)
+        || !string.IsNullOrWhiteSpace(NewSuburb)
+        || !string.IsNullOrWhiteSpace(NewCity)
+        || !string.IsNullOrWhiteSpace(NewPostalCode)
+        || !string.IsNullOrWhiteSpace(NewPhoneNumber)
+        || !string.IsNullOrWhiteSpace(NewMobileNumber)
+        || !string.IsNullOrWhiteSpace(NewEmail);
+
+
 
     public bool IsTicketCustomerIdInvalid => !long.TryParse(TicketCustomerIdText, out _);
     public bool IsTicketNumberInvalid     => string.IsNullOrWhiteSpace(TicketNumber);
@@ -118,17 +141,6 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
     public bool IsNewDocumentFilePathInvalid  => string.IsNullOrWhiteSpace(NewDocumentFilePath);
 
     // --- Unsaved state flags (your originals) ---
-
-    public bool HasUnsavedNewCustomer =>
-        !string.IsNullOrWhiteSpace(NewFullName)
-        || NewIsCompany
-        || !string.IsNullOrWhiteSpace(NewCompanyName)
-        || !string.IsNullOrWhiteSpace(NewIdNumber)
-        || !string.IsNullOrWhiteSpace(NewAccountNumber)
-        || !string.IsNullOrWhiteSpace(NewPriceCode)
-        || !string.IsNullOrWhiteSpace(NewPhoneNumber)
-        || !string.IsNullOrWhiteSpace(NewMobileNumber)
-        || !string.IsNullOrWhiteSpace(NewEmail);
 
     public bool HasUnsavedTicket =>
         !string.IsNullOrWhiteSpace(TicketCustomerIdText)
@@ -172,9 +184,15 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
     private int _totalTicketsInDb;
 
     // --- New customer form ---
-    private string _newFullName = string.Empty;
+    private string _newFirstName = string.Empty;
+    private string _newLastName = string.Empty;
     private bool _newIsCompany;
     private string? _newCompanyName;
+    private string _newAddressLine1 = string.Empty;
+    private string _newAddressLine2 = string.Empty;
+    private string _newSuburb = string.Empty;
+    private string _newCity = string.Empty;
+    private string _newPostalCode = string.Empty;
     private string? _newIdNumber;
     private string? _newAccountNumber;
     private string? _newPriceCode;
@@ -428,12 +446,27 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
 
     // --- New customer form ---
 
-    public string NewFullName
+    // --- New customer form ---
+
+    public string NewFirstName
     {
-        get => _newFullName;
+        get => _newFirstName;
         set
         {
-            _newFullName = value;
+            _newFirstName = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsNewCustomerFullNameInvalid));
+            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+        }
+    }
+
+    public string NewLastName
+    {
+        get => _newLastName;
+        set
+        {
+            _newLastName = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsNewCustomerFullNameInvalid));
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
@@ -500,6 +533,67 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
             OnPropertyChanged(nameof(HasUnsavedChanges));
         }
     }
+
+    public string NewAddressLine1
+    {
+        get => _newAddressLine1;
+        set
+        {
+            _newAddressLine1 = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+        }
+    }
+
+    public string NewAddressLine2
+    {
+        get => _newAddressLine2;
+        set
+        {
+            _newAddressLine2 = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+        }
+    }
+
+    public string NewSuburb
+    {
+        get => _newSuburb;
+        set
+        {
+            _newSuburb = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+        }
+    }
+
+    public string NewCity
+    {
+        get => _newCity;
+        set
+        {
+            _newCity = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+        }
+    }
+
+    public string NewPostalCode
+    {
+        get => _newPostalCode;
+        set
+        {
+            _newPostalCode = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+        }
+    }
+
 
     public string? NewPhoneNumber
     {
@@ -1065,24 +1159,30 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
 
         try
         {
-            if (string.IsNullOrWhiteSpace(NewFullName))
+            // Build FullName from First + Last
+            var fullName = string.Join(" ",
+                new[] { NewFirstName, NewLastName }
+                    .Where(s => !string.IsNullOrWhiteSpace(s)));
+
+            if (string.IsNullOrWhiteSpace(fullName) &&
+                string.IsNullOrWhiteSpace(NewCompanyName))
             {
-                StatusMessage = "Full name is required.";
+                StatusMessage = "Please capture a First/Last name or a Company Name.";
                 return;
             }
 
             var customer = await _customerService.CreateCustomerAsync(
-                fullName: NewFullName,
+                fullName: fullName,
                 isCompany: NewIsCompany,
                 companyName: NewCompanyName,
                 idNumber: NewIdNumber,
                 accountNumber: NewAccountNumber,
                 priceCode: NewPriceCode,
-                addressLine1: null,
-                addressLine2: null,
-                suburb: null,
-                city: null,
-                postalCode: null,
+                addressLine1: string.IsNullOrWhiteSpace(NewAddressLine1) ? null : NewAddressLine1,
+                addressLine2: string.IsNullOrWhiteSpace(NewAddressLine2) ? null : NewAddressLine2,
+                suburb:      string.IsNullOrWhiteSpace(NewSuburb)      ? null : NewSuburb,
+                city:        string.IsNullOrWhiteSpace(NewCity)        ? null : NewCity,
+                postalCode:  string.IsNullOrWhiteSpace(NewPostalCode)  ? null : NewPostalCode,
                 phoneNumber: NewPhoneNumber,
                 mobileNumber: NewMobileNumber,
                 email: NewEmail
@@ -1094,16 +1194,22 @@ public class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
                 return;
             }
 
-            StatusMessage = $"Customer created: ID {customer.CustomerId}, {customer.FullName}.";
-            FoundCustomer = customer;
+            StatusMessage = $"Customer created: ID {customer.CustomerId:D8}, {customer.FullName}.";
+            FoundCustomer = customer;   // this makes the summary panel show the new customer
 
             // Clear form
-            NewFullName = string.Empty;
+            NewFirstName = string.Empty;
+            NewLastName  = string.Empty;
             NewIsCompany = false;
             NewCompanyName = null;
             NewIdNumber = null;
             NewAccountNumber = null;
             NewPriceCode = null;
+            NewAddressLine1 = string.Empty;
+            NewAddressLine2 = string.Empty;
+            NewSuburb = string.Empty;
+            NewCity = string.Empty;
+            NewPostalCode = string.Empty;
             NewPhoneNumber = null;
             NewMobileNumber = null;
             NewEmail = null;
