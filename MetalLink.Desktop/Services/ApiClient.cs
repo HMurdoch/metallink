@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -56,4 +57,43 @@ public sealed class ApiClient
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken: cancellationToken);
     }
+
+    public string ToQueryString(object? values)
+    {
+        if (values == null) return string.Empty;
+
+        var props = from p in values.GetType().GetProperties()
+                    let value = p.GetValue(values, null)
+                    where value != null
+                    select $"{Uri.EscapeDataString(p.Name)}={Uri.EscapeDataString(value.ToString()!)}";
+
+        var qs = string.Join("&", props);
+        return string.IsNullOrEmpty(qs) ? string.Empty : "?" + qs;
+    }
+
+//     public string ToQueryString(object? obj)
+//     {
+//         if (obj == null)
+//             return string.Empty;
+
+//         var properties = obj
+//             .GetType()
+//             .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+//             .Where(p => p.CanRead)
+//             .Select(p => new
+//             {
+//                 Name = p.Name,
+//                 Value = p.GetValue(obj)
+//             })
+//             .Where(x => x.Value != null && !string.IsNullOrWhiteSpace(x.Value.ToString()))
+//             .ToList();
+
+//         if (!properties.Any())
+//             return string.Empty;
+
+//         var query = string.Join("&", properties.Select(x =>
+//             $"{Uri.EscapeDataString(x.Name)}={Uri.EscapeDataString(x.Value!.ToString()!)}"));
+
+//         return "?" + query;
+//     }
 }

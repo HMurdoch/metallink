@@ -69,4 +69,13 @@ public sealed class CustomerService
             body,
             cancellationToken);
     }
+
+    public Task<CustomerDto[]?> SearchCustomersAsync(
+    CustomerSearchRequestDto request,
+    CancellationToken cancellationToken = default)
+    {
+        return _apiClient.GetAsync<CustomerDto[]?>(
+            "api/customers/search" + _apiClient.ToQueryString(request),
+            cancellationToken);
+    }
 }

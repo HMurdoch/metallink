@@ -20,13 +20,15 @@ public sealed class CustomersController : ControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [Authorize(Roles = "Admin,Operator")]
-    public async Task<IActionResult> CreateCustomer(
+    public async Task<IActionResult> Create(
         [FromBody] CreateCustomerRequest request,
         CancellationToken cancellationToken)
     {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
         var command = new CreateCustomerCommand(
             request.SiteId,
             request.FullName,
@@ -42,30 +44,37 @@ public sealed class CustomersController : ControllerBase
             request.PostalCode,
             request.PhoneNumber,
             request.MobileNumber,
-            request.Email
-        );
+            request.Email);
 
         var result = await _mediator.Send(command, cancellationToken);
-
-        return CreatedAtAction(nameof(GetCustomerById),
-            new { id = result.CustomerId }, result);
+        return Ok(result);
     }
 
-    [HttpGet("{id:long}")]
+    [HttpGet("search")]
+    [ProducesResponseType(typeof(CustomerDto[]), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Search(
+        [FromQuery] CustomerSearchRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var query = new SearchCustomersQuery(request);
+        var customers = await _mediator.Send(query, cancellationToken);
+        return Ok(customers);
+    }
+
+    [HttpGet("{customerId:long}")]
     [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetCustomerById(long id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById(long customerId, CancellationToken cancellationToken)
     {
-        var query = new GetCustomerByIdQuery(id);
-        var customer = await _mediator.Send(query, cancellationToken);
+        var result = await _mediator.Send(new GetCustomerByIdQuery(customerId), cancellationToken);
 
-        if (customer is null)
-        {
+        if (result is null)
             return NotFound();
-        }
 
-        return Ok(customer);
+        return Ok(result);
     }
+
+
 }
 
 // DTO used when creating customers via API
