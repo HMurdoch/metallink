@@ -21,6 +21,7 @@ using MetalLink.Desktop.Hardware;
 using MetalLink.Desktop.Services;
 using MetalLink.Shared.Customers;
 using MetalLink.Shared.Tickets;
+using CommunityToolkit.Mvvm.Input;
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -82,6 +83,12 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     // Signature command
     public ICommand CaptureSignatureCommand { get; }
 
+    public ICommand EditCustomerCommand { get; }
+    public ICommand DeleteCustomerCommand { get; }
+    public ICommand LogTicketCommand { get; }
+    public ICommand ClearNewCustomerCommand { get; }
+    public ICommand UpdateCustomerCommand { get; }
+
     public MainWindowViewModel(App app)
     {
         _app = app;
@@ -141,6 +148,12 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         ShowTicketsCommand   = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Tickets);
         ShowDocumentsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Documents);
         ShowCameraCommand    = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Camera);
+
+        EditCustomerCommand = new RelayCommand<CustomerDto>(OnEditCustomer);
+        DeleteCustomerCommand = new AsyncRelayCommand<CustomerDto>(execute: OnDeleteCustomerAsync);
+        LogTicketCommand     = new RelayCommand<CustomerDto>(OnLogTicket);
+        ClearNewCustomerCommand = new RelayCommand(ClearNewCustomerForm);
+        UpdateCustomerCommand = new AsyncRelayCommand(OnUpdateCustomerAsync, () => IsEditMode);
 
         // Camera commands
         CaptureWbFrontBeforeCommand = new AsyncCommand(() =>

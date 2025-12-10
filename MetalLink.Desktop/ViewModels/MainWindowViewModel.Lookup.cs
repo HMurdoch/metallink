@@ -7,6 +7,7 @@ using MetalLink.Shared.Companies;
 using MetalLink.Shared.Sites;
 using MetalLink.Shared.Provinces;
 using MetalLink.Shared.Locations;
+using MetalLink.Shared.Customers;
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -27,10 +28,8 @@ public partial class MainWindowViewModel
         _provinceService ??= new ProvinceService(_apiClient);
 
     // =====================================================
-    // SEARCH CUSTOMERS – COMPANY LETTER FILTER + SITE
+    // SHARED COMPANY MASTER LIST + LETTER FILTERS
     // =====================================================
-
-    // ----- Company: master list + letter filters -----
 
     private readonly ObservableCollection<CompanyLookupDto> _allCompanies        = new();
     private readonly ObservableCollection<string>           _companyLetterFilters = new();
@@ -39,7 +38,7 @@ public partial class MainWindowViewModel
     private bool _companyLettersLoading;
 
     /// <summary>
-    /// Letters used by the "ALL / A / B / C / …" filter ComboBox.
+    /// Letters used by the "ALL / A / B / C / …" filter ComboBoxes.
     /// Populated lazily the first time the view binds to it.
     /// </summary>
     public ObservableCollection<string> CompanyLetterFilters
@@ -56,6 +55,8 @@ public partial class MainWindowViewModel
         }
     }
 
+    // ---------------- Search section letter ----------------
+
     private string? _selectedCompanyLetter;
     public string? SelectedCompanyLetter
     {
@@ -70,9 +71,79 @@ public partial class MainWindowViewModel
         }
     }
 
+    // --------------- Create section letter -----------------
+
+    private string? _selectedNewCompanyLetter;
+    public string? SelectedNewCompanyLetter
+    {
+        get => _selectedNewCompanyLetter;
+        set
+        {
+            if (_selectedNewCompanyLetter == value) return;
+            _selectedNewCompanyLetter = value;
+            OnPropertyChanged();
+
+            ApplyNewCompanyLetterFilter();
+        }
+    }
+
+    /// <summary>
+    /// Convenience alias for the create section XAML.
+    /// </summary>
+    public ObservableCollection<string> NewCompanyLetterFilters => CompanyLetterFilters;
+
+    /// <summary>
+    /// Load all companies from the API, build the letter list and
+    /// apply the initial "ALL" filters for search and create areas.
+    /// </summary>
+    private async Task LoadCompaniesAndLettersAsync()
+    {
+        var items = await CompanyService.LookupCompaniesAsync(string.Empty);
+
+        _allCompanies.Clear();
+        if (items != null)
+        {
+            foreach (var c in items.OrderBy(c => c.CompanyName))
+                _allCompanies.Add(c);
+        }
+
+        // Build distinct A–Z list from company names
+        _companyLetterFilters.Clear();
+        _companyLetterFilters.Add("ALL");
+
+        var letters = _allCompanies
+            .Select(c => c.CompanyName?.FirstOrDefault() ?? '\0')
+            .Where(ch => ch != '\0')
+            .Select(ch => char.ToUpperInvariant(ch))
+            .Distinct()
+            .OrderBy(ch => ch);
+
+        foreach (var ch in letters)
+            _companyLetterFilters.Add(ch.ToString());
+
+        _companyLettersLoaded  = true;
+        _companyLettersLoading = false;
+
+        // Default to ALL on first load (search area)
+        if (SelectedCompanyLetter == null)
+            SelectedCompanyLetter = "ALL";
+        else
+            ApplyCompanyLetterFilter();
+
+        // Default to ALL for the create-customer area too
+        if (SelectedNewCompanyLetter == null)
+            SelectedNewCompanyLetter = "ALL";
+        else
+            ApplyNewCompanyLetterFilter();
+    }
+
+    // =====================================================
+    // SEARCH CUSTOMERS – COMPANY + SITE
+    // =====================================================
+
     /// <summary>
     /// Companies matching the chosen letter (or ALL).
-    /// Bound to the second "Company" ComboBox.
+    /// Bound to the search "Company" ComboBox.
     /// </summary>
     private ObservableCollection<CompanyLookupDto> _searchCompanySuggestions = new();
     public ObservableCollection<CompanyLookupDto> SearchCompanySuggestions
@@ -115,45 +186,6 @@ public partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// Load all companies from the API, build the letter list and
-    /// apply the initial "ALL" filter.
-    /// </summary>
-    private async Task LoadCompaniesAndLettersAsync()
-    {
-        var items = await CompanyService.LookupCompaniesAsync(string.Empty);
-
-        _allCompanies.Clear();
-        if (items != null)
-        {
-            foreach (var c in items.OrderBy(c => c.CompanyName))
-                _allCompanies.Add(c);
-        }
-
-        // Build distinct A–Z list from company names
-        _companyLetterFilters.Clear();
-        _companyLetterFilters.Add("ALL");
-
-        var letters = _allCompanies
-            .Select(c => c.CompanyName?.FirstOrDefault() ?? '\0')
-            .Where(ch => ch != '\0')
-            .Select(ch => char.ToUpperInvariant(ch))
-            .Distinct()
-            .OrderBy(ch => ch);
-
-        foreach (var ch in letters)
-            _companyLetterFilters.Add(ch.ToString());
-
-        _companyLettersLoaded  = true;
-        _companyLettersLoading = false;
-
-        // Default to ALL on first load
-        if (SelectedCompanyLetter == null)
-            SelectedCompanyLetter = "ALL";
-        else
-            ApplyCompanyLetterFilter();
-    }
-
-    /// <summary>
     /// Rebuild SearchCompanySuggestions based on SelectedCompanyLetter.
     /// </summary>
     private void ApplyCompanyLetterFilter()
@@ -173,7 +205,7 @@ public partial class MainWindowViewModel
             var ch = char.ToUpperInvariant(letter[0]);
             query = query.Where(c =>
                 !string.IsNullOrWhiteSpace(c.CompanyName) &&
-                char.ToUpperInvariant(c.CompanyName[0]) == ch);
+                char.ToUpperInvariant(c.CompanyName![0]) == ch);
         }
 
         foreach (var c in query)
@@ -185,6 +217,202 @@ public partial class MainWindowViewModel
         {
             SelectedSearchCompany = null;
         }
+    }
+
+    // ----- Customer -----
+
+    private void OnEditCustomer(Shared.Customers.CustomerDto? customer)
+    {
+        if (customer == null)
+            return;
+
+        EditingCustomerId = customer.CustomerId;
+        IsEditMode        = true;
+
+        // Basic fields
+        NewFirstName      = customer.FirstName;
+        NewLastName       = customer.LastName;
+        NewIdNumber       = customer.IdNumber;
+        NewAccountNumber  = customer.AccountNumber;
+        NewPriceCode      = customer.PriceCode;
+        NewPhoneNumber    = customer.PhoneNumber;
+        NewMobileNumber   = customer.MobileNumber;
+        NewEmail          = customer.Email;
+        NewAddressLine1   = customer.AddressLine1;
+        NewAddressLine2   = customer.AddressLine2;
+        NewSuburb         = customer.Suburb;
+        NewCity           = customer.City;
+        NewPostalCode     = customer.PostalCode;
+
+        // Company / site mode
+        NewIsCompany = true;  // editing from grid implies it's a company customer
+
+        // Match company from our lookup cache (by CompanyId if present)
+        var company = _allCompanies.FirstOrDefault(c => c.CompanyId == customer.CompanyId);
+
+        if (company != null)
+        {
+            var letter = char.ToUpperInvariant(company.CompanyName?.FirstOrDefault() ?? 'A');
+            var letterStr = letter.ToString();
+
+            if (!CompanyLetterFilters.Contains(letterStr))
+                letterStr = "ALL";
+
+            SelectedNewCompanyLetter = letterStr;
+            SelectedNewCompany       = company;
+        }
+        else
+        {
+            SelectedNewCompanyLetter = "ALL";
+            SelectedNewCompany       = null;
+        }
+
+        // Load sites for that company and select correct one
+        _ = LoadNewSitesAndSelectAsync(customer.SiteId);
+    }
+
+    private async Task OnDeleteCustomerAsync(CustomerDto? customer)
+    {
+        if (customer == null)
+            return;
+
+        // TODO: show your confirm dialog here
+
+        await _customerService.SoftDeleteCustomerAsync(customer.CustomerId);
+
+        CustomerSearchResults.Remove(customer);
+        StatusMessage = $"Customer {customer.FullName} was deleted (soft delete).";
+    }
+
+    private async Task LoadNewSitesAndSelectAsync(long? siteId)
+    {
+        NewSiteSuggestions.Clear();
+
+        if (SelectedNewCompany == null)
+        {
+            SelectedNewSite = null;
+            return;
+        }
+
+        var sites = await SiteService.LookupSitesForCompanyAsync(SelectedNewCompany.CompanyId, string.Empty);
+
+        if (sites != null)
+        {
+            foreach (var s in sites.OrderBy(s => s.SiteName))
+                NewSiteSuggestions.Add(s);
+        }
+
+        if (siteId.HasValue)
+        {
+            var match = NewSiteSuggestions.FirstOrDefault(s => s.SiteId == siteId.Value);
+            SelectedNewSite = match;
+        }
+        else
+        {
+            SelectedNewSite = null;
+        }
+    }
+
+    private void ClearNewCustomerForm()
+    {
+        EditingCustomerId = null;
+        IsEditMode        = false;
+
+        NewFirstName     = string.Empty;
+        NewLastName      = string.Empty;
+        NewIdNumber      = string.Empty;
+        NewAccountNumber = string.Empty;
+        NewPriceCode     = string.Empty;
+        NewPhoneNumber   = string.Empty;
+        NewMobileNumber  = string.Empty;
+        NewEmail         = string.Empty;
+        NewAddressLine1  = string.Empty;
+        NewAddressLine2  = string.Empty;
+        NewSuburb        = string.Empty;
+        NewCity          = string.Empty;
+        NewPostalCode    = string.Empty;
+
+        NewIsCompany           = false;
+        SelectedNewCompanyLetter = "ALL";
+        SelectedNewCompany     = null;
+        NewSiteSuggestions.Clear();
+        SelectedNewSite        = null;
+    }
+
+    private async Task OnUpdateCustomerAsync()
+    {
+        if (!IsEditMode || EditingCustomerId == null)
+            return;
+
+        // Basic validation: company + site required when IsCompany
+        if (NewIsCompany && (SelectedNewCompany == null || SelectedNewSite == null))
+        {
+            StatusMessage = "Select a company and site before updating.";
+            return;
+        }
+
+        var dto = new CustomerDto
+        {
+            CustomerId    = EditingCustomerId.Value,
+            FirstName     = NewFirstName,
+            LastName      = NewLastName,
+            IdNumber      = NewIdNumber,
+            AccountNumber = NewAccountNumber,
+            PriceCode     = NewPriceCode,
+            PhoneNumber   = NewPhoneNumber,
+            MobileNumber  = NewMobileNumber,
+            Email         = NewEmail,
+            AddressLine1  = NewAddressLine1,
+            AddressLine2  = NewAddressLine2,
+            Suburb        = NewSuburb,
+            City          = NewCity,
+            PostalCode    = NewPostalCode,
+            IsCompany     = NewIsCompany,
+
+            // We KNOW these are non-null if NewIsCompany is true
+            // because of the validation above.
+            CompanyId = (long)(SelectedNewCompany != null
+                ? SelectedNewCompany.CompanyId
+                : (long?)null),   // will be null for non-company customers
+
+            SiteId = SelectedNewSite != null
+                ? SelectedNewSite.SiteId
+                : (long?)null
+        };
+
+        await _customerService.UpdateCustomerAsync(dto);
+
+        // Refresh / update in current grid
+        var existing = CustomerSearchResults
+            .FirstOrDefault(c => c.CustomerId == dto.CustomerId);
+
+        if (existing != null)
+        {
+            existing.FirstName     = dto.FirstName;
+            existing.LastName      = dto.LastName;
+            existing.FullName      = $"{dto.FirstName} {dto.LastName}".Trim();
+            existing.AccountNumber = dto.AccountNumber;
+            existing.CompanyName   = SelectedNewCompany?.CompanyName;
+            existing.MobileNumber  = dto.MobileNumber;
+            existing.Email         = dto.Email;
+        }
+
+        ClearNewCustomerForm();
+    }
+
+    private void OnLogTicket(CustomerDto? customer)
+    {
+        if (customer == null)
+            return;
+
+        // Pre-fill the Ticket screen with this customer's ID (optional)
+        TicketCustomerIdText = customer.CustomerId.ToString("D8");
+
+        // Switch to the Tickets section – this uses the same enum
+        // you already use in ShowTicketsCommand.
+        CurrentSection = EnumMainSection.Tickets;
+
+        StatusMessage = $"Logging ticket for customer {customer.FullName} ({customer.CustomerId:D8}).";
     }
 
     // ----- Search Customers: Site -----
@@ -249,7 +477,7 @@ public partial class MainWindowViewModel
     }
 
     // =====================================================
-    // CREATE CUSTOMER: Company & Site typeahead
+    // CREATE CUSTOMER – COMPANY + SITE (LETTER FILTER)
     // =====================================================
 
     private ObservableCollection<CompanyLookupDto> _newCompanySuggestions = new();
@@ -259,39 +487,24 @@ public partial class MainWindowViewModel
         set { _newCompanySuggestions = value; OnPropertyChanged(); }
     }
 
-    private string _newCompanyFilterText = string.Empty;
-    public string NewCompanyFilterText
-    {
-        get => _newCompanyFilterText;
-        set
-        {
-            _newCompanyFilterText = value;
-            OnPropertyChanged();
-
-            if (_newCompanyFilterText.Length >= 2)
-            {
-                _ = RefreshNewCompanySuggestionsAsync();
-            }
-            else
-            {
-                NewCompanySuggestions.Clear();
-            }
-        }
-    }
-
     private CompanyLookupDto? _selectedNewCompany;
     public CompanyLookupDto? SelectedNewCompany
     {
         get => _selectedNewCompany;
         set
         {
+            if (_selectedNewCompany == value) return;
+
             _selectedNewCompany = value;
             OnPropertyChanged();
 
             if (value != null)
             {
+                // This string is what CreateCustomerAsync uses.
                 NewCompanyName = value.CompanyName;
-                _ = RefreshNewSiteSuggestionsAsync();
+
+                // Load sites for the selected company
+                _ = LoadNewSitesForSelectedCompanyAsync();
             }
             else
             {
@@ -302,20 +515,37 @@ public partial class MainWindowViewModel
         }
     }
 
-    private async Task RefreshNewCompanySuggestionsAsync()
+    /// <summary>
+    /// Rebuilds NewCompanySuggestions based on SelectedNewCompanyLetter.
+    /// </summary>
+    private void ApplyNewCompanyLetterFilter()
     {
-        var term    = NewCompanyFilterText;
-        var results = await CompanyService.LookupCompaniesAsync(term);
-
-        if (!string.Equals(NewCompanyFilterText, term, StringComparison.OrdinalIgnoreCase))
+        if (!_companyLettersLoaded)
             return;
+
+        var letter = SelectedNewCompanyLetter;
 
         NewCompanySuggestions.Clear();
 
-        if (results != null)
+        var query = _allCompanies.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(letter) &&
+            !string.Equals(letter, "ALL", StringComparison.OrdinalIgnoreCase))
         {
-            foreach (var c in results)
-                NewCompanySuggestions.Add(c);
+            var ch = char.ToUpperInvariant(letter[0]);
+            query = query.Where(c =>
+                !string.IsNullOrWhiteSpace(c.CompanyName) &&
+                char.ToUpperInvariant(c.CompanyName![0]) == ch);
+        }
+
+        foreach (var c in query)
+            NewCompanySuggestions.Add(c);
+
+        // Clear selection if it no longer matches the filter.
+        if (SelectedNewCompany != null &&
+            !NewCompanySuggestions.Contains(SelectedNewCompany))
+        {
+            SelectedNewCompany = null;
         }
     }
 
@@ -326,56 +556,77 @@ public partial class MainWindowViewModel
         set { _newSiteSuggestions = value; OnPropertyChanged(); }
     }
 
-    private string _newSiteFilterText = string.Empty;
-    public string NewSiteFilterText
-    {
-        get => _newSiteFilterText;
-        set
-        {
-            _newSiteFilterText = value;
-            OnPropertyChanged();
-
-            if (SelectedNewCompany != null && _newSiteFilterText.Length >= 1)
-            {
-                _ = RefreshNewSiteSuggestionsAsync();
-            }
-        }
-    }
-
     private SiteLookupDto? _selectedNewSite;
     public SiteLookupDto? SelectedNewSite
     {
         get => _selectedNewSite;
         set
         {
+            if (_selectedNewSite == value) return;
+
             _selectedNewSite = value;
             OnPropertyChanged();
 
             if (value != null)
             {
-                // At create time we will use SelectedNewSite.SiteId when calling API
+                // CreateCustomerAsync already has access to SelectedNewSite
+                // to determine which site the customer belongs to.
             }
         }
     }
 
-    private async Task RefreshNewSiteSuggestionsAsync()
+    // Which customer (if any) are we editing?
+    private long? _editingCustomerId;
+    public long? EditingCustomerId
     {
-        if (SelectedNewCompany == null) return;
+        get => _editingCustomerId;
+        set { _editingCustomerId = value; OnPropertyChanged(); }
+    }
 
-        var term    = NewSiteFilterText;
-        var results = await SiteService.LookupSitesForCompanyAsync(
-            SelectedNewCompany.CompanyId,
-            term);
+    private bool _isEditMode;
+    public bool IsEditMode
+    {
+        get => _isEditMode;
+        set
+        {
+            if (_isEditMode == value) return;
+            _isEditMode = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsCreateMode));
+        }
+    }
 
-        if (!string.Equals(NewSiteFilterText, term, StringComparison.OrdinalIgnoreCase))
+// Convenience flag for binding Create button
+public bool IsCreateMode => !IsEditMode;
+
+
+    /// <summary>
+    /// Loads all sites for the SelectedNewCompany into NewSiteSuggestions.
+    /// </summary>
+    private async Task LoadNewSitesForSelectedCompanyAsync()
+    {
+        if (SelectedNewCompany == null)
+        {
+            NewSiteSuggestions.Clear();
+            SelectedNewSite = null;
             return;
+        }
+
+        var companyId = SelectedNewCompany.CompanyId;
+        var results   = await SiteService.LookupSitesForCompanyAsync(companyId, string.Empty);
 
         NewSiteSuggestions.Clear();
 
         if (results != null)
         {
-            foreach (var s in results)
+            foreach (var s in results.OrderBy(s => s.SiteName))
                 NewSiteSuggestions.Add(s);
+        }
+
+        if (SelectedNewSite != null &&
+            !NewSiteSuggestions.Contains(SelectedNewSite))
+        {
+            SelectedNewSite = null;
         }
     }
 

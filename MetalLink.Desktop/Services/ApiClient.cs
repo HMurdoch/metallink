@@ -58,6 +58,13 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken: cancellationToken);
     }
 
+    // public Task<HttpResponseMessage> DeleteAsync(
+    // string relativeUrl,
+    // CancellationToken cancellationToken = default)
+    // {
+    //     return _httpClient.DeleteAsync(relativeUrl, cancellationToken);
+    // }
+
     public string ToQueryString(object? values)
     {
         if (values == null) return string.Empty;
@@ -71,29 +78,28 @@ public sealed class ApiClient
         return string.IsNullOrEmpty(qs) ? string.Empty : "?" + qs;
     }
 
-//     public string ToQueryString(object? obj)
-//     {
-//         if (obj == null)
-//             return string.Empty;
+    public async Task<HttpResponseMessage> PutAsJsonAsync<T>(
+    string uri,
+    T body,
+    CancellationToken cancellationToken = default)
+    {
+        // Attach auth header the same way you do in PostAsync / GetAsync
+        var request = new HttpRequestMessage(HttpMethod.Put, uri)
+        {
+            Content = JsonContent.Create(body)
+        };
 
-//         var properties = obj
-//             .GetType()
-//             .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
-//             .Where(p => p.CanRead)
-//             .Select(p => new
-//             {
-//                 Name = p.Name,
-//                 Value = p.GetValue(obj)
-//             })
-//             .Where(x => x.Value != null && !string.IsNullOrWhiteSpace(x.Value.ToString()))
-//             .ToList();
+        ApplyAuthHeader();
+        return await _httpClient.SendAsync(request, cancellationToken);
+    }
 
-//         if (!properties.Any())
-//             return string.Empty;
+    public async Task<HttpResponseMessage> DeleteAsync(
+        string uri,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Delete, uri);
 
-//         var query = string.Join("&", properties.Select(x =>
-//             $"{Uri.EscapeDataString(x.Name)}={Uri.EscapeDataString(x.Value!.ToString()!)}"));
-
-//         return "?" + query;
-//     }
+        ApplyAuthHeader();
+        return await _httpClient.SendAsync(request, cancellationToken);
+    }
 }

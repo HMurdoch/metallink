@@ -45,7 +45,6 @@ public sealed class CustomerService
     {
         var siteId = _authState.SiteId > 0 ? _authState.SiteId : 1; // fallback
 
-        // Shape matches API CreateCustomerRequest
         var body = new
         {
             siteId,
@@ -79,5 +78,20 @@ public sealed class CustomerService
         return _apiClient.GetAsync<CustomerDto[]?>(
             "api/customers/search" + _apiClient.ToQueryString(request),
             cancellationToken);
+    }
+
+    public async Task UpdateCustomerAsync(CustomerDto dto, CancellationToken cancellationToken = default)
+    {
+        var response = await _apiClient.PutAsJsonAsync("api/customers", dto, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
+
+    public async Task SoftDeleteCustomerAsync(
+        long customerId,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await _apiClient.DeleteAsync($"api/customers/{customerId}", cancellationToken);
+        response.EnsureSuccessStatusCode();
     }
 }

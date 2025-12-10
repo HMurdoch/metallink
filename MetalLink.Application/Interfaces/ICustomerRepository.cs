@@ -12,12 +12,10 @@ public interface ICustomerRepository
     Task<Customer?> GetByAccountNumberAsync(string accountNumber, CancellationToken cancellationToken = default);
     Task AddAsync(Customer customer, CancellationToken cancellationToken = default);
 
-    // Search with DTO criteria (FirstName / LastName / Company / Site / Address etc.)
     Task<IReadOnlyList<Customer>> SearchAsync(
         CustomerSearchRequestDto criteria,
         CancellationToken cancellationToken = default);
 
-    // Legacy-style search with flattened parameters (used by SearchCustomersQueryHandler)
     Task<IReadOnlyList<Customer>> SearchAsync(
         long? customerId,
         long? siteId,
@@ -35,4 +33,8 @@ public interface ICustomerRepository
         string? mobileNumber,
         string? email,
         CancellationToken cancellationToken = default);
+
+    // NEW:
+    Task UpdateAsync(Customer customer, CancellationToken cancellationToken = default);
+    Task SoftDeleteAsync(long customerId, CancellationToken cancellationToken = default);
 }

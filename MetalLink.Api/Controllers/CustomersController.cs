@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using MetalLink.Application.Customers.Commands;
 using MetalLink.Application.Customers.Queries;
 using MetalLink.Shared.Customers;
+using MetalLink.Application.Interfaces;
 
 namespace MetalLink.Api.Controllers;
 
@@ -13,10 +14,12 @@ namespace MetalLink.Api.Controllers;
 public sealed class CustomersController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ICustomerRepository _customerRepository;
 
-    public CustomersController(IMediator mediator)
+    public CustomersController(IMediator mediator, ICustomerRepository customerRepository)
     {
         _mediator = mediator;
+        _customerRepository = customerRepository;
     }
 
     // -----------------------------
@@ -95,6 +98,13 @@ public sealed class CustomersController : ControllerBase
             return NotFound();
 
         return Ok(result);
+    }
+
+    [HttpDelete("{customerId:long}")]
+    public async Task<IActionResult> SoftDelete(long customerId, CancellationToken cancellationToken)
+    {
+        await _customerRepository.SoftDeleteAsync(customerId, cancellationToken);
+        return NoContent();
     }
 }
 

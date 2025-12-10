@@ -9,79 +9,222 @@ using MetalLink.Shared.Customers;
 
 namespace MetalLink.Infrastructure.Persistence.Repositories;
 
-public sealed class CustomerRepository : ICustomerRepository
+public class CustomerRepository : ICustomerRepository
 {
-    private readonly MetalLinkDbContext _dbContext;
+    private readonly MetalLinkDbContext _db;
 
-    public CustomerRepository(MetalLinkDbContext dbContext)
+    public CustomerRepository(MetalLinkDbContext db)
     {
-        _dbContext = dbContext;
+        _db = db;
     }
 
-    public Task<Customer?> GetByIdAsync(long customerId, CancellationToken cancellationToken = default)
+    // -------------------------------------------------
+    // Basic CRUD-style operations
+    // -------------------------------------------------
+
+    public async Task<Customer?> GetByIdAsync(
+        long customerId,
+        CancellationToken cancellationToken = default)
     {
-        return _dbContext.Customers
+        return await _db.Customers
             .Include(c => c.Company)
             .Include(c => c.Site)
                 .ThenInclude(s => s.Province)
             .FirstOrDefaultAsync(c => c.CustomerId == customerId, cancellationToken);
     }
 
-    public Task<Customer?> GetByAccountNumberAsync(
+    public async Task<Customer?> GetByAccountNumberAsync(
         string accountNumber,
         CancellationToken cancellationToken = default)
     {
-        return _dbContext.Customers
+        return await _db.Customers
             .Include(c => c.Company)
             .Include(c => c.Site)
                 .ThenInclude(s => s.Province)
-            .FirstOrDefaultAsync(c => c.AccountNumber == accountNumber, cancellationToken);
+            .FirstOrDefaultAsync(
+                c => c.AccountNumber != null && c.AccountNumber == accountNumber,
+                cancellationToken);
     }
 
-    public Task AddAsync(Customer customer, CancellationToken cancellationToken = default)
-    {
-        return _dbContext.Customers.AddAsync(customer, cancellationToken).AsTask();
-    }
-
-    /// <summary>
-    /// Primary DTO-based search. This is the one called from the Desktop app via MediatR.
-    /// It simply maps into the parameter-based overload so that all filter logic lives in one place.
-    /// </summary>
-    public Task<IReadOnlyList<Customer>> SearchAsync(
-        CustomerSearchRequestDto criteria,
+    public async Task AddAsync(
+        Customer customer,
         CancellationToken cancellationToken = default)
     {
-        // Merge first + last name into a single "full name" term (still stored in Customer.FullName)
-        string? fullNameFilter = null;
-        if (!string.IsNullOrWhiteSpace(criteria.FirstName) ||
-            !string.IsNullOrWhiteSpace(criteria.LastName))
-        {
-            fullNameFilter = $"{criteria.FirstName} {criteria.LastName}".Trim();
-        }
-
-        return SearchAsync(
-            customerId:    criteria.CustomerId,
-            siteId:        criteria.SiteId,
-            fullName:      fullNameFilter,
-            companyName:   criteria.CompanyName,
-            idNumber:      criteria.IdNumber,
-            accountNumber: criteria.AccountNumber,
-            priceCode:     criteria.PriceCode,
-            addressLine1:  criteria.AddressLine1,
-            addressLine2:  criteria.AddressLine2,
-            suburb:        criteria.Suburb,
-            city:          criteria.City,
-            postalCode:    criteria.PostalCode,
-            phoneNumber:   criteria.PhoneNumber,
-            mobileNumber:  criteria.MobileNumber,
-            email:         criteria.Email,
-            cancellationToken: cancellationToken);
+        await _db.Customers.AddAsync(customer, cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
     }
 
-    /// <summary>
-    /// Core search implementation. All repository search paths end up here.
-    /// Note: address / suburb / city / postal code now live on Site; company name lives on Company.
-    /// </summary>
+    // -------------------------------------------------
+    // NEW: DTO-based search (used by SearchCustomersQueryHandler)
+    // -------------------------------------------------
+
+    public async Task<IReadOnlyList<Customer>> SearchAsync(
+        CustomerSearchRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        const int MaxResults = 500;
+
+        var query = _db.Customers
+            .Include(c => c.Company)
+            .Include(c => c.Site)
+                .ThenInclude(s => s.Province)
+            .Where(c => c.IsActive)            // << only active customers
+            .AsQueryable();
+
+        // -------------------
+        // Id / Site / Company
+        // -------------------
+        if (request.CustomerId.HasValue)
+        {
+            var id = request.CustomerId.Value;
+            query = query.Where(c => c.CustomerId == id);
+        }
+
+        if (request.SiteId.HasValue)
+        {
+            var siteId = request.SiteId.Value;
+            query = query.Where(c => c.SiteId == siteId);
+
+            // When a specific Site is chosen, we don't also need
+            // to filter by company name (site already implies company).
+        }
+        else if (!string.IsNullOrWhiteSpace(request.CompanyName))
+        {
+            var companyTerm = request.CompanyName.ToLower();
+            query = query.Where(c =>
+                c.Company != null &&
+                c.Company.CompanyName != null &&
+                c.Company.CompanyName.ToLower().Contains(companyTerm));
+        }
+
+        // -------------
+        // Name filters
+        // -------------
+        if (!string.IsNullOrWhiteSpace(request.FirstName))
+        {
+            var term = request.FirstName.ToLower();
+            query = query.Where(c =>
+                c.FirstName != null &&
+                c.FirstName.ToLower().Contains(term));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.LastName))
+        {
+            var term = request.LastName.ToLower();
+            query = query.Where(c =>
+                c.LastName != null &&
+                c.LastName.ToLower().Contains(term));
+        }
+
+        // -------------
+        // Other filters
+        // -------------
+        if (!string.IsNullOrWhiteSpace(request.IdNumber))
+        {
+            var term = request.IdNumber.ToLower();
+            query = query.Where(c =>
+                c.IdNumber != null &&
+                c.IdNumber.ToLower().Contains(term));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.AccountNumber))
+        {
+            var term = request.AccountNumber.ToLower();
+            query = query.Where(c =>
+                c.AccountNumber != null &&
+                c.AccountNumber.ToLower().Contains(term));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.PriceCode))
+        {
+            var term = request.PriceCode.ToLower();
+            query = query.Where(c =>
+                c.PriceCode != null &&
+                c.PriceCode.ToLower().Contains(term));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.AddressLine1))
+        {
+            var term = request.AddressLine1.ToLower();
+            query = query.Where(c =>
+                c.Site != null &&
+                c.Site.AddressLine1 != null &&
+                c.Site.AddressLine1.ToLower().Contains(term));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.AddressLine2))
+        {
+            var term = request.AddressLine2.ToLower();
+            query = query.Where(c =>
+                c.Site != null &&
+                c.Site.AddressLine2 != null &&
+                c.Site.AddressLine2.ToLower().Contains(term));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Suburb))
+        {
+            var term = request.Suburb.ToLower();
+            query = query.Where(c =>
+                c.Site != null &&
+                c.Site.Suburb != null &&
+                c.Site.Suburb.ToLower().Contains(term));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.City))
+        {
+            var term = request.City.ToLower();
+            query = query.Where(c =>
+                c.Site != null &&
+                c.Site.City != null &&
+                c.Site.City.ToLower().Contains(term));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.PostalCode))
+        {
+            var term = request.PostalCode.ToLower();
+            query = query.Where(c =>
+                c.Site != null &&
+                c.Site.PostalCode != null &&
+                c.Site.PostalCode.ToLower().Contains(term));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            var term = request.PhoneNumber.ToLower();
+            query = query.Where(c =>
+                c.PhoneNumber != null &&
+                c.PhoneNumber.ToLower().Contains(term));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.MobileNumber))
+        {
+            var term = request.MobileNumber.ToLower();
+            query = query.Where(c =>
+                c.MobileNumber != null &&
+                c.MobileNumber.ToLower().Contains(term));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Email))
+        {
+            var term = request.Email.ToLower();
+            query = query.Where(c =>
+                c.Email != null &&
+                c.Email.ToLower().Contains(term));
+        }
+
+        // Final shape
+        query = query
+            .OrderBy(c => c.CustomerId)
+            .Take(MaxResults);
+
+        return await query.ToListAsync(cancellationToken);
+    }
+
+    // -------------------------------------------------
+    // LEGACY: flattened-parameter search
+    // (kept for compatibility, implemented via DTO)
+    // -------------------------------------------------
+
     public async Task<IReadOnlyList<Customer>> SearchAsync(
         long? customerId,
         long? siteId,
@@ -100,142 +243,48 @@ public sealed class CustomerRepository : ICustomerRepository
         string? email,
         CancellationToken cancellationToken = default)
     {
-        // Always include navigation properties so the API / DTO mapping has everything it needs.
-        IQueryable<Customer> query = _dbContext.Customers
-            .Include(c => c.Company)
-            .Include(c => c.Site)
-                .ThenInclude(s => s.Province);
+        // NOTE: we intentionally ignore fullName here, because the old
+        // implementation relied on a Customer.FullName property that
+        // EF Core could not translate. Callers should prefer passing
+        // FirstName / LastName via the DTO-based overload instead.
 
-        // --- ID filters ---
-
-        if (customerId.HasValue)
-            query = query.Where(c => c.CustomerId == customerId.Value);
-
-        if (siteId.HasValue)
-            query = query.Where(c => c.SiteId == siteId.Value);
-
-        // --- Name / company filters ---
-
-        if (!string.IsNullOrWhiteSpace(fullName))
+        var criteria = new CustomerSearchRequestDto
         {
-            var term = fullName.Trim().ToLower();
-            query = query.Where(c =>
-                c.FullName != null &&
-                c.FullName.ToLower().Contains(term));
-        }
+            CustomerId    = customerId,
+            SiteId        = siteId,
+            CompanyName   = companyName,
+            IdNumber      = idNumber,
+            AccountNumber = accountNumber,
+            PriceCode     = priceCode,
+            AddressLine1  = addressLine1,
+            AddressLine2  = addressLine2,
+            Suburb        = suburb,
+            City          = city,
+            PostalCode    = postalCode,
+            PhoneNumber   = phoneNumber,
+            MobileNumber  = mobileNumber,
+            Email         = email,
+            // FirstName / LastName intentionally left null here
+        };
 
-        if (!string.IsNullOrWhiteSpace(companyName))
-        {
-            var term = companyName.Trim().ToLower();
-            query = query.Where(c =>
-                c.Company != null &&
-                c.Company.CompanyName != null &&
-                c.Company.CompanyName.ToLower().Contains(term));
-        }
+        return await SearchAsync(criteria, cancellationToken);
+    }
 
-        // --- Identity / account filters ---
+    public async Task UpdateAsync(Customer customer, CancellationToken cancellationToken = default)
+    {
+        _db.Customers.Update(customer);
+        await _db.SaveChangesAsync(cancellationToken);
+    }
 
-        if (!string.IsNullOrWhiteSpace(idNumber))
-        {
-            var term = idNumber.Trim().ToLower();
-            query = query.Where(c =>
-                c.IdNumber != null &&
-                c.IdNumber.ToLower().Contains(term));
-        }
+    public async Task SoftDeleteAsync(long customerId, CancellationToken cancellationToken = default)
+    {
+        var customer = await _db.Customers
+            .FirstOrDefaultAsync(c => c.CustomerId == customerId, cancellationToken);
 
-        if (!string.IsNullOrWhiteSpace(accountNumber))
-        {
-            var term = accountNumber.Trim().ToLower();
-            query = query.Where(c =>
-                c.AccountNumber != null &&
-                c.AccountNumber.ToLower().Contains(term));
-        }
+        if (customer == null)
+            return;
 
-        if (!string.IsNullOrWhiteSpace(priceCode))
-        {
-            var term = priceCode.Trim().ToLower();
-            query = query.Where(c =>
-                c.PriceCode != null &&
-                c.PriceCode.ToLower().Contains(term));
-        }
-
-        // --- Address filters (now on Site) ---
-
-        if (!string.IsNullOrWhiteSpace(addressLine1))
-        {
-            var term = addressLine1.Trim().ToLower();
-            query = query.Where(c =>
-                c.Site != null &&
-                c.Site.AddressLine1 != null &&
-                c.Site.AddressLine1.ToLower().Contains(term));
-        }
-
-        if (!string.IsNullOrWhiteSpace(addressLine2))
-        {
-            var term = addressLine2.Trim().ToLower();
-            query = query.Where(c =>
-                c.Site != null &&
-                c.Site.AddressLine2 != null &&
-                c.Site.AddressLine2.ToLower().Contains(term));
-        }
-
-        if (!string.IsNullOrWhiteSpace(suburb))
-        {
-            var term = suburb.Trim().ToLower();
-            query = query.Where(c =>
-                c.Site != null &&
-                c.Site.Suburb != null &&
-                c.Site.Suburb.ToLower().Contains(term));
-        }
-
-        if (!string.IsNullOrWhiteSpace(city))
-        {
-            var term = city.Trim().ToLower();
-            query = query.Where(c =>
-                c.Site != null &&
-                c.Site.City != null &&
-                c.Site.City.ToLower().Contains(term));
-        }
-
-        if (!string.IsNullOrWhiteSpace(postalCode))
-        {
-            var term = postalCode.Trim().ToLower();
-            query = query.Where(c =>
-                c.Site != null &&
-                c.Site.PostalCode != null &&
-                c.Site.PostalCode.ToLower().Contains(term));
-        }
-
-        // --- Contact filters ---
-
-        if (!string.IsNullOrWhiteSpace(phoneNumber))
-        {
-            var term = phoneNumber.Trim().ToLower();
-            query = query.Where(c =>
-                c.PhoneNumber != null &&
-                c.PhoneNumber.ToLower().Contains(term));
-        }
-
-        if (!string.IsNullOrWhiteSpace(mobileNumber))
-        {
-            var term = mobileNumber.Trim().ToLower();
-            query = query.Where(c =>
-                c.MobileNumber != null &&
-                c.MobileNumber.ToLower().Contains(term));
-        }
-
-        if (!string.IsNullOrWhiteSpace(email))
-        {
-            var term = email.Trim().ToLower();
-            query = query.Where(c =>
-                c.Email != null &&
-                c.Email.ToLower().Contains(term));
-        }
-
-        // Safety: cap results so a wildcard search doesn't nuke the DB
-        return await query
-            .OrderBy(c => c.CustomerId)
-            .Take(200)
-            .ToListAsync(cancellationToken);
+        customer.IsActive = false;
+        await _db.SaveChangesAsync(cancellationToken);
     }
 }
