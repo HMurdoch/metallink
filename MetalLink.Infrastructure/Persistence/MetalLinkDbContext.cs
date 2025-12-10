@@ -10,10 +10,16 @@ public class MetalLinkDbContext : DbContext
     {
     }
 
-    public DbSet<Customer> Customers => Set<Customer>();
-    public DbSet<Operator> Operators => Set<Operator>();
+    // Existing sets
+    public DbSet<Customer> Customers           => Set<Customer>();
+    public DbSet<Operator> Operators           => Set<Operator>();
     public DbSet<CustomerDocument> CustomerDocuments => Set<CustomerDocument>();
-    public DbSet<Ticket> Tickets => Set<Ticket>();
+    public DbSet<Ticket> Tickets               => Set<Ticket>();
+
+    // NEW sets
+    public DbSet<Company> Companies            => Set<Company>();
+    public DbSet<Site> Sites                   => Set<Site>();
+    public DbSet<Province> Provinces           => Set<Province>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,7 +29,16 @@ public class MetalLinkDbContext : DbContext
         ConfigureOperator(modelBuilder);
         ConfigureCustomerDocument(modelBuilder);
         ConfigureTicket(modelBuilder);
+
+        // NEW
+        ConfigureCompany(modelBuilder);
+        ConfigureSite(modelBuilder);
+        ConfigureProvince(modelBuilder);
     }
+
+    // -------------------------
+    // CUSTOMER
+    // -------------------------
 
     private static void ConfigureCustomer(ModelBuilder modelBuilder)
     {
@@ -38,22 +53,31 @@ public class MetalLinkDbContext : DbContext
               .HasColumnName("customer_id")
               .ValueGeneratedOnAdd();
 
-        entity.Property(c => c.SiteId)
-              .HasColumnName("site_id")
+        // NEW: company_id (required)
+        entity.Property(c => c.CompanyId)
+              .HasColumnName("company_id")
               .IsRequired();
 
-        entity.Property(c => c.FullName)
-              .HasColumnName("full_name")
-              .IsRequired()
-              .HasMaxLength(200);
+        // NEW: site_id (optional)
+        entity.Property(c => c.SiteId)
+              .HasColumnName("site_id")
+              .IsRequired(false);
+
+        // NEW: first_name / last_name stored separately
+        entity.Property(c => c.FirstName)
+              .HasColumnName("first_name")
+              .HasMaxLength(100);
+
+        entity.Property(c => c.LastName)
+              .HasColumnName("last_name")
+              .HasMaxLength(100);
+
+        // FullName is a computed/read-only property in the domain model,
+        // so we do NOT map it to a column anymore.
 
         entity.Property(c => c.IsCompany)
               .HasColumnName("is_company")
               .IsRequired();
-
-        entity.Property(c => c.CompanyName)
-              .HasColumnName("company_name")
-              .HasMaxLength(200);
 
         entity.Property(c => c.IdNumber)
               .HasColumnName("id_number")
@@ -66,26 +90,6 @@ public class MetalLinkDbContext : DbContext
         entity.Property(c => c.PriceCode)
               .HasColumnName("price_code")
               .HasMaxLength(50);
-
-        entity.Property(c => c.AddressLine1)
-              .HasColumnName("address_line1")
-              .HasMaxLength(200);
-
-        entity.Property(c => c.AddressLine2)
-              .HasColumnName("address_line2")
-              .HasMaxLength(200);
-
-        entity.Property(c => c.Suburb)
-              .HasColumnName("suburb")
-              .HasMaxLength(100);
-
-        entity.Property(c => c.City)
-              .HasColumnName("city")
-              .HasMaxLength(100);
-
-        entity.Property(c => c.PostalCode)
-              .HasColumnName("postal_code")
-              .HasMaxLength(20);
 
         entity.Property(c => c.PhoneNumber)
               .HasColumnName("phone_number")
@@ -116,7 +120,224 @@ public class MetalLinkDbContext : DbContext
 
         entity.HasIndex(c => c.IdNumber)
               .HasDatabaseName("customers_id_number_idx");
+
+        // FK → companies
+        entity.HasOne(c => c.Company)
+              .WithMany(co => co.Customers)
+              .HasForeignKey(c => c.CompanyId)
+              .HasConstraintName("fk_customers_company_id_companies");
+
+        // FK → sites (optional)
+        entity.HasOne(c => c.Site)
+              .WithMany(s => s.Customers)
+              .HasForeignKey(c => c.SiteId)
+              .HasConstraintName("fk_customers_site_id_sites");
     }
+
+      // -------------------------
+      // COMPANY
+      // -------------------------
+
+      private static void ConfigureCompany(ModelBuilder modelBuilder)
+      {
+      var entity = modelBuilder.Entity<Company>();
+
+      entity.ToTable("companies", schema: "metal_link");
+
+      entity.HasKey(c => c.CompanyId)
+            .HasName("pk_companies_company_id");
+
+      entity.Property(c => c.CompanyId)
+            .HasColumnName("company_id")
+            .ValueGeneratedOnAdd();
+
+      entity.Property(c => c.CompanyName)
+            .HasColumnName("company_name")
+            .IsRequired()
+            .HasMaxLength(200);
+
+      entity.Property(c => c.VatNumber)
+            .HasColumnName("vat_number")
+            .HasMaxLength(50);
+
+      entity.Property(c => c.Taxable)
+            .HasColumnName("taxable")
+            .IsRequired(); // bool -> stored as 0/1
+
+      // 🚫 NO address fields on Company anymore – all address info lives on Site.
+
+      entity.Property(c => c.IsActive)
+            .HasColumnName("is_active")
+            .IsRequired();
+
+      entity.Property(c => c.CreatedTime)
+            .HasColumnName("created_time")
+            .IsRequired();
+
+      entity.Property(c => c.UpdatedTime)
+            .HasColumnName("updated_time")
+            .IsRequired();
+
+      entity.HasIndex(c => c.CompanyName)
+            .HasDatabaseName("companies_company_name_idx");
+
+      entity.HasIndex(c => c.VatNumber)
+            .HasDatabaseName("companies_vat_number_idx");
+
+      // Navigation: Company → Sites
+      entity.HasMany(c => c.Sites)
+            .WithOne(s => s.Company)
+            .HasForeignKey(s => s.CompanyId)
+            .HasConstraintName("fk_sites_company_id_companies");
+
+      // Navigation: Company → Customers
+      entity.HasMany(c => c.Customers)
+            .WithOne(cu => cu.Company)
+            .HasForeignKey(cu => cu.CompanyId)
+            .HasConstraintName("fk_customers_company_id_companies");
+      }
+
+
+    // -------------------------
+    // SITE
+    // -------------------------
+
+    private static void ConfigureSite(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<Site>();
+
+        entity.ToTable("sites", schema: "metal_link");
+
+        entity.HasKey(s => s.SiteId)
+              .HasName("pk_sites_site_id");
+
+        entity.Property(s => s.SiteId)
+              .HasColumnName("site_id")
+              .ValueGeneratedOnAdd();
+
+        entity.Property(s => s.CompanyId)
+              .HasColumnName("company_id")
+              .IsRequired();
+
+        entity.Property(s => s.SiteName)
+              .HasColumnName("site_name")
+              .IsRequired()
+              .HasMaxLength(200);
+
+        entity.Property(s => s.SiteCode)
+              .HasColumnName("site_code")
+              .HasMaxLength(50);
+
+        entity.Property(s => s.AddressLine1)
+              .HasColumnName("address_line1")
+              .HasMaxLength(200);
+
+        entity.Property(s => s.AddressLine2)
+              .HasColumnName("address_line2")
+              .HasMaxLength(200);
+
+        entity.Property(s => s.Suburb)
+              .HasColumnName("suburb")
+              .HasMaxLength(100);
+
+        entity.Property(s => s.City)
+              .HasColumnName("city")
+              .HasMaxLength(100);
+
+        entity.Property(s => s.PostalCode)
+              .HasColumnName("postal_code")
+              .HasMaxLength(20);
+
+        entity.Property(s => s.ProvinceId)
+              .HasColumnName("province_id")
+              .IsRequired(false);
+
+        entity.Property(s => s.IsActive)
+              .HasColumnName("is_active")
+              .IsRequired();
+
+        entity.Property(s => s.CreatedTime)
+              .HasColumnName("created_time")
+              .IsRequired();
+
+        entity.Property(s => s.UpdatedTime)
+              .HasColumnName("updated_time")
+              .IsRequired();
+
+        entity.HasIndex(s => s.SiteCode)
+              .HasDatabaseName("sites_site_code_idx");
+
+        entity.HasIndex(s => new { s.CompanyId, s.SiteName })
+              .HasDatabaseName("sites_company_id_site_name_idx");
+
+        // FK → Company
+        entity.HasOne(s => s.Company)
+              .WithMany(c => c.Sites)
+              .HasForeignKey(s => s.CompanyId)
+              .HasConstraintName("fk_sites_company_id_companies");
+
+        // FK → Province (optional)
+        entity.HasOne(s => s.Province)
+              .WithMany(p => p.Sites)
+              .HasForeignKey(s => s.ProvinceId)
+              .HasConstraintName("fk_sites_province_id_provinces");
+    }
+
+    // -------------------------
+    // PROVINCE
+    // -------------------------
+
+    private static void ConfigureProvince(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<Province>();
+
+        entity.ToTable("provinces", schema: "metal_link");
+
+        entity.HasKey(p => p.ProvinceId)
+              .HasName("pk_provinces_province_id");
+
+        entity.Property(p => p.ProvinceId)
+              .HasColumnName("province_id")
+              .ValueGeneratedOnAdd();
+
+        entity.Property(p => p.ProvinceName)
+              .HasColumnName("name")
+              .IsRequired()
+              .HasMaxLength(100);
+
+        entity.Property(p => p.ProvinceCode)
+              .HasColumnName("code")
+              .IsRequired()
+              .HasMaxLength(10);
+
+        entity.Property(p => p.IsActive)
+              .HasColumnName("is_active")
+              .IsRequired();
+
+        entity.Property(p => p.CreatedTime)
+              .HasColumnName("created_time")
+              .IsRequired();
+
+        entity.Property(p => p.UpdatedTime)
+              .HasColumnName("updated_time")
+              .IsRequired();
+
+        entity.HasIndex(p => p.ProvinceCode)
+              .HasDatabaseName("provinces_code_idx");
+
+        entity.HasIndex(p => p.ProvinceName)
+              .HasDatabaseName("provinces_name_idx");
+
+        // Navigation: Province → Sites
+        entity.HasMany(p => p.Sites)
+              .WithOne(s => s.Province)
+              .HasForeignKey(s => s.ProvinceId)
+              .HasConstraintName("fk_sites_province_id_provinces");
+    }
+
+    // -------------------------
+    // OPERATOR
+    // -------------------------
 
     private static void ConfigureOperator(ModelBuilder modelBuilder)
     {
@@ -172,7 +393,11 @@ public class MetalLinkDbContext : DbContext
               .HasDatabaseName("operators_username_idx");
     }
 
-     private static void ConfigureCustomerDocument(ModelBuilder modelBuilder)
+    // -------------------------
+    // CUSTOMER DOCUMENT
+    // -------------------------
+
+    private static void ConfigureCustomerDocument(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<CustomerDocument>();
 
@@ -211,7 +436,7 @@ public class MetalLinkDbContext : DbContext
 
         entity.Property(d => d.CreatedTime)
               .HasColumnName("created_time")
-                          .IsRequired();
+              .IsRequired();
 
         entity.HasIndex(d => d.CustomerId)
               .HasDatabaseName("customer_documents_customer_id_idx");
@@ -222,7 +447,11 @@ public class MetalLinkDbContext : DbContext
               .HasConstraintName("fk_customer_documents_customer_id_customers");
     }
 
-private static void ConfigureTicket(ModelBuilder modelBuilder)
+    // -------------------------
+    // TICKET
+    // -------------------------
+
+    private static void ConfigureTicket(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<Ticket>();
 
@@ -320,5 +549,11 @@ private static void ConfigureTicket(ModelBuilder modelBuilder)
               .WithMany()
               .HasForeignKey(t => t.OperatorId)
               .HasConstraintName("fk_tickets_operator_id_operators");
-    }    
+
+        // Optional: FK to Site for referential integrity
+        entity.HasOne<Site>()
+              .WithMany()
+              .HasForeignKey(t => t.SiteId)
+              .HasConstraintName("fk_tickets_site_id_sites");
+    }
 }

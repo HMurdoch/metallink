@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -55,5 +56,50 @@ public sealed class ApiClient
         var response = await _httpClient.PostAsJsonAsync(relativeUrl, body, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken: cancellationToken);
+    }
+
+    // public Task<HttpResponseMessage> DeleteAsync(
+    // string relativeUrl,
+    // CancellationToken cancellationToken = default)
+    // {
+    //     return _httpClient.DeleteAsync(relativeUrl, cancellationToken);
+    // }
+
+    public string ToQueryString(object? values)
+    {
+        if (values == null) return string.Empty;
+
+        var props = from p in values.GetType().GetProperties()
+                    let value = p.GetValue(values, null)
+                    where value != null
+                    select $"{Uri.EscapeDataString(p.Name)}={Uri.EscapeDataString(value.ToString()!)}";
+
+        var qs = string.Join("&", props);
+        return string.IsNullOrEmpty(qs) ? string.Empty : "?" + qs;
+    }
+
+    public async Task<HttpResponseMessage> PutAsJsonAsync<T>(
+    string uri,
+    T body,
+    CancellationToken cancellationToken = default)
+    {
+        // Attach auth header the same way you do in PostAsync / GetAsync
+        var request = new HttpRequestMessage(HttpMethod.Put, uri)
+        {
+            Content = JsonContent.Create(body)
+        };
+
+        ApplyAuthHeader();
+        return await _httpClient.SendAsync(request, cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> DeleteAsync(
+        string uri,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Delete, uri);
+
+        ApplyAuthHeader();
+        return await _httpClient.SendAsync(request, cancellationToken);
     }
 }
