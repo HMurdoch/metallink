@@ -11,12 +11,12 @@ public sealed class CreateCustomerCommandValidator
         RuleFor(x => x.SiteId)
             .GreaterThan(0);
 
-        RuleFor(x => x.FullName)
+        RuleFor(x => x.FirstName)
             .NotEmpty()
-            .MaximumLength(200);
+            .MaximumLength(100);
 
-        RuleFor(x => x.CompanyName)
-            .MaximumLength(200)
+        RuleFor(x => x.LastName)
+            .MaximumLength(100)
             .When(x => x.IsCompany);
 
         RuleFor(x => x.IdNumber)

@@ -122,6 +122,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         };
 
         SelectedTabIndex = 0;
+        IsSearchSiteEnabled = false;
 
         // Core commands
         CheckDbCommand = new AsyncCommand(CheckDbAsync);
@@ -346,7 +347,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             }
 
             var customer = await _customerService.CreateCustomerAsync(
-                fullName: fullName,
+                firstName: NewFirstName,
+                lastName: NewLastName,
                 isCompany: NewIsCompany,
                 companyName: NewCompanyName,
                 idNumber: NewIdNumber,

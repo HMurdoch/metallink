@@ -37,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<IOperatorRepository, OperatorRepository>();
         services.AddScoped<ICustomerDocumentRepository, CustomerDocumentRepository>();
         services.AddScoped<ITicketRepository, TicketRepository>();
+        services.AddScoped<ICompanyRepository, CompanyRepository>();
 
         // Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();

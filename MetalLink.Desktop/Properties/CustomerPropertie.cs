@@ -243,8 +243,8 @@ public partial class MainWindowViewModel
         return (parts[0], parts[1]);
     }
 
-    public string SelectedFirstName      => SplitName().first;
-    public string SelectedLastName       => SplitName().last;
+    public string SelectedFirstName      => FoundCustomer?.FirstName ?? "";
+    public string SelectedLastName       => FoundCustomer?.LastName ?? "";
     public string SelectedCompanyName    => FoundCustomer?.CompanyName ?? string.Empty;
     public string SelectedIdNumber       => FoundCustomer?.IdNumber ?? string.Empty;
     public string SelectedAccountNumber  => FoundCustomer?.AccountNumber ?? string.Empty;

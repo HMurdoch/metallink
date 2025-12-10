@@ -1,3 +1,4 @@
+// MetalLink.Application/Customers/Queries/SearchCustomersQuery.cs
 using MediatR;
 using MetalLink.Shared.Customers;
 

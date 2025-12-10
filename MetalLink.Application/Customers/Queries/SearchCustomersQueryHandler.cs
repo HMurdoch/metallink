@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using MetalLink.Application.Interfaces;
+using MetalLink.Domain.Entities;
 using MetalLink.Shared.Customers;
 
 namespace MetalLink.Application.Customers.Queries;
@@ -21,28 +22,53 @@ public sealed class SearchCustomersQueryHandler
         SearchCustomersQuery request,
         CancellationToken cancellationToken)
     {
-        // Just pass the DTO straight through; repository already does wildcard checks
-        var customers = await _customerRepository.SearchAsync(request.Request, cancellationToken);
+        var r = request.Request;
 
-        return customers
-            .Select(customer => new CustomerDto
+        // We now use the repository SearchAsync(CustomerSearchRequestDto)
+        var customers = await _customerRepository.SearchAsync(r, cancellationToken);
+
+        // Project Domain.Customer (+ Company/Site) into the flattened CustomerDto
+        var result = customers.Select(c =>
+        {
+            // Prefer site address; fall back to company address if needed
+            var company = c.Company;
+            var site    = c.Site;
+
+            var addressLine1 = site?.AddressLine1;
+            var addressLine2 = site?.AddressLine2;
+            var suburb       = site?.Suburb;
+            var city         = site?.City;
+            var postalCode   = site?.PostalCode;
+
+            return new CustomerDto
             {
-                CustomerId    = customer.CustomerId,
-                SiteId        = customer.SiteId,
-                FullName      = customer.FullName,
-                CompanyName   = customer.CompanyName,
-                IdNumber      = customer.IdNumber,
-                AccountNumber = customer.AccountNumber,
-                PriceCode     = customer.PriceCode,
-                AddressLine1  = customer.AddressLine1,
-                AddressLine2  = customer.AddressLine2,
-                Suburb        = customer.Suburb,
-                City          = customer.City,
-                PostalCode    = customer.PostalCode,
-                PhoneNumber   = customer.PhoneNumber,
-                MobileNumber  = customer.MobileNumber,
-                Email         = customer.Email
-            })
-            .ToArray();
+                CustomerId    = c.CustomerId,
+
+                // DTO still uses int? for SiteId – cast from long?
+                SiteId        = c.SiteId.HasValue
+                    ? (int?)checked((int)c.SiteId.Value)
+                    : null,
+
+                FullName      = c.FullName,
+                CompanyName   = company?.CompanyName,
+
+                IdNumber      = c.IdNumber,
+                AccountNumber = c.AccountNumber,
+                PriceCode     = c.PriceCode,
+
+                AddressLine1  = addressLine1,
+                AddressLine2  = addressLine2,
+                Suburb        = suburb,
+                City          = city,
+                PostalCode    = postalCode,
+
+                PhoneNumber   = c.PhoneNumber,
+                MobileNumber  = c.MobileNumber,
+                Email         = c.Email
+            };
+        })
+        .ToArray();
+
+        return result;
     }
 }

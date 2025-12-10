@@ -1,3 +1,6 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using MediatR;
 using MetalLink.Application.Interfaces;
 using MetalLink.Domain.Entities;
@@ -6,84 +9,70 @@ using MetalLink.Shared.Customers;
 namespace MetalLink.Application.Customers.Commands;
 
 public sealed class CreateCustomerCommandHandler
-    : IRequestHandler<CreateCustomerCommand, CustomerDto>
+    : IRequestHandler<CreateCustomerCommand, CustomerDto?>
 {
     private readonly ICustomerRepository _customerRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public CreateCustomerCommandHandler(
-        ICustomerRepository customerRepository,
-        IUnitOfWork unitOfWork)
+    public CreateCustomerCommandHandler(ICustomerRepository customerRepository)
     {
         _customerRepository = customerRepository;
-        _unitOfWork = unitOfWork;
     }
 
-    public async Task<CustomerDto> Handle(
+    public async Task<CustomerDto?> Handle(
         CreateCustomerCommand request,
         CancellationToken cancellationToken)
     {
-        // Optional: uniqueness check on account number
-        if (!string.IsNullOrWhiteSpace(request.AccountNumber))
+        // Minimal validation – you can tighten this if you want:
+        if (string.IsNullOrWhiteSpace(request.FirstName) &&
+            string.IsNullOrWhiteSpace(request.LastName))
         {
-            var existing = await _customerRepository
-                .GetByAccountNumberAsync(request.AccountNumber, cancellationToken);
-
-            if (existing != null)
-            {
-                throw new InvalidOperationException(
-                    $"A customer with account number '{request.AccountNumber}' already exists.");
-            }
+            throw new ArgumentException("First or last name is required.");
         }
 
-        var customer = new Customer(
-            request.SiteId,
-            request.FullName,
-            request.IsCompany,
-            request.CompanyName
-        );
+        // You may want to validate request.CompanyId / SiteId here as well.
 
-        customer.SetIdentity(
-            request.IdNumber,
-            request.AccountNumber,
-            request.PriceCode
-        );
+        var now = DateTime.UtcNow;
 
-        customer.SetAddress(
-            request.AddressLine1,
-            request.AddressLine2,
-            request.Suburb,
-            request.City,
-            request.PostalCode
-        );
-
-        customer.SetContact(
-            request.PhoneNumber,
-            request.MobileNumber,
-            request.Email
-        );
+        var customer = new Customer
+        {
+            CompanyId     = request.CompanyId,
+            SiteId        = request.SiteId,
+            FirstName     = request.FirstName,
+            LastName      = request.LastName,
+            IsCompany     = request.IsCompany,
+            IdNumber      = request.IdNumber,
+            AccountNumber = request.AccountNumber,
+            PriceCode     = request.PriceCode,
+            PhoneNumber   = request.PhoneNumber,
+            MobileNumber  = request.MobileNumber,
+            Email         = request.Email,
+            IsActive      = true,
+            CreatedTime   = now,
+            UpdatedTime   = now
+        };
 
         await _customerRepository.AddAsync(customer, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new CustomerDto
+        // Build DTO – address now lives on Company/Site, so we leave those null for now.
+        var dto = new CustomerDto
         {
-            CustomerId = customer.CustomerId,
-            SiteId = customer.SiteId,
-            FullName = customer.FullName,
-            IsCompany = customer.IsCompany,
-            CompanyName = customer.CompanyName,
-            IdNumber = customer.IdNumber,
+            CustomerId    = customer.CustomerId,
+            SiteId        = customer.SiteId,
+            FullName      = customer.FullName,
+            CompanyName   = null,           // can be filled from Company later if needed
+            IdNumber      = customer.IdNumber,
             AccountNumber = customer.AccountNumber,
-            PriceCode = customer.PriceCode,
-            AddressLine1 = customer.AddressLine1,
-            AddressLine2 = customer.AddressLine2,
-            Suburb = customer.Suburb,
-            City = customer.City,
-            PostalCode = customer.PostalCode,
-            PhoneNumber = customer.PhoneNumber,
-            MobileNumber = customer.MobileNumber,
-            Email = customer.Email
+            PriceCode     = customer.PriceCode,
+            AddressLine1  = null,
+            AddressLine2  = null,
+            Suburb        = null,
+            City          = null,
+            PostalCode    = null,
+            PhoneNumber   = customer.PhoneNumber,
+            MobileNumber  = customer.MobileNumber,
+            Email         = customer.Email
         };
+
+        return dto;
     }
 }

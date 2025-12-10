@@ -26,7 +26,8 @@ public sealed class CustomerService
     }
 
     public async Task<CustomerDto?> CreateCustomerAsync(
-        string fullName,
+        string firstName,
+        string lastName,
         bool isCompany,
         string? companyName,
         string? idNumber,
@@ -48,7 +49,8 @@ public sealed class CustomerService
         var body = new
         {
             siteId,
-            fullName,
+            firstName,
+            lastName,
             isCompany,
             companyName,
             idNumber,

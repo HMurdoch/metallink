@@ -1,3 +1,5 @@
+using System.Threading;
+using System.Threading.Tasks;
 using MediatR;
 using MetalLink.Application.Interfaces;
 using MetalLink.Shared.Customers;
@@ -18,31 +20,48 @@ public sealed class GetCustomerByIdQueryHandler
         GetCustomerByIdQuery request,
         CancellationToken cancellationToken)
     {
-        var customer = await _customerRepository.GetByIdAsync(request.CustomerId, cancellationToken);
+        var customer = await _customerRepository.GetByIdAsync(
+            request.CustomerId,
+            cancellationToken);
 
         if (customer == null)
-        {
             return null;
-        }
 
-        return new CustomerDto
+        var company = customer.Company;
+        var site    = customer.Site;
+
+        var addressLine1 = site?.AddressLine1;
+        var addressLine2 = site?.AddressLine2;
+        var suburb       = site?.Suburb;
+        var city         = site?.City;
+        var postalCode   = site?.PostalCode;
+
+        var dto = new CustomerDto
         {
-            CustomerId = customer.CustomerId,
-            SiteId = customer.SiteId,
-            FullName = customer.FullName,
-            IsCompany = customer.IsCompany,
-            CompanyName = customer.CompanyName,
-            IdNumber = customer.IdNumber,
+            CustomerId    = customer.CustomerId,
+
+            SiteId        = customer.SiteId.HasValue
+                ? (int?)checked((int)customer.SiteId.Value)
+                : null,
+
+            FullName      = customer.FullName,
+            CompanyName   = company?.CompanyName,
+
+            IdNumber      = customer.IdNumber,
             AccountNumber = customer.AccountNumber,
-            PriceCode = customer.PriceCode,
-            AddressLine1 = customer.AddressLine1,
-            AddressLine2 = customer.AddressLine2,
-            Suburb = customer.Suburb,
-            City = customer.City,
-            PostalCode = customer.PostalCode,
-            PhoneNumber = customer.PhoneNumber,
-            MobileNumber = customer.MobileNumber,
-            Email = customer.Email
+            PriceCode     = customer.PriceCode,
+
+            AddressLine1  = addressLine1,
+            AddressLine2  = addressLine2,
+            Suburb        = suburb,
+            City          = city,
+            PostalCode    = postalCode,
+
+            PhoneNumber   = customer.PhoneNumber,
+            MobileNumber  = customer.MobileNumber,
+            Email         = customer.Email
         };
+
+        return dto;
     }
 }
