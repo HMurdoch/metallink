@@ -220,6 +220,7 @@ public partial class MainWindowViewModel
     }
 
     // ----- Customer -----
+    private long? _pendingSelectSiteId;
 
     private void OnEditCustomer(Shared.Customers.CustomerDto? customer)
     {
@@ -297,8 +298,10 @@ public partial class MainWindowViewModel
         }
 
         // Load sites for the company and select the correct one
+        _pendingSelectSiteId = customer.SiteId;
         OnPropertyChanged(nameof(CanCreateCustomer));
         OnPropertyChanged(nameof(CanUpdateCustomer));
+        (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         _ = LoadNewSitesAndSelectAsync(customer.SiteId);
     }
 
@@ -467,20 +470,29 @@ public partial class MainWindowViewModel
         };
 
         await _customerService.UpdateCustomerAsync(dto);
+        FoundCustomer = await _customerService.GetCustomerByIdAsync(dto.CustomerId);
 
-        // Refresh / update in current grid
-        var existing = CustomerSearchResults
-            .FirstOrDefault(c => c.CustomerId == dto.CustomerId);
+        // Pull fresh copy from API (includes SiteName + AddressLine2 etc)
+        var refreshed = await _customerService.GetCustomerByIdAsync(dto.CustomerId);
 
+        // Fallback if API returns null for any reason
+        refreshed ??= dto;
+
+        var existing = CustomerSearchResults.FirstOrDefault(c => c.CustomerId == dto.CustomerId);
         if (existing != null)
         {
-            existing.FirstName     = dto.FirstName;
-            existing.LastName      = dto.LastName;
-            existing.AccountNumber = dto.AccountNumber;
-            existing.CompanyName   = SelectedNewCompany?.CompanyName;
-            existing.MobileNumber  = dto.MobileNumber;
-            existing.Email         = dto.Email;
+            var index = CustomerSearchResults.IndexOf(existing);
+            if (index >= 0)
+                CustomerSearchResults[index] = refreshed; // replace item (forces UI refresh)
         }
+        else
+        {
+            CustomerSearchResults.Add(refreshed);
+        }
+
+        // update details panel immediately
+        FoundCustomer = refreshed;
+
 
         await ClearNewCustomerFormAsync();
         _newAccountNumber = await _customerService.GetNextAccountNumberAsync();
@@ -705,6 +717,10 @@ public partial class MainWindowViewModel
             if (_editingCustomerId == value) return;
             _editingCustomerId = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CanUpdateCustomer));
+
+            // ✅ IMPORTANT: refresh command CanExecute
+            (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -716,9 +732,14 @@ public partial class MainWindowViewModel
         {
             if (_isEditMode == value) return;
             _isEditMode = value;
+
             OnPropertyChanged();
             OnPropertyChanged(nameof(CanCreateCustomer));
             OnPropertyChanged(nameof(CanUpdateCustomer));
+            OnPropertyChanged(nameof(IsCreateMode)); // you already expose IsCreateMode
+
+            // ✅ IMPORTANT: refresh command CanExecute
+            (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -753,6 +774,13 @@ public bool IsCreateMode => !IsEditMode;
             !NewSiteSuggestions.Contains(SelectedNewSite))
         {
             SelectedNewSite = null;
+        }
+
+        if (_pendingSelectSiteId.HasValue)
+        {
+            var match = NewSiteSuggestions.FirstOrDefault(s => s.SiteId == _pendingSelectSiteId.Value);
+            SelectedNewSite = match;
+            _pendingSelectSiteId = null;
         }
     }
 

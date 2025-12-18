@@ -111,6 +111,71 @@ public sealed class CustomersController : ControllerBase
         return Ok(result);
     }
 
+    // -----------------------------
+    // UPDATE CUSTOMER
+    // PUT api/customers
+    // -----------------------------
+    [HttpPut]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update(
+        [FromBody] CustomerDto dto,
+        CancellationToken cancellationToken)
+    {
+        if (dto == null)
+            return BadRequest("Request body is required.");
+
+        if (dto.CustomerId <= 0)
+            return BadRequest("CustomerId is required.");
+
+        var customer = await _customerRepository.GetByIdAsync(dto.CustomerId, cancellationToken);
+        if (customer == null)
+            return NotFound();
+
+        // ---- Update Customer fields
+        if (dto.CompanyId.HasValue)
+            customer.CompanyId = dto.CompanyId.Value;
+
+        if (dto.SiteId.HasValue)
+            customer.SiteId = dto.SiteId.Value;
+
+        customer.FirstName     = dto.FirstName;
+        customer.LastName      = dto.LastName;
+        customer.IsCompany     = dto.IsCompany;
+        customer.IdNumber      = dto.IdNumber;
+        customer.AccountNumber = dto.AccountNumber;
+        customer.PriceCode     = dto.PriceCode;
+        customer.PhoneNumber   = dto.PhoneNumber;
+        customer.MobileNumber  = dto.MobileNumber;
+        customer.Email         = dto.Email;
+        customer.Taxable       = dto.Taxable;
+
+        customer.UpdatedTime = DateTime.UtcNow;
+
+        // ---- Update Site fields too (because your UI edits address lines, and those live on Site)
+        if (customer.Site != null)
+        {
+            customer.Site.AddressLine1 = dto.AddressLine1;
+            customer.Site.AddressLine2 = dto.AddressLine2;
+            customer.Site.Suburb       = dto.Suburb;
+            customer.Site.City         = dto.City;
+            customer.Site.PostalCode   = dto.PostalCode;
+
+            // DTO uses long? but Site uses int?
+            if (dto.ProvinceId.HasValue)
+                customer.Site.ProvinceId = (int)dto.ProvinceId.Value;
+
+            if (dto.CountryId.HasValue)
+                customer.Site.CountryId = (int)dto.CountryId.Value;
+
+            customer.Site.UpdatedTime = DateTime.UtcNow;
+        }
+
+        await _customerRepository.UpdateAsync(customer, cancellationToken);
+        return NoContent();
+    }
+
     [HttpDelete("{customerId:long}")]
     public async Task<IActionResult> SoftDelete(long customerId, CancellationToken cancellationToken)
     {

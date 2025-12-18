@@ -163,7 +163,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         Console.WriteLine($"Next account number = {NewAccountNumber}");
         OnPropertyChanged(nameof(NewAccountNumberDisplay));
 
-        UpdateCustomerCommand = new AsyncRelayCommand(OnUpdateCustomerAsync, () => IsEditMode);
+        UpdateCustomerCommand = new AsyncRelayCommand(OnUpdateCustomerAsync, () => CanUpdateCustomer);
 
         // Camera commands
         CaptureWbFrontBeforeCommand = new AsyncCommand(() =>

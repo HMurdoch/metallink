@@ -248,6 +248,8 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
             OnPropertyChanged(nameof(CanCreateCustomer));
+
+            (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -263,6 +265,8 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
             OnPropertyChanged(nameof(CanCreateCustomer));
+
+            (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 

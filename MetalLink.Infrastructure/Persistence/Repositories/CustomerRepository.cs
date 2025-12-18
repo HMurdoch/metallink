@@ -30,6 +30,8 @@ public class CustomerRepository : ICustomerRepository
             .Include(c => c.Company)
             .Include(c => c.Site)
                 .ThenInclude(s => s.Province)
+            .Include(c => c.Site)
+                .ThenInclude(s => s.Country)
             .FirstOrDefaultAsync(c => c.CustomerId == customerId, cancellationToken);
     }
 

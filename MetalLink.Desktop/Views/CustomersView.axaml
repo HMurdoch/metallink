@@ -560,7 +560,7 @@
                     Content="Create"
                     Command="{Binding CreateCustomerCommand}"
                     IsEnabled="{Binding CanCreateCustomer}"
-                    IsVisible="{Binding !IsEditMode}" />
+                    IsVisible="{Binding IsCreateMode}" />
 
                 <Button
                     Width="100"
@@ -569,7 +569,6 @@
                     IsEnabled="{Binding CanUpdateCustomer}"
                     IsVisible="{Binding IsEditMode}" />
               </StackPanel>
-
             </Grid>
 
             <TextBlock
