@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using MetalLink.Application.Interfaces;
-using MetalLink.Domain.Entities;
 using MetalLink.Shared.Customers;
 
 namespace MetalLink.Application.Customers.Queries;
@@ -19,56 +18,73 @@ public sealed class SearchCustomersQueryHandler
     }
 
     public async Task<CustomerDto[]> Handle(
-        SearchCustomersQuery request,
+        SearchCustomersQuery query,
         CancellationToken cancellationToken)
     {
-        var r = request.Request;
+        // Use the DTO that the query already wraps
+        var criteria = query.Request ?? new CustomerSearchRequestDto();
 
-        // We now use the repository SearchAsync(CustomerSearchRequestDto)
-        var customers = await _customerRepository.SearchAsync(r, cancellationToken);
+        // Repository now has the DTO-based SearchAsync
+        var customers = await _customerRepository.SearchAsync(criteria, cancellationToken);
 
-        // Project Domain.Customer (+ Company/Site) into the flattened CustomerDto
-        var result = customers.Select(c =>
-        {
-            // Prefer site address; fall back to company address if needed
-            var company = c.Company;
-            var site    = c.Site;
-
-            var addressLine1 = site?.AddressLine1;
-            var addressLine2 = site?.AddressLine2;
-            var suburb       = site?.Suburb;
-            var city         = site?.City;
-            var postalCode   = site?.PostalCode;
-
-            return new CustomerDto
+        // Map domain Customer (+ Company + Site + Province + Country) to the shared DTO
+        return customers
+            .Select(c =>
             {
-                CustomerId    = c.CustomerId,
+                var company  = c.Company;
+                var site     = c.Site;
+                var province = site?.Province;
+                var country  = site?.Country;
 
-                // DTO still uses int? for SiteId – cast from long?
-                SiteId        = c.SiteId.HasValue
-                    ? (int?)checked((int)c.SiteId.Value)
-                    : null,
+                var addressLine1 = site?.AddressLine1;
+                var addressLine2 = site?.AddressLine2;
+                var suburb       = site?.Suburb;
+                var city         = site?.City;
+                var postalCode   = site?.PostalCode;
 
-                FullName      = c.FullName,
-                CompanyName   = company?.CompanyName,
+                return new CustomerDto
+                {
+                    CustomerId = c.CustomerId,
+                    CompanyId  = c.CompanyId,
+                    SiteId = c.SiteId,
 
-                IdNumber      = c.IdNumber,
-                AccountNumber = c.AccountNumber,
-                PriceCode     = c.PriceCode,
+                    FullName  = c.FullName,
+                    FirstName = c.FirstName,
+                    LastName  = c.LastName,
+                    IsCompany = c.IsCompany,
 
-                AddressLine1  = addressLine1,
-                AddressLine2  = addressLine2,
-                Suburb        = suburb,
-                City          = city,
-                PostalCode    = postalCode,
+                    CompanyName = company?.CompanyName,
+                    VatNumber   = company?.VatNumber,
+                    Taxable     = c.Taxable,
 
-                PhoneNumber   = c.PhoneNumber,
-                MobileNumber  = c.MobileNumber,
-                Email         = c.Email
-            };
-        })
-        .ToArray();
+                    SiteName = site?.SiteName,
+                    SiteCode = site?.SiteCode,
 
-        return result;
+                    AddressLine1 = addressLine1,
+                    AddressLine2 = addressLine2,
+                    Suburb       = suburb,
+                    City         = city,
+                    PostalCode   = postalCode,
+
+                    ProvinceId   = province?.ProvinceId,
+                    ProvinceName = province?.ProvinceName,
+
+                    CountryId    = country?.CountryId,
+                    CountryName  = country?.Name,
+
+                    IdNumber      = c.IdNumber,
+                    AccountNumber = c.AccountNumber,
+                    PriceCode     = c.PriceCode,
+
+                    PhoneNumber   = c.PhoneNumber,
+                    MobileNumber  = c.MobileNumber,
+                    Email         = c.Email,
+
+                    IsActive    = c.IsActive,
+                    CreatedTime = c.CreatedTime,
+                    UpdatedTime = c.UpdatedTime
+                };
+            })
+            .ToArray();
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using CommunityToolkit.Mvvm.ComponentModel;
 using LiveChartsCore;
 using LiveChartsCore.Measure;
@@ -41,7 +42,14 @@ public partial class MainWindowViewModel
     public string StatusMessage
     {
         get => _statusMessage;
-        set { _statusMessage = value; OnPropertyChanged(); }
+            set
+        {
+            _statusMessage = value ?? string.Empty;
+            OnPropertyChanged();
+
+            // ALSO log to console so you see it in dotnet run output:
+            Console.WriteLine($"[STATUS] {_statusMessage}");
+        }
     }
 
     public bool IsBusy

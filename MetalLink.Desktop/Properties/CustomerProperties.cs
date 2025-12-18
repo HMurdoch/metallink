@@ -2,6 +2,7 @@
 using System;
 using System.Collections.ObjectModel;
 using MetalLink.Shared.Customers;
+using MetalLink.Shared.Locations;
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -15,7 +16,6 @@ public partial class MainWindowViewModel
     private string _searchLastNameText = string.Empty;
     private string _searchCompanyNameText = string.Empty;
     private string _searchIdNumberText = string.Empty;
-    private string _searchAccountNumberText = string.Empty;
     private string _searchPriceCodeText = string.Empty;
     private string _searchAddressLine1Text = string.Empty;
     private string _searchAddressLine2Text = string.Empty;
@@ -36,22 +36,6 @@ public partial class MainWindowViewModel
 
     // --- New customer form backing fields ---
 
-    private string _newFirstName = string.Empty;
-    private string _newLastName = string.Empty;
-    private bool _newIsCompany;
-    private string? _newCompanyName;
-    private string? _newIdNumber;
-    private string? _newAccountNumber;
-    private string? _newPriceCode;
-    private string _newAddressLine1 = string.Empty;
-    private string _newAddressLine2 = string.Empty;
-    private string _newSuburb = string.Empty;
-    private string _newCity = string.Empty;
-    private string _newPostalCode = string.Empty;
-    private string? _newPhoneNumber;
-    private string? _newMobileNumber;
-    private string? _newEmail;
-
     // --- Validation / dirty flags ---
 
     public bool IsNewCustomerFullNameInvalid =>
@@ -65,7 +49,7 @@ public partial class MainWindowViewModel
         || NewIsCompany
         || !string.IsNullOrWhiteSpace(NewCompanyName)
         || !string.IsNullOrWhiteSpace(NewIdNumber)
-        || !string.IsNullOrWhiteSpace(NewAccountNumber)
+        || NewAccountNumber != null
         || !string.IsNullOrWhiteSpace(NewPriceCode)
         || !string.IsNullOrWhiteSpace(NewAddressLine1)
         || !string.IsNullOrWhiteSpace(NewAddressLine2)
@@ -112,12 +96,6 @@ public partial class MainWindowViewModel
     {
         get => _searchIdNumberText;
         set { _searchIdNumberText = value; OnPropertyChanged(); }
-    }
-
-    public string SearchAccountNumberText
-    {
-        get => _searchAccountNumberText;
-        set { _searchAccountNumberText = value; OnPropertyChanged(); }
     }
 
     public string SearchPriceCodeText
@@ -206,6 +184,8 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(SelectedFirstName));
             OnPropertyChanged(nameof(SelectedLastName));
             OnPropertyChanged(nameof(SelectedCompanyName));
+            OnPropertyChanged(nameof(SelectedSiteName));
+            OnPropertyChanged(nameof(SelectedAccountNumberFormatted));
             OnPropertyChanged(nameof(SelectedIdNumber));
             OnPropertyChanged(nameof(SelectedAccountNumber));
             OnPropertyChanged(nameof(SelectedPriceCode));
@@ -217,37 +197,28 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(SelectedPhoneNumber));
             OnPropertyChanged(nameof(SelectedMobileNumber));
             OnPropertyChanged(nameof(SelectedEmail));
+            OnPropertyChanged(nameof(SelectedProvinceName));
+            OnPropertyChanged(nameof(SelectedCountryName));
+            OnPropertyChanged(nameof(SelectedTaxable));
         }
     }
 
     public string FoundCustomerSummary =>
         FoundCustomer == null
             ? "No customer loaded."
-            : $"ID: {FoundCustomer.CustomerId:D8}, Name: {FoundCustomer.FullName}, Account: {FoundCustomer.AccountNumber ?? "-"}";
+            : $"ID: {FoundCustomer.CustomerId:D8}, Name: {FoundCustomer.FirstName} {FoundCustomer.LastName}, Account: {FoundCustomer.AccountNumber}";
 
     // 8-digit, zero-padded ID
     public string SelectedCustomerIdDisplay =>
         FoundCustomer == null ? string.Empty : FoundCustomer.CustomerId.ToString("D8");
 
-    // helper to split full name
-    private (string first, string last) SplitName()
-    {
-        if (FoundCustomer == null || string.IsNullOrWhiteSpace(FoundCustomer.FullName))
-            return (string.Empty, string.Empty);
-
-        var parts = FoundCustomer.FullName.Trim()
-            .Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-
-        if (parts.Length == 0) return (string.Empty, string.Empty);
-        if (parts.Length == 1) return (parts[0], string.Empty);
-        return (parts[0], parts[1]);
-    }
-
     public string SelectedFirstName      => FoundCustomer?.FirstName ?? "";
     public string SelectedLastName       => FoundCustomer?.LastName ?? "";
     public string SelectedCompanyName    => FoundCustomer?.CompanyName ?? string.Empty;
+    public string SelectedSiteName       => FoundCustomer?.SiteName ?? string.Empty;
+    public string SelectedAccountNumberFormatted    => FoundCustomer?.AccountNumberFormatted ?? string.Empty;
     public string SelectedIdNumber       => FoundCustomer?.IdNumber ?? string.Empty;
-    public string SelectedAccountNumber  => FoundCustomer?.AccountNumber ?? string.Empty;
+    public long? SelectedAccountNumber  => FoundCustomer?.AccountNumber;
     public string SelectedPriceCode      => FoundCustomer?.PriceCode ?? string.Empty;
     public string SelectedAddressLine1   => FoundCustomer?.AddressLine1 ?? string.Empty;
     public string SelectedAddressLine2   => FoundCustomer?.AddressLine2 ?? string.Empty;
@@ -257,9 +228,15 @@ public partial class MainWindowViewModel
     public string SelectedPhoneNumber    => FoundCustomer?.PhoneNumber ?? string.Empty;
     public string SelectedMobileNumber   => FoundCustomer?.MobileNumber ?? string.Empty;
     public string SelectedEmail          => FoundCustomer?.Email ?? string.Empty;
+    public string SelectedProvinceName => FoundCustomer?.ProvinceName ?? string.Empty;
+    public string SelectedCountryName  => FoundCustomer?.CountryName  ?? string.Empty;
+    public bool   SelectedTaxable      => FoundCustomer?.Taxable ?? false;
+
 
     // --- New customer form properties ---
 
+
+    private string _newFirstName = string.Empty;
     public string NewFirstName
     {
         get => _newFirstName;
@@ -270,9 +247,11 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(IsNewCustomerFullNameInvalid));
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
+            OnPropertyChanged(nameof(CanCreateCustomer));
         }
     }
 
+    private string _newLastName = string.Empty;
     public string NewLastName
     {
         get => _newLastName;
@@ -283,9 +262,11 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(IsNewCustomerFullNameInvalid));
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
+            OnPropertyChanged(nameof(CanCreateCustomer));
         }
     }
 
+    private bool _newIsCompany;
     public bool NewIsCompany
     {
         get => _newIsCompany;
@@ -295,9 +276,11 @@ public partial class MainWindowViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
+            OnPropertyChanged(nameof(CanCreateCustomer));
         }
     }
 
+    private string? _newCompanyName;
     public string? NewCompanyName
     {
         get => _newCompanyName;
@@ -307,9 +290,11 @@ public partial class MainWindowViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
+            OnPropertyChanged(nameof(CanCreateCustomer));
         }
     }
 
+    private string? _newIdNumber;
     public string? NewIdNumber
     {
         get => _newIdNumber;
@@ -319,21 +304,30 @@ public partial class MainWindowViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
+            OnPropertyChanged(nameof(CanCreateCustomer));
         }
     }
 
-    public string? NewAccountNumber
+    private long? _newAccountNumber;
+
+    public long? NewAccountNumber
     {
         get => _newAccountNumber;
-        set
+        private set
         {
             _newAccountNumber = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
-            OnPropertyChanged(nameof(HasUnsavedChanges));
+            OnPropertyChanged(nameof(NewAccountNumberDisplay));
+            OnPropertyChanged(nameof(CanCreateCustomer));
         }
     }
 
+    public string NewAccountNumberDisplay =>
+        NewAccountNumber.HasValue ? NewAccountNumber.Value.ToString("D8") : string.Empty;
+
+    public bool IsAccountNumberReadOnly => true;
+
+    private string? _newPriceCode;
     public string? NewPriceCode
     {
         get => _newPriceCode;
@@ -346,6 +340,7 @@ public partial class MainWindowViewModel
         }
     }
 
+    private string _newAddressLine1 = string.Empty;
     public string NewAddressLine1
     {
         get => _newAddressLine1;
@@ -358,6 +353,7 @@ public partial class MainWindowViewModel
         }
     }
 
+    private string _newAddressLine2 = string.Empty;
     public string NewAddressLine2
     {
         get => _newAddressLine2;
@@ -370,6 +366,7 @@ public partial class MainWindowViewModel
         }
     }
 
+    private string _newSuburb = string.Empty;
     public string NewSuburb
     {
         get => _newSuburb;
@@ -382,6 +379,7 @@ public partial class MainWindowViewModel
         }
     }
 
+    private string _newCity = string.Empty;
     public string NewCity
     {
         get => _newCity;
@@ -394,6 +392,7 @@ public partial class MainWindowViewModel
         }
     }
 
+    private string _newPostalCode = string.Empty;
     public string NewPostalCode
     {
         get => _newPostalCode;
@@ -406,6 +405,7 @@ public partial class MainWindowViewModel
         }
     }
 
+    private string? _newPhoneNumber;
     public string? NewPhoneNumber
     {
         get => _newPhoneNumber;
@@ -418,6 +418,7 @@ public partial class MainWindowViewModel
         }
     }
 
+    private string? _newMobileNumber;
     public string? NewMobileNumber
     {
         get => _newMobileNumber;
@@ -430,6 +431,7 @@ public partial class MainWindowViewModel
         }
     }
 
+    private string? _newEmail;
     public string? NewEmail
     {
         get => _newEmail;
@@ -440,5 +442,19 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
         }
+    }
+
+    private bool _newTaxable = true;
+    public bool NewTaxable
+    {
+        get => _newTaxable;
+        set { _newTaxable = value; OnPropertyChanged(); }
+    }
+    
+    private bool _searchTaxable = true;
+    public bool SearchTaxable
+    {
+        get => _searchTaxable;
+        set { _searchTaxable = value; OnPropertyChanged(); }
     }
 }

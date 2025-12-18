@@ -9,8 +9,10 @@
     xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
     xmlns:transitions="clr-namespace:MetalLink.Desktop.Transitions"
     Title="{Binding Title}"
-    Width="1200"
-    Height="800"
+    Width="1400"
+    Height="850"
+    MinWidth="1200"
+    MinHeight="720"
     CanResize="True">
 
 <Window.Resources>
@@ -113,7 +115,7 @@
     </Border>
 
     <!-- Left navigation -->
-    <Border DockPanel.Dock="Left" Width="220" Background="#252932" Padding="12">
+    <Border DockPanel.Dock="Left" Width="180" Background="#252932" Padding="12">
       <StackPanel Spacing="8">
         <TextBlock
             Text="Navigation"

@@ -36,7 +36,14 @@ public class LoginViewModel : INotifyPropertyChanged
     public string StatusMessage
     {
         get => _statusMessage;
-        set { _statusMessage = value; OnPropertyChanged(); }
+        set
+        {
+            _statusMessage = value ?? string.Empty;
+            OnPropertyChanged();
+
+            // ALSO log to console so you see it in dotnet run output:
+            Console.WriteLine($"[STATUS] {_statusMessage}");
+        }
     }
 
     public bool IsBusy
@@ -77,6 +84,11 @@ public class LoginViewModel : INotifyPropertyChanged
                 {
                     DataContext = new MainWindowViewModel(_app)
                 };
+
+                var vm = (MainWindowViewModel)mainWindow.DataContext;
+
+                // fire-and-forget safely (don’t block startup)
+                _ = vm.InitializeLookupsAsync();
 
                 var loginWindow = desktop.MainWindow; // should be the LoginWindow
 

@@ -34,7 +34,7 @@ public class CustomerRepository : ICustomerRepository
     }
 
     public async Task<Customer?> GetByAccountNumberAsync(
-        string accountNumber,
+        long accountNumber,
         CancellationToken cancellationToken = default)
     {
         return await _db.Customers
@@ -42,8 +42,16 @@ public class CustomerRepository : ICustomerRepository
             .Include(c => c.Site)
                 .ThenInclude(s => s.Province)
             .FirstOrDefaultAsync(
-                c => c.AccountNumber != null && c.AccountNumber == accountNumber,
+                c => c.AccountNumber == accountNumber,
                 cancellationToken);
+    }
+
+
+    public async Task<long> GetNextAccountNumberAsync(CancellationToken ct)
+    {
+        // EF Core scalar SqlQueryRaw<long>() expects the column name to be "Value"
+        const string sql = "SELECT nextval('metal_link.customer_account_number_seq') AS \"Value\"";
+        return await _db.Database.SqlQueryRaw<long>(sql).SingleAsync(ct);
     }
 
     public async Task AddAsync(
@@ -68,7 +76,9 @@ public class CustomerRepository : ICustomerRepository
             .Include(c => c.Company)
             .Include(c => c.Site)
                 .ThenInclude(s => s.Province)
-            .Where(c => c.IsActive)            // << only active customers
+            .Include(c => c.Site)
+                .ThenInclude(s => s.Country)
+            .Where(c => c.IsActive)
             .AsQueryable();
 
         // -------------------
@@ -84,22 +94,18 @@ public class CustomerRepository : ICustomerRepository
         {
             var siteId = request.SiteId.Value;
             query = query.Where(c => c.SiteId == siteId);
-
-            // When a specific Site is chosen, we don't also need
-            // to filter by company name (site already implies company).
         }
-        else if (!string.IsNullOrWhiteSpace(request.CompanyName))
+
+        if (!string.IsNullOrWhiteSpace(request.CompanyName))
         {
-            var companyTerm = request.CompanyName.ToLower();
+            var term = request.CompanyName.ToLower();
             query = query.Where(c =>
                 c.Company != null &&
                 c.Company.CompanyName != null &&
-                c.Company.CompanyName.ToLower().Contains(companyTerm));
+                c.Company.CompanyName.ToLower().Contains(term));
         }
 
-        // -------------
-        // Name filters
-        // -------------
+        // -------------  Names
         if (!string.IsNullOrWhiteSpace(request.FirstName))
         {
             var term = request.FirstName.ToLower();
@@ -116,9 +122,7 @@ public class CustomerRepository : ICustomerRepository
                 c.LastName.ToLower().Contains(term));
         }
 
-        // -------------
-        // Other filters
-        // -------------
+        // -------------  Other filters (same as you had)
         if (!string.IsNullOrWhiteSpace(request.IdNumber))
         {
             var term = request.IdNumber.ToLower();
@@ -127,12 +131,10 @@ public class CustomerRepository : ICustomerRepository
                 c.IdNumber.ToLower().Contains(term));
         }
 
-        if (!string.IsNullOrWhiteSpace(request.AccountNumber))
+        if (request.AccountNumber.HasValue)
         {
-            var term = request.AccountNumber.ToLower();
-            query = query.Where(c =>
-                c.AccountNumber != null &&
-                c.AccountNumber.ToLower().Contains(term));
+            var acc = request.AccountNumber.Value;
+            query = query.Where(c => c.AccountNumber == acc);
         }
 
         if (!string.IsNullOrWhiteSpace(request.PriceCode))
@@ -141,6 +143,31 @@ public class CustomerRepository : ICustomerRepository
             query = query.Where(c =>
                 c.PriceCode != null &&
                 c.PriceCode.ToLower().Contains(term));
+        }
+
+        // Province filter (site)
+        if (request.ProvinceId.HasValue)
+        {
+            var provinceId = request.ProvinceId.Value;
+            query = query.Where(c =>
+                c.Site != null &&
+                c.Site.ProvinceId == provinceId);
+        }
+
+        // Country filter (site)
+        if (request.CountryId.HasValue)
+        {
+            var countryId = request.CountryId.Value;
+            query = query.Where(c =>
+                c.Site != null &&
+                c.Site.CountryId == countryId);
+        }
+
+        // Taxable filter (customer)
+        if (request.Taxable.HasValue)
+        {
+            var taxable = request.Taxable.Value;
+            query = query.Where(c => c.Taxable == taxable);
         }
 
         if (!string.IsNullOrWhiteSpace(request.AddressLine1))
@@ -212,13 +239,12 @@ public class CustomerRepository : ICustomerRepository
                 c.Email.ToLower().Contains(term));
         }
 
-        // Final shape
-        query = query
+        return await query
             .OrderBy(c => c.CustomerId)
-            .Take(MaxResults);
-
-        return await query.ToListAsync(cancellationToken);
+            .Take(MaxResults)
+            .ToListAsync(cancellationToken);
     }
+
 
     // -------------------------------------------------
     // LEGACY: flattened-parameter search
@@ -228,10 +254,11 @@ public class CustomerRepository : ICustomerRepository
     public async Task<IReadOnlyList<Customer>> SearchAsync(
         long? customerId,
         long? siteId,
-        string? fullName,
+        string? firstName,
+        string? lastName,
         string? companyName,
         string? idNumber,
-        string? accountNumber,
+        long? accountNumber,
         string? priceCode,
         string? addressLine1,
         string? addressLine2,

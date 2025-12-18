@@ -229,37 +229,66 @@ public partial class MainWindowViewModel
         EditingCustomerId = customer.CustomerId;
         IsEditMode        = true;
 
-        // Basic fields
-        NewFirstName      = customer.FirstName;
-        NewLastName       = customer.LastName;
-        NewIdNumber       = customer.IdNumber;
-        NewAccountNumber  = customer.AccountNumber;
-        NewPriceCode      = customer.PriceCode;
-        NewPhoneNumber    = customer.PhoneNumber;
-        NewMobileNumber   = customer.MobileNumber;
-        NewEmail          = customer.Email;
-        NewAddressLine1   = customer.AddressLine1;
-        NewAddressLine2   = customer.AddressLine2;
-        NewSuburb         = customer.Suburb;
-        NewCity           = customer.City;
-        NewPostalCode     = customer.PostalCode;
+        // -----------------------
+        // Names (already fixed on API, but keep safe)
+        // -----------------------
+        NewFirstName = customer.FirstName ?? string.Empty;
+        NewLastName  = customer.LastName  ?? string.Empty;
 
+        // -----------------------
+        // Basic contact / address
+        // -----------------------
+        NewIdNumber      = customer.IdNumber      ?? string.Empty;
+        NewAccountNumber = customer.AccountNumber;
+        NewPriceCode     = customer.PriceCode     ?? string.Empty;
+        NewPhoneNumber   = customer.PhoneNumber   ?? string.Empty;
+        NewMobileNumber  = customer.MobileNumber  ?? string.Empty;
+        NewEmail         = customer.Email         ?? string.Empty;
+        NewAddressLine1  = customer.AddressLine1  ?? string.Empty;
+        NewAddressLine2  = customer.AddressLine2  ?? string.Empty;
+        NewSuburb        = customer.Suburb        ?? string.Empty;
+        NewCity          = customer.City          ?? string.Empty;
+        NewPostalCode    = customer.PostalCode    ?? string.Empty;
+
+        // -----------------------
         // Company / site mode
-        NewIsCompany = true;  // editing from grid implies it's a company customer
+        // -----------------------
+        NewIsCompany = customer.IsCompany
+                || customer.CompanyId.HasValue
+                || customer.SiteId.HasValue;   // <-- use actual flag
 
-        // Match company from our lookup cache (by CompanyId if present)
-        var company = _allCompanies.FirstOrDefault(c => c.CompanyId == customer.CompanyId);
+        // Try to locate the company in the cached lookup list.
+        // First by ID, then (if needed) by name.
+        CompanyLookupDto? company = null;
+
+        if (customer.CompanyId.HasValue)
+        {
+            company = _allCompanies
+                .FirstOrDefault(c => c.CompanyId == customer.CompanyId.Value);
+        }
+
+        if (company == null && !string.IsNullOrWhiteSpace(customer.CompanyName))
+        {
+            company = _allCompanies
+                .FirstOrDefault(c =>
+                    string.Equals(c.CompanyName,
+                                customer.CompanyName,
+                                StringComparison.OrdinalIgnoreCase));
+        }
 
         if (company != null)
         {
-            var letter = char.ToUpperInvariant(company.CompanyName?.FirstOrDefault() ?? 'A');
+            var letter   = char.ToUpperInvariant(company.CompanyName?.FirstOrDefault() ?? 'A');
             var letterStr = letter.ToString();
 
             if (!CompanyLetterFilters.Contains(letterStr))
                 letterStr = "ALL";
 
+            // This will rebuild NewCompanySuggestions via ApplyNewCompanyLetterFilter
             SelectedNewCompanyLetter = letterStr;
-            SelectedNewCompany       = company;
+
+            // Set the actual selection used by the Create/Edit combobox
+            SelectedNewCompany = company;
         }
         else
         {
@@ -267,7 +296,9 @@ public partial class MainWindowViewModel
             SelectedNewCompany       = null;
         }
 
-        // Load sites for that company and select correct one
+        // Load sites for the company and select the correct one
+        OnPropertyChanged(nameof(CanCreateCustomer));
+        OnPropertyChanged(nameof(CanUpdateCustomer));
         _ = LoadNewSitesAndSelectAsync(customer.SiteId);
     }
 
@@ -281,7 +312,7 @@ public partial class MainWindowViewModel
         await _customerService.SoftDeleteCustomerAsync(customer.CustomerId);
 
         CustomerSearchResults.Remove(customer);
-        StatusMessage = $"Customer {customer.FullName} was deleted (soft delete).";
+        StatusMessage = $"Customer {customer.FirstName} {customer.LastName} was deleted (soft delete).";
     }
 
     private async Task LoadNewSitesAndSelectAsync(long? siteId)
@@ -313,30 +344,85 @@ public partial class MainWindowViewModel
         }
     }
 
-    private void ClearNewCustomerForm()
+    private async Task ClearNewCustomerFormAsync()
     {
         EditingCustomerId = null;
-        IsEditMode        = false;
+        IsEditMode = false;
 
-        NewFirstName     = string.Empty;
-        NewLastName      = string.Empty;
-        NewIdNumber      = string.Empty;
-        NewAccountNumber = string.Empty;
-        NewPriceCode     = string.Empty;
-        NewPhoneNumber   = string.Empty;
-        NewMobileNumber  = string.Empty;
-        NewEmail         = string.Empty;
-        NewAddressLine1  = string.Empty;
-        NewAddressLine2  = string.Empty;
-        NewSuburb        = string.Empty;
-        NewCity          = string.Empty;
-        NewPostalCode    = string.Empty;
+        NewFirstName = string.Empty;
+        NewLastName = string.Empty;
+        NewIdNumber = string.Empty;
 
-        NewIsCompany           = false;
+        try
+        {
+            // assign the next available account number
+            NewAccountNumber = await _customerService.GetNextAccountNumberAsync();
+        }
+        catch (Exception ex)
+        {
+            // Don't crash the app. Log + fall back to null/empty display.
+            Console.WriteLine($"GetNextAccountNumberAsync failed: {ex}");
+            NewAccountNumber = null;
+        }
+
+        NewPriceCode = string.Empty;
+        NewPhoneNumber = string.Empty;
+        NewMobileNumber = string.Empty;
+        NewEmail = string.Empty;
+        NewAddressLine1 = string.Empty;
+        NewAddressLine2 = string.Empty;
+        NewSuburb = string.Empty;
+        NewCity = string.Empty;
+        NewPostalCode = string.Empty;
+
+        NewIsCompany = false;
         SelectedNewCompanyLetter = "ALL";
-        SelectedNewCompany     = null;
+        SelectedNewCompany = null;
         NewSiteSuggestions.Clear();
-        SelectedNewSite        = null;
+        SelectedNewSite = null;
+    }
+
+    private async Task LoadNextAccountNumberAsync()
+    {
+        try
+        {
+            // You’ll implement this method on your Desktop CustomerService
+            var next = await _customerService.GetNextAccountNumberAsync();
+            NewAccountNumber = next;
+            OnPropertyChanged(nameof(NewAccountNumberDisplay));
+            OnPropertyChanged(nameof(CanCreateCustomer));
+        }
+        catch
+        {
+            // optional: keep it null or set a safe default
+            NewAccountNumber = null;
+            OnPropertyChanged(nameof(NewAccountNumberDisplay));
+        }
+    }
+
+    private string _searchAccountNumberText = string.Empty;
+    public string SearchAccountNumberText
+    {
+        get => _searchAccountNumberText;
+        set
+        {
+            _searchAccountNumberText = value ?? string.Empty;
+            OnPropertyChanged();
+        }
+    }
+
+    private long? ParseAccountNumberOrNull(string text)
+    {
+        var t = (text ?? "").Trim();
+
+        if (string.IsNullOrEmpty(t))
+            return null;
+
+        // treat "0", "00", "0000" etc as "no filter"
+        if (t.All(c => c == '0'))
+            return null;
+
+        return long.TryParse(t, out var v) ? v : null;
     }
 
     private async Task OnUpdateCustomerAsync()
@@ -371,13 +457,13 @@ public partial class MainWindowViewModel
 
             // We KNOW these are non-null if NewIsCompany is true
             // because of the validation above.
-            CompanyId = (long)(SelectedNewCompany != null
+            CompanyId = SelectedNewCompany != null
                 ? SelectedNewCompany.CompanyId
-                : (long?)null),   // will be null for non-company customers
+                : null,   // will be null for non-company customers
 
             SiteId = SelectedNewSite != null
                 ? SelectedNewSite.SiteId
-                : (long?)null
+                : null
         };
 
         await _customerService.UpdateCustomerAsync(dto);
@@ -390,14 +476,16 @@ public partial class MainWindowViewModel
         {
             existing.FirstName     = dto.FirstName;
             existing.LastName      = dto.LastName;
-            existing.FullName      = $"{dto.FirstName} {dto.LastName}".Trim();
             existing.AccountNumber = dto.AccountNumber;
             existing.CompanyName   = SelectedNewCompany?.CompanyName;
             existing.MobileNumber  = dto.MobileNumber;
             existing.Email         = dto.Email;
         }
 
-        ClearNewCustomerForm();
+        await ClearNewCustomerFormAsync();
+        _newAccountNumber = await _customerService.GetNextAccountNumberAsync();
+        OnPropertyChanged(nameof(NewAccountNumber));
+        OnPropertyChanged(nameof(CanCreateCustomer));
     }
 
     private void OnLogTicket(CustomerDto? customer)
@@ -412,7 +500,7 @@ public partial class MainWindowViewModel
         // you already use in ShowTicketsCommand.
         CurrentSection = EnumMainSection.Tickets;
 
-        StatusMessage = $"Logging ticket for customer {customer.FullName} ({customer.CustomerId:D8}).";
+        StatusMessage = $"Logging ticket for customer {customer.FirstName} {customer.LastName} - ({customer.CustomerId:D8}).";
     }
 
     // ----- Search Customers: Site -----
@@ -497,11 +585,15 @@ public partial class MainWindowViewModel
 
             _selectedNewCompany = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CanCreateCustomer));
 
             if (value != null)
             {
                 // This string is what CreateCustomerAsync uses.
                 NewCompanyName = value.CompanyName;
+
+                SelectedNewSite = null;
+                NewSiteSuggestions.Clear();
 
                 // Load sites for the selected company
                 _ = LoadNewSitesForSelectedCompanyAsync();
@@ -566,11 +658,39 @@ public partial class MainWindowViewModel
 
             _selectedNewSite = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CanCreateCustomer));
 
-            if (value != null)
+            UpdateNewLocationFromSelectedSite();
+        }
+    }
+
+    private void UpdateNewLocationFromSelectedSite()
+    {
+        // Nothing selected – nothing to sync
+        if (SelectedNewSite == null)
+            return;
+
+        // 🔹 Province: match by Id into the Provinces collection
+        if (SelectedNewSite.ProvinceId.HasValue && Provinces is { Count: > 0 })
+        {
+            var province = Provinces.FirstOrDefault(
+                p => p.ProvinceId == SelectedNewSite.ProvinceId.Value);
+
+            if (province != null)
             {
-                // CreateCustomerAsync already has access to SelectedNewSite
-                // to determine which site the customer belongs to.
+                NewProvince = province;
+            }
+        }
+
+        // 🔹 Country: match by Id into the Countries collection
+        if (SelectedNewSite.CountryId.HasValue && Countries is { Count: > 0 })
+        {
+            var country = Countries.FirstOrDefault(
+                c => c.CountryId == SelectedNewSite.CountryId.Value);
+
+            if (country != null)
+            {
+                NewCountry = country;
             }
         }
     }
@@ -580,7 +700,12 @@ public partial class MainWindowViewModel
     public long? EditingCustomerId
     {
         get => _editingCustomerId;
-        set { _editingCustomerId = value; OnPropertyChanged(); }
+        set
+        {
+            if (_editingCustomerId == value) return;
+            _editingCustomerId = value;
+            OnPropertyChanged();
+        }
     }
 
     private bool _isEditMode;
@@ -592,7 +717,8 @@ public partial class MainWindowViewModel
             if (_isEditMode == value) return;
             _isEditMode = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(IsCreateMode));
+            OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanUpdateCustomer));
         }
     }
 
@@ -655,15 +781,153 @@ public bool IsCreateMode => !IsEditMode;
         }
     }
 
+
+    private ProvinceDto? _newProvince;
+    public ProvinceDto? NewProvince
+    {
+        get => _newProvince;
+        set { _newProvince = value; OnPropertyChanged(); }
+    }
+
+    private ProvinceDto? _searchProvince;
+    public ProvinceDto? SearchProvince
+    {
+        get => _searchProvince;
+        set { _searchProvince = value; OnPropertyChanged(); }
+    }
+
+    // 🔹 NEW: search-only provinces (includes "ALL")
+    private ObservableCollection<ProvinceDto> _searchProvinces = new();
+    public ObservableCollection<ProvinceDto> SearchProvinces
+    {
+        get => _searchProvinces;
+        set { _searchProvinces = value; OnPropertyChanged(); }
+    }
+
+    // Countries (dropdown) – for now just South Africa, but shaped for future API
+    private ObservableCollection<CountryDto> _countries = new();
+
+    public ObservableCollection<CountryDto> Countries
+    {
+        get => _countries;
+        set { _countries = value; OnPropertyChanged(); }
+    }
+
+    private CountryDto? _selectedCountry;
+    public CountryDto? SelectedCountry
+    {
+        get => _selectedCountry;
+        set
+        {
+            _selectedCountry = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private CountryDto? _newCountry;
+    public CountryDto? NewCountry
+    {
+        get => _newCountry;
+        set { _newCountry = value; OnPropertyChanged(); }
+    }
+
+    private CountryDto? _searchCountry;
+    public CountryDto? SearchCountry
+    {
+        get => _searchCountry;
+        set { _searchCountry = value; OnPropertyChanged(); }
+    }
+
+    // 🔹 NEW: search-only countries (includes "ALL")
+    private ObservableCollection<CountryDto> _searchCountries = new();
+    public ObservableCollection<CountryDto> SearchCountries
+    {
+        get => _searchCountries;
+        set { _searchCountries = value; OnPropertyChanged(); }
+    }    
+
+    public void InitializeCountries()
+    {
+        // Avoid re-initialising if already done
+        if (Countries.Count > 0 && SearchCountries.Count > 0)
+            return;
+
+        Countries.Clear();
+        SearchCountries.Clear();
+
+        // Real country row
+        var southAfrica = new CountryDto
+        {
+            CountryId = 1,
+            Name      = "South Africa",
+            Code      = "ZA"
+        };
+
+        Countries.Add(southAfrica);
+
+        // 🔹 Search list: add real country, then insert "ALL" at the top
+        SearchCountries.Add(southAfrica);
+
+        var allCountry = new CountryDto
+        {
+            CountryId = 0,
+            Name      = "ALL",
+            Code      = "ALL"
+        };
+
+        // ALL at index 0
+        SearchCountries.Insert(0, allCountry);
+
+        // 🔹 Defaults
+        // Create/Edit → South Africa
+        _selectedCountry = southAfrica;
+        NewCountry       = southAfrica;
+        OnPropertyChanged(nameof(SelectedCountry));
+        OnPropertyChanged(nameof(NewCountry));
+
+        // Search → ALL (meaning "no country filter")
+        SearchCountry = allCountry;
+        OnPropertyChanged(nameof(SearchCountry));
+    }
+
     public async Task LoadProvincesAsync()
     {
         var items = await ProvinceService.GetAllAsync();
+
         Provinces.Clear();
+        SearchProvinces.Clear();
 
         if (items != null)
         {
             foreach (var p in items)
+            {
                 Provinces.Add(p);
+                SearchProvinces.Add(p);
+            }
         }
+
+        // 🔹 Add "ALL" to the top of the SEARCH list only
+        var allProvince = new ProvinceDto
+        {
+            ProvinceId   = 0,
+            ProvinceName = "ALL",
+            ProvinceCode = "ALL"
+        };
+
+        SearchProvinces.Insert(0, allProvince);
+
+        // 🔹 Default create/edit → Gauteng
+        var gauteng = Provinces.FirstOrDefault(p => p.ProvinceName == "Gauteng");
+        if (gauteng is not null)
+        {
+            _selectedProvince = gauteng;
+            NewProvince       = gauteng;
+            OnPropertyChanged(nameof(SelectedProvince));
+            OnPropertyChanged(nameof(NewProvince));
+        }
+
+        // 🔹 Default search → ALL (meaning "no province filter")
+        SearchProvince = allProvince;
+        OnPropertyChanged(nameof(SearchProvince));
     }
 }

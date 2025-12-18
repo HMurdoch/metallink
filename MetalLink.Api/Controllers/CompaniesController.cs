@@ -29,8 +29,7 @@ public class CompaniesController : ControllerBase
         {
             CompanyId   = c.CompanyId,
             CompanyName = c.CompanyName,
-            VatNumber   = c.VatNumber,
-            Taxable     = c.Taxable
+            VatNumber   = c.VatNumber
         });
 
         return Ok(dtos);
@@ -58,7 +57,7 @@ public class CompaniesController : ControllerBase
             City         = s.City,
             PostalCode   = s.PostalCode,
             ProvinceId   = s.ProvinceId,
-            ProvinceName = s.Province?.ProvinceName
+            CountryId    = s.CountryId
         });
 
         return Ok(dtos);

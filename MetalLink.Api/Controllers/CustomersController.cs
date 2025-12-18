@@ -5,6 +5,7 @@ using MetalLink.Application.Customers.Commands;
 using MetalLink.Application.Customers.Queries;
 using MetalLink.Shared.Customers;
 using MetalLink.Application.Interfaces;
+using System.Text.Json.Serialization;
 
 namespace MetalLink.Api.Controllers;
 
@@ -32,6 +33,15 @@ public sealed class CustomersController : ControllerBase
         [FromBody] CreateCustomerRequest request,
         CancellationToken cancellationToken)
     {
+        if (request == null)
+            return BadRequest("Request body is required.");
+
+        // If client didn't send account number, generate it
+        if (!request.AccountNumber.HasValue || request.AccountNumber.Value <= 0)
+        {
+            request.AccountNumber = await _customerRepository.GetNextAccountNumberAsync(cancellationToken);
+        }
+
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
@@ -48,7 +58,8 @@ public sealed class CustomersController : ControllerBase
             PriceCode     = request.PriceCode,
             PhoneNumber   = request.PhoneNumber,
             MobileNumber  = request.MobileNumber,
-            Email         = request.Email
+            Email         = request.Email,
+            Taxable       = request.Taxable
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -106,6 +117,14 @@ public sealed class CustomersController : ControllerBase
         await _customerRepository.SoftDeleteAsync(customerId, cancellationToken);
         return NoContent();
     }
+
+    [HttpGet("next-account-number")]
+    public async Task<ActionResult<long>> GetNextAccountNumber(CancellationToken ct)
+    {
+        var next = await _customerRepository.GetNextAccountNumberAsync(ct);
+        return Ok(next);
+    }
+
 }
 
 // ---------------------------------------------------------------------
@@ -117,7 +136,7 @@ public sealed class CreateCustomerRequest
     public long CompanyId { get; set; }
 
     // Optional branch / site (align with domain: long?)
-    public long? SiteId { get; set; }
+    public long SiteId { get; set; }
 
     public string FirstName { get; set; } = string.Empty;
     public string LastName  { get; set; } = string.Empty;
@@ -127,7 +146,9 @@ public sealed class CreateCustomerRequest
     public string? CompanyName  { get; set; }
 
     public string? IdNumber      { get; set; }
-    public string? AccountNumber { get; set; }
+    
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public long? AccountNumber { get; set; }
     public string? PriceCode     { get; set; }
 
     // Address fields are no longer on Customer in the DB/schema,
@@ -142,4 +163,6 @@ public sealed class CreateCustomerRequest
     public string? PhoneNumber   { get; set; }
     public string? MobileNumber  { get; set; }
     public string? Email         { get; set; }
+    public bool Taxable { get; set; } = true;
+
 }

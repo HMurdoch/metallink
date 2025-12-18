@@ -20,6 +20,7 @@ public class MetalLinkDbContext : DbContext
     public DbSet<Company> Companies            => Set<Company>();
     public DbSet<Site> Sites                   => Set<Site>();
     public DbSet<Province> Provinces           => Set<Province>();
+    public DbSet<Country> Countries  => Set<Country>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -34,106 +35,97 @@ public class MetalLinkDbContext : DbContext
         ConfigureCompany(modelBuilder);
         ConfigureSite(modelBuilder);
         ConfigureProvince(modelBuilder);
+        ConfigureCountry(modelBuilder);
     }
 
     // -------------------------
     // CUSTOMER
     // -------------------------
 
-    private static void ConfigureCustomer(ModelBuilder modelBuilder)
-    {
-        var entity = modelBuilder.Entity<Customer>();
+    private void ConfigureCustomer(ModelBuilder modelBuilder)
+{
+    var entity = modelBuilder.Entity<Customer>();
 
-        entity.ToTable("customers", schema: "metal_link");
+    entity.ToTable("customers", "metal_link");
 
-        entity.HasKey(c => c.CustomerId)
-              .HasName("pk_customers_customer_id");
+    entity.HasKey(c => c.CustomerId);
 
-        entity.Property(c => c.CustomerId)
-              .HasColumnName("customer_id")
-              .ValueGeneratedOnAdd();
+    entity.Property(c => c.CustomerId)
+        .HasColumnName("customer_id")
+        .ValueGeneratedOnAdd();
 
-        // NEW: company_id (required)
-        entity.Property(c => c.CompanyId)
-              .HasColumnName("company_id")
-              .IsRequired();
+    // Company is required
+    entity.Property(c => c.CompanyId)
+        .HasColumnName("company_id")
+        .IsRequired();            // long + required
 
-        // NEW: site_id (optional)
-        entity.Property(c => c.SiteId)
-              .HasColumnName("site_id")
-              .IsRequired(false);
+    // Site is required (your business rule)
+    entity.Property(c => c.SiteId)
+        .HasColumnName("site_id")
+        .IsRequired();            // ✅ NO IsRequired(false)
 
-        // NEW: first_name / last_name stored separately
-        entity.Property(c => c.FirstName)
-              .HasColumnName("first_name")
-              .HasMaxLength(100);
+    entity.Property(c => c.FirstName)
+        .HasColumnName("first_name")
+        .HasMaxLength(50);
 
-        entity.Property(c => c.LastName)
-              .HasColumnName("last_name")
-              .HasMaxLength(100);
+    entity.Property(c => c.LastName)
+        .HasColumnName("last_name")
+        .HasMaxLength(50);
 
-        // FullName is a computed/read-only property in the domain model,
-        // so we do NOT map it to a column anymore.
+    entity.Property(c => c.IsCompany)
+        .HasColumnName("is_company");
 
-        entity.Property(c => c.IsCompany)
-              .HasColumnName("is_company")
-              .IsRequired();
+    entity.Property(c => c.IdNumber)
+        .HasColumnName("id_number")
+        .HasMaxLength(20);
 
-        entity.Property(c => c.IdNumber)
-              .HasColumnName("id_number")
-              .HasMaxLength(50);
+    entity.Property(c => c.AccountNumber)
+        .HasColumnName("account_number")
+        .HasColumnType("bigint")
+        .ValueGeneratedOnAdd();
 
-        entity.Property(c => c.AccountNumber)
-              .HasColumnName("account_number")
-              .HasMaxLength(50);
+    entity.Property(c => c.PriceCode)
+        .HasColumnName("price_code")
+        .HasMaxLength(10);
 
-        entity.Property(c => c.PriceCode)
-              .HasColumnName("price_code")
-              .HasMaxLength(50);
+    entity.Property(c => c.PhoneNumber)
+        .HasColumnName("phone_number")
+        .HasMaxLength(20);
 
-        entity.Property(c => c.PhoneNumber)
-              .HasColumnName("phone_number")
-              .HasMaxLength(50);
+    entity.Property(c => c.MobileNumber)
+        .HasColumnName("mobile_number")
+        .HasMaxLength(20);
 
-        entity.Property(c => c.MobileNumber)
-              .HasColumnName("mobile_number")
-              .HasMaxLength(50);
+    entity.Property(c => c.Email)
+        .HasColumnName("email")
+        .HasMaxLength(100);
 
-        entity.Property(c => c.Email)
-              .HasColumnName("email")
-              .HasMaxLength(200);
+    entity.Property(c => c.Taxable)
+        .HasColumnName("taxable")
+        .IsRequired();
 
-        entity.Property(c => c.IsActive)
-              .HasColumnName("is_active")
-              .IsRequired();
+    entity.Property(c => c.IsActive)
+        .HasColumnName("is_active")
+        .IsRequired();
 
-        entity.Property(c => c.CreatedTime)
-              .HasColumnName("created_time")
-              .IsRequired();
+    entity.Property(c => c.CreatedTime)
+        .HasColumnName("created_time");
 
-        entity.Property(c => c.UpdatedTime)
-              .HasColumnName("updated_time")
-              .IsRequired();
+    entity.Property(c => c.UpdatedTime)
+        .HasColumnName("updated_time");
 
-        entity.HasIndex(c => c.AccountNumber)
-              .HasDatabaseName("customers_account_number_idx");
+    // Relationships
 
-        entity.HasIndex(c => c.IdNumber)
-              .HasDatabaseName("customers_id_number_idx");
+    entity.HasOne(c => c.Company)
+        .WithMany(co => co.Customers)
+        .HasForeignKey(c => c.CompanyId)
+        .OnDelete(DeleteBehavior.Restrict);
 
-        // FK → companies
-        entity.HasOne(c => c.Company)
-              .WithMany(co => co.Customers)
-              .HasForeignKey(c => c.CompanyId)
-              .HasConstraintName("fk_customers_company_id_companies");
-
-        // FK → sites (optional)
-        entity.HasOne(c => c.Site)
-              .WithMany(s => s.Customers)
-              .HasForeignKey(c => c.SiteId)
-              .HasConstraintName("fk_customers_site_id_sites");
-    }
-
+    entity.HasOne(c => c.Site)
+        .WithMany(s => s.Customers)
+        .HasForeignKey(c => c.SiteId)
+        .OnDelete(DeleteBehavior.Restrict);   // ✅ NO IsRequired(false) here either
+}
       // -------------------------
       // COMPANY
       // -------------------------
@@ -159,12 +151,6 @@ public class MetalLinkDbContext : DbContext
       entity.Property(c => c.VatNumber)
             .HasColumnName("vat_number")
             .HasMaxLength(50);
-
-      entity.Property(c => c.Taxable)
-            .HasColumnName("taxable")
-            .IsRequired(); // bool -> stored as 0/1
-
-      // 🚫 NO address fields on Company anymore – all address info lives on Site.
 
       entity.Property(c => c.IsActive)
             .HasColumnName("is_active")
@@ -250,7 +236,11 @@ public class MetalLinkDbContext : DbContext
 
         entity.Property(s => s.ProvinceId)
               .HasColumnName("province_id")
-              .IsRequired(false);
+              .IsRequired();
+
+        entity.Property(s => s.CountryId)
+            .HasColumnName("country_id")
+            .IsRequired();
 
         entity.Property(s => s.IsActive)
               .HasColumnName("is_active")
@@ -270,17 +260,23 @@ public class MetalLinkDbContext : DbContext
         entity.HasIndex(s => new { s.CompanyId, s.SiteName })
               .HasDatabaseName("sites_company_id_site_name_idx");
 
-        // FK → Company
-        entity.HasOne(s => s.Company)
-              .WithMany(c => c.Sites)
-              .HasForeignKey(s => s.CompanyId)
-              .HasConstraintName("fk_sites_company_id_companies");
+      // FK → Company
+      entity.HasOne(s => s.Company)
+            .WithMany(c => c.Sites)
+            .HasForeignKey(s => s.CompanyId)
+            .HasConstraintName("fk_sites_company_id_companies");
 
-        // FK → Province (optional)
-        entity.HasOne(s => s.Province)
-              .WithMany(p => p.Sites)
-              .HasForeignKey(s => s.ProvinceId)
-              .HasConstraintName("fk_sites_province_id_provinces");
+      // FK → Province (optional/required depending on your model)
+      entity.HasOne(s => s.Province)
+            .WithMany(p => p.Sites)
+            .HasForeignKey(s => s.ProvinceId)
+            .HasConstraintName("fk_sites_province_id_provinces");
+
+      // NEW: FK → Country
+      entity.HasOne(s => s.Country)
+            .WithMany(c => c.Sites)
+            .HasForeignKey(s => s.CountryId)
+            .HasConstraintName("fk_sites_country_id_countries");
     }
 
     // -------------------------
@@ -334,6 +330,51 @@ public class MetalLinkDbContext : DbContext
               .HasForeignKey(s => s.ProvinceId)
               .HasConstraintName("fk_sites_province_id_provinces");
     }
+
+      // -------------------------
+      // COUNTRY
+      // -------------------------
+
+      private static void ConfigureCountry(ModelBuilder modelBuilder)
+      {
+      var entity = modelBuilder.Entity<Country>();
+
+      entity.ToTable("countries", schema: "metal_link");
+
+      entity.HasKey(c => c.CountryId)
+            .HasName("pk_countries_country_id");
+
+      entity.Property(c => c.CountryId)
+            .HasColumnName("country_id")
+            .ValueGeneratedOnAdd();
+
+      entity.Property(c => c.Name)
+            .HasColumnName("name")
+            .IsRequired()
+            .HasMaxLength(50);
+
+      entity.Property(c => c.Code)
+            .HasColumnName("code")
+            .HasMaxLength(10);
+
+      entity.Property(c => c.IsActive)
+            .HasColumnName("is_active")
+            .IsRequired();
+
+      entity.Property(c => c.CreatedTime)
+            .HasColumnName("created_time")
+            .IsRequired();
+
+      entity.Property(c => c.UpdatedTime)
+            .HasColumnName("updated_time")
+            .IsRequired();
+
+      entity.HasIndex(c => c.Code)
+            .HasDatabaseName("countries_code_idx");
+
+      entity.HasIndex(c => c.Name)
+            .HasDatabaseName("countries_name_idx");
+      }
 
     // -------------------------
     // OPERATOR

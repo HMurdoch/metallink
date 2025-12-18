@@ -9,6 +9,7 @@ using Microsoft.OpenApi.Models;
 using QuestPDF.Infrastructure;
 using System.Collections.Generic;
 using MediatR;
+using MetalLink.Api.Versioning;
 
 QuestPDF.Settings.License = LicenseType.Community;
 
@@ -23,7 +24,8 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "MetalLink API",
-        Version = "v1"
+        Version = AppVersion.GetInformationalVersion(),
+        Description = $"Build: {AppVersion.GetInformationalVersion()}"
     });
 
     // 🔐 Tell Swagger we use Bearer tokens
@@ -100,6 +102,12 @@ builder.Services
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-App-Version"] = AppVersion.GetInformationalVersion();
+    await next();
+});
 
 using (var scope = app.Services.CreateScope())
 {

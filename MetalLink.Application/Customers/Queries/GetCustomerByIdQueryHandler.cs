@@ -40,11 +40,8 @@ public sealed class GetCustomerByIdQueryHandler
         {
             CustomerId    = customer.CustomerId,
 
-            SiteId        = customer.SiteId.HasValue
-                ? (int?)checked((int)customer.SiteId.Value)
-                : null,
+            SiteId        = customer.SiteId,
 
-            FullName      = customer.FullName,
             CompanyName   = company?.CompanyName,
 
             IdNumber      = customer.IdNumber,

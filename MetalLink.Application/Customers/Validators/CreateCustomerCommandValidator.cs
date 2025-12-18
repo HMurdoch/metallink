@@ -23,7 +23,8 @@ public sealed class CreateCustomerCommandValidator
             .MaximumLength(50);
 
         RuleFor(x => x.AccountNumber)
-            .MaximumLength(50);
+            .GreaterThan(0)
+            .WithMessage("Account Number must be greater than 0.");
 
         RuleFor(x => x.Email)
             .EmailAddress()

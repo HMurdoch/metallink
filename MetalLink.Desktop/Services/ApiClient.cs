@@ -42,54 +42,66 @@ public sealed class ApiClient
         CancellationToken cancellationToken = default)
     {
         ApplyAuthHeader();
+
         var response = await _httpClient.GetAsync(relativeUrl, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        var raw = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"API {(int)response.StatusCode} {response.ReasonPhrase}. Body: {raw}");
+        }
+
         return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken: cancellationToken);
     }
+
 
     public async Task<TResponse?> PostAsync<TRequest, TResponse>(
         string relativeUrl,
-        TRequest body,
+        TRequest requestBody,
         CancellationToken cancellationToken = default)
     {
         ApplyAuthHeader();
-        var response = await _httpClient.PostAsJsonAsync(relativeUrl, body, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken: cancellationToken);
-    }
 
-    // public Task<HttpResponseMessage> DeleteAsync(
-    // string relativeUrl,
-    // CancellationToken cancellationToken = default)
-    // {
-    //     return _httpClient.DeleteAsync(relativeUrl, cancellationToken);
-    // }
+        var response = await _httpClient.PostAsJsonAsync(
+            relativeUrl,
+            requestBody,
+            cancellationToken);
 
-    public string ToQueryString(object? values)
-    {
-        if (values == null) return string.Empty;
+        var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        var props = from p in values.GetType().GetProperties()
-                    let value = p.GetValue(values, null)
-                    where value != null
-                    select $"{Uri.EscapeDataString(p.Name)}={Uri.EscapeDataString(value.ToString()!)}";
+        if (!response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("========== API POST ERROR ==========");
+            Console.WriteLine($"URL: {relativeUrl}");
+            Console.WriteLine($"Status: {(int)response.StatusCode} {response.ReasonPhrase}");
+            Console.WriteLine("REQUEST BODY:");
+            Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(
+                requestBody,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+            Console.WriteLine("RESPONSE BODY:");
+            Console.WriteLine(responseBody);
+            Console.WriteLine("====================================");
 
-        var qs = string.Join("&", props);
-        return string.IsNullOrEmpty(qs) ? string.Empty : "?" + qs;
+            throw new HttpRequestException(
+                $"API {(int)response.StatusCode} {response.ReasonPhrase}. Body: {responseBody}");
+        }
+
+        return await response.Content.ReadFromJsonAsync<TResponse>(
+            cancellationToken: cancellationToken);
     }
 
     public async Task<HttpResponseMessage> PutAsJsonAsync<T>(
-    string uri,
-    T body,
-    CancellationToken cancellationToken = default)
+        string uri,
+        T body,
+        CancellationToken cancellationToken = default)
     {
-        // Attach auth header the same way you do in PostAsync / GetAsync
+        ApplyAuthHeader();
         var request = new HttpRequestMessage(HttpMethod.Put, uri)
         {
             Content = JsonContent.Create(body)
         };
 
-        ApplyAuthHeader();
         return await _httpClient.SendAsync(request, cancellationToken);
     }
 
@@ -97,9 +109,22 @@ public sealed class ApiClient
         string uri,
         CancellationToken cancellationToken = default)
     {
-        var request = new HttpRequestMessage(HttpMethod.Delete, uri);
-
         ApplyAuthHeader();
+        var request = new HttpRequestMessage(HttpMethod.Delete, uri);
         return await _httpClient.SendAsync(request, cancellationToken);
+    }
+
+    public string ToQueryString(object? values)
+    {
+        if (values == null) return string.Empty;
+
+        var props =
+            from p in values.GetType().GetProperties()
+            let value = p.GetValue(values, null)
+            where value != null
+            select $"{Uri.EscapeDataString(p.Name)}={Uri.EscapeDataString(value.ToString()!)}";
+
+        var qs = string.Join("&", props);
+        return string.IsNullOrEmpty(qs) ? string.Empty : "?" + qs;
     }
 }
