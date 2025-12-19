@@ -15,86 +15,74 @@
     MinHeight="720"
     CanResize="True">
 
-<Window.Resources>
-  <!-- Page transition used when switching main content -->
-  <anim:CompositePageTransition x:Key="ForwardTransition">
-    <!-- quick fade between views -->
-    <anim:CrossFade Duration="0:0:0.15" />
-    <!-- your custom directional slide -->
-    <transitions:DirectionalPageSlide IsForward="True"
-                                      Duration="0:0:0.25" />
-  </anim:CompositePageTransition>
+  <Window.Resources>
+    <!-- Page transition used when switching main content -->
+    <anim:CompositePageTransition x:Key="ForwardTransition">
+      <anim:CrossFade Duration="0:0:0.15" />
+      <transitions:DirectionalPageSlide IsForward="True"
+                                        Duration="0:0:0.25" />
+    </anim:CompositePageTransition>
 
-  <!-- Section (enum) -> View converter -->
-  <views:SectionToViewConverter x:Key="SectionToViewConverter" />
-</Window.Resources>
+    <!-- Section (enum) -> View converter -->
+    <views:SectionToViewConverter x:Key="SectionToViewConverter" />
+  </Window.Resources>
 
-<Window.Styles>
+  <Window.Styles>
     <!-- Base nav button style -->
     <Style Selector="Button.nav-button">
-        <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <Setter Property="HorizontalContentAlignment" Value="Left" />
-            <Setter Property="Margin" Value="0,4" />
-            <Setter Property="Padding" Value="16,8" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="#F5F5F5" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Transitions">
-            <Transitions>
-                <!-- Smooth hover/press transitions -->
-                <DoubleTransition Property="Opacity" Duration="0:0:0.08" />
-                <ThicknessTransition Property="Padding" Duration="0:0:0.10" />
-                <anim:BrushTransition Property="Background" Duration="0:0:0.12" />
-            </Transitions>
-        </Setter>
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Margin" Value="0,2" />
+      <!-- tighter left padding so items sit in the red-square area -->
+      <Setter Property="Padding" Value="10,10" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#F5F5F5" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.08" />
+          <ThicknessTransition Property="Padding" Duration="0:0:0.10" />
+          <anim:BrushTransition Property="Background" Duration="0:0:0.12" />
+        </Transitions>
+      </Setter>
     </Style>
 
-    <!-- Hover state -->
     <Style Selector="Button.nav-button:pointerover">
-        <Setter Property="Background" Value="#2A2F3C" />
-        <Setter Property="Padding" Value="16,8" />
+      <Setter Property="Background" Value="#2A2F3C" />
     </Style>
 
-    <!-- Pressed state -->
     <Style Selector="Button.nav-button:pressed">
-        <Setter Property="Opacity" Value="0.8" />
-        <Setter Property="Background" Value="#334155" />
+      <Setter Property="Opacity" Value="0.8" />
+      <Setter Property="Background" Value="#334155" />
     </Style>
 
     <Style Selector="Button.nav-button:checked">
-         <Setter Property="Background" Value="#1D4ED8" />
+      <Setter Property="Background" Value="#1D4ED8" />
     </Style>
-   
-</Window.Styles>
-
+  </Window.Styles>
 
   <DockPanel Background="#1f2229">
 
-  <!-- Top bar with global "dirty" indicator -->
+    <!-- Top bar -->
     <Border DockPanel.Dock="Top" Background="#2b3039" Padding="12">
       <Grid ColumnDefinitions="*,Auto">
-        <!-- Left side: title + global dirty indicator + user info -->
         <StackPanel Orientation="Vertical" Spacing="2">
           <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-            <TextBlock Classes="HeaderTitle"
-                      Text="{Binding Title}" />
-
-            <!-- Global dirty indicator -->
+            <TextBlock Classes="HeaderTitle" Text="{Binding Title}" />
             <Ellipse Width="8"
-                    Height="8"
-                    Margin="4,0,0,0"
-                    VerticalAlignment="Center"
-                    Fill="#FFDD4444"
-                    IsVisible="{Binding HasUnsavedChanges}" />
+                     Height="8"
+                     Margin="4,0,0,0"
+                     VerticalAlignment="Center"
+                     Fill="#FFDD4444"
+                     IsVisible="{Binding HasUnsavedChanges}" />
           </StackPanel>
 
           <TextBlock Text="{Binding LoggedInUser}"
-                    Foreground="#c0c4cf"
-                    FontSize="13" />
+                     Foreground="#c0c4cf"
+                     FontSize="13" />
         </StackPanel>
 
-        <!-- Right side: actions -->
         <StackPanel Orientation="Horizontal"
                     Spacing="8"
                     Grid.Column="1"
@@ -114,80 +102,112 @@
       <TextBlock Text="{Binding StatusMessage}" Foreground="#c0c4cf" FontSize="12" />
     </Border>
 
-    <!-- Left navigation -->
-    <Border DockPanel.Dock="Left" Width="180" Background="#252932" Padding="12">
-      <StackPanel Spacing="8">
-        <TextBlock
-            Text="Navigation"
-            Foreground="#9fa4b2"
-            FontSize="13"
-            Margin="4,0,0,4" />
+    <!-- Left navigation (flush-left) -->
+    <Border DockPanel.Dock="Left"
+            Width="200"
+            Background="#252932"
+            Padding="0">
+
+      <!-- Add our own padding only where needed -->
+      <StackPanel Spacing="6" Margin="10,12,10,12">
+
+        <TextBlock Text="Navigation"
+                   Foreground="#9fa4b2"
+                   FontSize="13"
+                   Margin="0,0,0,6" />
 
         <!-- Dashboard -->
         <Button Classes="nav-button" Command="{Binding ShowDashboardCommand}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-          <materialIcons:MaterialIcon
-              Kind="{x:Static icons:MaterialIconKind.Home}"
-              Width="24"
-              Height="24" />
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <materialIcons:MaterialIcon
+                Kind="{x:Static icons:MaterialIconKind.Home}"
+                Width="22"
+                Height="22" />
             <TextBlock Text="Dashboard" VerticalAlignment="Center" />
           </StackPanel>
         </Button>
 
         <!-- Customers -->
         <Button Classes="nav-button" Command="{Binding ShowCustomersCommand}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-          <materialIcons:MaterialIcon
-              Kind="{x:Static icons:MaterialIconKind.AccountCircle}"
-              Width="24"
-              Height="24" />
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <materialIcons:MaterialIcon
+                Kind="{x:Static icons:MaterialIconKind.AccountCircle}"
+                Width="22"
+                Height="22" />
             <TextBlock Text="Customers" VerticalAlignment="Center" />
           </StackPanel>
         </Button>
 
         <!-- Tickets -->
         <Button Classes="nav-button" Command="{Binding ShowTicketsCommand}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-          <materialIcons:MaterialIcon
-              Kind="{x:Static icons:MaterialIconKind.Receipt}"
-              Width="24"
-              Height="24" />
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <materialIcons:MaterialIcon
+                Kind="{x:Static icons:MaterialIconKind.Receipt}"
+                Width="22"
+                Height="22" />
             <TextBlock Text="Tickets" VerticalAlignment="Center" />
           </StackPanel>
         </Button>
 
         <!-- Documents -->
         <Button Classes="nav-button" Command="{Binding ShowDocumentsCommand}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-          <materialIcons:MaterialIcon
-              Kind="{x:Static icons:MaterialIconKind.InsertDriveFile}"
-              Width="24"
-              Height="24" />
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <materialIcons:MaterialIcon
+                Kind="{x:Static icons:MaterialIconKind.InsertDriveFile}"
+                Width="22"
+                Height="22" />
             <TextBlock Text="Documents" VerticalAlignment="Center" />
           </StackPanel>
         </Button>
 
         <!-- Camera -->
         <Button Classes="nav-button" Command="{Binding ShowCameraCommand}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-          <materialIcons:MaterialIcon
-              Kind="{x:Static icons:MaterialIconKind.PhotoCamera}"
-              Width="24"
-              Height="24" />
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <materialIcons:MaterialIcon
+                Kind="{x:Static icons:MaterialIconKind.PhotoCamera}"
+                Width="22"
+                Height="22" />
             <TextBlock Text="Camera" VerticalAlignment="Center" />
           </StackPanel>
         </Button>
+
+        <!-- Spacer -->
+        <Border Height="10" Background="Transparent"/>
+
+        <!-- Reports -->
+        <Button Classes="nav-button" Command="{Binding ShowReportsCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <materialIcons:MaterialIcon
+                Kind="{x:Static icons:MaterialIconKind.ChartBar}"
+                Width="22"
+                Height="22" />
+            <TextBlock Text="Reports" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+
+        <!-- Settings -->
+        <Button Classes="nav-button" Command="{Binding ShowSettingsCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <materialIcons:MaterialIcon
+                Kind="{x:Static icons:MaterialIconKind.Cog}"
+                Width="22"
+                Height="22" />
+            <TextBlock Text="Settings" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+
       </StackPanel>
     </Border>
 
-    <!-- Main content with cross-fade + slide transition -->
+    <!-- Main content -->
     <Grid Margin="8">
-        <controls:TransitioningContentControl
-            Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}}"
-            Background="#1E212A"
-            HorizontalContentAlignment="Stretch"
-            VerticalContentAlignment="Stretch"
-            PageTransition="{StaticResource ForwardTransition}" />
+      <controls:TransitioningContentControl
+          Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}}"
+          Background="#1E212A"
+          HorizontalContentAlignment="Stretch"
+          VerticalContentAlignment="Stretch"
+          PageTransition="{StaticResource ForwardTransition}" />
     </Grid>
+
   </DockPanel>
 </Window>

@@ -10,7 +10,7 @@ public class Site
     public long CompanyId { get; set; }
     public Company Company { get; set; } = null!;
 
-    public int? ProvinceId { get; set; }
+    public long? ProvinceId { get; set; }
     public Province Province { get; set; } = null!;
 
     public int? CountryId { get; set; }
@@ -26,8 +26,8 @@ public class Site
     public string? PostalCode  { get; set; }
 
     public bool     IsActive    { get; set; } = true;
-    public DateTime CreatedTime { get; set; }
-    public DateTime UpdatedTime { get; set; }
+    public DateTimeOffset CreatedTime { get; set; }
+    public DateTimeOffset UpdatedTime { get; set; }
 
     public ICollection<Customer> Customers { get; set; } = new List<Customer>();
 }

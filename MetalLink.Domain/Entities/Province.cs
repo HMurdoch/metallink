@@ -5,7 +5,7 @@ namespace MetalLink.Domain.Entities;
 
 public class Province
 {
-    public int ProvinceId { get; set; }
+    public long ProvinceId { get; set; }
 
     public string ProvinceName { get; set; } = string.Empty;
     public string? ProvinceCode { get; set; }
