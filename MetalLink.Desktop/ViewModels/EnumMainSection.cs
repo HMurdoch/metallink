@@ -1,11 +1,13 @@
-namespace MetalLink.Desktop.ViewModels
+namespace MetalLink.Desktop.ViewModels;
+
+public enum EnumMainSection
 {
-    public enum EnumMainSection
-    {
-        Dashboard = 0,
-        Customers = 1,
-        Tickets   = 2,
-        Documents = 3,
-        Camera    = 4
-    }
+    Dashboard,
+    Customers,
+    CompanyAndSites,
+    Tickets,
+    Documents,
+    Camera,
+    Reports,
+    Settings
 }

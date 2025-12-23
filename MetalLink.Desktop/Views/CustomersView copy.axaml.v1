@@ -72,6 +72,9 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
               <!-- Row 0: Customer ID / ID Number (SWAPPED) -->
@@ -142,24 +145,81 @@
                 <TextBox Text="{Binding SearchPriceCodeText}" />
               </StackPanel>
 
-              <!-- Row 6: Postal / Phone -->
+              <!-- Row 4: Address 1 / Address 2 -->
               <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Address Line 1" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchAddressLine1Text}" />
+              </StackPanel>
+              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Address Line 2" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchAddressLine2Text}" />
+              </StackPanel>
+
+              <!-- Row 5: Suburb / City -->
+              <StackPanel Grid.Row="5" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Suburb" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchSuburbText}" />
+              </StackPanel>
+              <StackPanel Grid.Row="5" Grid.Column="1" Spacing="2">
+                <TextBlock Text="City" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchCityText}" />
+              </StackPanel>
+
+              <!-- Row 5.5: Province / Country -->
+              <StackPanel Grid.Row="6" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Province" Foreground="#c0c4cf" />
+                <!-- Search: Province -->
+                <ComboBox Grid.Row="6"
+                          Grid.Column="0"
+                          Margin="0,4,4,4"
+                          ItemsSource="{Binding SearchProvinces}"
+                          SelectedItem="{Binding SearchProvince}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding ProvinceName}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+
+              <StackPanel Grid.Row="6" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Country" Foreground="#c0c4cf" />
+                <!-- Search: Country -->
+                <ComboBox Grid.Row="6"
+                          Grid.Column="1"
+                          Margin="4,4,0,4"
+                          ItemsSource="{Binding SearchCountries}"
+                          SelectedItem="{Binding SearchCountry}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding Name}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>              
+              </StackPanel>
+
+              <!-- Row 6: Postal / Phone -->
+              <StackPanel Grid.Row="7" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Postal Code" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchPostalCodeText}" />
+              </StackPanel>
+              <StackPanel Grid.Row="7" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Phone" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding SearchPhoneNumberText}" />
               </StackPanel>
-              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2">
+
+              <!-- Row 7: Mobile / Email -->
+              <StackPanel Grid.Row="8" Grid.Column="0" Spacing="2">
                 <TextBlock Text="Mobile" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding SearchMobileNumberText}" />
               </StackPanel>
-
-              <!-- Row 7: Mobile / Email -->
-              <StackPanel Grid.Row="5" Grid.Column="0" Spacing="2">
+              <StackPanel Grid.Row="8" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Email" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding SearchEmailText}" />
               </StackPanel>
 
               <!-- Row 8: Taxable -->
-              <StackPanel Grid.Row="6" Grid.Column="0" Orientation="Horizontal" Spacing="8">
+              <StackPanel Grid.Row="9" Grid.Column="0" Orientation="Horizontal" Spacing="8">
                 <CheckBox
                     Content="Taxable"
                     IsChecked="{Binding SearchTaxable}" />
@@ -167,7 +227,7 @@
 
               <!-- Row 8: Search button -->
               <Button
-                  Grid.Row="7"
+                  Grid.Row="10"
                   Grid.Column="0"
                   Grid.ColumnSpan="2"
                   Margin="0,8,0,0"
@@ -245,6 +305,13 @@
                   <RowDefinition Height="Auto" />
                   <RowDefinition Height="Auto" />
                   <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Customer ID" Foreground="#c0c4cf" Margin="0,0,8,2" />
@@ -275,14 +342,37 @@
                 <TextBlock Grid.Row="8" Grid.Column="0" Text="Price Code" Foreground="#c0c4cf" Margin="0,4,8,2" />
                 <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding SelectedPriceCode}" Foreground="#f5f5f5" />
 
-                <TextBlock Grid.Row="9" Grid.Column="0" Text="Phone" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding SelectedPhoneNumber}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="9" Grid.Column="0" Text="Address Line 1" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding SelectedAddressLine1}" Foreground="#f5f5f5" />
 
-                <TextBlock Grid.Row="10" Grid.Column="0" Text="Mobile" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding SelectedMobileNumber}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="10" Grid.Column="0" Text="Address Line 2" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding SelectedAddressLine2}" Foreground="#f5f5f5" />
 
-                <TextBlock Grid.Row="11" Grid.Column="0" Text="Email" Foreground="#c0c4cf" Margin="0,4,8,0" />
-                <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding SelectedEmail}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="11" Grid.Column="0" Text="Suburb" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding SelectedSuburb}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="12" Grid.Column="0" Text="City" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="12" Grid.Column="1" Text="{Binding SelectedCity}" Foreground="#f5f5f5" />
+
+                <!-- NEW: Province under City -->
+                <TextBlock Grid.Row="13" Grid.Column="0" Text="Province" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="13" Grid.Column="1" Text="{Binding SelectedProvinceName}" Foreground="#f5f5f5" />
+
+                <!-- NEW: Country under Province -->
+                <TextBlock Grid.Row="14" Grid.Column="0" Text="Country" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="14" Grid.Column="1" Text="{Binding SelectedCountryName}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="15" Grid.Column="0" Text="Postal Code" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="15" Grid.Column="1" Text="{Binding SelectedPostalCode}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="16" Grid.Column="0" Text="Phone" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="16" Grid.Column="1" Text="{Binding SelectedPhoneNumber}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="17" Grid.Column="0" Text="Mobile" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="17" Grid.Column="1" Text="{Binding SelectedMobileNumber}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="18" Grid.Column="0" Text="Email" Foreground="#c0c4cf" Margin="0,4,8,0" />
+                <TextBlock Grid.Row="18" Grid.Column="1" Text="{Binding SelectedEmail}" Foreground="#f5f5f5" />
               </Grid>
             </Border>
           </StackPanel>
@@ -299,6 +389,9 @@
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
               <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -386,19 +479,71 @@
                 <TextBox Text="{Binding NewPhoneNumber}" />
               </StackPanel>
 
+              <!-- Row 5: Address 1 / Address 2 -->
+              <StackPanel Grid.Row="5" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Address Line 1" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewAddressLine1}" />
+              </StackPanel>
+              <StackPanel Grid.Row="5" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Address Line 2" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewAddressLine2}" />
+              </StackPanel>
+
+              <!-- Row 6: Suburb / City -->
+              <StackPanel Grid.Row="6" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Suburb" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewSuburb}" />
+              </StackPanel>
+              <StackPanel Grid.Row="6" Grid.Column="1" Spacing="2">
+                <TextBlock Text="City" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewCity}" />
+              </StackPanel>
+
+              <!-- Row 7: Province / Country -->
+              <StackPanel Grid.Row="7" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Province" Foreground="#c0c4cf" />
+                <!-- Create/Edit: Province -->
+                <ComboBox ItemsSource="{Binding Provinces}"
+                          SelectedItem="{Binding NewProvince}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding ProvinceName}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+
+              <StackPanel Grid.Row="7" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Country" Foreground="#c0c4cf" />
+                <!-- Create/Edit: Country -->
+                <ComboBox ItemsSource="{Binding Countries}"
+                          SelectedItem="{Binding NewCountry}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding Name}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
 
               <!-- Row 8: Postal / Mobile -->
-              <StackPanel Grid.Row="5" Grid.Column="0" Spacing="2">
+              <StackPanel Grid.Row="8" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Postal Code" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewPostalCode}" />
+              </StackPanel>
+              <StackPanel Grid.Row="8" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Mobile" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding NewMobileNumber}" />
               </StackPanel>
-              <StackPanel Grid.Row="5" Grid.Column="1" Spacing="2">
+
+              <!-- Row 9: Email + buttons -->
+              <StackPanel Grid.Row="9" Grid.Column="0" Spacing="2">
                 <TextBlock Text="Email" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding NewEmail}" />
               </StackPanel>
 
               <StackPanel
-                  Grid.Row="6"
+                  Grid.Row="20"
                   Grid.Column="1"
                   Orientation="Horizontal"
                   HorizontalAlignment="Right"

@@ -3,9 +3,9 @@ using Avalonia.Markup.Xaml;
 
 namespace MetalLink.Desktop.Views;
 
-public partial class CompanyAndSiteView : UserControl
+public partial class CustomersView : UserControl
 {
-    public CompanyAndSiteView()
+    public CustomersView()
     {
         InitializeComponent();
     }

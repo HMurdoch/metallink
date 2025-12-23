@@ -24,6 +24,7 @@ using MetalLink.Shared.Tickets;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.Generic;
 using System.Threading;
+using Avalonia.Threading;
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -35,6 +36,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     private readonly AuthState _authState;
     private readonly ApiClient _apiClient;
     private readonly CustomerService _customerService;
+    private readonly CompanyAndSiteService _companyAndSiteService;
     private readonly TicketService _ticketService;
     private readonly IScaleService _scaleService;
     private readonly DocumentService _documentService;
@@ -58,9 +60,12 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     // Section navigation
     public ICommand ShowDashboardCommand { get; }
     public ICommand ShowCustomersCommand { get; }
+    public ICommand ShowCompanyAndSitesCommand { get; }
     public ICommand ShowTicketsCommand { get; }
     public ICommand ShowDocumentsCommand { get; }
     public ICommand ShowCameraCommand { get; }
+    public ICommand ShowReportsCommand { get; }   // ✅ ADDED
+    public ICommand ShowSettingsCommand { get; }  // ✅ ADDED
 
     // Camera commands
     public ICommand CaptureWbFrontBeforeCommand { get; }
@@ -97,6 +102,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         _authState = app.AuthState;
         _apiClient = app.ApiClient;
         _customerService = app.CustomerService;
+        _companyAndSiteService = app.CompanyAndSiteService;
         _ticketService = app.TicketService;
         _scaleService = app.ScaleService;
         _documentService = app.DocumentService;
@@ -144,6 +150,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         LoadCustomerDocumentsCommand = new AsyncCommand(LoadCustomerDocumentsAsync);
         UploadCustomerDocumentCommand = new AsyncCommand(UploadCustomerDocumentAsync);
 
+        ShowCompanyAndSitesCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.CompanyAndSites);
         // Section navigation (used by menu)
         ShowDashboardCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Dashboard);
         ShowCustomersCommand = ReactiveUI.ReactiveCommand.CreateFromTask(async () =>
@@ -151,15 +158,19 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             CurrentSection = EnumMainSection.Customers;
             await ClearNewCustomerFormAsync(); // this fetches NewAccountNumber
         });
-        ShowTicketsCommand   = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Tickets);
+        ShowTicketsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Tickets);
         ShowDocumentsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Documents);
-        ShowCameraCommand    = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Camera);
+        ShowCameraCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Camera);
+
+        // ✅ ADDED: Reports + Settings behave like other nav items
+        ShowReportsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Reports);
+        ShowSettingsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Settings);
 
         EditCustomerCommand = new RelayCommand<CustomerDto>(OnEditCustomer);
         DeleteCustomerCommand = new AsyncRelayCommand<CustomerDto>(execute: OnDeleteCustomerAsync);
-        LogTicketCommand     = new RelayCommand<CustomerDto>(OnLogTicket);
+        LogTicketCommand = new RelayCommand<CustomerDto>(OnLogTicket);
         ClearNewCustomerCommand = new AsyncRelayCommand(ClearNewCustomerFormAsync);
-        
+
         Console.WriteLine($"Next account number = {NewAccountNumber}");
         OnPropertyChanged(nameof(NewAccountNumberDisplay));
 
@@ -222,6 +233,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         });
 
         InitializeCountries();
+        InitializeCompanyAndSiteCommands();
         _ = LoadProvincesAsync();
     }
 
@@ -332,26 +344,26 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             // Build a request object with all filters (null / empty = ignore)
             var request = new CustomerSearchRequestDto
             {
-                CustomerId    = customerId,
-                SiteId        = siteId,
-                FirstName     = string.IsNullOrWhiteSpace(SearchFirstNameText) ? null : SearchFirstNameText,
-                LastName      = string.IsNullOrWhiteSpace(SearchLastNameText)  ? null : SearchLastNameText,
-                CompanyName   = string.IsNullOrWhiteSpace(SearchCompanyNameText) ? null : SearchCompanyNameText,
-                IdNumber      = string.IsNullOrWhiteSpace(SearchIdNumberText)     ? null : SearchIdNumberText,
+                CustomerId = customerId,
+                SiteId = siteId,
+                FirstName = string.IsNullOrWhiteSpace(SearchFirstNameText) ? null : SearchFirstNameText,
+                LastName = string.IsNullOrWhiteSpace(SearchLastNameText) ? null : SearchLastNameText,
+                CompanyName = string.IsNullOrWhiteSpace(SearchCompanyNameText) ? null : SearchCompanyNameText,
+                IdNumber = string.IsNullOrWhiteSpace(SearchIdNumberText) ? null : SearchIdNumberText,
                 AccountNumber = ParseAccountNumberOrNull(SearchAccountNumberText),
-                PriceCode     = string.IsNullOrWhiteSpace(SearchPriceCodeText)     ? null : SearchPriceCodeText,
-                AddressLine1  = string.IsNullOrWhiteSpace(SearchAddressLine1Text) ? null : SearchAddressLine1Text,
-                AddressLine2  = string.IsNullOrWhiteSpace(SearchAddressLine2Text) ? null : SearchAddressLine2Text,
-                Suburb        = string.IsNullOrWhiteSpace(SearchSuburbText)       ? null : SearchSuburbText,
-                City          = string.IsNullOrWhiteSpace(SearchCityText)         ? null : SearchCityText,
-                PostalCode    = string.IsNullOrWhiteSpace(SearchPostalCodeText)   ? null : SearchPostalCodeText,
-                PhoneNumber   = string.IsNullOrWhiteSpace(SearchPhoneNumberText)  ? null : SearchPhoneNumberText,
-                MobileNumber  = string.IsNullOrWhiteSpace(SearchMobileNumberText) ? null : SearchMobileNumberText,
-                Email         = string.IsNullOrWhiteSpace(SearchEmailText)        ? null : SearchEmailText,
+                PriceCode = string.IsNullOrWhiteSpace(SearchPriceCodeText) ? null : SearchPriceCodeText,
+                AddressLine1 = string.IsNullOrWhiteSpace(SearchAddressLine1Text) ? null : SearchAddressLine1Text,
+                AddressLine2 = string.IsNullOrWhiteSpace(SearchAddressLine2Text) ? null : SearchAddressLine2Text,
+                Suburb = string.IsNullOrWhiteSpace(SearchSuburbText) ? null : SearchSuburbText,
+                City = string.IsNullOrWhiteSpace(SearchCityText) ? null : SearchCityText,
+                PostalCode = string.IsNullOrWhiteSpace(SearchPostalCodeText) ? null : SearchPostalCodeText,
+                PhoneNumber = string.IsNullOrWhiteSpace(SearchPhoneNumberText) ? null : SearchPhoneNumberText,
+                MobileNumber = string.IsNullOrWhiteSpace(SearchMobileNumberText) ? null : SearchMobileNumberText,
+                Email = string.IsNullOrWhiteSpace(SearchEmailText) ? null : SearchEmailText,
 
-                ProvinceId    = provinceId,
-                CountryId     = countryId,
-                Taxable       = SearchTaxable
+                ProvinceId = provinceId,
+                CountryId = countryId,
+                Taxable = SearchTaxable
             };
 
             var results = await _customerService.SearchCustomersAsync(request);
@@ -443,8 +455,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             var uniqueCheckRequest = new CustomerSearchRequestDto
             {
                 // only send the fields we care about for uniqueness
-                IdNumber      = NewIdNumber,
-                Email         = NewEmail
+                IdNumber = NewIdNumber,
+                Email = NewEmail
             };
 
             var duplicates = await _customerService.SearchCustomersAsync(uniqueCheckRequest);
@@ -479,25 +491,25 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             // ----- build DTO for the API (no AccountNumber) -----
             var dto = new CustomerDto
             {
-                FirstName     = NewFirstName!,
-                LastName      = NewLastName!,
-                IdNumber      = NewIdNumber!,
-                Email         = NewEmail!,
-                PhoneNumber   = string.IsNullOrWhiteSpace(NewPhoneNumber)  ? null : NewPhoneNumber,
-                MobileNumber  = string.IsNullOrWhiteSpace(NewMobileNumber) ? null : NewMobileNumber,
-                PriceCode     = string.IsNullOrWhiteSpace(NewPriceCode)    ? null : NewPriceCode,
-                AddressLine1  = string.IsNullOrWhiteSpace(NewAddressLine1) ? null : NewAddressLine1,
-                AddressLine2  = string.IsNullOrWhiteSpace(NewAddressLine2) ? null : NewAddressLine2,
-                Suburb        = string.IsNullOrWhiteSpace(NewSuburb)       ? null : NewSuburb,
-                City          = string.IsNullOrWhiteSpace(NewCity)         ? null : NewCity,
-                PostalCode    = string.IsNullOrWhiteSpace(NewPostalCode)   ? null : NewPostalCode,
-                IsCompany     = NewIsCompany,
-                Taxable       = NewTaxable,
+                FirstName = NewFirstName!,
+                LastName = NewLastName!,
+                IdNumber = NewIdNumber!,
+                Email = NewEmail!,
+                PhoneNumber = string.IsNullOrWhiteSpace(NewPhoneNumber) ? null : NewPhoneNumber,
+                MobileNumber = string.IsNullOrWhiteSpace(NewMobileNumber) ? null : NewMobileNumber,
+                PriceCode = string.IsNullOrWhiteSpace(NewPriceCode) ? null : NewPriceCode,
+                AddressLine1 = string.IsNullOrWhiteSpace(NewAddressLine1) ? null : NewAddressLine1,
+                AddressLine2 = string.IsNullOrWhiteSpace(NewAddressLine2) ? null : NewAddressLine2,
+                Suburb = string.IsNullOrWhiteSpace(NewSuburb) ? null : NewSuburb,
+                City = string.IsNullOrWhiteSpace(NewCity) ? null : NewCity,
+                PostalCode = string.IsNullOrWhiteSpace(NewPostalCode) ? null : NewPostalCode,
+                IsCompany = NewIsCompany,
+                Taxable = NewTaxable,
 
-                CompanyId     = NewIsCompany && SelectedNewCompany != null
+                CompanyId = NewIsCompany && SelectedNewCompany != null
                                     ? SelectedNewCompany.CompanyId
                                     : 0,   // or throw if you prefer
-                SiteId        = NewIsCompany && SelectedNewSite != null
+                SiteId = NewIsCompany && SelectedNewSite != null
                                     ? SelectedNewSite.SiteId
                                     : 0
             };
@@ -517,7 +529,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
                 StatusMessage = "Customer could not be created.";
             }
 
-             // store raw number and refresh displayed padded text
+            // store raw number and refresh displayed padded text
             _newAccountNumber = created.AccountNumber;
             OnPropertyChanged(nameof(NewAccountNumber));
 
@@ -548,6 +560,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         && EditingCustomerId.HasValue
         && !string.IsNullOrWhiteSpace(NewFirstName)
         && !string.IsNullOrWhiteSpace(NewLastName);
+
     // --- Scale reading ---
 
     private async Task ReadWeighbridgeAsync()
@@ -859,10 +872,10 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         if (health != null)
         {
             TotalCustomersInDb = health.customersCount;
-            TotalTicketsInDb   = health.ticketsCount;
+            TotalTicketsInDb = health.ticketsCount;
 
             _ = AnimateCounterAsync(TotalCustomersInDb, v => AnimatedTotalCustomersInDb = v);
-            _ = AnimateCounterAsync(TotalTicketsInDb,   v => AnimatedTotalTicketsInDb   = v);
+            _ = AnimateCounterAsync(TotalTicketsInDb, v => AnimatedTotalTicketsInDb = v);
         }
     }
 

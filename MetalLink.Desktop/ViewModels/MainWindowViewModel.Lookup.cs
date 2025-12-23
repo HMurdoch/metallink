@@ -8,6 +8,7 @@ using MetalLink.Shared.Sites;
 using MetalLink.Shared.Provinces;
 using MetalLink.Shared.Locations;
 using MetalLink.Shared.Customers;
+using Avalonia.Threading;
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -36,6 +37,8 @@ public partial class MainWindowViewModel
 
     private bool _companyLettersLoaded;
     private bool _companyLettersLoading;
+    private bool _syncingCompanyLetter;
+    private bool _suppressLetterApply;
 
     /// <summary>
     /// Letters used by the "ALL / A / B / C / …" filter ComboBoxes.
@@ -67,9 +70,24 @@ public partial class MainWindowViewModel
             _selectedCompanyLetter = value;
             OnPropertyChanged();
 
-            ApplyCompanyLetterFilter();
+            // If we're in the middle of syncing because company selection changed,
+            // don't rebuild the combo's ItemsSource immediately.
+            if (_suppressLetterApply)
+                return;
+
+            // Defer rebuilding the company suggestions until after the selection event finishes.
+            PostUI(() =>
+            {
+                ApplyCompanyLetterFilter();
+
+                // Optional: If the user manually changed the letter (not caused by selecting a company)
+                // clear company selection AFTER the filter is applied.
+                if (!_syncingCompanyLetter)
+                    SelectedSearchCompany = null;
+            });
         }
     }
+
 
     // --------------- Create section letter -----------------
 
@@ -159,31 +177,54 @@ public partial class MainWindowViewModel
         set
         {
             if (_selectedSearchCompany == value) return;
-
             _selectedSearchCompany = value;
             OnPropertyChanged();
 
             if (value != null)
             {
-                // Used by your search handler
-                SearchCompanyNameText = value.CompanyName;
+                var first = value.CompanyName?.FirstOrDefault();
+                var letter = first.HasValue ? char.ToUpperInvariant(first.Value).ToString() : "ALL";
 
-                // Enable & load sites for this company
+                // Defer the letter change so we don't mutate ItemsSource mid-selection
+                PostUI(() =>
+                {
+                    _syncingCompanyLetter = true;
+                    _suppressLetterApply = true;
+
+                    SelectedCompanyLetter = CompanyLetterFilters.Contains(letter) ? letter : "ALL";
+
+                    _suppressLetterApply = false;
+                    _syncingCompanyLetter = false;
+
+                    // Now rebuild suggestions and keep the selected company pinned in the list
+                    ApplyCompanyLetterFilter();
+
+                    // Ensure the selected company still exists in the filtered suggestions
+                    // (and doesn't get cleared by Contains() checks)
+                    if (!SearchCompanySuggestions.Contains(value))
+                    {
+                        // if your filter excluded it somehow, force-add it at top
+                        SearchCompanySuggestions.Insert(0, value);
+                    }
+                });
+
+                // keep your existing behaviour if needed
+                SearchCompanyNameText = value.CompanyName;
                 IsSearchSiteEnabled = true;
                 _ = LoadSitesForSelectedCompanyAsync();
             }
             else
             {
                 SearchCompanyNameText = string.Empty;
-
                 IsSearchSiteEnabled = false;
-                SearchSiteIdText    = string.Empty;
+                SearchSiteIdText = string.Empty;
 
                 SearchSiteSuggestions.Clear();
                 SelectedSearchSite = null;
             }
         }
     }
+
 
     /// <summary>
     /// Rebuild SearchCompanySuggestions based on SelectedCompanyLetter.
@@ -242,6 +283,7 @@ public partial class MainWindowViewModel
         NewIdNumber      = customer.IdNumber      ?? string.Empty;
         NewAccountNumber = customer.AccountNumber;
         NewPriceCode     = customer.PriceCode     ?? string.Empty;
+        NewTaxable       = customer.Taxable;
         NewPhoneNumber   = customer.PhoneNumber   ?? string.Empty;
         NewMobileNumber  = customer.MobileNumber  ?? string.Empty;
         NewEmail         = customer.Email         ?? string.Empty;
@@ -451,6 +493,7 @@ public partial class MainWindowViewModel
             PhoneNumber   = NewPhoneNumber,
             MobileNumber  = NewMobileNumber,
             Email         = NewEmail,
+            Taxable       = NewTaxable,
             AddressLine1  = NewAddressLine1,
             AddressLine2  = NewAddressLine2,
             Suburb        = NewSuburb,
@@ -957,5 +1000,10 @@ public bool IsCreateMode => !IsEditMode;
         // 🔹 Default search → ALL (meaning "no province filter")
         SearchProvince = allProvince;
         OnPropertyChanged(nameof(SearchProvince));
+    }
+
+    private void PostUI(Action action)
+    {
+        Dispatcher.UIThread.Post(action, DispatcherPriority.Background);
     }
 }

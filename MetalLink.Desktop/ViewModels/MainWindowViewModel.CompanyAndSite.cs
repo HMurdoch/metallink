@@ -43,13 +43,14 @@ public partial class MainWindowViewModel
             _selectedCompany = value;
             OnPropertyChanged();
 
-            // When company changes, clear sites + details
             SiteResults.Clear();
             SelectedSite = null;
 
             CompanyEditName = value?.CompanyName ?? string.Empty;
-            OnPropertyChanged(nameof(CanUpdateCompany));
-            (UpdateCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+
+            // ✅ load sites for the selected results-grid company
+            if (value != null)
+                _ = LoadSitesForSelectedCompanyResultsAsync();
         }
     }
 
@@ -172,6 +173,8 @@ public partial class MainWindowViewModel
     public IAsyncRelayCommand<SiteLookupDto> DeleteSiteCommand { get; private set; } = null!;
     public IAsyncRelayCommand CreateOrUpdateSiteCommand { get; private set; } = null!;
     public IAsyncRelayCommand CancelSiteEditCommand { get; private set; } = null!;
+    public IAsyncRelayCommand CreateCompanyCommand { get; private set; } = null!;
+
 
     /// <summary>
     /// Call this ONCE from your constructor in MWVM.Core.cs
@@ -183,7 +186,7 @@ public partial class MainWindowViewModel
             UpdateCompanyCommand = new AsyncRelayCommand(ct => UpdateCompanyAsync(ct), () => CanUpdateCompany);
             CancelCompanyEditCommand = new AsyncRelayCommand(ct => CancelCompanyEditAsync(ct));
 
-            LoadSitesForCompanyCommand = new AsyncRelayCommand(ct => LoadSitesForSelectedCompanyAsync(ct));
+            LoadSitesForCompanyCommand = new AsyncRelayCommand(ct => LoadSitesForSelectedCompanyResultsAsync(ct));
 
             CreateOrUpdateSiteCommand = new AsyncRelayCommand(ct => CreateOrUpdateSiteAsync(ct), () => CanCreateOrUpdateSite);
             CancelSiteEditCommand = new AsyncRelayCommand(ct => CancelSiteEditAsync(ct));
@@ -195,12 +198,53 @@ public partial class MainWindowViewModel
 
     private async Task SearchCompaniesAsync(CancellationToken ct = default)
     {
-        // TODO: call CompanyService.LookupCompaniesAsync(...) like you do for customers
-        // e.g. var items = await CompanyService.LookupCompaniesAsync(term);
+        if (IsBusy) return;
+        IsBusy = true;
 
-        StatusMessage = "[STATUS] Company search not wired yet.";
-        Console.WriteLine(StatusMessage);
-        await Task.CompletedTask;
+        try
+        {
+            StatusMessage = "Searching companies...";
+
+            // Ensure lookup cache is loaded (CompanyLetterFilters triggers lazy load)
+            _ = CompanyLetterFilters;
+
+            // If still loading, you can optionally wait a tiny bit, but usually it's ready quickly.
+            // (If you want to be strict, add a flag in Lookup.cs to expose loading state.)
+
+            // Start from cached master list
+            var query = _allCompanies.AsEnumerable();
+
+            // Apply letter filter (ALL = no filter)
+            var letter = (SelectedCompanyLetter ?? "ALL").Trim();
+
+            if (!letter.Equals("ALL", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(letter))
+            {
+                var ch = char.ToUpperInvariant(letter[0]);
+
+                query = query.Where(c =>
+                    !string.IsNullOrWhiteSpace(c.CompanyName) &&
+                    char.ToUpperInvariant(c.CompanyName![0]) == ch);
+            }
+
+            // Populate results grid
+            CompanyResults.Clear();
+            foreach (var c in query.OrderBy(c => c.CompanyName))
+                CompanyResults.Add(c);
+
+            // Optional: auto-select first row (or set null)
+            SelectedCompany = CompanyResults.FirstOrDefault();
+
+            StatusMessage = $"Found {CompanyResults.Count} company(s).";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Company search failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     private async Task NewCompanyAsync(CancellationToken ct = default)
@@ -213,6 +257,57 @@ public partial class MainWindowViewModel
         Console.WriteLine(StatusMessage);
         await Task.CompletedTask;
     }
+
+    private async Task CreateCompanyAsync(CancellationToken ct = default)
+{
+    if (!CanCreateCompany) return;
+
+    try
+    {
+        StatusMessage = "Creating company...";
+
+        // 1) create company
+        var company = await _app.CompanyAndSiteService.CreateCompanyAsync(
+            new CompanyDto
+            {
+                CompanyName = NewCompanyCreateName.Trim(),
+                IsActive = true
+            }, ct);
+
+        if (company == null)
+        {
+            StatusMessage = "Create company failed (null response).";
+            return;
+        }
+
+        // 2) create first site
+        var site = await _app.CompanyAndSiteService.CreateSiteAsync(
+            new SiteDto
+            {
+                CompanyId = company.CompanyId,
+                SiteName  = NewCompanyCreateSiteName.Trim(),
+                IsActive  = true
+            }, ct);
+
+        // 3) clear form
+        NewCompanyCreateName = "";
+        NewCompanyCreateSiteName = "";
+
+        // 4) refresh lists + select new company
+        await LoadCompaniesAndLettersAsync();      // rebuild _allCompanies + letters
+        await SearchCompaniesAsync(ct);            // repopulate CompanyResults
+
+        SelectedCompany = CompanyResults.FirstOrDefault(c => c.CompanyId == company.CompanyId);
+        if (SelectedCompany != null)
+            await LoadSitesForSelectedCompanyResultsAsync(ct);
+
+        StatusMessage = "Company + first site created.";
+    }
+    catch (Exception ex)
+    {
+        StatusMessage = $"Create failed: {ex.Message}";
+    }
+}
 
     private void OnEditCompany(CompanyLookupDto? company)
     {
@@ -255,10 +350,26 @@ public partial class MainWindowViewModel
             return;
         }
 
-        // TODO: call SiteService.LookupSitesForCompanyAsync(SelectedCompany.CompanyId, "")
-        StatusMessage = "[STATUS] Load sites not wired yet.";
-        Console.WriteLine(StatusMessage);
-        await Task.CompletedTask;
+        try
+        {
+            StatusMessage = "Loading sites...";
+
+            var items = await _app.CompanyAndSiteService.LookupSitesForCompanyAsync(
+                SelectedCompany.CompanyId,
+                term: string.Empty,
+                ct);
+
+            SiteResults.Clear();
+            foreach (var s in items.OrderBy(x => x.SiteName))
+                SiteResults.Add(s);
+
+            StatusMessage = $"Loaded {SiteResults.Count} site(s).";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Load sites failed: {ex.Message}";
+            SiteResults.Clear();
+        }
     }
 
     private void LoadSelectedSiteIntoEditFields(SiteLookupDto? site)
@@ -300,6 +411,19 @@ public partial class MainWindowViewModel
         Console.WriteLine(StatusMessage);
     }
 
+    private string _newCompanySiteName = string.Empty;
+    public string NewCompanySiteName
+    {
+        get => _newCompanySiteName;
+        set
+        {
+            _newCompanySiteName = value ?? string.Empty;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CanCreateCompany));
+        }
+    }
+
+
     private async Task CreateOrUpdateSiteAsync(CancellationToken ct = default)
     {
         if (SelectedCompany == null)
@@ -336,4 +460,77 @@ public partial class MainWindowViewModel
         Console.WriteLine(StatusMessage);
         await Task.CompletedTask;
     }
+
+    private async Task RefreshCompaniesForLetterAsync()
+    {
+        try
+        {
+            var term = (SelectedCompanyLetter?.Equals("ALL", StringComparison.OrdinalIgnoreCase) ?? true)
+                ? null
+                : SelectedCompanyLetter;
+
+            // If your API lookup expects "term", sending "E" will return E companies.
+            // If it expects free text, this still works as a prefix filter.
+            var items = await _app.CompanyAndSiteService.LookupCompaniesAsync(term);
+
+            // If "ALL" selected, we may want everything.
+            // If API returns too broad, we can still enforce letter filtering locally.
+            if (!string.IsNullOrWhiteSpace(SelectedCompanyLetter) &&
+                !SelectedCompanyLetter.Equals("ALL", StringComparison.OrdinalIgnoreCase))
+            {
+                items = items
+                    .Where(c => (c.CompanyName ?? string.Empty)
+                        .StartsWith(SelectedCompanyLetter, StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+            }
+
+            // dropdown suggestions
+            SearchCompanySuggestions.Clear();
+            foreach (var c in items.OrderBy(x => x.CompanyName))
+                SearchCompanySuggestions.Add(c);
+
+            // ✅ ALSO update results grid immediately to match the letter selection
+            CompanyResults.Clear();
+            foreach (var c in items.OrderBy(x => x.CompanyName))
+                CompanyResults.Add(c);
+
+            SelectedSearchCompany = SearchCompanySuggestions.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Company refresh failed: {ex.Message}";
+        }
+    }
+
+    private async Task LoadSitesForSelectedCompanyResultsAsync(CancellationToken ct = default)
+    {
+        if (SelectedCompany == null)
+        {
+            SiteResults.Clear();
+            SelectedSite = null;
+            return;
+        }
+
+        try
+        {
+            StatusMessage = "Loading sites...";
+
+            var items = await _app.CompanyAndSiteService.LookupSitesForCompanyAsync(
+                SelectedCompany.CompanyId,
+                term: string.Empty,
+                ct);
+
+            SiteResults.Clear();
+            foreach (var s in items.OrderBy(x => x.SiteName))
+                SiteResults.Add(s);
+
+            StatusMessage = $"Loaded {SiteResults.Count} site(s).";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Load sites failed: {ex.Message}";
+            SiteResults.Clear();
+        }
+    }
+
 }

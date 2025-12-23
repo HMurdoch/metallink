@@ -15,6 +15,7 @@ public partial class App : Application
     public ApiClient ApiClient { get; private set; } = null!;
     public AuthService AuthService { get; private set; } = null!;
     public CustomerService CustomerService { get; private set; } = null!;
+    public CompanyAndSiteService CompanyAndSiteService { get; private set; } = null!;
     public TicketService TicketService { get; private set; } = null!;
     public IScaleService ScaleService { get; private set; } = null!;
     public DocumentService DocumentService { get; private set; } = null!;
@@ -33,6 +34,7 @@ public partial class App : Application
         ApiClient = new ApiClient(AuthState);
         AuthService = new AuthService(AuthState);
         CustomerService = new CustomerService(ApiClient, AuthState);
+        CompanyAndSiteService = new CompanyAndSiteService(ApiClient, AuthState);
         TicketService = new TicketService(ApiClient, AuthState);
         ScaleService = new MockScaleService();
         DocumentService = new DocumentService(ApiClient, AuthState);
