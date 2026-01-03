@@ -16,5 +16,6 @@ public sealed class SiteLookupDto
     public string? PostalCode   { get; set; }
 
     public long? ProvinceId   { get; set; }
-    public long? CountryId { get; set; }
+    public int? CountryId { get; set; }
+    public bool IsActive { get; set; } = true;
 }

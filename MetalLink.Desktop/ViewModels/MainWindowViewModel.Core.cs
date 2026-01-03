@@ -43,7 +43,6 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     private readonly ICameraService _cameraService;
     private readonly TicketReportService _ticketReportService;
     private readonly ISignaturePadService _signaturePadService;
-
     public new event PropertyChangedEventHandler? PropertyChanged;
 
     // Commands

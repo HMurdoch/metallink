@@ -6,6 +6,7 @@
   <!-- Global styles -->
   <Application.Styles>
     <!-- Fluent base theme -->
+    <!-- <FluentTheme /> -->
     <FluentTheme />
     <!-- DataGrid theme (important for DataGrid to look right) -->
     <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />

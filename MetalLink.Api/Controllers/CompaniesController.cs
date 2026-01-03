@@ -1,65 +1,94 @@
-// File: MetalLink.Api/Controllers/CompaniesController.cs
 using Microsoft.AspNetCore.Mvc;
-using MetalLink.Application.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using MetalLink.Infrastructure.Persistence;
+using MetalLink.Domain.Entities;
 using MetalLink.Shared.Companies;
-using MetalLink.Shared.Sites;
 
 namespace MetalLink.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class CompaniesController : ControllerBase
+[Route("api/companies")]
+public sealed class CompaniesController : ControllerBase
 {
-    private readonly ICompanyRepository _companyRepository;
+    private readonly MetalLinkDbContext _db;
 
-    public CompaniesController(ICompanyRepository companyRepository)
+    public CompaniesController(MetalLinkDbContext db)
     {
-        _companyRepository = companyRepository;
+        _db = db;
     }
 
-    // GET api/companies/lookup?term=ap
+    // GET api/companies/lookup?term=foo
     [HttpGet("lookup")]
-    public async Task<ActionResult<IEnumerable<CompanyLookupDto>>> LookupCompanies(
-        [FromQuery] string? term,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<CompanyLookupDto>>> Lookup([FromQuery] string? term, CancellationToken ct)
     {
-        var items = await _companyRepository.LookupCompaniesAsync(term, cancellationToken);
+        var q = _db.Companies.AsNoTracking().Where(c => c.IsActive);
 
-        var dtos = items.Select(c => new CompanyLookupDto
+        if (!string.IsNullOrWhiteSpace(term))
         {
-            CompanyId   = c.CompanyId,
-            CompanyName = c.CompanyName,
-            VatNumber   = c.VatNumber
-        });
+            var t = term.Trim();
+            q = q.Where(c => c.CompanyName.Contains(t));
+        }
 
-        return Ok(dtos);
+        var items = await q
+            .OrderBy(c => c.CompanyName)
+            .Select(c => new CompanyLookupDto
+            {
+                CompanyId = c.CompanyId,
+                CompanyName = c.CompanyName,
+                VatNumber = c.VatNumber,
+                IsActive = c.IsActive
+            })
+            .ToListAsync(ct);
+
+        return Ok(items);
     }
 
-    // GET api/companies/{companyId}/sites/lookup?term=jo
-    [HttpGet("{companyId:long}/sites/lookup")]
-    public async Task<ActionResult<IEnumerable<SiteLookupDto>>> LookupSitesForCompany(
-        long companyId,
-        [FromQuery] string? term,
-        CancellationToken cancellationToken)
+    // POST api/companies
+    [HttpPost]
+    public async Task<ActionResult<CompanyLookupDto>> Create([FromBody] CompanyCreateDto dto, CancellationToken ct)
     {
-        var items = await _companyRepository.LookupSitesForCompanyAsync(
-            companyId, term, cancellationToken);
+        if (dto == null)
+            return BadRequest("Body required.");
 
-        var dtos = items.Select(s => new SiteLookupDto
+        var name = (dto.CompanyName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            return BadRequest("CompanyName is required.");
+
+        var entity = new Company
         {
-            SiteId      = s.SiteId,
-            CompanyId   = s.CompanyId,
-            SiteName    = s.SiteName,
-            SiteCode    = s.SiteCode,
-            AddressLine1 = s.AddressLine1,
-            AddressLine2 = s.AddressLine2,
-            Suburb       = s.Suburb,
-            City         = s.City,
-            PostalCode   = s.PostalCode,
-            ProvinceId   = s.ProvinceId,
-            CountryId    = s.CountryId
-        });
+            CompanyName = name,
+            VatNumber = dto.VatNumber,
+            IsActive = dto.IsActive
+        };
 
-        return Ok(dtos);
+        _db.Companies.Add(entity);
+        await _db.SaveChangesAsync(ct);
+
+        var result = new CompanyLookupDto
+        {
+            CompanyId = entity.CompanyId,
+            CompanyName = entity.CompanyName,
+            VatNumber = entity.VatNumber,
+            IsActive = entity.IsActive
+        };
+
+        // Returns 201 + Location header
+        return CreatedAtAction(nameof(GetById), new { companyId = entity.CompanyId }, result);
+    }
+
+    // GET api/companies/{companyId}
+    [HttpGet("{companyId:long}")]
+    public async Task<ActionResult<CompanyLookupDto>> GetById(long companyId, CancellationToken ct)
+    {
+        var c = await _db.Companies.AsNoTracking().FirstOrDefaultAsync(x => x.CompanyId == companyId, ct);
+        if (c == null) return NotFound();
+
+        return Ok(new CompanyLookupDto
+        {
+            CompanyId = c.CompanyId,
+            CompanyName = c.CompanyName,
+            VatNumber = c.VatNumber,
+            IsActive = c.IsActive
+        });
     }
 }

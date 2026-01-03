@@ -106,25 +106,32 @@
         <Border Background="#252932" Padding="12" CornerRadius="4">
           <StackPanel Spacing="10">
             <TextBlock Text="Create New Company" Foreground="#f5f5f5" FontWeight="Bold" />
+              <Border Margin="0,12,0,0"
+                      Padding="12"
+                      Background="#2A2F38"
+                      CornerRadius="6">
 
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
-              <StackPanel Grid.Column="0" Spacing="6">
-              <TextBox
-                Text="{Binding NewCompanyCreateName, Mode=TwoWay}"
-                Watermark="Company name" />
+                <StackPanel Spacing="8">
+                  <TextBlock Text="Create New Company"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Margin="0,0,0,6" />
 
-              <TextBox
-                Text="{Binding NewCompanyCreateSiteName, Mode=TwoWay}"
-                Watermark="Site name" />
+                  <TextBox
+                    Watermark="Company name"
+                    Text="{Binding NewCompanyCreateName, Mode=TwoWay}" />
 
-              <Button
-                Content="Create"
-                Command="{Binding CreateCompanyCommand}"
-                HorizontalAlignment="Left"
-                Width="100"
-                IsEnabled="{Binding CanCreateCompany}" />
-              </StackPanel>
-            </Grid>
+                  <TextBox
+                    Watermark="Site name"
+                    Text="{Binding NewCompanyCreateSiteName, Mode=TwoWay}" />
+
+                  <Button
+                    Content="Create"
+                    Command="{Binding CreateCompanyCommand}"
+                    IsEnabled="{Binding CanCreateCompany}" />
+                </StackPanel>
+
+              </Border>
           </StackPanel>
         </Border>
 

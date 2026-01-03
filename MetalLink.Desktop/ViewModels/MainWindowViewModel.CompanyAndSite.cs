@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
 using MetalLink.Shared.Companies;
 using MetalLink.Shared.Sites;
+using MetalLink.Desktop.Services;
+using Avalonia.Threading;
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -176,6 +178,7 @@ public partial class MainWindowViewModel
     public IAsyncRelayCommand CreateCompanyCommand { get; private set; } = null!;
 
 
+
     /// <summary>
     /// Call this ONCE from your constructor in MWVM.Core.cs
     /// </summary>
@@ -190,6 +193,7 @@ public partial class MainWindowViewModel
 
             CreateOrUpdateSiteCommand = new AsyncRelayCommand(ct => CreateOrUpdateSiteAsync(ct), () => CanCreateOrUpdateSite);
             CancelSiteEditCommand = new AsyncRelayCommand(ct => CancelSiteEditAsync(ct));
+            CreateCompanyCommand = new AsyncRelayCommand(ct => CreateCompanyAsync(ct), () => CanCreateCompany);
     }
 
     // =====================================================
@@ -259,55 +263,97 @@ public partial class MainWindowViewModel
     }
 
     private async Task CreateCompanyAsync(CancellationToken ct = default)
-{
-    if (!CanCreateCompany) return;
-
-    try
     {
-        StatusMessage = "Creating company...";
+        if (IsBusy) return;
+        if (!CanCreateCompany) return;
 
-        // 1) create company
-        var company = await _app.CompanyAndSiteService.CreateCompanyAsync(
-            new CompanyDto
-            {
-                CompanyName = NewCompanyCreateName.Trim(),
-                IsActive = true
-            }, ct);
+        IsBusy = true;
 
-        if (company == null)
+         try
         {
-            StatusMessage = "Create company failed (null response).";
-            return;
-        }
+            StatusMessage = "[STATUS] Creating company...";
 
-        // 2) create first site
-        var site = await _app.CompanyAndSiteService.CreateSiteAsync(
-            new SiteDto
+            var company = await _app.CompanyAndSiteService.CreateCompanyAsync(
+                new CompanyDto { CompanyName = NewCompanyCreateName.Trim(), IsActive = true },
+                ct);
+
+            if (company == null)
+                throw new Exception("CreateCompany returned null.");
+
+            var site = await _app.CompanyAndSiteService.CreateSiteAsync(
+                new SiteDto
+                {
+                    CompanyId = company!.CompanyId,
+                    SiteName = NewCompanyCreateSiteName.Trim(),
+                    IsActive = true,
+                    CountryId = NewCountry?.CountryId ?? SelectedCountry?.CountryId ?? 1
+                }, ct);
+
+            if (site == null)
+                throw new Exception("CreateSite returned null.");
+
+            // Clear UI
+            NewCompanyCreateName = string.Empty;
+            NewCompanyCreateSiteName = string.Empty;
+
+            // Refresh your caches/results
+            // If you already have a lookup cache loader, call it.
+            // Otherwise, simplest: re-run company search / reload letters.
+            StatusMessage = $"[STATUS] Created company {company.CompanyName} and site {site.SiteName}.";
+
+            // Optional: reload companies list if your UI needs it
+            // await SearchCompaniesAsync(); // if you have it
+
+            // Convert to lookup dto if your API returns CompanyDto
+            var lookup = new CompanyLookupDto
             {
                 CompanyId = company.CompanyId,
-                SiteName  = NewCompanyCreateSiteName.Trim(),
-                IsActive  = true
-            }, ct);
+                CompanyName = company.CompanyName,
+                IsActive = company.IsActive
+            };
 
-        // 3) clear form
-        NewCompanyCreateName = "";
-        NewCompanyCreateSiteName = "";
+            // Run UI updates on UI thread (Avalonia-safe)
+            Dispatcher.UIThread.Post(() =>
+            {
+                AddCompanyToCachesAndSelect(lookup);
+            }, DispatcherPriority.Background);
 
-        // 4) refresh lists + select new company
-        await LoadCompaniesAndLettersAsync();      // rebuild _allCompanies + letters
-        await SearchCompaniesAsync(ct);            // repopulate CompanyResults
+            var createdId = lookup.CompanyId;
 
-        SelectedCompany = CompanyResults.FirstOrDefault(c => c.CompanyId == company.CompanyId);
-        if (SelectedCompany != null)
-            await LoadSitesForSelectedCompanyResultsAsync(ct);
+            Dispatcher.UIThread.Post(() =>
+            {
+                AddCompanyToCachesAndSelect(lookup);
 
-        StatusMessage = "Company + first site created.";
+                // Ensure the grid selection is the created company (in case anything refreshed)
+                SelectedCompany = CompanyResults.FirstOrDefault(c => c.CompanyId == createdId)
+                                ?? SelectedCompany;
+            }, DispatcherPriority.Background);
+
+            // optional: load sites for the selected company (only if endpoint exists)
+            // Populate results grid
+            var keepId = SelectedCompany?.CompanyId; // preserve current selection if possible
+
+            //CompanyResults.Clear();
+            foreach (var c in CompanyResults.OrderBy(c => c.CompanyName))
+                CompanyResults.Add(c);
+
+            // Re-select previous (or keep current), otherwise pick first
+            if (keepId.HasValue)
+                SelectedCompany = CompanyResults.FirstOrDefault(x => x.CompanyId == keepId.Value) 
+                                ?? CompanyResults.FirstOrDefault();
+            else
+                SelectedCompany = CompanyResults.FirstOrDefault();
+            _ = LoadSitesForSelectedCompanyResultsAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Create failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
-    catch (Exception ex)
-    {
-        StatusMessage = $"Create failed: {ex.Message}";
-    }
-}
 
     private void OnEditCompany(CompanyLookupDto? company)
     {
@@ -339,37 +385,6 @@ public partial class MainWindowViewModel
         StatusMessage = "[STATUS] Company edit cancelled.";
         Console.WriteLine(StatusMessage);
         await Task.CompletedTask;
-    }
-
-    private async Task LoadSitesForSelectedCompanyAsync(CancellationToken ct = default)
-    {
-        if (SelectedCompany == null)
-        {
-            SiteResults.Clear();
-            SelectedSite = null;
-            return;
-        }
-
-        try
-        {
-            StatusMessage = "Loading sites...";
-
-            var items = await _app.CompanyAndSiteService.LookupSitesForCompanyAsync(
-                SelectedCompany.CompanyId,
-                term: string.Empty,
-                ct);
-
-            SiteResults.Clear();
-            foreach (var s in items.OrderBy(x => x.SiteName))
-                SiteResults.Add(s);
-
-            StatusMessage = $"Loaded {SiteResults.Count} site(s).";
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Load sites failed: {ex.Message}";
-            SiteResults.Clear();
-        }
     }
 
     private void LoadSelectedSiteIntoEditFields(SiteLookupDto? site)

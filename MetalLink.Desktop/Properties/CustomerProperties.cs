@@ -277,6 +277,13 @@ public partial class MainWindowViewModel
         set
         {
             _newIsCompany = value;
+            if (!NewIsCompany)
+            {
+                SelectedNewCompany = null;
+                SelectedNewSite = null;
+                NewSiteSuggestions.Clear();
+            }
+
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));

@@ -11,6 +11,7 @@ public sealed class SiteDto
     public string? City         { get; set; }
     public string? PostalCode   { get; set; }
     public int? ProvinceId      { get; set; }
+    public int? CountryId      { get; set; }
     public string? ProvinceName { get; set; }
     public bool IsActive { get; set; } = false;
 }
