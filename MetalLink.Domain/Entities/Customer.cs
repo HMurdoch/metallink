@@ -42,8 +42,8 @@ public class Customer
 
     // Audit
     public bool     IsActive    { get; set; } = true;
-    public DateTime CreatedTime { get; set; }
-    public DateTime UpdatedTime { get; set; }
+    public DateTime? CreatedTime { get; set; }
+    public DateTime? UpdatedTime { get; set; }
 
     // Navigations
     public ICollection<CustomerDocument> Documents { get; set; } = new List<CustomerDocument>();

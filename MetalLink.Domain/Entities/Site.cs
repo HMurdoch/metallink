@@ -10,11 +10,11 @@ public class Site
     public long CompanyId { get; set; }
     public Company Company { get; set; } = null!;
 
-    public long? ProvinceId { get; set; }
-    public Province Province { get; set; } = null!;
+    public int? ProvinceId { get; set; }
+    public Province? Province { get; set; } = null!;
 
     public int? CountryId { get; set; }
-    public Country Country { get; set; } = null!;
+    public Country? Country { get; set; } = null!;
 
     public string SiteName { get; set; } = string.Empty;
     public string SiteCode { get; set; } = string.Empty;
