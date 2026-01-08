@@ -7,7 +7,7 @@ public sealed class SiteLookupDto
     public long CompanyId { get; set; }
 
     public string SiteName { get; set; } = string.Empty;
-    public string? SiteCode { get; set; } = string.Empty;
+    public string SiteCode { get; set; } = string.Empty;
 
     public string? AddressLine1 { get; set; }
     public string? AddressLine2 { get; set; }
@@ -15,7 +15,7 @@ public sealed class SiteLookupDto
     public string? City         { get; set; }
     public string? PostalCode   { get; set; }
 
-    public long? ProvinceId   { get; set; }
+    public int? ProvinceId   { get; set; }
     public int? CountryId { get; set; }
     public bool IsActive { get; set; } = true;
 }

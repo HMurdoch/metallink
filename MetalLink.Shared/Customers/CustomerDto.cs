@@ -26,8 +26,8 @@ public sealed class CustomerDto
     public bool Taxable { get; set; }
 
     // Site / address (all from Site, NOT Customer)
-    public string? SiteName     { get; set; }
-    public string? SiteCode     { get; set; }
+    public string SiteName     { get; set; } = string.Empty;
+    public string SiteCode     { get; set; } = string.Empty;
     public string? AddressLine1 { get; set; }
     public string? AddressLine2 { get; set; }
     public string? Suburb       { get; set; }
@@ -64,6 +64,6 @@ public sealed class CustomerDto
 
     // Status
     public bool     IsActive    { get; set; }
-    public DateTime CreatedTime { get; set; }
-    public DateTime UpdatedTime { get; set; }
+    public DateTime? CreatedTime { get; set; }
+    public DateTime? UpdatedTime { get; set; }
 }
