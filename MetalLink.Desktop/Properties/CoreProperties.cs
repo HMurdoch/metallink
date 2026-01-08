@@ -27,6 +27,8 @@ public partial class MainWindowViewModel
     // Animated dashboard values
     private int _animatedTotalCustomersInDb;
     private int _animatedTotalTicketsInDb;
+    private int _animatedTotalCompaniesInDb;
+    private int _animatedTotalSitesInDb;
 
     // Charts
     public ISeries[] TicketsByTypeSeries { get; set; } = System.Array.Empty<ISeries>();
@@ -48,7 +50,7 @@ public partial class MainWindowViewModel
             OnPropertyChanged();
 
             // ALSO log to console so you see it in dotnet run output:
-            Console.WriteLine($"[STATUS] {_statusMessage}");
+            Console.WriteLine($"{_statusMessage}");
         }
     }
 
@@ -130,6 +132,17 @@ public partial class MainWindowViewModel
         set { _animatedTotalTicketsInDb = value; OnPropertyChanged(); }
     }
 
-    // Global dirty flags
+    public int AnimatedTotalCompaniesInDb
+    {
+        get => _animatedTotalCompaniesInDb;
+        set { _animatedTotalCompaniesInDb = value; OnPropertyChanged(); }
+    }
+
+    public int AnimatedTotalSitesInDb
+    {
+        get => _animatedTotalSitesInDb;
+        set { _animatedTotalSitesInDb = value; OnPropertyChanged(); }
+    }
+
     public bool HasUnsavedChanges => HasUnsavedNewCustomer || HasUnsavedTicket;
 }

@@ -5,6 +5,7 @@ public enum EnumMainSection
     Dashboard,
     Customers,
     CompanyAndSites,
+    ProductsAndPrices,
     Tickets,
     Documents,
     Camera,

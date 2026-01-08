@@ -60,6 +60,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand ShowDashboardCommand { get; }
     public ICommand ShowCustomersCommand { get; }
     public ICommand ShowCompanyAndSitesCommand { get; }
+    public ICommand ShowProductsAndPricesCommand { get; }
     public ICommand ShowTicketsCommand { get; }
     public ICommand ShowDocumentsCommand { get; }
     public ICommand ShowCameraCommand { get; }
@@ -150,6 +151,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         UploadCustomerDocumentCommand = new AsyncCommand(UploadCustomerDocumentAsync);
 
         ShowCompanyAndSitesCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.CompanyAndSites);
+        ShowProductsAndPricesCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.ProductsAndPrices);
         // Section navigation (used by menu)
         ShowDashboardCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Dashboard);
         ShowCustomersCommand = ReactiveUI.ReactiveCommand.CreateFromTask(async () =>
@@ -335,7 +337,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
             long? countryId = null;
             if (SearchCountry != null &&
-                !string.Equals(SearchCountry.Name, "ALL", StringComparison.OrdinalIgnoreCase))
+                !string.Equals(SearchCountry.CountryName, "ALL", StringComparison.OrdinalIgnoreCase))
             {
                 countryId = SearchCountry.CountryId;
             }
@@ -872,9 +874,13 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         {
             TotalCustomersInDb = health.customersCount;
             TotalTicketsInDb = health.ticketsCount;
+            TotalCompaniesInDb = health.companiesCount;
+            TotalSitesInDb = health.sitesCount;
 
             _ = AnimateCounterAsync(TotalCustomersInDb, v => AnimatedTotalCustomersInDb = v);
             _ = AnimateCounterAsync(TotalTicketsInDb, v => AnimatedTotalTicketsInDb = v);
+            _ = AnimateCounterAsync(TotalCompaniesInDb, v => AnimatedTotalCompaniesInDb = v);
+            _ = AnimateCounterAsync(TotalSitesInDb, v => AnimatedTotalSitesInDb = v);
         }
     }
 
@@ -924,5 +930,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         public string status { get; set; } = string.Empty;
         public int customersCount { get; set; }
         public int ticketsCount { get; set; }
+        public int companiesCount { get; set; }
+        public int sitesCount { get; set; }
     }
 }

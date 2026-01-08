@@ -28,15 +28,7 @@ public partial class MainWindowViewModel
 
     private ObservableCollection<CustomerDto> _customerSearchResults = new();
 
-    // the “selected / loaded” customer that drives the details panel
     private CustomerDto? _foundCustomer;
-
-    private int _totalCustomersInDb;
-    private int _totalTicketsInDb;
-
-    // --- New customer form backing fields ---
-
-    // --- Validation / dirty flags ---
 
     public bool IsNewCustomerFullNameInvalid =>
         string.IsNullOrWhiteSpace(NewFirstName)
@@ -158,18 +150,33 @@ public partial class MainWindowViewModel
         set { _customerSearchResults = value; OnPropertyChanged(); }
     }
 
+    private int _totalCustomersInDb;
     public int TotalCustomersInDb
     {
         get => _totalCustomersInDb;
         set { _totalCustomersInDb = value; OnPropertyChanged(); }
     }
 
+    private int _totalTicketsInDb;
     public int TotalTicketsInDb
     {
         get => _totalTicketsInDb;
         set { _totalTicketsInDb = value; OnPropertyChanged(); }
     }
 
+    private int _totalCompaniesInDb;
+    public int TotalCompaniesInDb
+    {
+        get => _totalCompaniesInDb;
+        set { _totalCompaniesInDb = value; OnPropertyChanged(); }
+    }
+
+    private int _totalSitesInDb;
+    public int TotalSitesInDb
+    {
+        get => _totalSitesInDb;
+        set { _totalSitesInDb = value; OnPropertyChanged(); }
+    }
     // --- Loaded / selected customer driving the details panel ---
 
     public CustomerDto? FoundCustomer

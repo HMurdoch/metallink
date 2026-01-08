@@ -8,175 +8,93 @@ using MetalLink.Shared.Companies;
 using MetalLink.Shared.Sites;
 using MetalLink.Desktop.Services;
 using Avalonia.Threading;
+using System.Collections.Generic;
 
 namespace MetalLink.Desktop.ViewModels;
 
 public partial class MainWindowViewModel
 {
-    // =====================================================
-    // COMPANY & SITE - STATE (bind these in your View)
-    // =====================================================
-
-    // Company search inputs
-    private string? _companySearchLetter = "ALL";
-    public string? CompanySearchLetter
+    private void ClearCompanyEditor()
     {
-        get => _companySearchLetter;
-        set { _companySearchLetter = value; OnPropertyChanged(); }
+        EditingCompanyId = null; // if you have it; otherwise just use a bool flag
+        CompanyEditName = string.Empty;
+        CompanyVatNumber = string.Empty;
+
+        // only relevant for create-mode
+        CompanyEditName = string.Empty;
+        CompanyVatNumber = string.Empty;
+        CompanyFormInitialSiteName = string.Empty;
+
+        (UpdateCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+        (CreateCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
     }
 
-    private string _companySearchName = string.Empty;
-    public string CompanySearchName
-    {
-        get => _companySearchName;
-        set { _companySearchName = value ?? string.Empty; OnPropertyChanged(); }
-    }
+    private string _originalCompanyName = "";
+    private string? _originalVatNumber = null;
 
-    // Company results
-    public ObservableCollection<CompanyLookupDto> CompanyResults { get; } = new();
+    public bool IsCompanyEditMode => EditingCompanyId.HasValue;
+    public bool IsCompanyCreateMode => !EditingCompanyId.HasValue;
 
-    private CompanyLookupDto? _selectedCompany;
-    public CompanyLookupDto? SelectedCompany
+    public bool CanCreateCompany =>
+        IsCompanyCreateMode
+        && !string.IsNullOrWhiteSpace(CompanyEditName)
+        && !string.IsNullOrWhiteSpace(CompanyFormInitialSiteName);
+
+    public bool CanUpdateCompany
     {
-        get => _selectedCompany;
-        set
+        get
         {
-            if (_selectedCompany == value) return;
-            _selectedCompany = value;
-            OnPropertyChanged();
+            if (!IsCompanyEditMode) return false;
+            if (SelectedCompany == null) return false;
 
-            SiteResults.Clear();
-            SelectedSite = null;
+            var name = (CompanyEditName ?? "").Trim();
+            var vat  = string.IsNullOrWhiteSpace(CompanyVatNumber) ? null : CompanyVatNumber.Trim();
 
-            CompanyEditName = value?.CompanyName ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(name)) return false;
 
-            // ✅ load sites for the selected results-grid company
-            if (value != null)
-                _ = LoadSitesForSelectedCompanyResultsAsync();
+            var changedName = !string.Equals(name, _originalCompanyName, StringComparison.Ordinal);
+            var changedVat  = !string.Equals(vat, _originalVatNumber, StringComparison.Ordinal);
+
+            return changedName || changedVat;
         }
     }
 
-    // Company edit section
-    private string _companyEditName = string.Empty;
-    public string CompanyEditName
+    public bool HasSiteFormSuccess => !string.IsNullOrWhiteSpace(SiteFormSuccess);
+
+    private void ClearSiteFormMessages()
     {
-        get => _companyEditName;
-        set
-        {
-            _companyEditName = value ?? string.Empty;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(CanUpdateCompany));
-            (UpdateCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
-        }
-    }
-
-    public bool CanUpdateCompany =>
-        SelectedCompany != null &&
-        !string.IsNullOrWhiteSpace(CompanyEditName) &&
-        !string.Equals(CompanyEditName.Trim(), SelectedCompany.CompanyName?.Trim(), StringComparison.Ordinal);
-
-    // Sites list for selected company
-    public ObservableCollection<SiteLookupDto> SiteResults { get; } = new();
-
-    private SiteLookupDto? _selectedSite;
-    public SiteLookupDto? SelectedSite
-    {
-        get => _selectedSite;
-        set
-        {
-            if (_selectedSite == value) return;
-            _selectedSite = value;
-            OnPropertyChanged();
-
-            // TODO: when selected, load site details into Site edit fields
-            LoadSelectedSiteIntoEditFields(value);
-        }
-    }
-
-    // Site create/edit fields (remember: address belongs to Site)
-    private long? _editingSiteId;
-    public long? EditingSiteId
-    {
-        get => _editingSiteId;
-        set { _editingSiteId = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsSiteEditMode)); }
+        SiteFormError = "";
+        SiteFormSuccess = "";
     }
 
     public bool IsSiteEditMode => EditingSiteId.HasValue;
 
-    private string _siteName = string.Empty;
-    public string SiteName
-    {
-        get => _siteName;
-        set { _siteName = value ?? string.Empty; OnPropertyChanged(); OnPropertyChanged(nameof(CanCreateOrUpdateSite)); (CreateOrUpdateSiteCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged(); }
-    }
-
-    private string _siteCode = string.Empty;
-    public string SiteCode
-    {
-        get => _siteCode;
-        set { _siteCode = value ?? string.Empty; OnPropertyChanged(); }
-    }
-
-    private string _addressLine1 = string.Empty;
-    public string AddressLine1
-    {
-        get => _addressLine1;
-        set { _addressLine1 = value ?? string.Empty; OnPropertyChanged(); }
-    }
-
-    private string _addressLine2 = string.Empty;
-    public string AddressLine2
-    {
-        get => _addressLine2;
-        set { _addressLine2 = value ?? string.Empty; OnPropertyChanged(); }
-    }
-
-    private string _suburb = string.Empty;
-    public string Suburb
-    {
-        get => _suburb;
-        set { _suburb = value ?? string.Empty; OnPropertyChanged(); }
-    }
-
-    private string _city = string.Empty;
-    public string City
-    {
-        get => _city;
-        set { _city = value ?? string.Empty; OnPropertyChanged(); }
-    }
-
-    private string _postalCode = string.Empty;
-    public string PostalCode
-    {
-        get => _postalCode;
-        set { _postalCode = value ?? string.Empty; OnPropertyChanged(); }
-    }
-
-    // NOTE: Province/Country are in your Lookup partial already (Provinces/Countries + NewProvince/NewCountry).
-    // We'll re-use NewProvince/NewCountry for site create/edit to avoid duplicates.
+    public bool CanCreateSite =>
+        SelectedCompany != null && !string.IsNullOrWhiteSpace(NewSiteCreateName);
 
     public bool CanCreateOrUpdateSite =>
         SelectedCompany != null &&
         !string.IsNullOrWhiteSpace(SiteName);
 
-    // =====================================================
-    // COMMANDS (CommunityToolkit)
-    // =====================================================
+    public string SiteSaveButtonText => IsSiteEditMode ? "Update" : "Create";
 
+    public IAsyncRelayCommand CreateSiteForSelectedCompanyCommand { get; private set; } = null!;
     public IAsyncRelayCommand SearchCompaniesCommand { get; private set; } = null!;
     public IAsyncRelayCommand NewCompanyCommand { get; private set; } = null!;
     public IAsyncRelayCommand UpdateCompanyCommand { get; private set; } = null!;
     public IAsyncRelayCommand CancelCompanyEditCommand { get; private set; } = null!;
-
-    public IRelayCommand<CompanyLookupDto> EditCompanyCommand { get; private set; } = null!;
     public IAsyncRelayCommand LoadSitesForCompanyCommand { get; private set; } = null!;
-
     public IRelayCommand<SiteLookupDto> EditSiteCommand { get; private set; } = null!;
     public IAsyncRelayCommand<SiteLookupDto> DeleteSiteCommand { get; private set; } = null!;
     public IAsyncRelayCommand CreateOrUpdateSiteCommand { get; private set; } = null!;
     public IAsyncRelayCommand CancelSiteEditCommand { get; private set; } = null!;
     public IAsyncRelayCommand CreateCompanyCommand { get; private set; } = null!;
-
+    public IAsyncRelayCommand<CompanyLookupDto> ShowSitesForCompanyCommand { get; private set; } = null!;
+    public IRelayCommand<CompanyLookupDto> EditCompanyCommand { get; private set; } = null!;
+    public IAsyncRelayCommand<CompanyLookupDto> DeleteCompanyCommand { get; private set; } = null!;
+    public IAsyncRelayCommand ClearCompanyFormCommand { get; private set; } = null!;
+    public IAsyncRelayCommand UpdateCompany2Command { get; private set; } = null!;
+    public IRelayCommand ClearSiteFormCommand { get; private set; } = null!;
 
 
     /// <summary>
@@ -188,12 +106,17 @@ public partial class MainWindowViewModel
             NewCompanyCommand = new AsyncRelayCommand(ct => NewCompanyAsync(ct));
             UpdateCompanyCommand = new AsyncRelayCommand(ct => UpdateCompanyAsync(ct), () => CanUpdateCompany);
             CancelCompanyEditCommand = new AsyncRelayCommand(ct => CancelCompanyEditAsync(ct));
-
             LoadSitesForCompanyCommand = new AsyncRelayCommand(ct => LoadSitesForSelectedCompanyResultsAsync(ct));
-
             CreateOrUpdateSiteCommand = new AsyncRelayCommand(ct => CreateOrUpdateSiteAsync(ct), () => CanCreateOrUpdateSite);
             CancelSiteEditCommand = new AsyncRelayCommand(ct => CancelSiteEditAsync(ct));
             CreateCompanyCommand = new AsyncRelayCommand(ct => CreateCompanyAsync(ct), () => CanCreateCompany);
+            ShowSitesForCompanyCommand = new AsyncRelayCommand<CompanyLookupDto>(ShowSitesForCompanyAsync);
+            CreateSiteForSelectedCompanyCommand = new AsyncRelayCommand(ct => CreateSiteForSelectedCompanyAsync(ct), () => CanCreateSite);
+            EditCompanyCommand = new RelayCommand<CompanyLookupDto>(OnEditCompany);
+            DeleteCompanyCommand = new AsyncRelayCommand<CompanyLookupDto>(DeleteCompanyAsync);
+            ClearCompanyFormCommand = new AsyncRelayCommand(ct => ClearCompanyFormAsync(ct));
+            UpdateCompany2Command = new AsyncRelayCommand(ct => UpdateCompanyAsync(ct), () => CanUpdateCompany);
+            ClearSiteFormCommand = new RelayCommand(ClearSiteForm);
     }
 
     // =====================================================
@@ -239,16 +162,49 @@ public partial class MainWindowViewModel
             // Optional: auto-select first row (or set null)
             SelectedCompany = CompanyResults.FirstOrDefault();
 
-            StatusMessage = $"Found {CompanyResults.Count} company(s).";
+            StatusMessage = $"[STATUS] Found {CompanyResults.Count} company(s).";
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Company search failed: {ex.Message}";
+            StatusMessage = $"[STATUS] Company search failed: {ex.Message}";
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private void ClearSiteForm()
+    {
+        EditingSiteId = null;
+        SelectedSite = null;
+
+        SiteName = "";
+        SiteCode = "";
+        AddressLine1 = "";
+        AddressLine2 = "";
+        Suburb = "";
+        City = "";
+        PostalCode = "";
+
+        // defaults
+        SetDefaultProvinceAndCountryForSite();
+
+        OnPropertyChanged(nameof(SiteSaveButtonText));
+        (CreateOrUpdateSiteCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+    }
+
+    private void SetDefaultProvinceAndCountryForSite()
+    {
+        // Gauteng default
+        var gp = Provinces.FirstOrDefault(p =>
+            string.Equals(p.ProvinceName, "Gauteng", StringComparison.OrdinalIgnoreCase));
+        if (gp != null) SelectedProvince = gp;
+
+        // South Africa default
+        var za = Countries.FirstOrDefault(c =>
+            string.Equals(c.CountryName, "South Africa", StringComparison.OrdinalIgnoreCase));
+        if (za != null) SelectedCountry = za;
     }
 
     private async Task NewCompanyAsync(CancellationToken ct = default)
@@ -274,7 +230,12 @@ public partial class MainWindowViewModel
             StatusMessage = "[STATUS] Creating company...";
 
             var company = await _app.CompanyAndSiteService.CreateCompanyAsync(
-                new CompanyDto { CompanyName = NewCompanyCreateName.Trim(), IsActive = true },
+                new CompanyDto
+                {
+                    CompanyName = CompanyEditName.Trim(),
+                    VatNumber = string.IsNullOrWhiteSpace(CompanyVatNumber) ? null : CompanyVatNumber.Trim(),
+                    IsActive = true
+                },
                 ct);
 
             if (company == null)
@@ -284,7 +245,8 @@ public partial class MainWindowViewModel
                 new SiteDto
                 {
                     CompanyId = company!.CompanyId,
-                    SiteName = NewCompanyCreateSiteName.Trim(),
+                    SiteName = CompanyFormInitialSiteName.Trim(),
+                    SiteCode = "SITE-1",
                     IsActive = true,
                     CountryId = NewCountry?.CountryId ?? SelectedCountry?.CountryId ?? 1
                 }, ct);
@@ -293,8 +255,9 @@ public partial class MainWindowViewModel
                 throw new Exception("CreateSite returned null.");
 
             // Clear UI
-            NewCompanyCreateName = string.Empty;
-            NewCompanyCreateSiteName = string.Empty;
+            CompanyEditName = string.Empty;
+            CompanyVatNumber = string.Empty;
+            CompanyFormInitialSiteName = string.Empty;
 
             // Refresh your caches/results
             // If you already have a lookup cache loader, call it.
@@ -309,6 +272,7 @@ public partial class MainWindowViewModel
             {
                 CompanyId = company.CompanyId,
                 CompanyName = company.CompanyName,
+                VatNumber = company.VatNumber,
                 IsActive = company.IsActive
             };
 
@@ -358,24 +322,155 @@ public partial class MainWindowViewModel
     private void OnEditCompany(CompanyLookupDto? company)
     {
         if (company == null) return;
-        SelectedCompany = company;
-        CompanyEditName = company.CompanyName ?? string.Empty;
+
+        SelectedCompany = company;           // keeps grid selection consistent
+        EditingCompanyId = company.CompanyId;
+
+        _originalCompanyName = company.CompanyName?.Trim() ?? "";
+        _originalVatNumber = company.VatNumber?.Trim();
+
+        CompanyEditName = company.CompanyName ?? "";
+        CompanyVatNumber = company.VatNumber ?? "";
+
+        OnPropertyChanged(nameof(CanUpdateCompany));
+        (UpdateCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+
+        // only if your dto has it; otherwise leave blank
+        // CompanyFormVatNumber = company.VatNumber ?? "";
+
+        // create-only field; don’t use it in edit
+        CompanyFormInitialSiteName = "";
 
         StatusMessage = $"[STATUS] Editing company {company.CompanyId}.";
-        Console.WriteLine(StatusMessage);
     }
 
     private async Task UpdateCompanyAsync(CancellationToken ct = default)
     {
+        if (IsBusy) return;
         if (SelectedCompany == null) return;
+        if (!CanUpdateCompany) return;
 
-        // TODO: call API to update company name
-        // await CompanyService.UpdateCompanyNameAsync(SelectedCompany.CompanyId, CompanyEditName, ct);
+        IsBusy = true;
+        try
+        {
+            StatusMessage = "[STATUS] Updating company...";
 
-        StatusMessage = "[STATUS] Update company not wired yet.";
-        Console.WriteLine(StatusMessage);
-        await Task.CompletedTask;
+            var dto = new CompanyDto
+            {
+                CompanyId = SelectedCompany.CompanyId,                 // harmless
+                CompanyName = CompanyEditName.Trim(),
+                VatNumber = string.IsNullOrWhiteSpace(CompanyVatNumber) ? null : CompanyVatNumber.Trim(),
+                IsActive = true
+            };
+
+            await _app.CompanyAndSiteService.UpdateCompanyAsync(SelectedCompany.CompanyId, dto, ct);
+
+            var idx = CompanyResults.IndexOf(SelectedCompany);
+            if (idx >= 0)
+            {
+                var updatedLookup = new CompanyLookupDto
+                {
+                    CompanyId = SelectedCompany.CompanyId,
+                    CompanyName = dto.CompanyName,
+                    VatNumber = dto.VatNumber,
+                    IsActive = true
+                };
+
+                CompanyResults[idx] = updatedLookup;
+                SelectedCompany = updatedLookup; // keep selection + triggers site load
+            }
+
+            // ✅ Keep lookup cache in sync if you have it
+            var cache = _allCompanies?.FirstOrDefault(x => x.CompanyId == dto.CompanyId);
+            if (cache != null)
+            {
+                cache.CompanyName = dto.CompanyName;
+                cache.VatNumber = dto.VatNumber;
+            }
+
+            // re-render grid
+            OnPropertyChanged(nameof(CompanyResults));
+            OnPropertyChanged(nameof(SelectedCompany));
+
+            StatusMessage = $"[STATUS] Company updated: {dto.CompanyName}";
+
+            // refresh sites list (optional but nice)
+            await LoadSitesForSelectedCompanyResultsAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Update failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+            (UpdateCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+        }
     }
+
+    private Task ClearCompanyFormAsync(CancellationToken ct = default)
+    {
+        EditingCompanyId = null;
+
+        CompanyFormName = "";
+        CompanyFormVatNumber = "";
+
+        CompanyEditName = string.Empty;
+        CompanyVatNumber = string.Empty;
+        CompanyFormInitialSiteName = string.Empty;
+
+        StatusMessage = "[STATUS] Company form cleared.";
+        return Task.CompletedTask;
+    }
+
+    private async Task<bool> ConfirmAsync(string message)
+    {
+        var owner = (Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (owner == null) return false;
+
+        var dlg = new MetalLink.Desktop.Views.ConfirmDialog(message);
+        return await dlg.ShowDialog<bool>(owner);
+    }
+
+    private async Task DeleteCompanyAsync(CompanyLookupDto? company, CancellationToken ct = default)
+    {
+        if (company == null) return;
+        if (IsBusy) return;
+
+        var ok = await ConfirmAsync($"Are you sure you want to delete - {company.CompanyName} ?");
+        if (!ok) return;
+
+        IsBusy = true;
+        try
+        {
+            StatusMessage = "[STATUS] Deleting company...";
+            await _app.CompanyAndSiteService.DeleteCompanyAsync(company.CompanyId, ct);
+
+            var row = CompanyResults.FirstOrDefault(x => x.CompanyId == company.CompanyId);
+            if (row != null) CompanyResults.Remove(row);
+
+            if (SelectedCompany?.CompanyId == company.CompanyId)
+            {
+                SelectedCompany = null;
+                EditingCompanyId = null;
+                SiteResults.Clear();
+                CompanyFormName = "";
+                CompanyFormVatNumber = "";
+                CompanyFormInitialSiteName = "";
+            }
+
+            StatusMessage = "[STATUS] Company deleted (soft).";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Delete failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
 
     private async Task CancelCompanyEditAsync(CancellationToken ct = default)
     {
@@ -391,14 +486,7 @@ public partial class MainWindowViewModel
     {
         if (site == null)
         {
-            EditingSiteId = null;
-            SiteName = "";
-            SiteCode = "";
-            AddressLine1 = "";
-            AddressLine2 = "";
-            Suburb = "";
-            City = "";
-            PostalCode = "";
+            ClearSiteForm();
             return;
         }
 
@@ -412,9 +500,18 @@ public partial class MainWindowViewModel
         City = site.City ?? "";
         PostalCode = site.PostalCode ?? "";
 
-        // Province/Country: re-use your existing NewProvince/NewCountry collections,
-        // and set them based on site.ProvinceId/site.CountryId if those exist on SiteLookupDto.
-        // (You already have UpdateNewLocationFromSelectedSite() logic elsewhere.)
+        if (site.ProvinceId.HasValue)
+            SelectedProvince = Provinces.FirstOrDefault(p => p.ProvinceId == site.ProvinceId.Value);
+
+        if (site.CountryId.HasValue)
+            SelectedCountry = Countries.FirstOrDefault(c => c.CountryId == site.CountryId.Value);
+
+        // fallback defaults if null
+        if (SelectedProvince == null || SelectedCountry == null)
+            SetDefaultProvinceAndCountryForSite();
+
+        OnPropertyChanged(nameof(SiteSaveButtonText));
+        (CreateOrUpdateSiteCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
     }
 
     private void OnEditSite(SiteLookupDto? site)
@@ -426,34 +523,78 @@ public partial class MainWindowViewModel
         Console.WriteLine(StatusMessage);
     }
 
-    private string _newCompanySiteName = string.Empty;
-    public string NewCompanySiteName
-    {
-        get => _newCompanySiteName;
-        set
-        {
-            _newCompanySiteName = value ?? string.Empty;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(CanCreateCompany));
-        }
-    }
-
-
     private async Task CreateOrUpdateSiteAsync(CancellationToken ct = default)
     {
+        if (IsBusy) return;
         if (SelectedCompany == null)
         {
             StatusMessage = "[STATUS] Select a company first.";
-            Console.WriteLine(StatusMessage);
             return;
         }
+        if (!CanCreateOrUpdateSite) return;
 
-        // TODO: call API to create or update site.
-        // If EditingSiteId.HasValue => update, else create.
+        IsBusy = true;
+        try
+        {
+            if (!EditingSiteId.HasValue)
+            {
+                StatusMessage = "[STATUS] Creating site...";
 
-        StatusMessage = "[STATUS] Create/Update site not wired yet.";
-        Console.WriteLine(StatusMessage);
-        await Task.CompletedTask;
+                await _app.SiteService.CreateSiteAsync(
+                    new SiteCreateDto
+                    {
+                        CompanyId = SelectedCompany.CompanyId,
+                        SiteName = SiteName.Trim(),
+                        SiteCode = string.IsNullOrWhiteSpace(SiteCode) ? null : SiteCode.Trim(),
+                        AddressLine1 = string.IsNullOrWhiteSpace(AddressLine1) ? null : AddressLine1.Trim(),
+                        AddressLine2 = string.IsNullOrWhiteSpace(AddressLine2) ? null : AddressLine2.Trim(),
+                        Suburb = string.IsNullOrWhiteSpace(Suburb) ? null : Suburb.Trim(),
+                        City = string.IsNullOrWhiteSpace(City) ? null : City.Trim(),
+                        PostalCode = string.IsNullOrWhiteSpace(PostalCode) ? null : PostalCode.Trim(),
+                        ProvinceId = SelectedProvince?.ProvinceId,
+                        CountryId = SelectedCountry?.CountryId,
+                        IsActive = true
+                    }, ct);
+
+                StatusMessage = "[STATUS] Site created.";
+            }
+            else
+            {
+                StatusMessage = "[STATUS] Updating site...";
+
+                await _app.CompanyAndSiteService.UpdateSiteAsync(
+                    EditingSiteId.Value,
+                    new SiteDto
+                    {
+                        SiteId = EditingSiteId.Value,
+                        CompanyId = SelectedCompany.CompanyId,
+                        SiteName = SiteName.Trim(),
+                        SiteCode = SiteCode,
+                        AddressLine1 = AddressLine1,
+                        AddressLine2 = AddressLine2,
+                        Suburb = Suburb,
+                        City = City,
+                        PostalCode = PostalCode,
+                        ProvinceId = SelectedProvince?.ProvinceId,
+                        CountryId = SelectedCountry?.CountryId,
+                        IsActive = true
+                    }, ct);
+
+                StatusMessage = "[STATUS] Site updated.";
+            }
+
+            await LoadSitesForSelectedCompanyResultsAsync(ct);
+            ClearSiteForm();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Save site failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+            (CreateOrUpdateSiteCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+        }
     }
 
     private async Task OnDeleteSiteAsync(SiteLookupDto? site, CancellationToken ct = default)
@@ -530,10 +671,10 @@ public partial class MainWindowViewModel
         {
             StatusMessage = "Loading sites...";
 
-            var items = await _app.CompanyAndSiteService.LookupSitesForCompanyAsync(
+            var items = await _app.SiteService.LookupSitesForCompanyAsync(
                 SelectedCompany.CompanyId,
                 term: string.Empty,
-                ct);
+                ct) ?? new List<SiteLookupDto>();
 
             SiteResults.Clear();
             foreach (var s in items.OrderBy(x => x.SiteName))
@@ -548,4 +689,155 @@ public partial class MainWindowViewModel
         }
     }
 
+
+    private async Task ShowSitesForCompanyAsync(CompanyLookupDto? company, CancellationToken ct = default)
+    {
+        if (company == null) return;
+
+        // selecting it will already trigger LoadSitesForSelectedCompanyResultsAsync()
+        SelectedCompany = company;
+
+        // but to be 100% explicit:
+        await LoadSitesForSelectedCompanyResultsAsync(ct);
+    }
+
+    private async Task CreateSiteForSelectedCompanyAsync(CancellationToken ct = default)
+    {
+        if (IsBusy) return;
+        if (SelectedCompany == null)
+        {
+            StatusMessage = "[STATUS] Select a company first.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(NewSiteCreateName))
+        {
+            StatusMessage = "[STATUS] Site name is required.";
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            StatusMessage = "[STATUS] Creating site...";
+
+            // Uses your Desktop SiteService (calls POST api/sites)
+            var created = await _app.SiteService.CreateSiteAsync(
+                new SiteCreateDto
+                {
+                    CompanyId = SelectedCompany.CompanyId,
+                    SiteName = NewSiteCreateName.Trim(),
+                    SiteCode = string.IsNullOrWhiteSpace(NewSiteCreateCode) ? null : NewSiteCreateCode.Trim(),
+                    IsActive = true,
+
+                    // use your existing NewCountry/NewProvince if you want,
+                    CountryId = NewCountry?.CountryId ?? 1,
+                    ProvinceId = NewProvince?.ProvinceId
+                },
+                ct);
+
+            if (created == null)
+                throw new Exception("CreateSite returned null.");
+
+            NewSiteCreateName = "";
+            NewSiteCreateCode = "";
+
+            await LoadSitesForSelectedCompanyResultsAsync(ct);
+            StatusMessage = $"[STATUS] Created site {created.SiteName}.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Create site failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+            (CreateSiteForSelectedCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+        }
+    }
+
+
+    private readonly ObservableCollection<CompanyLookupDto> _allCompanies = new();
+
+    private async Task LoadCompaniesAndLettersAsync()
+    {
+        try
+        {
+            var items = await _app.CompanyAndSiteService.LookupCompaniesAsync(string.Empty);
+
+            _allCompanies.Clear();
+            foreach (var c in items.OrderBy(c => c.CompanyName))
+                _allCompanies.Add(c);
+
+            _companyLetterFilters.Clear();
+            _companyLetterFilters.Add("ALL");
+
+            var letters = _allCompanies
+                .Select(c => c.CompanyName?.FirstOrDefault() ?? '\0')
+                .Where(ch => ch != '\0')
+                .Select(ch => char.ToUpperInvariant(ch))
+                .Distinct()
+                .OrderBy(ch => ch);
+
+            foreach (var ch in letters)
+                _companyLetterFilters.Add(ch.ToString());
+
+            _companyLettersLoaded = true;
+            _companyLettersLoading = false;
+
+            // Defaults
+            SelectedCompanyLetter ??= "ALL";
+            SelectedNewCompanyLetter ??= "ALL";
+
+            // Apply both dropdowns
+            ApplyCompanyLetterFilter();
+            ApplyNewCompanyLetterFilter();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Failed to load company letters: {ex.Message}";
+            _companyLettersLoaded = true;
+            _companyLettersLoading = false;
+        }
+    }
+
+    private bool _companyLettersLoaded;
+    private bool _restoringSearchCompanySelection;
+    private void ApplyCompanyLetterFilter()
+    {
+        if (!_companyLettersLoaded) return;
+
+        var selectedId = SelectedSearchCompany?.CompanyId;
+        var letter = (SelectedCompanyLetter ?? "ALL").Trim();
+
+        SearchCompanySuggestions.Clear();
+
+        IEnumerable<CompanyLookupDto> query = _allCompanies;
+
+        if (!letter.Equals("ALL", StringComparison.OrdinalIgnoreCase) && letter.Length > 0)
+        {
+            var ch = char.ToUpperInvariant(letter[0]);
+            query = query.Where(c =>
+                !string.IsNullOrWhiteSpace(c.CompanyName) &&
+                char.ToUpperInvariant(c.CompanyName![0]) == ch);
+        }
+
+        foreach (var c in query.OrderBy(c => c.CompanyName))
+            SearchCompanySuggestions.Add(c);
+
+        if (selectedId.HasValue)
+        {
+            var match = SearchCompanySuggestions.FirstOrDefault(x => x.CompanyId == selectedId.Value);
+
+            _restoringSearchCompanySelection = true;
+            SelectedSearchCompany = match;
+            _restoringSearchCompanySelection = false;
+        }
+    }
+
+
+    private void PostUI(Action action)
+    {
+        Dispatcher.UIThread.Post(action, DispatcherPriority.Background);
+    }
 }

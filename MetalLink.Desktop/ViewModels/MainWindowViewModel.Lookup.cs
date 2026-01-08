@@ -17,8 +17,8 @@ namespace MetalLink.Desktop.ViewModels;
 public partial class MainWindowViewModel
 {
     // Lazy-created services (we already have _apiClient in the core partial)
-    private CompanyService?  _companyService;
-    private SiteService?     _siteService;
+    private CompanyService? _companyService;
+    private SiteService? _siteService;
     private ProvinceService? _provinceService;
 
     private CompanyService CompanyService =>
@@ -32,6 +32,7 @@ public partial class MainWindowViewModel
 
     // ----- Customer -----
     private long? _pendingSelectSiteId;
+    private bool _suppressLetterApply;
 
     private void OnEditCustomer(Shared.Customers.CustomerDto? customer)
     {
@@ -39,36 +40,36 @@ public partial class MainWindowViewModel
             return;
 
         EditingCustomerId = customer.CustomerId;
-        IsEditMode        = true;
+        IsEditMode = true;
 
         // -----------------------
         // Names (already fixed on API, but keep safe)
         // -----------------------
         NewFirstName = customer.FirstName ?? string.Empty;
-        NewLastName  = customer.LastName  ?? string.Empty;
+        NewLastName = customer.LastName ?? string.Empty;
 
         // -----------------------
         // Basic contact / address
         // -----------------------
-        NewIdNumber      = customer.IdNumber      ?? string.Empty;
+        NewIdNumber = customer.IdNumber ?? string.Empty;
         NewAccountNumber = customer.AccountNumber;
-        NewPriceCode     = customer.PriceCode     ?? string.Empty;
-        NewTaxable       = customer.Taxable;
-        NewPhoneNumber   = customer.PhoneNumber   ?? string.Empty;
-        NewMobileNumber  = customer.MobileNumber  ?? string.Empty;
-        NewEmail         = customer.Email         ?? string.Empty;
-        NewAddressLine1  = customer.AddressLine1  ?? string.Empty;
-        NewAddressLine2  = customer.AddressLine2  ?? string.Empty;
-        NewSuburb        = customer.Suburb        ?? string.Empty;
-        NewCity          = customer.City          ?? string.Empty;
-        NewPostalCode    = customer.PostalCode    ?? string.Empty;
+        NewPriceCode = customer.PriceCode ?? string.Empty;
+        NewTaxable = customer.Taxable;
+        NewPhoneNumber = customer.PhoneNumber ?? string.Empty;
+        NewMobileNumber = customer.MobileNumber ?? string.Empty;
+        NewEmail = customer.Email ?? string.Empty;
+        NewAddressLine1 = customer.AddressLine1 ?? string.Empty;
+        NewAddressLine2 = customer.AddressLine2 ?? string.Empty;
+        NewSuburb = customer.Suburb ?? string.Empty;
+        NewCity = customer.City ?? string.Empty;
+        NewPostalCode = customer.PostalCode ?? string.Empty;
 
         // -----------------------
         // Company / site mode
         // -----------------------
         NewIsCompany = customer.IsCompany
-                || customer.CompanyId.HasValue
-                || customer.SiteId.HasValue;   // <-- use actual flag
+                       || customer.CompanyId.HasValue
+                       || customer.SiteId.HasValue; // <-- use actual flag
 
         // Try to locate the company in the cached lookup list.
         // First by ID, then (if needed) by name.
@@ -85,13 +86,13 @@ public partial class MainWindowViewModel
             company = _allCompanies
                 .FirstOrDefault(c =>
                     string.Equals(c.CompanyName,
-                                customer.CompanyName,
-                                StringComparison.OrdinalIgnoreCase));
+                        customer.CompanyName,
+                        StringComparison.OrdinalIgnoreCase));
         }
 
         if (company != null)
         {
-            var letter   = char.ToUpperInvariant(company.CompanyName?.FirstOrDefault() ?? 'A');
+            var letter = char.ToUpperInvariant(company.CompanyName?.FirstOrDefault() ?? 'A');
             var letterStr = letter.ToString();
 
             if (!CompanyLetterFilters.Contains(letterStr))
@@ -106,7 +107,7 @@ public partial class MainWindowViewModel
         else
         {
             SelectedCompanyLetter = "ALL";
-            SelectedNewCompany       = null;
+            SelectedNewCompany = null;
         }
 
         // Load sites for the company and select the correct one
@@ -278,6 +279,7 @@ public partial class MainWindowViewModel
     }
 
     private string _searchAccountNumberText = string.Empty;
+
     public string SearchAccountNumberText
     {
         get => _searchAccountNumberText;
@@ -316,28 +318,28 @@ public partial class MainWindowViewModel
 
         var dto = new CustomerDto
         {
-            CustomerId    = EditingCustomerId.Value,
-            FirstName     = NewFirstName,
-            LastName      = NewLastName,
-            IdNumber      = NewIdNumber,
+            CustomerId = EditingCustomerId.Value,
+            FirstName = NewFirstName,
+            LastName = NewLastName,
+            IdNumber = NewIdNumber,
             AccountNumber = NewAccountNumber,
-            PriceCode     = NewPriceCode,
-            PhoneNumber   = NewPhoneNumber,
-            MobileNumber  = NewMobileNumber,
-            Email         = NewEmail,
-            Taxable       = NewTaxable,
-            AddressLine1  = NewAddressLine1,
-            AddressLine2  = NewAddressLine2,
-            Suburb        = NewSuburb,
-            City          = NewCity,
-            PostalCode    = NewPostalCode,
-            IsCompany     = NewIsCompany,
+            PriceCode = NewPriceCode,
+            PhoneNumber = NewPhoneNumber,
+            MobileNumber = NewMobileNumber,
+            Email = NewEmail,
+            Taxable = NewTaxable,
+            AddressLine1 = NewAddressLine1,
+            AddressLine2 = NewAddressLine2,
+            Suburb = NewSuburb,
+            City = NewCity,
+            PostalCode = NewPostalCode,
+            IsCompany = NewIsCompany,
 
             // We KNOW these are non-null if NewIsCompany is true
             // because of the validation above.
             CompanyId = SelectedNewCompany != null
                 ? SelectedNewCompany.CompanyId
-                : null,   // will be null for non-company customers
+                : null, // will be null for non-company customers
 
             SiteId = SelectedNewSite != null
                 ? SelectedNewSite.SiteId
@@ -387,28 +389,33 @@ public partial class MainWindowViewModel
         // you already use in ShowTicketsCommand.
         CurrentSection = EnumMainSection.Tickets;
 
-        StatusMessage = $"Logging ticket for customer {customer.FirstName} {customer.LastName} - ({customer.CustomerId:D8}).";
+        StatusMessage =
+            $"Logging ticket for customer {customer.FirstName} {customer.LastName} - ({customer.CustomerId:D8}).";
     }
 
     // ----- Search Customers: Site -----
 
     private bool _isSearchSiteEnabled;
+
     public bool IsSearchSiteEnabled
     {
         get => _isSearchSiteEnabled;
-        set { 
+        set
+        {
             if (_isSearchSiteEnabled == value) return;
-            _isSearchSiteEnabled = value; 
+            _isSearchSiteEnabled = value;
             OnPropertyChanged();
         }
     }
 
     private bool _isNewSiteEnabled;
+
     public bool IsNewSiteEnabled
     {
         get => _isNewSiteEnabled;
-        set { 
-            _isNewSiteEnabled = value; 
+        set
+        {
+            _isNewSiteEnabled = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsNewSiteEnabled));
         }
@@ -416,13 +423,19 @@ public partial class MainWindowViewModel
 
 
     private ObservableCollection<SiteLookupDto> _searchSiteSuggestions = new();
+
     public ObservableCollection<SiteLookupDto> SearchSiteSuggestions
     {
         get => _searchSiteSuggestions;
-        set { _searchSiteSuggestions = value; OnPropertyChanged(); }
+        set
+        {
+            _searchSiteSuggestions = value;
+            OnPropertyChanged();
+        }
     }
 
     private SiteLookupDto? _selectedSearchSite;
+
     public SiteLookupDto? SelectedSearchSite
     {
         get => _selectedSearchSite;
@@ -486,13 +499,19 @@ public partial class MainWindowViewModel
     // =====================================================
 
     private ObservableCollection<CompanyLookupDto> _newCompanySuggestions = new();
+
     public ObservableCollection<CompanyLookupDto> NewCompanySuggestions
     {
         get => _newCompanySuggestions;
-        set { _newCompanySuggestions = value; OnPropertyChanged(); }
+        set
+        {
+            _newCompanySuggestions = value;
+            OnPropertyChanged();
+        }
     }
 
     private CompanyLookupDto? _selectedNewCompany;
+
     public CompanyLookupDto? SelectedNewCompany
     {
         get => _selectedNewCompany;
@@ -527,8 +546,8 @@ public partial class MainWindowViewModel
     /// <summary>
     /// Rebuilds NewCompanySuggestions based on SelectedNewCompanyLetter.
     /// </summary>
-    
     private string? _selectedNewCompanyLetter = "ALL";
+
     public string? SelectedNewCompanyLetter
     {
         get => _selectedNewCompanyLetter;
@@ -572,15 +591,20 @@ public partial class MainWindowViewModel
     }
 
 
-
     private ObservableCollection<SiteLookupDto> _newSiteSuggestions = new();
+
     public ObservableCollection<SiteLookupDto> NewSiteSuggestions
     {
         get => _newSiteSuggestions;
-        set { _newSiteSuggestions = value; OnPropertyChanged(); }
+        set
+        {
+            _newSiteSuggestions = value;
+            OnPropertyChanged();
+        }
     }
 
     private SiteLookupDto? _selectedNewSite;
+
     public SiteLookupDto? SelectedNewSite
     {
         get => _selectedNewSite;
@@ -605,8 +629,7 @@ public partial class MainWindowViewModel
         // 🔹 Province: match by Id into the Provinces collection
         if (SelectedNewSite.ProvinceId.HasValue && Provinces is { Count: > 0 })
         {
-            var province = Provinces.FirstOrDefault(
-                p => p.ProvinceId == SelectedNewSite.ProvinceId.Value);
+            var province = Provinces.FirstOrDefault(p => p.ProvinceId == SelectedNewSite.ProvinceId.Value);
 
             if (province != null)
             {
@@ -617,8 +640,7 @@ public partial class MainWindowViewModel
         // 🔹 Country: match by Id into the Countries collection
         if (SelectedNewSite.CountryId.HasValue && Countries is { Count: > 0 })
         {
-            var country = Countries.FirstOrDefault(
-                c => c.CountryId == SelectedNewSite.CountryId.Value);
+            var country = Countries.FirstOrDefault(c => c.CountryId == SelectedNewSite.CountryId.Value);
 
             if (country != null)
             {
@@ -629,6 +651,7 @@ public partial class MainWindowViewModel
 
     // Which customer (if any) are we editing?
     private long? _editingCustomerId;
+
     public long? EditingCustomerId
     {
         get => _editingCustomerId;
@@ -645,6 +668,7 @@ public partial class MainWindowViewModel
     }
 
     private bool _isEditMode;
+
     public bool IsEditMode
     {
         get => _isEditMode;
@@ -663,8 +687,8 @@ public partial class MainWindowViewModel
         }
     }
 
-// Convenience flag for binding Create button
-public bool IsCreateMode => !IsEditMode;
+    // Convenience flag for binding Create button
+    public bool IsCreateMode => !IsEditMode;
 
 
     /// <summary>
@@ -720,13 +744,19 @@ public bool IsCreateMode => !IsEditMode;
     // --------------------
 
     private ObservableCollection<ProvinceDto> _provinces = new();
+
     public ObservableCollection<ProvinceDto> Provinces
     {
         get => _provinces;
-        set { _provinces = value; OnPropertyChanged(); }
+        set
+        {
+            _provinces = value;
+            OnPropertyChanged();
+        }
     }
 
     private ProvinceDto? _selectedProvince;
+
     public ProvinceDto? SelectedProvince
     {
         get => _selectedProvince;
@@ -742,25 +772,40 @@ public bool IsCreateMode => !IsEditMode;
 
 
     private ProvinceDto? _newProvince;
+
     public ProvinceDto? NewProvince
     {
         get => _newProvince;
-        set { _newProvince = value; OnPropertyChanged(); }
+        set
+        {
+            _newProvince = value;
+            OnPropertyChanged();
+        }
     }
 
     private ProvinceDto? _searchProvince;
+
     public ProvinceDto? SearchProvince
     {
         get => _searchProvince;
-        set { _searchProvince = value; OnPropertyChanged(); }
+        set
+        {
+            _searchProvince = value;
+            OnPropertyChanged();
+        }
     }
 
     // 🔹 NEW: search-only provinces (includes "ALL")
     private ObservableCollection<ProvinceDto> _searchProvinces = new();
+
     public ObservableCollection<ProvinceDto> SearchProvinces
     {
         get => _searchProvinces;
-        set { _searchProvinces = value; OnPropertyChanged(); }
+        set
+        {
+            _searchProvinces = value;
+            OnPropertyChanged();
+        }
     }
 
     // Countries (dropdown) – for now just South Africa, but shaped for future API
@@ -769,10 +814,15 @@ public bool IsCreateMode => !IsEditMode;
     public ObservableCollection<CountryDto> Countries
     {
         get => _countries;
-        set { _countries = value; OnPropertyChanged(); }
+        set
+        {
+            _countries = value;
+            OnPropertyChanged();
+        }
     }
 
     private CountryDto? _selectedCountry;
+
     public CountryDto? SelectedCountry
     {
         get => _selectedCountry;
@@ -784,26 +834,41 @@ public bool IsCreateMode => !IsEditMode;
     }
 
     private CountryDto? _newCountry;
+
     public CountryDto? NewCountry
     {
         get => _newCountry;
-        set { _newCountry = value; OnPropertyChanged(); }
+        set
+        {
+            _newCountry = value;
+            OnPropertyChanged();
+        }
     }
 
     private CountryDto? _searchCountry;
+
     public CountryDto? SearchCountry
     {
         get => _searchCountry;
-        set { _searchCountry = value; OnPropertyChanged(); }
+        set
+        {
+            _searchCountry = value;
+            OnPropertyChanged();
+        }
     }
 
     // 🔹 NEW: search-only countries (includes "ALL")
     private ObservableCollection<CountryDto> _searchCountries = new();
+
     public ObservableCollection<CountryDto> SearchCountries
     {
         get => _searchCountries;
-        set { _searchCountries = value; OnPropertyChanged(); }
-    }    
+        set
+        {
+            _searchCountries = value;
+            OnPropertyChanged();
+        }
+    }
 
     public void InitializeCountries()
     {
@@ -818,8 +883,8 @@ public bool IsCreateMode => !IsEditMode;
         var southAfrica = new CountryDto
         {
             CountryId = 1,
-            Name      = "South Africa",
-            Code      = "ZA"
+            CountryName = "South Africa",
+            CountryCode = "ZA"
         };
 
         Countries.Add(southAfrica);
@@ -830,8 +895,8 @@ public bool IsCreateMode => !IsEditMode;
         var allCountry = new CountryDto
         {
             CountryId = 0,
-            Name      = "ALL",
-            Code      = "ALL"
+            CountryName = "ALL",
+            CountryCode = "ALL"
         };
 
         // ALL at index 0
@@ -840,7 +905,7 @@ public bool IsCreateMode => !IsEditMode;
         // 🔹 Defaults
         // Create/Edit → South Africa
         _selectedCountry = southAfrica;
-        NewCountry       = southAfrica;
+        NewCountry = southAfrica;
         OnPropertyChanged(nameof(SelectedCountry));
         OnPropertyChanged(nameof(NewCountry));
 
@@ -868,7 +933,7 @@ public bool IsCreateMode => !IsEditMode;
         // 🔹 Add "ALL" to the top of the SEARCH list only
         var allProvince = new ProvinceDto
         {
-            ProvinceId   = 0,
+            ProvinceId = 0,
             ProvinceName = "ALL",
             ProvinceCode = "ALL"
         };
@@ -880,7 +945,7 @@ public bool IsCreateMode => !IsEditMode;
         if (gauteng is not null)
         {
             _selectedProvince = gauteng;
-            NewProvince       = gauteng;
+            NewProvince = gauteng;
             OnPropertyChanged(nameof(SelectedProvince));
             OnPropertyChanged(nameof(NewProvince));
         }
