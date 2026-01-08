@@ -63,17 +63,9 @@ public sealed class CompanyAndSiteService
             throw new HttpRequestException($"API {(int)response.StatusCode} {response.ReasonPhrase}. Body: {body}");
     }
 
-    /// <summary>
-    /// UI says "Delete" — soft delete (IsActive=false) using PUT.
-    /// </summary>
-    public async Task DeleteCompanyAsync(long companyId, CancellationToken ct = default)
-    {
-        var company = await GetCompanyAsync(companyId, ct)
-                      ?? throw new InvalidOperationException($"Company {companyId} not found.");
+    public Task DeleteCompanyAsync(long companyId, CancellationToken ct = default)
+        => _apiClient.DeleteAsync($"api/companies/{companyId}", ct);
 
-        company.IsActive = false;
-        await UpdateCompanyAsync(companyId, company, ct);
-    }
 
     // ============================================================
     // SITES
@@ -82,17 +74,14 @@ public sealed class CompanyAndSiteService
     /// <summary>
     /// GET api/companies/{companyId}/sites/lookup?term=foo
     /// </summary>
-    public async Task<IReadOnlyList<SiteLookupDto>> LookupSitesForCompanyAsync(
+    public Task<List<SiteLookupDto>?> LookupSitesForCompanyAsync(
         long companyId,
-        string? term,
+        string term = "",
         CancellationToken ct = default)
     {
-        var path = $"api/companies/{companyId}/sites/lookup";
-        if (!string.IsNullOrWhiteSpace(term))
-            path += $"?term={Uri.EscapeDataString(term)}";
-
-        var result = await _apiClient.GetAsync<SiteLookupDto[]>(path, ct);
-        return result ?? Array.Empty<SiteLookupDto>();
+        var url =
+            $"api/sites/lookup?companyId={companyId}&term={Uri.EscapeDataString(term ?? "")}";
+        return _apiClient.GetAsync<List<SiteLookupDto>>(url, ct);
     }
 
     /// <summary>

@@ -57,9 +57,9 @@ public sealed class CustomerService
         long customerId,
         CancellationToken cancellationToken = default)
     {
-        var response = await _apiClient.DeleteAsync($"api/customers/{customerId}", cancellationToken);
-        response.EnsureSuccessStatusCode();
+        await _apiClient.DeleteAsync($"api/customers/{customerId}", cancellationToken);
     }
+
 
     public Task<long> GetNextAccountNumberAsync(
         CancellationToken cancellationToken = default)

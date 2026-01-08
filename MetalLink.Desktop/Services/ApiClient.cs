@@ -43,6 +43,8 @@ public sealed class ApiClient
     {
         ApplyAuthHeader();
 
+        Console.WriteLine($"GET: {_httpClient.BaseAddress}{relativeUrl}");
+
         var response = await _httpClient.GetAsync(relativeUrl, cancellationToken);
         var raw = await response.Content.ReadAsStringAsync(cancellationToken);
 
@@ -97,6 +99,8 @@ public sealed class ApiClient
         CancellationToken cancellationToken = default)
     {
         ApplyAuthHeader();
+        Console.WriteLine($"PUT: {_httpClient.BaseAddress}{uri}");
+        
         var request = new HttpRequestMessage(HttpMethod.Put, uri)
         {
             Content = JsonContent.Create(body)
@@ -105,14 +109,19 @@ public sealed class ApiClient
         return await _httpClient.SendAsync(request, cancellationToken);
     }
 
-    public async Task<HttpResponseMessage> DeleteAsync(
-        string uri,
-        CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(string relativeUrl, CancellationToken ct = default)
     {
         ApplyAuthHeader();
-        var request = new HttpRequestMessage(HttpMethod.Delete, uri);
-        return await _httpClient.SendAsync(request, cancellationToken);
+
+        Console.WriteLine($"DELETE: {_httpClient.BaseAddress}{relativeUrl}");
+
+        var response = await _httpClient.DeleteAsync(relativeUrl, ct);
+        var raw = await response.Content.ReadAsStringAsync(ct);
+
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"API {(int)response.StatusCode} {response.ReasonPhrase}. Body: {raw}");
     }
+
 
     public string ToQueryString(object? values)
     {

@@ -22,6 +22,8 @@ public partial class App : Application
     public ICameraService CameraService { get; private set; } = null!;
     public TicketReportService TicketReportService { get; private set; } = null!;
     public ISignaturePadService SignaturePadService { get; private set; } = null!;
+    public SiteService SiteService { get; private set; } = null!;
+
 
     public override void Initialize()
     {
@@ -41,6 +43,7 @@ public partial class App : Application
         CameraService = new MockCameraService();
         TicketReportService = new TicketReportService(AuthState);
         SignaturePadService = new MockSignaturePadService(); // swap to real device later
+        SiteService = new SiteService(ApiClient);
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {

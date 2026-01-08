@@ -30,4 +30,7 @@ public sealed class CompanyService
 
     public Task<CompanyLookupDto?> CreateCompanyAsync(CompanyCreateDto dto, CancellationToken ct = default)
         => _apiClient.PostAsync<CompanyCreateDto, CompanyLookupDto>("api/companies", dto, ct);
+
+    public Task DeleteCompanyAsync(long companyId, CancellationToken ct = default)
+        => _apiClient.DeleteAsync($"api/companies/{companyId}", ct);
 }
