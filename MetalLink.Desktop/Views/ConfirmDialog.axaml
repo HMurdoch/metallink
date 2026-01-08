@@ -1,0 +1,21 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MetalLink.Desktop.Views.ConfirmDialog"
+        Width="420" Height="160"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Title="Confirm delete">
+  <Border Background="#252932" Padding="16">
+    <StackPanel Spacing="14">
+      <TextBlock x:Name="MessageText"
+                 Foreground="#f5f5f5"
+                 FontSize="14"
+                 TextWrapping="Wrap" />
+
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+        <Button Width="100" Content="Cancel" Click="Cancel_Click"/>
+        <Button Width="100" Content="Confirm" Click="Confirm_Click"/>
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</Window>
