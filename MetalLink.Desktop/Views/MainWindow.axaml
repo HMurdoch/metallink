@@ -4,7 +4,7 @@
         xmlns:views="using:MetalLink.Desktop.Views"
         xmlns:converters="using:MetalLink.Desktop.Views"
         x:Class="MetalLink.Desktop.Views.MainWindow"
-        Width="1300"
+        Width="1500"
         Height="800"
         MinWidth="1150"
         MinHeight="700"
@@ -72,9 +72,12 @@
           <Button Content="Customers"
                   Command="{Binding ShowCustomersCommand}"
                   Classes="NavButton SubNavButton"/>
-          <Button Content="Company &amp; Sites"
+          <Button Content="Companies &amp; Sites"
                   Command="{Binding ShowCompanyAndSitesCommand}"
-                  Classes="NavButton SubNavButton"/>                  
+                  Classes="NavButton SubNavButton"/>
+          <Button Content="Products &amp; Prices"
+                  Command="{Binding ShowProductsAndPricesCommand}"
+                  Classes="NavButton SubNavButton" />                  
 
           <Button Content="Tickets" Command="{Binding ShowTicketsCommand}" Classes="NavButton"/>
           <Button Content="Documents" Command="{Binding ShowDocumentsCommand}" Classes="NavButton"/>
