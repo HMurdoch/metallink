@@ -26,31 +26,32 @@ public sealed class SitesController : ControllerBase
     {
         term ??= "";
 
-        var q = _db.Sites.AsNoTracking()
+        var query = _db.Sites.AsNoTracking()
             .Where(s => s.CompanyId == companyId && s.IsActive);
 
         if (!string.IsNullOrWhiteSpace(term))
         {
             var t = term.Trim();
-            q = q.Where(s => EF.Functions.ILike(s.SiteName, $"%{t}%"));
+            query = query.Where(s => EF.Functions.ILike(s.SiteName!, $"%{t}%"));
         }
 
-        var results = await q
+        var results = await query
             .OrderBy(s => s.SiteName)
             .Select(s => new SiteLookupDto
             {
                 SiteId = s.SiteId,
                 CompanyId = s.CompanyId,
                 SiteName = s.SiteName,
+                ProvinceId = s.ProvinceId,
+                CountryId = s.CountryId,
+                IsActive = s.IsActive,
+
                 SiteCode = s.SiteCode,
                 AddressLine1 = s.AddressLine1,
                 AddressLine2 = s.AddressLine2,
                 Suburb = s.Suburb,
                 City = s.City,
-                PostalCode = s.PostalCode,
-                ProvinceId = s.ProvinceId,
-                CountryId = s.CountryId,
-                IsActive = s.IsActive
+                PostalCode = s.PostalCode
             })
             .ToListAsync(ct);
 
@@ -74,13 +75,17 @@ public sealed class SitesController : ControllerBase
         if (!companyExists)
             return BadRequest($"Company {dto.CompanyId} not found.");
 
+        // if this site is being created as the first site for a company
+        if (string.IsNullOrWhiteSpace(dto.SiteCode))
+            dto.SiteCode = "SITE-1";
+
         var entity = new Site
         {
             CompanyId = dto.CompanyId,
             SiteName = name,
             IsActive = dto.IsActive,
 
-            SiteCode = dto.SiteCode ?? string.Empty,
+            SiteCode = dto.SiteCode,
             AddressLine1 = dto.AddressLine1,
             AddressLine2 = dto.AddressLine2,
             Suburb = dto.Suburb,
@@ -109,7 +114,7 @@ public sealed class SitesController : ControllerBase
             IsActive = entity.IsActive
         };
 
-        return CreatedAtAction(nameof(Lookup), new { companyId = entity.CompanyId, term = "" }, result);
+        return Created($"api/sites/{entity.SiteId}", result);
     }
 
     // PUT /api/sites/{siteId}
@@ -119,8 +124,8 @@ public sealed class SitesController : ControllerBase
         var site = await _db.Sites.FirstOrDefaultAsync(s => s.SiteId == siteId, ct);
         if (site == null) return NotFound();
 
-        site.SiteName = string.IsNullOrWhiteSpace(dto.SiteName) ? site.SiteName : dto.SiteName.Trim();
-        site.SiteCode = dto.SiteCode ?? string.Empty;
+        site.SiteName = dto.SiteName ?? site.SiteName;
+        site.SiteCode = dto.SiteCode;
         site.AddressLine1 = dto.AddressLine1;
         site.AddressLine2 = dto.AddressLine2;
         site.Suburb = dto.Suburb;

@@ -7,7 +7,8 @@ public sealed class TicketReportModel
     public long TicketId { get; init; }
     public string TicketNumber { get; init; } = string.Empty;
     public string TicketType { get; init; } = string.Empty;
-    public DateTime CreatedTime { get; init; }
+    public DateTime? CreatedTime { get; init; }
+    public DateTime? UpdatedTime { get; init; }
 
     // Site
     public long SiteId { get; init; }

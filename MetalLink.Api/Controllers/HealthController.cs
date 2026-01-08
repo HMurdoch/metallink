@@ -21,12 +21,16 @@ public class HealthController : ControllerBase
         // Attempt a trivial query against Customers
         var customers = await _dbContext.Customers.CountAsync();
         var tickets = await _dbContext.Tickets.CountAsync();
+        var companies = await _dbContext.Companies.CountAsync();
+        var sites = await _dbContext.Sites.CountAsync();
 
         return Ok(new
         {
             status = "ok",
             customersCount = customers,
-            ticketsCount = tickets
+            ticketsCount = tickets,
+            companiesCount = companies,
+            sitesCount = sites
         });
     }
 }

@@ -58,7 +58,9 @@ public sealed class CompaniesController : ControllerBase
         {
             CompanyName = name,
             VatNumber = dto.VatNumber,
-            IsActive = dto.IsActive
+            IsActive = dto.IsActive,
+            CreatedTime = DateTimeOffset.UtcNow,
+            UpdatedTime = DateTimeOffset.UtcNow
         };
 
         _db.Companies.Add(entity);
@@ -69,7 +71,7 @@ public sealed class CompaniesController : ControllerBase
             CompanyId = entity.CompanyId,
             CompanyName = entity.CompanyName,
             VatNumber = entity.VatNumber,
-            IsActive = entity.IsActive
+            IsActive = entity.IsActive,
         };
 
         // Returns 201 + Location header
@@ -90,5 +92,43 @@ public sealed class CompaniesController : ControllerBase
             VatNumber = c.VatNumber,
             IsActive = c.IsActive
         });
+    }
+
+    // PUT /api/companies/14
+    [HttpPut("{companyId:long}")]
+    public async Task<IActionResult> Update(long companyId, [FromBody] CompanyDto dto, CancellationToken ct)
+    {
+        if (dto == null) return BadRequest("Body required.");
+
+        var company = await _db.Companies.FirstOrDefaultAsync(x => x.CompanyId == companyId, ct);
+        if (company == null) return NotFound();
+
+        var name = (dto.CompanyName ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            return BadRequest("CompanyName is required.");
+
+        company.CompanyName = name;
+        company.VatNumber = string.IsNullOrWhiteSpace(dto.VatNumber) ? null : dto.VatNumber.Trim();
+        company.IsActive = dto.IsActive;
+
+        // IMPORTANT: fix -infinity if you want (recommended)
+        company.UpdatedTime = DateTimeOffset.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
+        return NoContent();
+    }
+
+    // DELETE /api/companies/14  (soft delete)
+    [HttpDelete("{companyId:long}")]
+    public async Task<IActionResult> Delete(long companyId, CancellationToken ct)
+    {
+        var company = await _db.Companies.FirstOrDefaultAsync(x => x.CompanyId == companyId, ct);
+        if (company == null) return NotFound();
+
+        company.IsActive = false;
+        company.UpdatedTime = DateTimeOffset.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
+        return NoContent();
     }
 }
