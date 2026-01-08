@@ -1,0 +1,303 @@
+<UserControl
+  x:Class="MetalLink.Desktop.Views.CompanyAndSiteView"
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <UserControl.Resources>
+    <DataTemplate x:Key="CompanyLookupTemplate">
+      <TextBlock Text="{Binding CompanyName}" />
+    </DataTemplate>
+
+    <DataTemplate x:Key="SiteLookupTemplate">
+      <TextBlock Text="{Binding SiteName}" />
+    </DataTemplate>
+
+    <DataTemplate x:Key="ProvinceLookupTemplate">
+      <TextBlock Text="{Binding ProvinceName}" />
+    </DataTemplate>
+
+    <DataTemplate x:Key="CountryLookupTemplate">
+      <TextBlock Text="{Binding CountryName}" />
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <Border Background="#1f2229" Padding="16">
+    <ScrollViewer>
+      <StackPanel Spacing="16">
+
+        <!-- Header -->
+        <TextBlock
+          Text="Companies"
+          FontSize="20"
+          FontWeight="Bold"
+          Foreground="#f5f5f5" />
+
+        <!-- Search -->
+        <Border Background="#252932" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="10">
+            <TextBlock Text="Search company" Foreground="#f5f5f5" FontWeight="Bold" />
+
+            <!-- 2-column layout, left column used -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+              <StackPanel Grid.Column="0" Spacing="6">
+                <TextBlock Text="Company" Foreground="#c0c4cf" />
+                <Grid ColumnDefinitions="70,*,*">
+                  <ComboBox
+                    Grid.Column="0"
+                    ItemsSource="{Binding CompanyLetterFilters}"
+                    SelectedItem="{Binding SelectedCompanyLetter}" />
+
+                  <!-- middle column is HALF of the available width -->
+                  <ComboBox
+                    Grid.Column="1"
+                    Margin="4,0,0,0"
+                    HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding SearchCompanySuggestions}"
+                    SelectedItem="{Binding SelectedSearchCompany}"
+                    ItemTemplate="{StaticResource CompanyLookupTemplate}" />
+                </Grid>
+                <Button Content="Search"
+                        Command="{Binding SearchCompaniesCommand}"
+                        HorizontalAlignment="Left"
+                        Width="100" />
+              </StackPanel>
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <!-- Results -->
+        <Border Background="#252932" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Results" Foreground="#f5f5f5" FontWeight="Bold" />
+
+            <DataGrid
+              AutoGenerateColumns="False"
+              ItemsSource="{Binding CompanyResults}"
+              SelectedItem="{Binding SelectedCompany, Mode=TwoWay}"
+              Height="220">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Company ID" Binding="{Binding CompanyId}" IsReadOnly="True" Width="120" />
+                <DataGridTextColumn Header="Company Name" Binding="{Binding CompanyName}" IsReadOnly="True" Width="*" />
+                <DataGridTextColumn Header="Company VAT Number" Binding="{Binding VatNumber}" IsReadOnly="True"
+                                    Width="*" />
+                <DataGridTemplateColumn Header="" Width="160">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Button
+                          Content="Edit"
+                          Padding="6,2"
+                          Command="{Binding DataContext.EditCompanyCommand,
+                                            RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          CommandParameter="{Binding}" />
+
+                        <Button
+                          Content="Delete"
+                          Padding="6,2"
+                          Command="{Binding DataContext.DeleteCompanyCommand,
+                                            RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          CommandParameter="{Binding}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+              </DataGrid.Columns>
+            </DataGrid>
+          </StackPanel>
+        </Border>
+
+        <!-- Create/Edit Company -->
+        <Border Background="#252932" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="10">
+            <TextBlock Text="Create/Edit Company" Foreground="#f5f5f5" FontWeight="Bold" />
+
+            <Border Padding="12" Background="#2A2F38" CornerRadius="6">
+              <StackPanel Spacing="10">
+
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+
+                  <StackPanel Grid.Row="0" Grid.Column="0" Spacing="6">
+                    <TextBlock Text="Company name" Foreground="#c0c4cf" />
+                    <TextBox
+                      Watermark="Company name"
+                      Text="{Binding CompanyEditName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                  </StackPanel>
+
+                  <StackPanel Grid.Row="0" Grid.Column="1" Spacing="6">
+                    <TextBlock Text="VAT number (optional)" Foreground="#c0c4cf" />
+                    <TextBox
+                      Watermark="VAT number (optional)"
+                      Text="{Binding CompanyVatNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                  </StackPanel>
+
+                  <!-- Only show this when creating -->
+                  <StackPanel Grid.Row="1" Grid.Column="0" Spacing="6"
+                              IsVisible="{Binding IsCompanyCreateMode}">
+                    <TextBlock Text="Initial site name" Foreground="#c0c4cf" />
+                    <TextBox
+                      Watermark="Initial Site Name"
+                      Text="{Binding CompanyFormInitialSiteName, Mode=TwoWay}" />
+                  </StackPanel>
+                  <StackPanel Grid.Row="1" Grid.Column="1" Spacing="6"
+                              IsVisible="{Binding IsCompanyCreateMode}">
+                    <TextBlock Text="Initial site code" Foreground="#c0c4cf" />
+                    <TextBox
+                      Watermark="Initial Site Code"
+                      IsEnabled="false"
+                      Text="SITE-1" />
+                  </StackPanel>
+
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                  <Button Width="100"
+                          HorizontalContentAlignment="Center"
+                          Content="Clear"
+                          Command="{Binding ClearCompanyFormCommand}" />
+
+                  <Button Width="100"
+                          HorizontalContentAlignment="Center"
+                          Content="Create"
+                          Command="{Binding CreateCompanyCommand}"
+                          IsVisible="{Binding IsCompanyCreateMode}" />
+
+                  <Button Width="100"
+                          HorizontalContentAlignment="Center"
+                          Content="Update"
+                          Command="{Binding UpdateCompanyCommand}"
+                          IsVisible="{Binding !IsCompanyCreateMode}" />
+                </StackPanel>
+
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <!-- Sites -->
+        <Border Background="#252932" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Sites" Foreground="#f5f5f5" FontWeight="Bold" />
+
+            <DataGrid
+              AutoGenerateColumns="False"
+              ItemsSource="{Binding SiteResults}"
+              SelectedItem="{Binding SelectedSite, Mode=TwoWay}"
+              Height="220">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Site ID" Binding="{Binding SiteId}" IsReadOnly="True" Width="90" />
+                <DataGridTextColumn Header="Site Name" Binding="{Binding SiteName}" IsReadOnly="True" Width="*" />
+                <DataGridTextColumn Header="Site Code" Binding="{Binding SiteCode}" IsReadOnly="True" Width="120" />
+
+                <DataGridTemplateColumn Header="" Width="180">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <!-- <Button
+                          Content="Edit"
+                          Padding="6,2"
+                          Command="{Binding DataContext.EditSiteCommand,
+                                                                        RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          CommandParameter="{Binding}" /> -->
+                        <Button
+                          Content="Delete"
+                          Padding="6,2"
+                          Command="{Binding DataContext.DeleteSiteCommand,
+                                                                        RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          CommandParameter="{Binding}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+              </DataGrid.Columns>
+            </DataGrid>
+
+          </StackPanel>
+        </Border>
+
+        <!-- Create/Edit Site -->
+        <Border Background="#252932" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="10">
+            <TextBlock Text="Create/Edit Site" Foreground="#f5f5f5" FontWeight="Bold" />
+
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+
+              <!-- Row 0 -->
+              <StackPanel Grid.Row="0" Grid.Column="0" Spacing="6">
+                <TextBlock Text="Site name" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SiteName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+
+              <StackPanel Grid.Row="0" Grid.Column="1" Spacing="6">
+                <TextBlock Text="Site code" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SiteCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+
+              <!-- Row 1 -->
+              <StackPanel Grid.Row="1" Grid.Column="0" Spacing="6">
+                <TextBlock Text="Address line 1" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding AddressLine1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+
+              <StackPanel Grid.Row="1" Grid.Column="1" Spacing="6">
+                <TextBlock Text="Address line 2" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding AddressLine2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+
+              <!-- Row 2 -->
+              <StackPanel Grid.Row="2" Grid.Column="0" Spacing="6">
+                <TextBlock Text="Suburb" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding Suburb, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+
+              <StackPanel Grid.Row="2" Grid.Column="1" Spacing="6">
+                <TextBlock Text="City" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding City, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+
+              <!-- Row 3 -->
+              <StackPanel Grid.Row="3" Grid.Column="0" Spacing="6">
+                <TextBlock Text="Postal code" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding PostalCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+
+              <StackPanel Grid.Row="3" Grid.Column="1" Spacing="6">
+                <TextBlock Text="Province" Foreground="#c0c4cf" />
+                <ComboBox
+                  Width="200"
+                  ItemsSource="{Binding Provinces}"
+                  SelectedItem="{Binding SelectedProvince, Mode=TwoWay}"
+                  ItemTemplate="{StaticResource ProvinceLookupTemplate}" />
+              </StackPanel>
+
+              <!-- Row 4 -->
+              <StackPanel Grid.Row="4" Grid.Column="0" Spacing="6">
+                <TextBlock Text="Country" Foreground="#c0c4cf" />
+                <ComboBox
+                  Width="200"
+                  ItemsSource="{Binding Countries}"
+                  SelectedItem="{Binding SelectedCountry, Mode=TwoWay}"
+                  ItemTemplate="{StaticResource CountryLookupTemplate}" />
+              </StackPanel>
+
+            </Grid>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+              <Button Width="100"
+                      HorizontalContentAlignment="Center"
+                      Content="Clear"
+                      Command="{Binding ClearSiteFormCommand}" />
+
+              <Button Width="100"
+                      HorizontalContentAlignment="Center"
+                      Content="{Binding SiteSaveButtonText}"
+                      Command="{Binding CreateOrUpdateSiteCommand}"
+                      IsEnabled="{Binding CanCreateOrUpdateSite}" />
+            </StackPanel>
+
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </Border>
+</UserControl>
+

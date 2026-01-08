@@ -1,0 +1,586 @@
+<UserControl
+    x:Class="MetalLink.Desktop.Views.CustomersView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+  <!-- Templates for lookup DTOs -->
+  <UserControl.Resources>
+    <DataTemplate x:Key="CompanyLookupTemplate">
+      <TextBlock Text="{Binding CompanyName}" />
+    </DataTemplate>
+
+    <DataTemplate x:Key="SiteLookupTemplate">
+      <TextBlock Text="{Binding SiteName}" />
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <UserControl.Styles>
+    <!-- Default textbox border -->
+    <Style Selector="TextBox">
+      <Setter Property="BorderBrush" Value="#444a55" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style Selector="TextBox:focus">
+      <Setter Property="BorderBrush" Value="#5c7cfa" />
+    </Style>
+
+    <!-- Make ComboBox look/size similar to TextBox -->
+    <Style Selector="ComboBox">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="BorderBrush" Value="#444a55" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style Selector="ComboBox:focus">
+      <Setter Property="BorderBrush" Value="#5c7cfa" />
+    </Style>
+  </UserControl.Styles>
+
+  <Border Background="#1f2229" Padding="16">
+    <ScrollViewer>
+      <StackPanel Spacing="16">
+
+        <!-- Header -->
+        <TextBlock
+            Text="Customers"
+            FontSize="20"
+            FontWeight="Bold"
+            Foreground="#f5f5f5" />
+
+        <!-- SEARCH EXISTING CUSTOMER -->
+        <Border Background="#252932" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Search existing customer" Foreground="#f5f5f5" FontWeight="Bold" />
+
+            <!-- 2-column search grid -->
+            <Grid Margin="0,8,0,0">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+              </Grid.RowDefinitions>
+
+              <!-- Row 0: Customer ID / ID Number (SWAPPED) -->
+              <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Customer ID" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchCustomerIdText}" />
+              </StackPanel>
+              <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
+                <TextBlock Text="ID Number" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchIdNumberText}" />
+              </StackPanel>
+
+              <!-- Row 1: First / Last name -->
+              <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2">
+                <TextBlock Text="First Name" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchFirstNameText}" />
+              </StackPanel>
+              <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Last Name" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchLastNameText}" />
+              </StackPanel>
+
+              <!-- Row 2: Company (letter + company dropdown) / Site -->
+              <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Company" Foreground="#c0c4cf" />
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+
+                  <!-- Letter dropdown -->
+                  <ComboBox
+                      Grid.Column="0"
+                      ItemsSource="{Binding CompanyLetterFilters}"
+                      SelectedItem="{Binding SelectedCompanyLetter}"
+                      HorizontalAlignment="Stretch" />
+
+                  <!-- Companies for selected letter -->
+                  <ComboBox
+                      Grid.Column="1"
+                      Margin="4,0,0,0"
+                      ItemsSource="{Binding SearchCompanySuggestions}"
+                      SelectedItem="{Binding SelectedSearchCompany}"
+                      HorizontalContentAlignment="Stretch"
+                      ItemTemplate="{StaticResource CompanyLookupTemplate}" />
+                </Grid>
+              </StackPanel>
+
+              <!-- Site: non-editable, enabled only when company selected -->
+              <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Site" Foreground="#c0c4cf" />
+                <ComboBox
+                    ItemsSource="{Binding SearchSiteSuggestions}"
+                    SelectedItem="{Binding SelectedSearchSite}"
+                    IsEnabled="{Binding IsSearchSiteEnabled}"
+                    HorizontalContentAlignment="Stretch"
+                    ItemTemplate="{StaticResource SiteLookupTemplate}" />
+              </StackPanel>
+
+              <!-- Row 3: Account / Price -->
+              <StackPanel Grid.Row="3" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Account Number" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchAccountNumberText, Mode=TwoWay}" />
+              </StackPanel>
+              <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Price Code" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchPriceCodeText}" />
+              </StackPanel>
+
+              <!-- Row 4: Address 1 / Address 2 -->
+              <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Address Line 1" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchAddressLine1Text}" />
+              </StackPanel>
+              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Address Line 2" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchAddressLine2Text}" />
+              </StackPanel>
+
+              <!-- Row 5: Suburb / City -->
+              <StackPanel Grid.Row="5" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Suburb" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchSuburbText}" />
+              </StackPanel>
+              <StackPanel Grid.Row="5" Grid.Column="1" Spacing="2">
+                <TextBlock Text="City" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchCityText}" />
+              </StackPanel>
+
+              <!-- Row 5.5: Province / Country -->
+              <StackPanel Grid.Row="6" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Province" Foreground="#c0c4cf" />
+                <!-- Search: Province -->
+                <ComboBox Grid.Row="6"
+                          Grid.Column="0"
+                          Margin="0,4,4,4"
+                          ItemsSource="{Binding SearchProvinces}"
+                          SelectedItem="{Binding SearchProvince}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding ProvinceName}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+
+              <StackPanel Grid.Row="6" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Country" Foreground="#c0c4cf" />
+                <!-- Search: Country -->
+                <ComboBox Grid.Row="6"
+                          Grid.Column="1"
+                          Margin="4,4,0,4"
+                          ItemsSource="{Binding SearchCountries}"
+                          SelectedItem="{Binding SearchCountry}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding Name}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>              
+              </StackPanel>
+
+              <!-- Row 6: Postal / Phone -->
+              <StackPanel Grid.Row="7" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Postal Code" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchPostalCodeText}" />
+              </StackPanel>
+              <StackPanel Grid.Row="7" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Phone" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchPhoneNumberText}" />
+              </StackPanel>
+
+              <!-- Row 7: Mobile / Email -->
+              <StackPanel Grid.Row="8" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Mobile" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchMobileNumberText}" />
+              </StackPanel>
+              <StackPanel Grid.Row="8" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Email" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchEmailText}" />
+              </StackPanel>
+
+              <!-- Row 8: Taxable -->
+              <StackPanel Grid.Row="9" Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                <CheckBox
+                    Content="Taxable"
+                    IsChecked="{Binding SearchTaxable}" />
+              </StackPanel>
+
+              <!-- Row 8: Search button -->
+              <Button
+                  Grid.Row="10"
+                  Grid.Column="0"
+                  Grid.ColumnSpan="2"
+                  Margin="0,8,0,0"
+                  HorizontalAlignment="Right"
+                  Content="Search"
+                  Command="{Binding SearchCustomerCommand}" />
+            </Grid>
+
+            <!-- Results grid -->
+            <DataGrid
+                Margin="0,12,0,0"
+                AutoGenerateColumns="False"
+                ItemsSource="{Binding CustomerSearchResults}"
+                SelectedItem="{Binding FoundCustomer, Mode=TwoWay}">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Customer ID" Binding="{Binding CustomerId}" IsReadOnly="True" />
+                <DataGridTextColumn Header="First Name"
+                                    Binding="{Binding FirstName}" />
+                <DataGridTextColumn Header="Last Name"
+                                    Binding="{Binding LastName}" />
+                <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" IsReadOnly="True" />
+                <DataGridTextColumn Header="Account" Binding="{Binding AccountNumberFormatted}" IsReadOnly="True" />
+                <DataGridTextColumn Header="Mobile" Binding="{Binding MobileNumber}" IsReadOnly="True" />
+                <DataGridTextColumn Header="Email" Binding="{Binding Email}" IsReadOnly="True" />
+
+                <!-- NEW: Action buttons -->
+                <DataGridTemplateColumn Header="">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="4">
+                        <Button
+                            Content="Log Ticket"
+                            Padding="4,0"
+                            Command="{Binding DataContext.LogTicketCommand,
+                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
+                        <Button
+                            Content="Edit"
+                            Padding="4,0"
+                            Command="{Binding DataContext.EditCustomerCommand,
+                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
+                        <Button
+                            Content="Delete"
+                            Padding="4,0"
+                            Command="{Binding DataContext.EditCustomerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+              </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Selected customer detail table -->
+            <Border Margin="0,12,0,0" Padding="8" Background="#1f2229" CornerRadius="4">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Customer ID" Foreground="#c0c4cf" Margin="0,0,8,2" />
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedCustomerIdDisplay}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="First Name" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedFirstName}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Last Name" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedLastName}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Company Name" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedCompanyName}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="Site Name" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedSiteName}" Foreground="#f5f5f5" />
+
+                <!-- NEW: Taxable under Company Name -->
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="Taxable" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedTaxable}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="6" Grid.Column="0" Text="ID Number" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SelectedIdNumber}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="7" Grid.Column="0" Text="Account Number" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding SelectedAccountNumberFormatted}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="8" Grid.Column="0" Text="Price Code" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding SelectedPriceCode}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="9" Grid.Column="0" Text="Address Line 1" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding SelectedAddressLine1}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="10" Grid.Column="0" Text="Address Line 2" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding SelectedAddressLine2}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="11" Grid.Column="0" Text="Suburb" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding SelectedSuburb}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="12" Grid.Column="0" Text="City" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="12" Grid.Column="1" Text="{Binding SelectedCity}" Foreground="#f5f5f5" />
+
+                <!-- NEW: Province under City -->
+                <TextBlock Grid.Row="13" Grid.Column="0" Text="Province" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="13" Grid.Column="1" Text="{Binding SelectedProvinceName}" Foreground="#f5f5f5" />
+
+                <!-- NEW: Country under Province -->
+                <TextBlock Grid.Row="14" Grid.Column="0" Text="Country" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="14" Grid.Column="1" Text="{Binding SelectedCountryName}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="15" Grid.Column="0" Text="Postal Code" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="15" Grid.Column="1" Text="{Binding SelectedPostalCode}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="16" Grid.Column="0" Text="Phone" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="16" Grid.Column="1" Text="{Binding SelectedPhoneNumber}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="17" Grid.Column="0" Text="Mobile" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="17" Grid.Column="1" Text="{Binding SelectedMobileNumber}" Foreground="#f5f5f5" />
+
+                <TextBlock Grid.Row="18" Grid.Column="0" Text="Email" Foreground="#c0c4cf" Margin="0,4,8,0" />
+                <TextBlock Grid.Row="18" Grid.Column="1" Text="{Binding SelectedEmail}" Foreground="#f5f5f5" />
+              </Grid>
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <!-- CREATE NEW CUSTOMER -->
+        <Border Background="#252932" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Create/Edit customer" Foreground="#f5f5f5" FontWeight="Bold" />
+
+            <Grid Margin="0,8,0,0">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+              </Grid.RowDefinitions>
+
+              <!-- Row 0: First / Last name -->
+              <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+                <TextBlock Text="First Name" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewFirstName}" />
+              </StackPanel>
+              <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Last Name" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewLastName}" />
+              </StackPanel>
+
+              <!-- Row 1: IsCompany + Taxable -->
+              <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                <CheckBox Content="Is Company" IsChecked="{Binding NewIsCompany}" />
+                <CheckBox Content="Taxable" IsChecked="{Binding NewTaxable}" Margin="12,0,0,0" />
+              </StackPanel>
+
+              <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Company" Foreground="#c0c4cf" />
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+
+                  <!-- Letter dropdown -->
+                  <ComboBox
+                      Grid.Column="0"
+                      ItemsSource="{Binding CompanyLetterFilters}"
+                      SelectedItem="{Binding SelectedNewCompanyLetter}"
+                      IsEnabled="{Binding NewIsCompany}"
+                      HorizontalAlignment="Stretch" />
+
+                  <!-- Companies for selected letter -->
+                  <ComboBox
+                      Grid.Column="1"
+                      Margin="4,0,0,0"
+                      ItemsSource="{Binding NewCompanySuggestions}"
+                      SelectedItem="{Binding SelectedNewCompany}"
+                      IsEnabled="{Binding NewIsCompany}"
+                      HorizontalContentAlignment="Stretch"
+                      ItemTemplate="{StaticResource CompanyLookupTemplate}" />
+                </Grid>
+              </StackPanel>
+
+              <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Site" Foreground="#c0c4cf" />
+                <ComboBox
+                    HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding NewSiteSuggestions}"
+                    SelectedItem="{Binding SelectedNewSite}"
+                    IsEnabled="{Binding NewIsCompany}"
+                    HorizontalContentAlignment="Stretch"
+                    ItemTemplate="{StaticResource SiteLookupTemplate}" />
+              </StackPanel>
+
+              <!-- Row 3: ID / Account -->
+              <StackPanel Grid.Row="3" Grid.Column="0" Spacing="2">
+                <TextBlock Text="ID Number" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewIdNumber}" />
+              </StackPanel>
+              <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Account Number" Foreground="#c0c4cf" />
+                <TextBox
+                  Text="{Binding NewAccountNumberDisplay}"
+                  IsReadOnly="True"
+                  IsTabStop="False"/>
+              </StackPanel>
+
+              <!-- Row 4: Price / Phone -->
+              <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Price Code" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewPriceCode}" />
+              </StackPanel>
+              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Phone" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewPhoneNumber}" />
+              </StackPanel>
+
+              <!-- Row 5: Address 1 / Address 2 -->
+              <StackPanel Grid.Row="5" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Address Line 1" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewAddressLine1}" />
+              </StackPanel>
+              <StackPanel Grid.Row="5" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Address Line 2" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewAddressLine2}" />
+              </StackPanel>
+
+              <!-- Row 6: Suburb / City -->
+              <StackPanel Grid.Row="6" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Suburb" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewSuburb}" />
+              </StackPanel>
+              <StackPanel Grid.Row="6" Grid.Column="1" Spacing="2">
+                <TextBlock Text="City" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewCity}" />
+              </StackPanel>
+
+              <!-- Row 7: Province / Country -->
+              <StackPanel Grid.Row="7" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Province" Foreground="#c0c4cf" />
+                <!-- Create/Edit: Province -->
+                <ComboBox ItemsSource="{Binding Provinces}"
+                          SelectedItem="{Binding NewProvince}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding ProvinceName}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+
+              <StackPanel Grid.Row="7" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Country" Foreground="#c0c4cf" />
+                <!-- Create/Edit: Country -->
+                <ComboBox ItemsSource="{Binding Countries}"
+                          SelectedItem="{Binding NewCountry}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding Name}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+
+              <!-- Row 8: Postal / Mobile -->
+              <StackPanel Grid.Row="8" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Postal Code" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewPostalCode}" />
+              </StackPanel>
+              <StackPanel Grid.Row="8" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Mobile" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewMobileNumber}" />
+              </StackPanel>
+
+              <!-- Row 9: Email + buttons -->
+              <StackPanel Grid.Row="9" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Email" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding NewEmail}" />
+              </StackPanel>
+
+              <StackPanel
+                  Grid.Row="20"
+                  Grid.Column="1"
+                  Orientation="Horizontal"
+                  HorizontalAlignment="Right"
+                  Spacing="8"
+                  Margin="0,20,0,0">
+
+                <Button
+                    Width="100"
+                    Content="Clear"
+                    Command="{Binding ClearNewCustomerCommand}" />
+
+                <Button
+                    Width="100"
+                    Content="Create"
+                    Command="{Binding CreateCustomerCommand}"
+                    IsEnabled="{Binding CanCreateCustomer}"
+                    IsVisible="{Binding IsCreateMode}" />
+
+                <Button
+                    Width="100"
+                    Content="Update"
+                    Command="{Binding UpdateCustomerCommand}"
+                    IsEnabled="{Binding CanUpdateCustomer}"
+                    IsVisible="{Binding IsEditMode}" />
+              </StackPanel>
+            </Grid>
+
+            <TextBlock
+                Margin="0,4,0,0"
+                Text="First/Last name is required."
+                Foreground="#ff6b6b"
+                FontSize="11"
+                IsVisible="{Binding IsNewCustomerFullNameInvalid}" />
+          </StackPanel>
+        </Border>
+
+      </StackPanel>
+    </ScrollViewer>
+  </Border>
+</UserControl>

@@ -39,27 +39,44 @@ public sealed class GetCustomerByIdQueryHandler
         var dto = new CustomerDto
         {
             CustomerId    = customer.CustomerId,
+            CompanyId     = customer.CompanyId,
+            SiteId        = customer.SiteId,
 
-            SiteId        = customer.SiteId.HasValue
-                ? (int?)checked((int)customer.SiteId.Value)
-                : null,
+            FirstName     = customer.FirstName,
+            LastName      = customer.LastName,
+            IsCompany     = customer.IsCompany,
 
-            FullName      = customer.FullName,
             CompanyName   = company?.CompanyName,
+            VatNumber     = company?.VatNumber,
+
+            Taxable       = customer.Taxable,
+
+            SiteName      = site?.SiteName,
+            SiteCode      = site?.SiteCode,
+
+            AddressLine1  = site?.AddressLine1,
+            AddressLine2  = site?.AddressLine2,
+            Suburb        = site?.Suburb,
+            City          = site?.City,
+            PostalCode    = site?.PostalCode,
+
+            ProvinceId    = site?.ProvinceId,
+            ProvinceName  = site?.Province?.ProvinceName,
+
+            CountryId     = site?.CountryId,
+            CountryName   = site?.Country?.Name,
 
             IdNumber      = customer.IdNumber,
             AccountNumber = customer.AccountNumber,
             PriceCode     = customer.PriceCode,
 
-            AddressLine1  = addressLine1,
-            AddressLine2  = addressLine2,
-            Suburb        = suburb,
-            City          = city,
-            PostalCode    = postalCode,
-
             PhoneNumber   = customer.PhoneNumber,
             MobileNumber  = customer.MobileNumber,
-            Email         = customer.Email
+            Email         = customer.Email,
+
+            IsActive      = customer.IsActive,
+            CreatedTime   = customer.CreatedTime,
+            UpdatedTime   = customer.UpdatedTime
         };
 
         return dto;

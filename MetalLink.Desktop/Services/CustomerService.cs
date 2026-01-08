@@ -16,82 +16,56 @@ public sealed class CustomerService
         _authState = authState;
     }
 
-    public async Task<CustomerDto?> GetCustomerByIdAsync(
-        long customerId,
-        CancellationToken cancellationToken = default)
-    {
-        return await _apiClient.GetAsync<CustomerDto>(
-            $"api/customers/{customerId}",
-            cancellationToken);
-    }
-
-    public async Task<CustomerDto?> CreateCustomerAsync(
-        string firstName,
-        string lastName,
-        bool isCompany,
-        string? companyName,
-        string? idNumber,
-        string? accountNumber,
-        string? priceCode,
-        string? addressLine1,
-        string? addressLine2,
-        string? suburb,
-        string? city,
-        string? postalCode,
-        string? phoneNumber,
-        string? mobileNumber,
-        string? email,
-        CancellationToken cancellationToken = default)
-    {
-        var siteId = _authState.SiteId > 0 ? _authState.SiteId : 1; // fallback
-
-        var body = new
-        {
-            siteId,
-            firstName,
-            lastName,
-            isCompany,
-            companyName,
-            idNumber,
-            accountNumber,
-            priceCode,
-            addressLine1,
-            addressLine2,
-            suburb,
-            city,
-            postalCode,
-            phoneNumber,
-            mobileNumber,
-            email
-        };
-
-        return await _apiClient.PostAsync<object, CustomerDto>(
-            "api/customers",
-            body,
-            cancellationToken);
-    }
-
     public Task<CustomerDto[]?> SearchCustomersAsync(
-    CustomerSearchRequestDto request,
-    CancellationToken cancellationToken = default)
+        CustomerSearchRequestDto request,
+        CancellationToken cancellationToken = default)
     {
         return _apiClient.GetAsync<CustomerDto[]?>(
             "api/customers/search" + _apiClient.ToQueryString(request),
             cancellationToken);
     }
 
-    public async Task UpdateCustomerAsync(CustomerDto dto, CancellationToken cancellationToken = default)
+    public Task<CustomerDto?> GetCustomerByIdAsync(
+        long customerId,
+        CancellationToken cancellationToken = default)
     {
+        return _apiClient.GetAsync<CustomerDto>(
+            $"api/customers/{customerId}",
+            cancellationToken);
+    }
+
+    public Task<CustomerDto?> CreateCustomerAsync(
+        CustomerDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync<CustomerDto, CustomerDto>(
+            "api/customers",
+            dto,
+            cancellationToken);
+    }
+
+    public async Task UpdateCustomerAsync(
+        CustomerDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        // If your API route is PUT api/customers (as you’re using)
         var response = await _apiClient.PutAsJsonAsync("api/customers", dto, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
-
 
     public async Task SoftDeleteCustomerAsync(
         long customerId,
         CancellationToken cancellationToken = default)
     {
-        var response = await _apiClient.DeleteAsync($"api/customers/{customerId}", cancellationToken);
-        response.EnsureSuccessStatusCode();
+        await _apiClient.DeleteAsync($"api/customers/{customerId}", cancellationToken);
+    }
+
+
+    public Task<long> GetNextAccountNumberAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return _apiClient.GetAsync<long>(
+            "api/customers/next-account-number",
+            cancellationToken)!;
     }
 }

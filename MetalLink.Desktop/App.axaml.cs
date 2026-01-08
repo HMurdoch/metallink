@@ -15,12 +15,15 @@ public partial class App : Application
     public ApiClient ApiClient { get; private set; } = null!;
     public AuthService AuthService { get; private set; } = null!;
     public CustomerService CustomerService { get; private set; } = null!;
+    public CompanyAndSiteService CompanyAndSiteService { get; private set; } = null!;
     public TicketService TicketService { get; private set; } = null!;
     public IScaleService ScaleService { get; private set; } = null!;
     public DocumentService DocumentService { get; private set; } = null!;
     public ICameraService CameraService { get; private set; } = null!;
     public TicketReportService TicketReportService { get; private set; } = null!;
     public ISignaturePadService SignaturePadService { get; private set; } = null!;
+    public SiteService SiteService { get; private set; } = null!;
+
 
     public override void Initialize()
     {
@@ -33,12 +36,14 @@ public partial class App : Application
         ApiClient = new ApiClient(AuthState);
         AuthService = new AuthService(AuthState);
         CustomerService = new CustomerService(ApiClient, AuthState);
+        CompanyAndSiteService = new CompanyAndSiteService(ApiClient, AuthState);
         TicketService = new TicketService(ApiClient, AuthState);
         ScaleService = new MockScaleService();
         DocumentService = new DocumentService(ApiClient, AuthState);
         CameraService = new MockCameraService();
         TicketReportService = new TicketReportService(AuthState);
         SignaturePadService = new MockSignaturePadService(); // swap to real device later
+        SiteService = new SiteService(ApiClient);
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {

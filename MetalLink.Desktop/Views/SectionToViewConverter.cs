@@ -1,37 +1,31 @@
 using System;
-using System.Globalization;
+using Avalonia.Controls;
 using Avalonia.Data.Converters;
 using MetalLink.Desktop.ViewModels;
 
-namespace MetalLink.Desktop.Views
+namespace MetalLink.Desktop.Views;
+
+public class SectionToViewConverter : IValueConverter
 {
-    /// <summary>
-    /// Maps EnumMainSection to the corresponding view.
-    /// IMPORTANT:
-    /// Do NOT set DataContext here, so the DataContext from MainWindow
-    /// (MainWindowViewModel) flows down into the child views.
-    /// </summary>
-    public class SectionToViewConverter : IValueConverter
+    public object? Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
     {
-        public static readonly SectionToViewConverter Instance = new();
+        if (value is not EnumMainSection section)
+            return null;
 
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        return section switch
         {
-            if (value is not EnumMainSection section)
-                return null;
-
-            return section switch
-            {
-                EnumMainSection.Dashboard => new DashboardView(),
-                EnumMainSection.Customers => new CustomersView(),
-                EnumMainSection.Tickets   => new TicketsView(),
-                EnumMainSection.Documents => new DocumentsView(),
-                EnumMainSection.Camera    => new CameraView(),
-                _                         => null
-            };
-        }
-
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-            => throw new NotSupportedException();
+            EnumMainSection.Dashboard => new DashboardView(),
+            EnumMainSection.Customers => new CustomersView(),
+            EnumMainSection.CompanyAndSites => new CompanyAndSiteView(),
+            EnumMainSection.Tickets => new TicketsView(),
+            EnumMainSection.Documents => new DocumentsView(),
+            EnumMainSection.Camera => new CameraView(),
+            EnumMainSection.Reports => new ReportsView(),
+            EnumMainSection.Settings => new SettingsView(),
+            _ => null
+        };
     }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+        => throw new NotSupportedException();
 }

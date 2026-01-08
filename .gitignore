@@ -134,4 +134,5 @@ TestResults/
 Thumbs.db
 Desktop.ini
 
-# New gitignore
+# Persisted build counter (do not commit)
+.build/version/buildcount.txt

@@ -4,8 +4,11 @@ public class Ticket
 {
     public long TicketId { get; private set; }
     public long SiteId { get; private set; }
+    public Site Site       { get; set; } = null!;
     public long CustomerId { get; private set; }
+    public Customer Customer { get; set; } = null!;
     public long OperatorId { get; private set; }
+    public Operator Operator { get; set; } = null!;
 
     public string TicketNumber { get; private set; } = string.Empty; // e.g. "WB-2025-00001"
     public string TicketType { get; private set; } = "weighbridge";  // "weighbridge" or "platform"

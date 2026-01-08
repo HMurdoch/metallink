@@ -9,7 +9,7 @@ namespace MetalLink.Application.Interfaces;
 public interface ICustomerRepository
 {
     Task<Customer?> GetByIdAsync(long customerId, CancellationToken cancellationToken = default);
-    Task<Customer?> GetByAccountNumberAsync(string accountNumber, CancellationToken cancellationToken = default);
+    Task<Customer?> GetByAccountNumberAsync(long accountNumber, CancellationToken cancellationToken = default);
     Task AddAsync(Customer customer, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Customer>> SearchAsync(
@@ -19,10 +19,11 @@ public interface ICustomerRepository
     Task<IReadOnlyList<Customer>> SearchAsync(
         long? customerId,
         long? siteId,
-        string? fullName,
+        string? firstName,
+        string? lastName,
         string? companyName,
         string? idNumber,
-        string? accountNumber,
+        long? accountNumber,
         string? priceCode,
         string? addressLine1,
         string? addressLine2,
@@ -37,4 +38,6 @@ public interface ICustomerRepository
     // NEW:
     Task UpdateAsync(Customer customer, CancellationToken cancellationToken = default);
     Task SoftDeleteAsync(long customerId, CancellationToken cancellationToken = default);
+    Task<long> GetNextAccountNumberAsync(CancellationToken ct);
+
 }

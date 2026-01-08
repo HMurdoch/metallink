@@ -1,191 +1,101 @@
-<Window
-    x:Class="MetalLink.Desktop.Views.MainWindow"
-    xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:views="clr-namespace:MetalLink.Desktop.Views"
-    xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
-    xmlns:anim="clr-namespace:Avalonia.Animation;assembly=Avalonia.Base"
-    xmlns:icons="clr-namespace:Material.Icons;assembly=Material.Icons"
-    xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
-    xmlns:transitions="clr-namespace:MetalLink.Desktop.Transitions"
-    Title="{Binding Title}"
-    Width="1200"
-    Height="800"
-    CanResize="True">
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MetalLink.Desktop.ViewModels"
+        xmlns:views="using:MetalLink.Desktop.Views"
+        xmlns:converters="using:MetalLink.Desktop.Views"
+        x:Class="MetalLink.Desktop.Views.MainWindow"
+        Width="1500"
+        Height="800"
+        MinWidth="1150"
+        MinHeight="700"
+        Title="Metal Link Desktop"
+        WindowStartupLocation="CenterScreen">
 
-<Window.Resources>
-  <!-- Page transition used when switching main content -->
-  <anim:CompositePageTransition x:Key="ForwardTransition">
-    <!-- quick fade between views -->
-    <anim:CrossFade Duration="0:0:0.15" />
-    <!-- your custom directional slide -->
-    <transitions:DirectionalPageSlide IsForward="True"
-                                      Duration="0:0:0.25" />
-  </anim:CompositePageTransition>
+  <Window.Resources>
+    <converters:SectionToViewConverter x:Key="SectionToViewConverter"/>
+  </Window.Resources>
 
-  <!-- Section (enum) -> View converter -->
-  <views:SectionToViewConverter x:Key="SectionToViewConverter" />
-</Window.Resources>
-
-<Window.Styles>
-    <!-- Base nav button style -->
-    <Style Selector="Button.nav-button">
-        <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <Setter Property="HorizontalContentAlignment" Value="Left" />
-            <Setter Property="Margin" Value="0,4" />
-            <Setter Property="Padding" Value="16,8" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="#F5F5F5" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Transitions">
-            <Transitions>
-                <!-- Smooth hover/press transitions -->
-                <DoubleTransition Property="Opacity" Duration="0:0:0.08" />
-                <ThicknessTransition Property="Padding" Duration="0:0:0.10" />
-                <anim:BrushTransition Property="Background" Duration="0:0:0.12" />
-            </Transitions>
-        </Setter>
+  <!-- ✅ Nav button styling -->
+  <Window.Styles>
+    <Style Selector="Button.NavButton">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="12,10"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="FontSize" Value="14"/>
     </Style>
 
-    <!-- Hover state -->
-    <Style Selector="Button.nav-button:pointerover">
-        <Setter Property="Background" Value="#2A2F3C" />
-        <Setter Property="Padding" Value="16,8" />
+    <!-- Sub-nav item under Customers -->
+    <Style Selector="Button.SubNavButton">
+      <Setter Property="Padding" Value="28,8"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="Foreground" Value="#cfd4df"/>
     </Style>
 
-    <!-- Pressed state -->
-    <Style Selector="Button.nav-button:pressed">
-        <Setter Property="Opacity" Value="0.8" />
-        <Setter Property="Background" Value="#334155" />
+    <Style Selector="Button.NavButton:pointerover">
+      <Setter Property="Background" Value="#2a2f3a"/>
     </Style>
 
-    <Style Selector="Button.nav-button:checked">
-         <Setter Property="Background" Value="#1D4ED8" />
+    <Style Selector="Button.NavButton:pressed">
+      <Setter Property="Background" Value="#343b49"/>
     </Style>
-   
-</Window.Styles>
 
+    <Style Selector="Button.NavButton:focus">
+      <Setter Property="Background" Value="#2a2f3a"/>
+    </Style>
+  </Window.Styles>
 
-  <DockPanel Background="#1f2229">
-
-  <!-- Top bar with global "dirty" indicator -->
-    <Border DockPanel.Dock="Top" Background="#2b3039" Padding="12">
-      <Grid ColumnDefinitions="*,Auto">
-        <!-- Left side: title + global dirty indicator + user info -->
-        <StackPanel Orientation="Vertical" Spacing="2">
-          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-            <TextBlock Classes="HeaderTitle"
-                      Text="{Binding Title}" />
-
-            <!-- Global dirty indicator -->
-            <Ellipse Width="8"
-                    Height="8"
-                    Margin="4,0,0,0"
-                    VerticalAlignment="Center"
-                    Fill="#FFDD4444"
-                    IsVisible="{Binding HasUnsavedChanges}" />
-          </StackPanel>
-
-          <TextBlock Text="{Binding LoggedInUser}"
-                    Foreground="#c0c4cf"
-                    FontSize="13" />
-        </StackPanel>
-
-        <!-- Right side: actions -->
-        <StackPanel Orientation="Horizontal"
-                    Spacing="8"
-                    Grid.Column="1"
-                    VerticalAlignment="Center">
-          <Button Content="Check DB"
-                  Command="{Binding CheckDbCommand}"
-                  Padding="10,6" />
-          <Button Content="Logout"
-                  Command="{Binding LogoutCommand}"
-                  Padding="10,6" />
-        </StackPanel>
-      </Grid>
-    </Border>
-
-    <!-- Status bar -->
-    <Border DockPanel.Dock="Bottom" Background="#2b3039" Padding="6,4">
-      <TextBlock Text="{Binding StatusMessage}" Foreground="#c0c4cf" FontSize="12" />
-    </Border>
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="260"/>
+      <ColumnDefinition Width="*"/>
+    </Grid.ColumnDefinitions>
 
     <!-- Left navigation -->
-    <Border DockPanel.Dock="Left" Width="220" Background="#252932" Padding="12">
-      <StackPanel Spacing="8">
-        <TextBlock
-            Text="Navigation"
-            Foreground="#9fa4b2"
-            FontSize="13"
-            Margin="4,0,0,4" />
+    <Border Grid.Column="0" Background="#20232a">
+      <DockPanel>
 
-        <!-- Dashboard -->
-        <Button Classes="nav-button" Command="{Binding ShowDashboardCommand}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-          <materialIcons:MaterialIcon
-              Kind="{x:Static icons:MaterialIconKind.Home}"
-              Width="24"
-              Height="24" />
-            <TextBlock Text="Dashboard" VerticalAlignment="Center" />
-          </StackPanel>
-        </Button>
+        <!-- Top header -->
+        <StackPanel DockPanel.Dock="Top" Margin="12,12,12,8" Spacing="3">
+          <TextBlock Text="Metal Link Desktop" FontSize="16" FontWeight="Bold" Foreground="White"/>
+          <TextBlock Text="{Binding LoggedInUserDisplay}" FontSize="12" Foreground="#b7bcc9"/>
+        </StackPanel>
 
-        <!-- Customers -->
-        <Button Classes="nav-button" Command="{Binding ShowCustomersCommand}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-          <materialIcons:MaterialIcon
-              Kind="{x:Static icons:MaterialIconKind.AccountCircle}"
-              Width="24"
-              Height="24" />
-            <TextBlock Text="Customers" VerticalAlignment="Center" />
-          </StackPanel>
-        </Button>
+        <!-- Navigation items -->
+        <StackPanel Margin="16,12,12,12" Spacing="8">
+          <Button Content="Dashboard" Command="{Binding ShowDashboardCommand}" Classes="NavButton"/>
 
-        <!-- Tickets -->
-        <Button Classes="nav-button" Command="{Binding ShowTicketsCommand}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-          <materialIcons:MaterialIcon
-              Kind="{x:Static icons:MaterialIconKind.Receipt}"
-              Width="24"
-              Height="24" />
-            <TextBlock Text="Tickets" VerticalAlignment="Center" />
-          </StackPanel>
-        </Button>
+          <Button Content="Entities" Classes="NavButton"/>
+          <Button Content="Customers"
+                  Command="{Binding ShowCustomersCommand}"
+                  Classes="NavButton SubNavButton"/>
+          <Button Content="Companies &amp; Sites"
+                  Command="{Binding ShowCompanyAndSitesCommand}"
+                  Classes="NavButton SubNavButton"/>
+          <Button Content="Products &amp; Prices"
+                  Command="{Binding ShowProductsAndPricesCommand}"
+                  Classes="NavButton SubNavButton" />                  
 
-        <!-- Documents -->
-        <Button Classes="nav-button" Command="{Binding ShowDocumentsCommand}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-          <materialIcons:MaterialIcon
-              Kind="{x:Static icons:MaterialIconKind.InsertDriveFile}"
-              Width="24"
-              Height="24" />
-            <TextBlock Text="Documents" VerticalAlignment="Center" />
-          </StackPanel>
-        </Button>
+          <Button Content="Tickets" Command="{Binding ShowTicketsCommand}" Classes="NavButton"/>
+          <Button Content="Documents" Command="{Binding ShowDocumentsCommand}" Classes="NavButton"/>
+          <Button Content="Camera" Command="{Binding ShowCameraCommand}" Classes="NavButton"/>
+          <Button Content="Reports" Command="{Binding ShowReportsCommand}" Classes="NavButton"/>
+          <Button Content="Settings" Command="{Binding ShowSettingsCommand}" Classes="NavButton"/>
+        </StackPanel>
 
-        <!-- Camera -->
-        <Button Classes="nav-button" Command="{Binding ShowCameraCommand}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-          <materialIcons:MaterialIcon
-              Kind="{x:Static icons:MaterialIconKind.PhotoCamera}"
-              Width="24"
-              Height="24" />
-            <TextBlock Text="Camera" VerticalAlignment="Center" />
-          </StackPanel>
-        </Button>
-      </StackPanel>
+        <StackPanel DockPanel.Dock="Bottom" Margin="12,8,12,12" Spacing="8">
+          <!-- Footer actions if needed -->
+        </StackPanel>
+
+      </DockPanel>
     </Border>
 
-    <!-- Main content with cross-fade + slide transition -->
-    <Grid Margin="8">
-        <controls:TransitioningContentControl
-            Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}}"
-            Background="#1E212A"
-            HorizontalContentAlignment="Stretch"
-            VerticalContentAlignment="Stretch"
-            PageTransition="{StaticResource ForwardTransition}" />
+    <!-- Main content -->
+    <Grid Grid.Column="1" Background="#1f2229">
+      <ContentControl Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}}"/>
     </Grid>
-  </DockPanel>
+  </Grid>
 </Window>

@@ -22,6 +22,9 @@ using MetalLink.Desktop.Services;
 using MetalLink.Shared.Customers;
 using MetalLink.Shared.Tickets;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.Generic;
+using System.Threading;
+using Avalonia.Threading;
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -33,13 +36,13 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     private readonly AuthState _authState;
     private readonly ApiClient _apiClient;
     private readonly CustomerService _customerService;
+    private readonly CompanyAndSiteService _companyAndSiteService;
     private readonly TicketService _ticketService;
     private readonly IScaleService _scaleService;
     private readonly DocumentService _documentService;
     private readonly ICameraService _cameraService;
     private readonly TicketReportService _ticketReportService;
     private readonly ISignaturePadService _signaturePadService;
-
     public new event PropertyChangedEventHandler? PropertyChanged;
 
     // Commands
@@ -56,9 +59,13 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     // Section navigation
     public ICommand ShowDashboardCommand { get; }
     public ICommand ShowCustomersCommand { get; }
+    public ICommand ShowCompanyAndSitesCommand { get; }
+    public ICommand ShowProductsAndPricesCommand { get; }
     public ICommand ShowTicketsCommand { get; }
     public ICommand ShowDocumentsCommand { get; }
     public ICommand ShowCameraCommand { get; }
+    public ICommand ShowReportsCommand { get; }   // ✅ ADDED
+    public ICommand ShowSettingsCommand { get; }  // ✅ ADDED
 
     // Camera commands
     public ICommand CaptureWbFrontBeforeCommand { get; }
@@ -95,6 +102,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         _authState = app.AuthState;
         _apiClient = app.ApiClient;
         _customerService = app.CustomerService;
+        _companyAndSiteService = app.CompanyAndSiteService;
         _ticketService = app.TicketService;
         _scaleService = app.ScaleService;
         _documentService = app.DocumentService;
@@ -142,18 +150,32 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         LoadCustomerDocumentsCommand = new AsyncCommand(LoadCustomerDocumentsAsync);
         UploadCustomerDocumentCommand = new AsyncCommand(UploadCustomerDocumentAsync);
 
+        ShowCompanyAndSitesCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.CompanyAndSites);
+        ShowProductsAndPricesCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.ProductsAndPrices);
         // Section navigation (used by menu)
         ShowDashboardCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Dashboard);
-        ShowCustomersCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Customers);
-        ShowTicketsCommand   = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Tickets);
+        ShowCustomersCommand = ReactiveUI.ReactiveCommand.CreateFromTask(async () =>
+        {
+            CurrentSection = EnumMainSection.Customers;
+            await ClearNewCustomerFormAsync(); // this fetches NewAccountNumber
+        });
+        ShowTicketsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Tickets);
         ShowDocumentsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Documents);
-        ShowCameraCommand    = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Camera);
+        ShowCameraCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Camera);
+
+        // ✅ ADDED: Reports + Settings behave like other nav items
+        ShowReportsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Reports);
+        ShowSettingsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Settings);
 
         EditCustomerCommand = new RelayCommand<CustomerDto>(OnEditCustomer);
         DeleteCustomerCommand = new AsyncRelayCommand<CustomerDto>(execute: OnDeleteCustomerAsync);
-        LogTicketCommand     = new RelayCommand<CustomerDto>(OnLogTicket);
-        ClearNewCustomerCommand = new RelayCommand(ClearNewCustomerForm);
-        UpdateCustomerCommand = new AsyncRelayCommand(OnUpdateCustomerAsync, () => IsEditMode);
+        LogTicketCommand = new RelayCommand<CustomerDto>(OnLogTicket);
+        ClearNewCustomerCommand = new AsyncRelayCommand(ClearNewCustomerFormAsync);
+
+        Console.WriteLine($"Next account number = {NewAccountNumber}");
+        OnPropertyChanged(nameof(NewAccountNumberDisplay));
+
+        UpdateCustomerCommand = new AsyncRelayCommand(OnUpdateCustomerAsync, () => CanUpdateCustomer);
 
         // Camera commands
         CaptureWbFrontBeforeCommand = new AsyncCommand(() =>
@@ -210,14 +232,31 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             SelectedTabIndex = 4;
             return Task.CompletedTask;
         });
+
+        InitializeCountries();
+        InitializeCompanyAndSiteCommands();
+        _ = LoadProvincesAsync();
     }
 
     // --- Core helpers / section switching ---
+
+    public async Task InitializeLookupsAsync()
+    {
+        InitializeCountries();
+        await LoadProvincesAsync();
+        await ClearNewCustomerFormAsync();
+    }
 
     private Task SwitchSectionAsync(EnumMainSection section)
     {
         CurrentSection = section;
         StatusMessage = $"Section switched to: {section}.";
+        return Task.CompletedTask;
+    }
+
+    private Task CreateTicketAsync()
+    {
+        // TODO: re-wire to real ticket creation if/when you want
         return Task.CompletedTask;
     }
 
@@ -281,32 +320,51 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         try
         {
             long? customerId = null;
-            if (long.TryParse(SearchCustomerIdText, out var id))
-                customerId = id;
+            if (long.TryParse(SearchCustomerIdText, out var cid))
+                customerId = cid;
 
             long? siteId = null;
             if (long.TryParse(SearchSiteIdText, out var sid))
                 siteId = sid;
 
+            // 🔹 Province / Country filters: null if "ALL"
+            long? provinceId = null;
+            if (SearchProvince != null &&
+                !string.Equals(SearchProvince.ProvinceName, "ALL", StringComparison.OrdinalIgnoreCase))
+            {
+                provinceId = SearchProvince.ProvinceId;
+            }
+
+            long? countryId = null;
+            if (SearchCountry != null &&
+                !string.Equals(SearchCountry.CountryName, "ALL", StringComparison.OrdinalIgnoreCase))
+            {
+                countryId = SearchCountry.CountryId;
+            }
+
             // Build a request object with all filters (null / empty = ignore)
             var request = new CustomerSearchRequestDto
             {
-                CustomerId    = customerId,
-                SiteId        = siteId,
-                FirstName     = string.IsNullOrWhiteSpace(SearchFirstNameText) ? null : SearchFirstNameText,
-                LastName      = string.IsNullOrWhiteSpace(SearchLastNameText) ? null : SearchLastNameText,
-                CompanyName   = string.IsNullOrWhiteSpace(SearchCompanyNameText) ? null : SearchCompanyNameText,
-                IdNumber      = string.IsNullOrWhiteSpace(SearchIdNumberText) ? null : SearchIdNumberText,
-                AccountNumber = string.IsNullOrWhiteSpace(SearchAccountNumberText) ? null : SearchAccountNumberText,
-                PriceCode     = string.IsNullOrWhiteSpace(SearchPriceCodeText) ? null : SearchPriceCodeText,
-                AddressLine1  = string.IsNullOrWhiteSpace(SearchAddressLine1Text) ? null : SearchAddressLine1Text,
-                AddressLine2  = string.IsNullOrWhiteSpace(SearchAddressLine2Text) ? null : SearchAddressLine2Text,
-                Suburb        = string.IsNullOrWhiteSpace(SearchSuburbText) ? null : SearchSuburbText,
-                City          = string.IsNullOrWhiteSpace(SearchCityText) ? null : SearchCityText,
-                PostalCode    = string.IsNullOrWhiteSpace(SearchPostalCodeText) ? null : SearchPostalCodeText,
-                PhoneNumber   = string.IsNullOrWhiteSpace(SearchPhoneNumberText) ? null : SearchPhoneNumberText,
-                MobileNumber  = string.IsNullOrWhiteSpace(SearchMobileNumberText) ? null : SearchMobileNumberText,
-                Email         = string.IsNullOrWhiteSpace(SearchEmailText) ? null : SearchEmailText
+                CustomerId = customerId,
+                SiteId = siteId,
+                FirstName = string.IsNullOrWhiteSpace(SearchFirstNameText) ? null : SearchFirstNameText,
+                LastName = string.IsNullOrWhiteSpace(SearchLastNameText) ? null : SearchLastNameText,
+                CompanyName = string.IsNullOrWhiteSpace(SearchCompanyNameText) ? null : SearchCompanyNameText,
+                IdNumber = string.IsNullOrWhiteSpace(SearchIdNumberText) ? null : SearchIdNumberText,
+                AccountNumber = ParseAccountNumberOrNull(SearchAccountNumberText),
+                PriceCode = string.IsNullOrWhiteSpace(SearchPriceCodeText) ? null : SearchPriceCodeText,
+                AddressLine1 = string.IsNullOrWhiteSpace(SearchAddressLine1Text) ? null : SearchAddressLine1Text,
+                AddressLine2 = string.IsNullOrWhiteSpace(SearchAddressLine2Text) ? null : SearchAddressLine2Text,
+                Suburb = string.IsNullOrWhiteSpace(SearchSuburbText) ? null : SearchSuburbText,
+                City = string.IsNullOrWhiteSpace(SearchCityText) ? null : SearchCityText,
+                PostalCode = string.IsNullOrWhiteSpace(SearchPostalCodeText) ? null : SearchPostalCodeText,
+                PhoneNumber = string.IsNullOrWhiteSpace(SearchPhoneNumberText) ? null : SearchPhoneNumberText,
+                MobileNumber = string.IsNullOrWhiteSpace(SearchMobileNumberText) ? null : SearchMobileNumberText,
+                Email = string.IsNullOrWhiteSpace(SearchEmailText) ? null : SearchEmailText,
+
+                ProvinceId = provinceId,
+                CountryId = countryId,
+                Taxable = SearchTaxable
             };
 
             var results = await _customerService.SearchCustomersAsync(request);
@@ -347,71 +405,144 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
         try
         {
-            // Build FullName from First + Last
-            var fullName = string.Join(" ",
-                new[] { NewFirstName, NewLastName }
-                    .Where(s => !string.IsNullOrWhiteSpace(s)));
+            var errors = new List<string>();
 
-            if (string.IsNullOrWhiteSpace(fullName) &&
-                string.IsNullOrWhiteSpace(NewCompanyName))
+            // 1) REQUIRED FIELDS
+            if (string.IsNullOrWhiteSpace(NewFirstName))
+                errors.Add("First Name is required.");
+
+            if (string.IsNullOrWhiteSpace(NewLastName))
+                errors.Add("Last Name is required.");
+
+            if (string.IsNullOrWhiteSpace(NewIdNumber))
+                errors.Add("ID Number is required.");
+
+            if (NewAccountNumber == null)
+                errors.Add("Account Number is required.");
+
+            if (string.IsNullOrWhiteSpace(NewEmail))
+                errors.Add("Email is required.");
+
+            if (NewProvince == null)
+                errors.Add("Province is required.");
+
+            if (NewCountry == null)
+                errors.Add("Country is required.");
+
+            // 2) COMPANY + SITE RULE
+            if (NewIsCompany)
             {
-                StatusMessage = "Please capture a First/Last name or a Company Name.";
+                if (SelectedNewCompany == null || SelectedNewSite == null)
+                {
+                    StatusMessage = "Company and Site are required when Is Company is checked.";
+                    return;
+                }
+
+                // Guard: stop “Elementech + Orange Farms” mismatch
+                if (SelectedNewSite.CompanyId != SelectedNewCompany.CompanyId)
+                {
+                    StatusMessage = "Selected Site does not belong to the selected Company. Please pick a matching Site.";
+                    return;
+                }
+            }
+
+            if (errors.Count > 0)
+            {
+                StatusMessage = string.Join(Environment.NewLine, errors);
                 return;
             }
 
-            var customer = await _customerService.CreateCustomerAsync(
-                firstName: NewFirstName,
-                lastName: NewLastName,
-                isCompany: NewIsCompany,
-                companyName: NewCompanyName,
-                idNumber: NewIdNumber,
-                accountNumber: NewAccountNumber,
-                priceCode: NewPriceCode,
-                addressLine1: string.IsNullOrWhiteSpace(NewAddressLine1) ? null : NewAddressLine1,
-                addressLine2: string.IsNullOrWhiteSpace(NewAddressLine2) ? null : NewAddressLine2,
-                suburb:      string.IsNullOrWhiteSpace(NewSuburb)      ? null : NewSuburb,
-                city:        string.IsNullOrWhiteSpace(NewCity)        ? null : NewCity,
-                postalCode:  string.IsNullOrWhiteSpace(NewPostalCode)  ? null : NewPostalCode,
-                phoneNumber: NewPhoneNumber,
-                mobileNumber: NewMobileNumber,
-                email: NewEmail
-            );
-
-            if (customer == null)
+            // 3) UNIQUENESS CHECK (ID NUMBER, ACCOUNT NUMBER, EMAIL)
+            var uniqueCheckRequest = new CustomerSearchRequestDto
             {
-                StatusMessage = "Customer could not be created (no response).";
+                // only send the fields we care about for uniqueness
+                IdNumber = NewIdNumber,
+                Email = NewEmail
+            };
+
+            var duplicates = await _customerService.SearchCustomersAsync(uniqueCheckRequest);
+
+            if (duplicates != null && duplicates.Any())
+            {
+                if (!string.IsNullOrWhiteSpace(NewIdNumber) &&
+                    duplicates.Any(c => string.Equals(c.IdNumber, NewIdNumber, StringComparison.OrdinalIgnoreCase)))
+                {
+                    errors.Add("A customer with this ID Number already exists.");
+                }
+
+                if (!string.IsNullOrWhiteSpace(NewEmail) &&
+                    duplicates.Any(c => string.Equals(c.Email, NewEmail, StringComparison.OrdinalIgnoreCase)))
+                {
+                    errors.Add("A customer with this Email already exists.");
+                }
+
+                if (errors.Count > 0)
+                {
+                    StatusMessage = string.Join(Environment.NewLine, errors);
+                    return;
+                }
+            }
+
+            if (errors.Count > 0)
+            {
+                StatusMessage = string.Join(" ", errors);
                 return;
             }
 
-            StatusMessage = $"Customer created: ID {customer.CustomerId:D8}, {customer.FullName}.";
-            CustomerSearchResults.Add(customer);
-            FoundCustomer = customer;   // summary panel shows the new customer
-            CustomersLoadedCount = CustomerSearchResults.Count;
+            // ----- build DTO for the API (no AccountNumber) -----
+            var dto = new CustomerDto
+            {
+                FirstName = NewFirstName!,
+                LastName = NewLastName!,
+                IdNumber = NewIdNumber!,
+                Email = NewEmail!,
+                PhoneNumber = string.IsNullOrWhiteSpace(NewPhoneNumber) ? null : NewPhoneNumber,
+                MobileNumber = string.IsNullOrWhiteSpace(NewMobileNumber) ? null : NewMobileNumber,
+                PriceCode = string.IsNullOrWhiteSpace(NewPriceCode) ? null : NewPriceCode,
+                AddressLine1 = string.IsNullOrWhiteSpace(NewAddressLine1) ? null : NewAddressLine1,
+                AddressLine2 = string.IsNullOrWhiteSpace(NewAddressLine2) ? null : NewAddressLine2,
+                Suburb = string.IsNullOrWhiteSpace(NewSuburb) ? null : NewSuburb,
+                City = string.IsNullOrWhiteSpace(NewCity) ? null : NewCity,
+                PostalCode = string.IsNullOrWhiteSpace(NewPostalCode) ? null : NewPostalCode,
+                IsCompany = NewIsCompany,
+                Taxable = NewTaxable,
 
-            // Clear form
-            NewFirstName = string.Empty;
-            NewLastName  = string.Empty;
-            NewIsCompany = false;
-            NewCompanyName = null;
-            NewIdNumber = null;
-            NewAccountNumber = null;
-            NewPriceCode = null;
-            NewAddressLine1 = string.Empty;
-            NewAddressLine2 = string.Empty;
-            NewSuburb = string.Empty;
-            NewCity = string.Empty;
-            NewPostalCode = string.Empty;
-            NewPhoneNumber = null;
-            NewMobileNumber = null;
-            NewEmail = null;
+                CompanyId = NewIsCompany && SelectedNewCompany != null
+                                    ? SelectedNewCompany.CompanyId
+                                    : 0,   // or throw if you prefer
+                SiteId = NewIsCompany && SelectedNewSite != null
+                                    ? SelectedNewSite.SiteId
+                                    : 0
+            };
+
+            Console.WriteLine($"CreateCustomer: IsCompany={NewIsCompany}, CompanyId={SelectedNewCompany?.CompanyId}, SiteId={SelectedNewSite?.SiteId}");
+
+            // API will allocate AccountNumber from the DB identity
+            var created = await _customerService.CreateCustomerAsync(dto);
+
+            if (created == null)
+            {
+                StatusMessage = "Customer create failed - API returned no result.";
+                return;
+            }
+            else
+            {
+                StatusMessage = "Customer could not be created.";
+            }
+
+            // store raw number and refresh displayed padded text
+            _newAccountNumber = created.AccountNumber;
+            OnPropertyChanged(nameof(NewAccountNumber));
+
+            StatusMessage = $"Customer {created.FirstName} {created.LastName} created successfully (Account {NewAccountNumber}).";
+
+            // if you want the form cleared except the new account number, you can adjust here;
+            // right now you probably still call ClearNewCustomerForm();
+            await ClearNewCustomerFormAsync();
         }
         catch (HttpRequestException ex)
         {
             StatusMessage = $"Error calling API: {ex.Message}";
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Error: {ex.Message}";
         }
         finally
         {
@@ -419,104 +550,17 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         }
     }
 
-    // --- Ticket creation ---
+    public bool CanCreateCustomer =>
+        !string.IsNullOrWhiteSpace(NewFirstName)
+        && !string.IsNullOrWhiteSpace(NewLastName)
+        && (!NewIsCompany || (SelectedNewCompany != null && SelectedNewSite != null))
+        && NewAccountNumber.HasValue;
 
-    private async Task CreateTicketAsync()
-    {
-        if (IsBusy) return;
-        IsBusy = true;
-        StatusMessage = "Creating ticket...";
-
-        try
-        {
-            if (!long.TryParse(TicketCustomerIdText, out var customerId))
-            {
-                StatusMessage = "Please enter a valid numeric Customer ID for the ticket.";
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(TicketNumber))
-            {
-                StatusMessage = "Ticket number is required.";
-                return;
-            }
-
-            if (!decimal.TryParse(TicketUnitPriceText, out var unitPrice))
-            {
-                StatusMessage = "Please enter a valid unit price (per kg).";
-                return;
-            }
-
-            decimal? firstWeight = null;
-            decimal? secondWeight = null;
-
-            if (!string.IsNullOrWhiteSpace(TicketFirstWeightText))
-            {
-                if (!decimal.TryParse(TicketFirstWeightText, out var fw))
-                {
-                    StatusMessage = "First weight is not a valid number.";
-                    return;
-                }
-                firstWeight = fw;
-            }
-
-            if (!string.IsNullOrWhiteSpace(TicketSecondWeightText))
-            {
-                if (!decimal.TryParse(TicketSecondWeightText, out var sw))
-                {
-                    StatusMessage = "Second weight is not a valid number.";
-                    return;
-                }
-                secondWeight = sw;
-            }
-
-            if (string.IsNullOrWhiteSpace(TicketType))
-            {
-                TicketType = "weighbridge";
-            }
-
-            var ticket = await _ticketService.CreateTicketAsync(
-                customerId: customerId,
-                ticketType: TicketType,
-                ticketNumber: TicketNumber,
-                firstWeightKg: firstWeight,
-                secondWeightKg: secondWeight,
-                unitPricePerKg: unitPrice,
-                currencyCode: TicketCurrencyCode,
-                productDescription: string.IsNullOrWhiteSpace(TicketProductDescription) ? null : TicketProductDescription,
-                notes: string.IsNullOrWhiteSpace(TicketNotes) ? null : TicketNotes
-            );
-
-            if (ticket == null)
-            {
-                StatusMessage = "Ticket could not be created (no response).";
-                return;
-            }
-
-            LastCreatedTicket = ticket;
-            TicketsCreatedCount++;
-            StatusMessage = $"Ticket {ticket.TicketNumber} created. Net {ticket.NetWeightKg} kg, Total {ticket.TotalAmount} {ticket.CurrencyCode}.";
-
-            TicketNumber = string.Empty;
-            TicketFirstWeightText = string.Empty;
-            TicketSecondWeightText = string.Empty;
-            TicketUnitPriceText = string.Empty;
-            TicketProductDescription = string.Empty;
-            TicketNotes = string.Empty;
-        }
-        catch (HttpRequestException ex)
-        {
-            StatusMessage = $"Error calling API: {ex.Message}";
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Error: {ex.Message}";
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
+    public bool CanUpdateCustomer =>
+        IsEditMode
+        && EditingCustomerId.HasValue
+        && !string.IsNullOrWhiteSpace(NewFirstName)
+        && !string.IsNullOrWhiteSpace(NewLastName);
 
     // --- Scale reading ---
 
@@ -829,10 +873,14 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         if (health != null)
         {
             TotalCustomersInDb = health.customersCount;
-            TotalTicketsInDb   = health.ticketsCount;
+            TotalTicketsInDb = health.ticketsCount;
+            TotalCompaniesInDb = health.companiesCount;
+            TotalSitesInDb = health.sitesCount;
 
             _ = AnimateCounterAsync(TotalCustomersInDb, v => AnimatedTotalCustomersInDb = v);
-            _ = AnimateCounterAsync(TotalTicketsInDb,   v => AnimatedTotalTicketsInDb   = v);
+            _ = AnimateCounterAsync(TotalTicketsInDb, v => AnimatedTotalTicketsInDb = v);
+            _ = AnimateCounterAsync(TotalCompaniesInDb, v => AnimatedTotalCompaniesInDb = v);
+            _ = AnimateCounterAsync(TotalSitesInDb, v => AnimatedTotalSitesInDb = v);
         }
     }
 
@@ -882,5 +930,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         public string status { get; set; } = string.Empty;
         public int customersCount { get; set; }
         public int ticketsCount { get; set; }
+        public int companiesCount { get; set; }
+        public int sitesCount { get; set; }
     }
 }

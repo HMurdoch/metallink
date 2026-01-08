@@ -7,6 +7,6 @@ public sealed class ProvinceDto
     public string ProvinceName { get; set; } = string.Empty;
 
     public bool   IsActive    { get; set; }
-    public DateTime CreatedTime { get; set; }
-    public DateTime UpdatedTime { get; set; }
+    public DateTime? CreatedTime { get; set; }
+    public DateTime? UpdatedTime { get; set; }
 }

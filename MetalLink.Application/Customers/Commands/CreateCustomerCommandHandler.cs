@@ -29,8 +29,6 @@ public sealed class CreateCustomerCommandHandler
             throw new ArgumentException("First or last name is required.");
         }
 
-        // You may want to validate request.CompanyId / SiteId here as well.
-
         var now = DateTime.UtcNow;
 
         var customer = new Customer
@@ -46,6 +44,7 @@ public sealed class CreateCustomerCommandHandler
             PhoneNumber   = request.PhoneNumber,
             MobileNumber  = request.MobileNumber,
             Email         = request.Email,
+            Taxable       = request.Taxable,
             IsActive      = true,
             CreatedTime   = now,
             UpdatedTime   = now
@@ -53,24 +52,36 @@ public sealed class CreateCustomerCommandHandler
 
         await _customerRepository.AddAsync(customer, cancellationToken);
 
-        // Build DTO – address now lives on Company/Site, so we leave those null for now.
+        // We only know the Customer row at this stage; Company/Site/Province/Country
+        // have not been eagerly loaded here, so we leave those DTO fields null.
         var dto = new CustomerDto
         {
-            CustomerId    = customer.CustomerId,
-            SiteId        = customer.SiteId,
-            FullName      = customer.FullName,
-            CompanyName   = null,           // can be filled from Company later if needed
+            CustomerId = customer.CustomerId,
+            CompanyId  = customer.CompanyId,
+
+            SiteId = customer.SiteId,
+
+            FullName  = customer.FullName,
+            FirstName = customer.FirstName,
+            LastName  = customer.LastName,
+            IsCompany = customer.IsCompany,
+
+            Taxable = customer.Taxable,
+
             IdNumber      = customer.IdNumber,
             AccountNumber = customer.AccountNumber,
             PriceCode     = customer.PriceCode,
-            AddressLine1  = null,
-            AddressLine2  = null,
-            Suburb        = null,
-            City          = null,
-            PostalCode    = null,
             PhoneNumber   = customer.PhoneNumber,
             MobileNumber  = customer.MobileNumber,
-            Email         = customer.Email
+            Email         = customer.Email,
+
+            IsActive    = customer.IsActive,
+            CreatedTime = customer.CreatedTime,
+            UpdatedTime = customer.UpdatedTime
+
+            // CompanyName, SiteName, address, Province, Country, etc.
+            // are intentionally left null here – they will be filled by
+            // search / get-by-id queries that include those navigations.
         };
 
         return dto;

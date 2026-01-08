@@ -8,14 +8,17 @@ using MetalLink.Shared.Sites;
 using MetalLink.Shared.Provinces;
 using MetalLink.Shared.Locations;
 using MetalLink.Shared.Customers;
+using Avalonia.Threading;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace MetalLink.Desktop.ViewModels;
 
 public partial class MainWindowViewModel
 {
     // Lazy-created services (we already have _apiClient in the core partial)
-    private CompanyService?  _companyService;
-    private SiteService?     _siteService;
+    private CompanyService? _companyService;
+    private SiteService? _siteService;
     private ProvinceService? _provinceService;
 
     private CompanyService CompanyService =>
@@ -27,199 +30,9 @@ public partial class MainWindowViewModel
     private ProvinceService ProvinceService =>
         _provinceService ??= new ProvinceService(_apiClient);
 
-    // =====================================================
-    // SHARED COMPANY MASTER LIST + LETTER FILTERS
-    // =====================================================
-
-    private readonly ObservableCollection<CompanyLookupDto> _allCompanies        = new();
-    private readonly ObservableCollection<string>           _companyLetterFilters = new();
-
-    private bool _companyLettersLoaded;
-    private bool _companyLettersLoading;
-
-    /// <summary>
-    /// Letters used by the "ALL / A / B / C / …" filter ComboBoxes.
-    /// Populated lazily the first time the view binds to it.
-    /// </summary>
-    public ObservableCollection<string> CompanyLetterFilters
-    {
-        get
-        {
-            if (!_companyLettersLoaded && !_companyLettersLoading)
-            {
-                _companyLettersLoading = true;
-                _ = LoadCompaniesAndLettersAsync();
-            }
-
-            return _companyLetterFilters;
-        }
-    }
-
-    // ---------------- Search section letter ----------------
-
-    private string? _selectedCompanyLetter;
-    public string? SelectedCompanyLetter
-    {
-        get => _selectedCompanyLetter;
-        set
-        {
-            if (_selectedCompanyLetter == value) return;
-            _selectedCompanyLetter = value;
-            OnPropertyChanged();
-
-            ApplyCompanyLetterFilter();
-        }
-    }
-
-    // --------------- Create section letter -----------------
-
-    private string? _selectedNewCompanyLetter;
-    public string? SelectedNewCompanyLetter
-    {
-        get => _selectedNewCompanyLetter;
-        set
-        {
-            if (_selectedNewCompanyLetter == value) return;
-            _selectedNewCompanyLetter = value;
-            OnPropertyChanged();
-
-            ApplyNewCompanyLetterFilter();
-        }
-    }
-
-    /// <summary>
-    /// Convenience alias for the create section XAML.
-    /// </summary>
-    public ObservableCollection<string> NewCompanyLetterFilters => CompanyLetterFilters;
-
-    /// <summary>
-    /// Load all companies from the API, build the letter list and
-    /// apply the initial "ALL" filters for search and create areas.
-    /// </summary>
-    private async Task LoadCompaniesAndLettersAsync()
-    {
-        var items = await CompanyService.LookupCompaniesAsync(string.Empty);
-
-        _allCompanies.Clear();
-        if (items != null)
-        {
-            foreach (var c in items.OrderBy(c => c.CompanyName))
-                _allCompanies.Add(c);
-        }
-
-        // Build distinct A–Z list from company names
-        _companyLetterFilters.Clear();
-        _companyLetterFilters.Add("ALL");
-
-        var letters = _allCompanies
-            .Select(c => c.CompanyName?.FirstOrDefault() ?? '\0')
-            .Where(ch => ch != '\0')
-            .Select(ch => char.ToUpperInvariant(ch))
-            .Distinct()
-            .OrderBy(ch => ch);
-
-        foreach (var ch in letters)
-            _companyLetterFilters.Add(ch.ToString());
-
-        _companyLettersLoaded  = true;
-        _companyLettersLoading = false;
-
-        // Default to ALL on first load (search area)
-        if (SelectedCompanyLetter == null)
-            SelectedCompanyLetter = "ALL";
-        else
-            ApplyCompanyLetterFilter();
-
-        // Default to ALL for the create-customer area too
-        if (SelectedNewCompanyLetter == null)
-            SelectedNewCompanyLetter = "ALL";
-        else
-            ApplyNewCompanyLetterFilter();
-    }
-
-    // =====================================================
-    // SEARCH CUSTOMERS – COMPANY + SITE
-    // =====================================================
-
-    /// <summary>
-    /// Companies matching the chosen letter (or ALL).
-    /// Bound to the search "Company" ComboBox.
-    /// </summary>
-    private ObservableCollection<CompanyLookupDto> _searchCompanySuggestions = new();
-    public ObservableCollection<CompanyLookupDto> SearchCompanySuggestions
-    {
-        get => _searchCompanySuggestions;
-        set { _searchCompanySuggestions = value; OnPropertyChanged(); }
-    }
-
-    private CompanyLookupDto? _selectedSearchCompany;
-    public CompanyLookupDto? SelectedSearchCompany
-    {
-        get => _selectedSearchCompany;
-        set
-        {
-            if (_selectedSearchCompany == value) return;
-
-            _selectedSearchCompany = value;
-            OnPropertyChanged();
-
-            if (value != null)
-            {
-                // Used by your search handler
-                SearchCompanyNameText = value.CompanyName;
-
-                // Enable & load sites for this company
-                IsSearchSiteEnabled = true;
-                _ = LoadSitesForSelectedCompanyAsync();
-            }
-            else
-            {
-                SearchCompanyNameText = string.Empty;
-
-                IsSearchSiteEnabled = false;
-                SearchSiteIdText    = string.Empty;
-
-                SearchSiteSuggestions.Clear();
-                SelectedSearchSite = null;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Rebuild SearchCompanySuggestions based on SelectedCompanyLetter.
-    /// </summary>
-    private void ApplyCompanyLetterFilter()
-    {
-        if (!_companyLettersLoaded)
-            return;
-
-        var letter = SelectedCompanyLetter;
-
-        SearchCompanySuggestions.Clear();
-
-        var query = _allCompanies.AsEnumerable();
-
-        if (!string.IsNullOrWhiteSpace(letter) &&
-            !string.Equals(letter, "ALL", StringComparison.OrdinalIgnoreCase))
-        {
-            var ch = char.ToUpperInvariant(letter[0]);
-            query = query.Where(c =>
-                !string.IsNullOrWhiteSpace(c.CompanyName) &&
-                char.ToUpperInvariant(c.CompanyName![0]) == ch);
-        }
-
-        foreach (var c in query)
-            SearchCompanySuggestions.Add(c);
-
-        // If current selection no longer fits filter, clear it
-        if (SelectedSearchCompany != null &&
-            !SearchCompanySuggestions.Contains(SelectedSearchCompany))
-        {
-            SelectedSearchCompany = null;
-        }
-    }
-
     // ----- Customer -----
+    private long? _pendingSelectSiteId;
+    private bool _suppressLetterApply;
 
     private void OnEditCustomer(Shared.Customers.CustomerDto? customer)
     {
@@ -227,28 +40,55 @@ public partial class MainWindowViewModel
             return;
 
         EditingCustomerId = customer.CustomerId;
-        IsEditMode        = true;
+        IsEditMode = true;
 
-        // Basic fields
-        NewFirstName      = customer.FirstName;
-        NewLastName       = customer.LastName;
-        NewIdNumber       = customer.IdNumber;
-        NewAccountNumber  = customer.AccountNumber;
-        NewPriceCode      = customer.PriceCode;
-        NewPhoneNumber    = customer.PhoneNumber;
-        NewMobileNumber   = customer.MobileNumber;
-        NewEmail          = customer.Email;
-        NewAddressLine1   = customer.AddressLine1;
-        NewAddressLine2   = customer.AddressLine2;
-        NewSuburb         = customer.Suburb;
-        NewCity           = customer.City;
-        NewPostalCode     = customer.PostalCode;
+        // -----------------------
+        // Names (already fixed on API, but keep safe)
+        // -----------------------
+        NewFirstName = customer.FirstName ?? string.Empty;
+        NewLastName = customer.LastName ?? string.Empty;
 
+        // -----------------------
+        // Basic contact / address
+        // -----------------------
+        NewIdNumber = customer.IdNumber ?? string.Empty;
+        NewAccountNumber = customer.AccountNumber;
+        NewPriceCode = customer.PriceCode ?? string.Empty;
+        NewTaxable = customer.Taxable;
+        NewPhoneNumber = customer.PhoneNumber ?? string.Empty;
+        NewMobileNumber = customer.MobileNumber ?? string.Empty;
+        NewEmail = customer.Email ?? string.Empty;
+        NewAddressLine1 = customer.AddressLine1 ?? string.Empty;
+        NewAddressLine2 = customer.AddressLine2 ?? string.Empty;
+        NewSuburb = customer.Suburb ?? string.Empty;
+        NewCity = customer.City ?? string.Empty;
+        NewPostalCode = customer.PostalCode ?? string.Empty;
+
+        // -----------------------
         // Company / site mode
-        NewIsCompany = true;  // editing from grid implies it's a company customer
+        // -----------------------
+        NewIsCompany = customer.IsCompany
+                       || customer.CompanyId.HasValue
+                       || customer.SiteId.HasValue; // <-- use actual flag
 
-        // Match company from our lookup cache (by CompanyId if present)
-        var company = _allCompanies.FirstOrDefault(c => c.CompanyId == customer.CompanyId);
+        // Try to locate the company in the cached lookup list.
+        // First by ID, then (if needed) by name.
+        CompanyLookupDto? company = null;
+
+        if (customer.CompanyId.HasValue)
+        {
+            company = _allCompanies
+                .FirstOrDefault(c => c.CompanyId == customer.CompanyId.Value);
+        }
+
+        if (company == null && !string.IsNullOrWhiteSpace(customer.CompanyName))
+        {
+            company = _allCompanies
+                .FirstOrDefault(c =>
+                    string.Equals(c.CompanyName,
+                        customer.CompanyName,
+                        StringComparison.OrdinalIgnoreCase));
+        }
 
         if (company != null)
         {
@@ -258,16 +98,23 @@ public partial class MainWindowViewModel
             if (!CompanyLetterFilters.Contains(letterStr))
                 letterStr = "ALL";
 
-            SelectedNewCompanyLetter = letterStr;
-            SelectedNewCompany       = company;
+            // This will rebuild NewCompanySuggestions via ApplyNewCompanyLetterFilter
+            SelectedCompanyLetter = letterStr;
+
+            // Set the actual selection used by the Create/Edit combobox
+            SelectedNewCompany = company;
         }
         else
         {
-            SelectedNewCompanyLetter = "ALL";
-            SelectedNewCompany       = null;
+            SelectedCompanyLetter = "ALL";
+            SelectedNewCompany = null;
         }
 
-        // Load sites for that company and select correct one
+        // Load sites for the company and select the correct one
+        _pendingSelectSiteId = customer.SiteId;
+        OnPropertyChanged(nameof(CanCreateCustomer));
+        OnPropertyChanged(nameof(CanUpdateCustomer));
+        (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         _ = LoadNewSitesAndSelectAsync(customer.SiteId);
     }
 
@@ -281,7 +128,7 @@ public partial class MainWindowViewModel
         await _customerService.SoftDeleteCustomerAsync(customer.CustomerId);
 
         CustomerSearchResults.Remove(customer);
-        StatusMessage = $"Customer {customer.FullName} was deleted (soft delete).";
+        StatusMessage = $"Customer {customer.FirstName} {customer.LastName} was deleted (soft delete).";
     }
 
     private async Task LoadNewSitesAndSelectAsync(long? siteId)
@@ -294,49 +141,167 @@ public partial class MainWindowViewModel
             return;
         }
 
-        var sites = await SiteService.LookupSitesForCompanyAsync(SelectedNewCompany.CompanyId, string.Empty);
+        try
+        {
+            var url = $"api/sites/lookup?companyId={SelectedNewCompany.CompanyId}&term=";
+            var sites = await _apiClient.GetAsync<List<SiteLookupDto>>(url);
 
-        if (sites != null)
-        {
-            foreach (var s in sites.OrderBy(s => s.SiteName))
-                NewSiteSuggestions.Add(s);
-        }
+            if (sites != null)
+            {
+                foreach (var s in sites.OrderBy(s => s.SiteName))
+                    NewSiteSuggestions.Add(s);
+            }
 
-        if (siteId.HasValue)
-        {
-            var match = NewSiteSuggestions.FirstOrDefault(s => s.SiteId == siteId.Value);
-            SelectedNewSite = match;
+            SelectedNewSite = siteId.HasValue
+                ? NewSiteSuggestions.FirstOrDefault(s => s.SiteId == siteId.Value)
+                : null;
         }
-        else
+        catch (Exception ex)
         {
+            StatusMessage = $"[STATUS] Load sites failed: {ex.Message}";
+            NewSiteSuggestions.Clear();
             SelectedNewSite = null;
         }
     }
 
-    private void ClearNewCustomerForm()
+    private async Task ClearNewCustomerFormAsync()
     {
         EditingCustomerId = null;
-        IsEditMode        = false;
+        IsEditMode = false;
 
-        NewFirstName     = string.Empty;
-        NewLastName      = string.Empty;
-        NewIdNumber      = string.Empty;
-        NewAccountNumber = string.Empty;
-        NewPriceCode     = string.Empty;
-        NewPhoneNumber   = string.Empty;
-        NewMobileNumber  = string.Empty;
-        NewEmail         = string.Empty;
-        NewAddressLine1  = string.Empty;
-        NewAddressLine2  = string.Empty;
-        NewSuburb        = string.Empty;
-        NewCity          = string.Empty;
-        NewPostalCode    = string.Empty;
+        NewFirstName = string.Empty;
+        NewLastName = string.Empty;
+        NewIdNumber = string.Empty;
 
-        NewIsCompany           = false;
-        SelectedNewCompanyLetter = "ALL";
-        SelectedNewCompany     = null;
+        try
+        {
+            // assign the next available account number
+            NewAccountNumber = await _customerService.GetNextAccountNumberAsync();
+        }
+        catch (Exception ex)
+        {
+            // Don't crash the app. Log + fall back to null/empty display.
+            Console.WriteLine($"GetNextAccountNumberAsync failed: {ex}");
+            NewAccountNumber = null;
+        }
+
+        NewPriceCode = string.Empty;
+        NewPhoneNumber = string.Empty;
+        NewMobileNumber = string.Empty;
+        NewEmail = string.Empty;
+        NewAddressLine1 = string.Empty;
+        NewAddressLine2 = string.Empty;
+        NewSuburb = string.Empty;
+        NewCity = string.Empty;
+        NewPostalCode = string.Empty;
+
+        NewIsCompany = false;
+        SelectedCompanyLetter = "ALL";
+        SelectedNewCompany = null;
         NewSiteSuggestions.Clear();
-        SelectedNewSite        = null;
+        SelectedNewSite = null;
+    }
+
+    private async Task LoadNextAccountNumberAsync()
+    {
+        try
+        {
+            // You’ll implement this method on your Desktop CustomerService
+            var next = await _customerService.GetNextAccountNumberAsync();
+            NewAccountNumber = next;
+            OnPropertyChanged(nameof(NewAccountNumberDisplay));
+            OnPropertyChanged(nameof(CanCreateCustomer));
+        }
+        catch
+        {
+            // optional: keep it null or set a safe default
+            NewAccountNumber = null;
+            OnPropertyChanged(nameof(NewAccountNumberDisplay));
+        }
+    }
+
+    private void AddCompanyToCachesAndSelect(CompanyLookupDto createdCompany)
+    {
+        // 1) Add/update in master cache
+        var existing = _allCompanies.FirstOrDefault(c => c.CompanyId == createdCompany.CompanyId);
+        if (existing != null)
+        {
+            var idx = _allCompanies.IndexOf(existing);
+            if (idx >= 0) _allCompanies[idx] = createdCompany;
+        }
+        else
+        {
+            _allCompanies.Add(createdCompany);
+        }
+
+        // 2) Keep master cache sorted (optional but helps)
+        var sorted = _allCompanies.OrderBy(c => c.CompanyName).ToList();
+        _allCompanies.Clear();
+        foreach (var c in sorted) _allCompanies.Add(c);
+
+        // 3) Rebuild letter list (simple rebuild)
+        _companyLetterFilters.Clear();
+        _companyLetterFilters.Add("ALL");
+
+        var letters = _allCompanies
+            .Select(c => c.CompanyName?.FirstOrDefault() ?? '\0')
+            .Where(ch => ch != '\0')
+            .Select(ch => char.ToUpperInvariant(ch))
+            .Distinct()
+            .OrderBy(ch => ch);
+
+        foreach (var ch in letters)
+            _companyLetterFilters.Add(ch.ToString());
+
+        _companyLettersLoaded = true;
+        _companyLettersLoading = false;
+
+        // 4) Switch the letter filter to the new company's letter
+        var first = createdCompany.CompanyName?.FirstOrDefault();
+        var letterStr = first.HasValue ? char.ToUpperInvariant(first.Value).ToString() : "ALL";
+        if (!CompanyLetterFilters.Contains(letterStr))
+            letterStr = "ALL";
+
+        _suppressLetterApply = true;
+        SelectedCompanyLetter = letterStr;
+        _suppressLetterApply = false;
+
+        // 5) Refresh both the dropdown + results grid from the cache
+        ApplyCompanyLetterFilter();
+
+        CompanyResults.Clear();
+        foreach (var c in SearchCompanySuggestions.OrderBy(x => x.CompanyName))
+            CompanyResults.Add(c);
+
+        // 6) Select the created company in BOTH selectors
+        SelectedSearchCompany = SearchCompanySuggestions.FirstOrDefault(c => c.CompanyId == createdCompany.CompanyId);
+        SelectedCompany = CompanyResults.FirstOrDefault(c => c.CompanyId == createdCompany.CompanyId);
+    }
+
+    private string _searchAccountNumberText = string.Empty;
+
+    public string SearchAccountNumberText
+    {
+        get => _searchAccountNumberText;
+        set
+        {
+            _searchAccountNumberText = value ?? string.Empty;
+            OnPropertyChanged();
+        }
+    }
+
+    private long? ParseAccountNumberOrNull(string text)
+    {
+        var t = (text ?? "").Trim();
+
+        if (string.IsNullOrEmpty(t))
+            return null;
+
+        // treat "0", "00", "0000" etc as "no filter"
+        if (t.All(c => c == '0'))
+            return null;
+
+        return long.TryParse(t, out var v) ? v : null;
     }
 
     private async Task OnUpdateCustomerAsync()
@@ -353,51 +318,63 @@ public partial class MainWindowViewModel
 
         var dto = new CustomerDto
         {
-            CustomerId    = EditingCustomerId.Value,
-            FirstName     = NewFirstName,
-            LastName      = NewLastName,
-            IdNumber      = NewIdNumber,
+            CustomerId = EditingCustomerId.Value,
+            FirstName = NewFirstName,
+            LastName = NewLastName,
+            IdNumber = NewIdNumber,
             AccountNumber = NewAccountNumber,
-            PriceCode     = NewPriceCode,
-            PhoneNumber   = NewPhoneNumber,
-            MobileNumber  = NewMobileNumber,
-            Email         = NewEmail,
-            AddressLine1  = NewAddressLine1,
-            AddressLine2  = NewAddressLine2,
-            Suburb        = NewSuburb,
-            City          = NewCity,
-            PostalCode    = NewPostalCode,
-            IsCompany     = NewIsCompany,
+            PriceCode = NewPriceCode,
+            PhoneNumber = NewPhoneNumber,
+            MobileNumber = NewMobileNumber,
+            Email = NewEmail,
+            Taxable = NewTaxable,
+            AddressLine1 = NewAddressLine1,
+            AddressLine2 = NewAddressLine2,
+            Suburb = NewSuburb,
+            City = NewCity,
+            PostalCode = NewPostalCode,
+            IsCompany = NewIsCompany,
 
             // We KNOW these are non-null if NewIsCompany is true
             // because of the validation above.
-            CompanyId = (long)(SelectedNewCompany != null
+            CompanyId = SelectedNewCompany != null
                 ? SelectedNewCompany.CompanyId
-                : (long?)null),   // will be null for non-company customers
+                : null, // will be null for non-company customers
 
             SiteId = SelectedNewSite != null
                 ? SelectedNewSite.SiteId
-                : (long?)null
+                : null
         };
 
         await _customerService.UpdateCustomerAsync(dto);
+        FoundCustomer = await _customerService.GetCustomerByIdAsync(dto.CustomerId);
 
-        // Refresh / update in current grid
-        var existing = CustomerSearchResults
-            .FirstOrDefault(c => c.CustomerId == dto.CustomerId);
+        // Pull fresh copy from API (includes SiteName + AddressLine2 etc)
+        var refreshed = await _customerService.GetCustomerByIdAsync(dto.CustomerId);
 
+        // Fallback if API returns null for any reason
+        refreshed ??= dto;
+
+        var existing = CustomerSearchResults.FirstOrDefault(c => c.CustomerId == dto.CustomerId);
         if (existing != null)
         {
-            existing.FirstName     = dto.FirstName;
-            existing.LastName      = dto.LastName;
-            existing.FullName      = $"{dto.FirstName} {dto.LastName}".Trim();
-            existing.AccountNumber = dto.AccountNumber;
-            existing.CompanyName   = SelectedNewCompany?.CompanyName;
-            existing.MobileNumber  = dto.MobileNumber;
-            existing.Email         = dto.Email;
+            var index = CustomerSearchResults.IndexOf(existing);
+            if (index >= 0)
+                CustomerSearchResults[index] = refreshed; // replace item (forces UI refresh)
+        }
+        else
+        {
+            CustomerSearchResults.Add(refreshed);
         }
 
-        ClearNewCustomerForm();
+        // update details panel immediately
+        FoundCustomer = refreshed;
+
+
+        await ClearNewCustomerFormAsync();
+        _newAccountNumber = await _customerService.GetNextAccountNumberAsync();
+        OnPropertyChanged(nameof(NewAccountNumber));
+        OnPropertyChanged(nameof(CanCreateCustomer));
     }
 
     private void OnLogTicket(CustomerDto? customer)
@@ -412,26 +389,53 @@ public partial class MainWindowViewModel
         // you already use in ShowTicketsCommand.
         CurrentSection = EnumMainSection.Tickets;
 
-        StatusMessage = $"Logging ticket for customer {customer.FullName} ({customer.CustomerId:D8}).";
+        StatusMessage =
+            $"Logging ticket for customer {customer.FirstName} {customer.LastName} - ({customer.CustomerId:D8}).";
     }
 
     // ----- Search Customers: Site -----
 
     private bool _isSearchSiteEnabled;
+
     public bool IsSearchSiteEnabled
     {
         get => _isSearchSiteEnabled;
-        set { _isSearchSiteEnabled = value; OnPropertyChanged(); }
+        set
+        {
+            if (_isSearchSiteEnabled == value) return;
+            _isSearchSiteEnabled = value;
+            OnPropertyChanged();
+        }
     }
 
+    private bool _isNewSiteEnabled;
+
+    public bool IsNewSiteEnabled
+    {
+        get => _isNewSiteEnabled;
+        set
+        {
+            _isNewSiteEnabled = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsNewSiteEnabled));
+        }
+    }
+
+
     private ObservableCollection<SiteLookupDto> _searchSiteSuggestions = new();
+
     public ObservableCollection<SiteLookupDto> SearchSiteSuggestions
     {
         get => _searchSiteSuggestions;
-        set { _searchSiteSuggestions = value; OnPropertyChanged(); }
+        set
+        {
+            _searchSiteSuggestions = value;
+            OnPropertyChanged();
+        }
     }
 
     private SiteLookupDto? _selectedSearchSite;
+
     public SiteLookupDto? SelectedSearchSite
     {
         get => _selectedSearchSite;
@@ -456,23 +460,37 @@ public partial class MainWindowViewModel
     private async Task LoadSitesForSelectedCompanyAsync()
     {
         if (SelectedSearchCompany == null)
-            return;
-
-        var companyId = SelectedSearchCompany.CompanyId;
-        var items     = await SiteService.LookupSitesForCompanyAsync(companyId, string.Empty);
-
-        SearchSiteSuggestions.Clear();
-
-        if (items != null)
         {
-            foreach (var s in items.OrderBy(s => s.SiteName))
-                SearchSiteSuggestions.Add(s);
+            SearchSiteSuggestions.Clear();
+            SelectedSearchSite = null;
+            IsSearchSiteEnabled = false;
+            return;
         }
 
-        if (SelectedSearchSite != null &&
-            !SearchSiteSuggestions.Contains(SelectedSearchSite))
+        try
         {
+            IsSearchSiteEnabled = true;
+
+            SearchSiteSuggestions.Clear();
             SelectedSearchSite = null;
+
+            var sites = await SiteService.LookupSitesForCompanyAsync(
+                SelectedSearchCompany.CompanyId,
+                term: "",
+                CancellationToken.None);
+
+            if (sites != null)
+            {
+                foreach (var s in sites.OrderBy(x => x.SiteName))
+                    SearchSiteSuggestions.Add(s);
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Load sites failed: {ex.Message}";
+            SearchSiteSuggestions.Clear();
+            SelectedSearchSite = null;
+            IsSearchSiteEnabled = false;
         }
     }
 
@@ -481,13 +499,19 @@ public partial class MainWindowViewModel
     // =====================================================
 
     private ObservableCollection<CompanyLookupDto> _newCompanySuggestions = new();
+
     public ObservableCollection<CompanyLookupDto> NewCompanySuggestions
     {
         get => _newCompanySuggestions;
-        set { _newCompanySuggestions = value; OnPropertyChanged(); }
+        set
+        {
+            _newCompanySuggestions = value;
+            OnPropertyChanged();
+        }
     }
 
     private CompanyLookupDto? _selectedNewCompany;
+
     public CompanyLookupDto? SelectedNewCompany
     {
         get => _selectedNewCompany;
@@ -497,11 +521,15 @@ public partial class MainWindowViewModel
 
             _selectedNewCompany = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CanCreateCustomer));
 
             if (value != null)
             {
                 // This string is what CreateCustomerAsync uses.
                 NewCompanyName = value.CompanyName;
+
+                SelectedNewSite = null;
+                NewSiteSuggestions.Clear();
 
                 // Load sites for the selected company
                 _ = LoadNewSitesForSelectedCompanyAsync();
@@ -518,19 +546,35 @@ public partial class MainWindowViewModel
     /// <summary>
     /// Rebuilds NewCompanySuggestions based on SelectedNewCompanyLetter.
     /// </summary>
+    private string? _selectedNewCompanyLetter = "ALL";
+
+    public string? SelectedNewCompanyLetter
+    {
+        get => _selectedNewCompanyLetter;
+        set
+        {
+            if (_selectedNewCompanyLetter == value) return;
+            _selectedNewCompanyLetter = value;
+            OnPropertyChanged();
+
+            ApplyNewCompanyLetterFilter();
+        }
+    }
+
     private void ApplyNewCompanyLetterFilter()
     {
         if (!_companyLettersLoaded)
             return;
 
-        var letter = SelectedNewCompanyLetter;
+        var selectedId = SelectedNewCompany?.CompanyId;
+
+        var letter = (SelectedNewCompanyLetter ?? "ALL").Trim();
 
         NewCompanySuggestions.Clear();
 
-        var query = _allCompanies.AsEnumerable();
+        IEnumerable<CompanyLookupDto> query = _allCompanies.AsEnumerable();
 
-        if (!string.IsNullOrWhiteSpace(letter) &&
-            !string.Equals(letter, "ALL", StringComparison.OrdinalIgnoreCase))
+        if (!letter.Equals("ALL", StringComparison.OrdinalIgnoreCase) && letter.Length > 0)
         {
             var ch = char.ToUpperInvariant(letter[0]);
             query = query.Where(c =>
@@ -538,25 +582,29 @@ public partial class MainWindowViewModel
                 char.ToUpperInvariant(c.CompanyName![0]) == ch);
         }
 
-        foreach (var c in query)
+        foreach (var c in query.OrderBy(c => c.CompanyName))
             NewCompanySuggestions.Add(c);
 
-        // Clear selection if it no longer matches the filter.
-        if (SelectedNewCompany != null &&
-            !NewCompanySuggestions.Contains(SelectedNewCompany))
-        {
-            SelectedNewCompany = null;
-        }
+        // ✅ preserve selection by ID
+        if (selectedId.HasValue)
+            SelectedNewCompany = NewCompanySuggestions.FirstOrDefault(x => x.CompanyId == selectedId.Value);
     }
 
+
     private ObservableCollection<SiteLookupDto> _newSiteSuggestions = new();
+
     public ObservableCollection<SiteLookupDto> NewSiteSuggestions
     {
         get => _newSiteSuggestions;
-        set { _newSiteSuggestions = value; OnPropertyChanged(); }
+        set
+        {
+            _newSiteSuggestions = value;
+            OnPropertyChanged();
+        }
     }
 
     private SiteLookupDto? _selectedNewSite;
+
     public SiteLookupDto? SelectedNewSite
     {
         get => _selectedNewSite;
@@ -566,24 +614,61 @@ public partial class MainWindowViewModel
 
             _selectedNewSite = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CanCreateCustomer));
 
-            if (value != null)
+            UpdateNewLocationFromSelectedSite();
+        }
+    }
+
+    private void UpdateNewLocationFromSelectedSite()
+    {
+        // Nothing selected – nothing to sync
+        if (SelectedNewSite == null)
+            return;
+
+        // 🔹 Province: match by Id into the Provinces collection
+        if (SelectedNewSite.ProvinceId.HasValue && Provinces is { Count: > 0 })
+        {
+            var province = Provinces.FirstOrDefault(p => p.ProvinceId == SelectedNewSite.ProvinceId.Value);
+
+            if (province != null)
             {
-                // CreateCustomerAsync already has access to SelectedNewSite
-                // to determine which site the customer belongs to.
+                NewProvince = province;
+            }
+        }
+
+        // 🔹 Country: match by Id into the Countries collection
+        if (SelectedNewSite.CountryId.HasValue && Countries is { Count: > 0 })
+        {
+            var country = Countries.FirstOrDefault(c => c.CountryId == SelectedNewSite.CountryId.Value);
+
+            if (country != null)
+            {
+                NewCountry = country;
             }
         }
     }
 
     // Which customer (if any) are we editing?
     private long? _editingCustomerId;
+
     public long? EditingCustomerId
     {
         get => _editingCustomerId;
-        set { _editingCustomerId = value; OnPropertyChanged(); }
+        set
+        {
+            if (_editingCustomerId == value) return;
+            _editingCustomerId = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CanUpdateCustomer));
+
+            // ✅ IMPORTANT: refresh command CanExecute
+            (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+        }
     }
 
     private bool _isEditMode;
+
     public bool IsEditMode
     {
         get => _isEditMode;
@@ -591,13 +676,19 @@ public partial class MainWindowViewModel
         {
             if (_isEditMode == value) return;
             _isEditMode = value;
+
             OnPropertyChanged();
-            OnPropertyChanged(nameof(IsCreateMode));
+            OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanUpdateCustomer));
+            OnPropertyChanged(nameof(IsCreateMode)); // you already expose IsCreateMode
+
+            // ✅ IMPORTANT: refresh command CanExecute
+            (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
-// Convenience flag for binding Create button
-public bool IsCreateMode => !IsEditMode;
+    // Convenience flag for binding Create button
+    public bool IsCreateMode => !IsEditMode;
 
 
     /// <summary>
@@ -612,20 +703,38 @@ public bool IsCreateMode => !IsEditMode;
             return;
         }
 
-        var companyId = SelectedNewCompany.CompanyId;
-        var results   = await SiteService.LookupSitesForCompanyAsync(companyId, string.Empty);
-
-        NewSiteSuggestions.Clear();
-
-        if (results != null)
+        try
         {
-            foreach (var s in results.OrderBy(s => s.SiteName))
-                NewSiteSuggestions.Add(s);
+            var sites = await SiteService.LookupSitesForCompanyAsync(
+                SelectedNewCompany.CompanyId,
+                term: "",
+                CancellationToken.None);
+
+            NewSiteSuggestions.Clear();
+
+            if (sites != null)
+            {
+                foreach (var s in sites.OrderBy(s => s.SiteName))
+                    NewSiteSuggestions.Add(s);
+            }
+
+            // If we were editing and want to auto-select an existing SiteId
+            if (_pendingSelectSiteId.HasValue)
+            {
+                SelectedNewSite = NewSiteSuggestions
+                    .FirstOrDefault(s => s.SiteId == _pendingSelectSiteId.Value);
+
+                _pendingSelectSiteId = null;
+            }
+            else if (SelectedNewSite != null && !NewSiteSuggestions.Contains(SelectedNewSite))
+            {
+                SelectedNewSite = null;
+            }
         }
-
-        if (SelectedNewSite != null &&
-            !NewSiteSuggestions.Contains(SelectedNewSite))
+        catch (Exception ex)
         {
+            StatusMessage = $"[STATUS] Load sites failed: {ex.Message}";
+            NewSiteSuggestions.Clear();
             SelectedNewSite = null;
         }
     }
@@ -635,13 +744,19 @@ public bool IsCreateMode => !IsEditMode;
     // --------------------
 
     private ObservableCollection<ProvinceDto> _provinces = new();
+
     public ObservableCollection<ProvinceDto> Provinces
     {
         get => _provinces;
-        set { _provinces = value; OnPropertyChanged(); }
+        set
+        {
+            _provinces = value;
+            OnPropertyChanged();
+        }
     }
 
     private ProvinceDto? _selectedProvince;
+
     public ProvinceDto? SelectedProvince
     {
         get => _selectedProvince;
@@ -655,15 +770,188 @@ public bool IsCreateMode => !IsEditMode;
         }
     }
 
+
+    private ProvinceDto? _newProvince;
+
+    public ProvinceDto? NewProvince
+    {
+        get => _newProvince;
+        set
+        {
+            _newProvince = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private ProvinceDto? _searchProvince;
+
+    public ProvinceDto? SearchProvince
+    {
+        get => _searchProvince;
+        set
+        {
+            _searchProvince = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // 🔹 NEW: search-only provinces (includes "ALL")
+    private ObservableCollection<ProvinceDto> _searchProvinces = new();
+
+    public ObservableCollection<ProvinceDto> SearchProvinces
+    {
+        get => _searchProvinces;
+        set
+        {
+            _searchProvinces = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // Countries (dropdown) – for now just South Africa, but shaped for future API
+    private ObservableCollection<CountryDto> _countries = new();
+
+    public ObservableCollection<CountryDto> Countries
+    {
+        get => _countries;
+        set
+        {
+            _countries = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private CountryDto? _selectedCountry;
+
+    public CountryDto? SelectedCountry
+    {
+        get => _selectedCountry;
+        set
+        {
+            _selectedCountry = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private CountryDto? _newCountry;
+
+    public CountryDto? NewCountry
+    {
+        get => _newCountry;
+        set
+        {
+            _newCountry = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private CountryDto? _searchCountry;
+
+    public CountryDto? SearchCountry
+    {
+        get => _searchCountry;
+        set
+        {
+            _searchCountry = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // 🔹 NEW: search-only countries (includes "ALL")
+    private ObservableCollection<CountryDto> _searchCountries = new();
+
+    public ObservableCollection<CountryDto> SearchCountries
+    {
+        get => _searchCountries;
+        set
+        {
+            _searchCountries = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public void InitializeCountries()
+    {
+        // Avoid re-initialising if already done
+        if (Countries.Count > 0 && SearchCountries.Count > 0)
+            return;
+
+        Countries.Clear();
+        SearchCountries.Clear();
+
+        // Real country row
+        var southAfrica = new CountryDto
+        {
+            CountryId = 1,
+            CountryName = "South Africa",
+            CountryCode = "ZA"
+        };
+
+        Countries.Add(southAfrica);
+
+        // 🔹 Search list: add real country, then insert "ALL" at the top
+        SearchCountries.Add(southAfrica);
+
+        var allCountry = new CountryDto
+        {
+            CountryId = 0,
+            CountryName = "ALL",
+            CountryCode = "ALL"
+        };
+
+        // ALL at index 0
+        SearchCountries.Insert(0, allCountry);
+
+        // 🔹 Defaults
+        // Create/Edit → South Africa
+        _selectedCountry = southAfrica;
+        NewCountry = southAfrica;
+        OnPropertyChanged(nameof(SelectedCountry));
+        OnPropertyChanged(nameof(NewCountry));
+
+        // Search → ALL (meaning "no country filter")
+        SearchCountry = allCountry;
+        OnPropertyChanged(nameof(SearchCountry));
+    }
+
     public async Task LoadProvincesAsync()
     {
         var items = await ProvinceService.GetAllAsync();
+
         Provinces.Clear();
+        SearchProvinces.Clear();
 
         if (items != null)
         {
             foreach (var p in items)
+            {
                 Provinces.Add(p);
+                SearchProvinces.Add(p);
+            }
         }
+
+        // 🔹 Add "ALL" to the top of the SEARCH list only
+        var allProvince = new ProvinceDto
+        {
+            ProvinceId = 0,
+            ProvinceName = "ALL",
+            ProvinceCode = "ALL"
+        };
+
+        SearchProvinces.Insert(0, allProvince);
+
+        // 🔹 Default create/edit → Gauteng
+        var gauteng = Provinces.FirstOrDefault(p => p.ProvinceName == "Gauteng");
+        if (gauteng is not null)
+        {
+            _selectedProvince = gauteng;
+            NewProvince = gauteng;
+            OnPropertyChanged(nameof(SelectedProvince));
+            OnPropertyChanged(nameof(NewProvince));
+        }
+
+        // 🔹 Default search → ALL (meaning "no province filter")
+        SearchProvince = allProvince;
+        OnPropertyChanged(nameof(SearchProvince));
     }
 }

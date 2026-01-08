@@ -11,7 +11,10 @@ public class Site
     public Company Company { get; set; } = null!;
 
     public int? ProvinceId { get; set; }
-    public Province? Province { get; set; }
+    public Province? Province { get; set; } = null!;
+
+    public int? CountryId { get; set; }
+    public Country? Country { get; set; } = null!;
 
     public string SiteName { get; set; } = string.Empty;
     public string SiteCode { get; set; } = string.Empty;
@@ -22,9 +25,9 @@ public class Site
     public string? City        { get; set; }
     public string? PostalCode  { get; set; }
 
-    public bool IsActive { get; set; } = true;
-    public DateTime CreatedTime { get; set; }
-    public DateTime UpdatedTime { get; set; }
+    public bool     IsActive    { get; set; } = true;
+    public DateTimeOffset CreatedTime { get; set; }
+    public DateTimeOffset UpdatedTime { get; set; }
 
     public ICollection<Customer> Customers { get; set; } = new List<Customer>();
 }
