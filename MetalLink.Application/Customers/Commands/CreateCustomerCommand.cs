@@ -3,8 +3,8 @@ using MetalLink.Shared.Customers;
 
 public sealed record CreateCustomerCommand : IRequest<CustomerDto?>
 {
-    public long CompanyId { get; init; }
-    public long SiteId   { get; init; }
+    public long? CompanyId { get; init; }
+    public long? SiteId   { get; init; }
 
     public string? FirstName { get; init; }
     public string? LastName  { get; init; }

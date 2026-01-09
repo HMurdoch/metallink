@@ -13,7 +13,63 @@ using MetalLink.Api.Versioning;
 
 QuestPDF.Settings.License = LicenseType.Community;
 
-var builder = WebApplication.CreateBuilder(args);
+// Increase inotify and file descriptor limits at startup to prevent "inotify instance or file descriptor limit" errors (may require elevated permissions or appropriate system configurations)
+// This typically requires changing system settings and cannot be fully done from within the app itself.
+
+// Recommended: Increase limits by configuring the system outside this app (e.g., /etc/sysctl.conf and /etc/security/limits.conf).
+
+// For demonstration, attempt to increase limits programmatically (Linux-specific, requires app to run with elevated permissions)
+try
+{
+    const string maxUserInstancesPath = "/proc/sys/fs/inotify/max_user_instances";
+    const string maxUserWatchesPath = "/proc/sys/fs/inotify/max_user_watches";
+
+    // Check if running as root
+    if (Environment.OSVersion.Platform == PlatformID.Unix && Environment.UserName == "root")
+    {
+        // Increase max_user_instances
+        if (System.IO.File.Exists(maxUserInstancesPath))
+        {
+            System.IO.File.WriteAllText(maxUserInstancesPath, "524288");
+        }
+
+        // Increase max_user_watches
+        if (System.IO.File.Exists(maxUserWatchesPath))
+        {
+            System.IO.File.WriteAllText(maxUserWatchesPath, "524288");
+        }
+
+        // Also increase user limits for open files
+        var limitsConfPath = "/etc/security/limits.conf";
+        if (System.IO.File.Exists(limitsConfPath))
+        {
+            var limitsContent = System.IO.File.ReadAllText(limitsConfPath);
+            if (!limitsContent.Contains("* hard nofile 524288"))
+            {
+                System.IO.File.AppendAllText(limitsConfPath, "\n* hard nofile 524288\n");
+                System.IO.File.AppendAllText(limitsConfPath, "* soft nofile 524288\n");
+            }
+        }
+    }
+    else
+    {
+        Console.WriteLine("Warning: Not running as root. Cannot increase inotify limits programmatically.");
+        Console.WriteLine("Please increase the limits manually by running 'sudo sysctl -w fs.inotify.max_user_instances=524288' and 'sudo sysctl -w fs.inotify.max_user_watches=524288'");
+        Console.WriteLine("Also, increase user open file descriptor limits by editing /etc/security/limits.conf or your systemd service config.");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Failed to increase inotify limits: {ex.Message}");
+}
+
+// Note: You may still need to increase user open file descriptor limits (ulimit) outside the app.
+// For user limits, edit /etc/security/limits.conf and/or systemd service settings.
+
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args
+});
 
 // Controllers + Swagger
 builder.Services.AddControllers();

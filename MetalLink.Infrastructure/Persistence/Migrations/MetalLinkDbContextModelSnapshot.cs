@@ -37,21 +37,21 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("company_name");
 
-                    b.Property<DateTime>("CreatedTime")
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_time");
+                        .HasColumnName("created_time")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
-                    b.Property<bool>("Taxable")
-                        .HasColumnType("boolean")
-                        .HasColumnName("taxable");
-
-                    b.Property<DateTime>("UpdatedTime")
+                    b.Property<DateTimeOffset>("UpdatedTime")
+                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_time");
+                        .HasColumnName("updated_time")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<string>("VatNumber")
                         .HasMaxLength(50)
@@ -70,6 +70,56 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.ToTable("companies", "metal_link");
                 });
 
+            modelBuilder.Entity("MetalLink.Domain.Entities.Country", b =>
+                {
+                    b.Property<int>("CountryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("country_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CountryId"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime?>("CreatedTime")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTime?>("UpdatedTime")
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("CountryId")
+                        .HasName("pk_countries_country_id");
+
+                    b.HasIndex("Code")
+                        .HasDatabaseName("countries_code_idx");
+
+                    b.HasIndex("Name")
+                        .HasDatabaseName("countries_name_idx");
+
+                    b.ToTable("countries", "metal_link");
+                });
+
             modelBuilder.Entity("MetalLink.Domain.Entities.Customer", b =>
                 {
                     b.Property<long>("CustomerId")
@@ -79,32 +129,37 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("CustomerId"));
 
-                    b.Property<string>("AccountNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                    b.Property<long?>("AccountNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
                         .HasColumnName("account_number");
 
-                    b.Property<long>("CompanyId")
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long?>("AccountNumber"));
+
+                    b.Property<long?>("CompanyId")
                         .HasColumnType("bigint")
                         .HasColumnName("company_id");
 
-                    b.Property<DateTime>("CreatedTime")
+                    b.Property<DateTime?>("CreatedTime")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_time");
+                        .HasColumnName("created_time")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<string>("Email")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("email");
 
                     b.Property<string>("FirstName")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("first_name");
 
                     b.Property<string>("IdNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("id_number");
 
                     b.Property<bool>("IsActive")
@@ -116,43 +171,43 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnName("is_company");
 
                     b.Property<string>("LastName")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("last_name");
 
                     b.Property<string>("MobileNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("mobile_number");
 
                     b.Property<string>("PhoneNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("phone_number");
 
                     b.Property<string>("PriceCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
                         .HasColumnName("price_code");
 
                     b.Property<long?>("SiteId")
                         .HasColumnType("bigint")
                         .HasColumnName("site_id");
 
-                    b.Property<DateTime>("UpdatedTime")
+                    b.Property<bool>("Taxable")
+                        .HasColumnType("boolean")
+                        .HasColumnName("taxable");
+
+                    b.Property<DateTime?>("UpdatedTime")
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_time");
+                        .HasColumnName("updated_time")
+                        .HasDefaultValueSql("now()");
 
-                    b.HasKey("CustomerId")
-                        .HasName("pk_customers_customer_id");
-
-                    b.HasIndex("AccountNumber")
-                        .HasDatabaseName("customers_account_number_idx");
+                    b.HasKey("CustomerId");
 
                     b.HasIndex("CompanyId");
-
-                    b.HasIndex("IdNumber")
-                        .HasDatabaseName("customers_id_number_idx");
 
                     b.HasIndex("SiteId");
 
@@ -182,6 +237,9 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("customer_id");
 
+                    b.Property<long?>("CustomerId1")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("DocumentType")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -205,6 +263,8 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CustomerId")
                         .HasDatabaseName("customer_documents_customer_id_idx");
+
+                    b.HasIndex("CustomerId1");
 
                     b.ToTable("customer_documents", "metal_link");
                 });
@@ -270,14 +330,15 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("MetalLink.Domain.Entities.Province", b =>
                 {
-                    b.Property<int>("ProvinceId")
+                    b.Property<int?>("ProvinceId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("province_id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ProvinceId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int?>("ProvinceId"));
 
-                    b.Property<DateTime>("CreatedTime")
+                    b.Property<DateTime?>("CreatedTime")
+                        .IsRequired()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_time");
 
@@ -297,7 +358,8 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
-                    b.Property<DateTime>("UpdatedTime")
+                    b.Property<DateTime?>("UpdatedTime")
+                        .IsRequired()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_time");
 
@@ -341,9 +403,15 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("company_id");
 
-                    b.Property<DateTime>("CreatedTime")
+                    b.Property<int?>("CountryId")
+                        .HasColumnType("integer")
+                        .HasColumnName("country_id");
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_time");
+                        .HasColumnName("created_time")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
@@ -375,12 +443,16 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("suburb");
 
-                    b.Property<DateTime>("UpdatedTime")
+                    b.Property<DateTimeOffset>("UpdatedTime")
+                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_time");
+                        .HasColumnName("updated_time")
+                        .HasDefaultValueSql("now()");
 
                     b.HasKey("SiteId")
                         .HasName("pk_sites_site_id");
+
+                    b.HasIndex("CountryId");
 
                     b.HasIndex("ProvinceId");
 
@@ -416,6 +488,9 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("customer_id");
 
+                    b.Property<long>("CustomerId1")
+                        .HasColumnType("bigint");
+
                     b.Property<decimal?>("FirstWeightKg")
                         .HasColumnType("numeric(18,3)")
                         .HasColumnName("first_weight_kg");
@@ -433,6 +508,9 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("operator_id");
 
+                    b.Property<long>("OperatorId1")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("ProductDescription")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
@@ -445,6 +523,9 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.Property<long>("SiteId")
                         .HasColumnType("bigint")
                         .HasColumnName("site_id");
+
+                    b.Property<long>("SiteId1")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("TicketNumber")
                         .IsRequired()
@@ -476,10 +557,16 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.HasIndex("CustomerId")
                         .HasDatabaseName("tickets_customer_id_idx");
 
+                    b.HasIndex("CustomerId1");
+
                     b.HasIndex("OperatorId");
+
+                    b.HasIndex("OperatorId1");
 
                     b.HasIndex("SiteId")
                         .HasDatabaseName("tickets_site_id_idx");
+
+                    b.HasIndex("SiteId1");
 
                     b.HasIndex("TicketNumber")
                         .IsUnique()
@@ -493,14 +580,13 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.HasOne("MetalLink.Domain.Entities.Company", "Company")
                         .WithMany("Customers")
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
+                        .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_customers_company_id_companies");
 
                     b.HasOne("MetalLink.Domain.Entities.Site", "Site")
                         .WithMany("Customers")
                         .HasForeignKey("SiteId")
-                        .HasConstraintName("fk_customers_site_id_sites");
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Company");
 
@@ -515,6 +601,10 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_customer_documents_customer_id_customers");
+
+                    b.HasOne("MetalLink.Domain.Entities.Customer", null)
+                        .WithMany("Documents")
+                        .HasForeignKey("CustomerId1");
                 });
 
             modelBuilder.Entity("MetalLink.Domain.Entities.Site", b =>
@@ -526,12 +616,19 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_sites_company_id_companies");
 
+                    b.HasOne("MetalLink.Domain.Entities.Country", "Country")
+                        .WithMany("Sites")
+                        .HasForeignKey("CountryId")
+                        .HasConstraintName("fk_sites_country_id_countries");
+
                     b.HasOne("MetalLink.Domain.Entities.Province", "Province")
                         .WithMany("Sites")
                         .HasForeignKey("ProvinceId")
                         .HasConstraintName("fk_sites_province_id_provinces");
 
                     b.Navigation("Company");
+
+                    b.Navigation("Country");
 
                     b.Navigation("Province");
                 });
@@ -545,6 +642,12 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_tickets_customer_id_customers");
 
+                    b.HasOne("MetalLink.Domain.Entities.Customer", "Customer")
+                        .WithMany("Tickets")
+                        .HasForeignKey("CustomerId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("MetalLink.Domain.Entities.Operator", null)
                         .WithMany()
                         .HasForeignKey("OperatorId")
@@ -552,12 +655,30 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_tickets_operator_id_operators");
 
+                    b.HasOne("MetalLink.Domain.Entities.Operator", "Operator")
+                        .WithMany()
+                        .HasForeignKey("OperatorId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("MetalLink.Domain.Entities.Site", null)
                         .WithMany()
                         .HasForeignKey("SiteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_tickets_site_id_sites");
+
+                    b.HasOne("MetalLink.Domain.Entities.Site", "Site")
+                        .WithMany()
+                        .HasForeignKey("SiteId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Operator");
+
+                    b.Navigation("Site");
                 });
 
             modelBuilder.Entity("MetalLink.Domain.Entities.Company", b =>
@@ -565,6 +686,18 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.Navigation("Customers");
 
                     b.Navigation("Sites");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.Country", b =>
+                {
+                    b.Navigation("Sites");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.Customer", b =>
+                {
+                    b.Navigation("Documents");
+
+                    b.Navigation("Tickets");
                 });
 
             modelBuilder.Entity("MetalLink.Domain.Entities.Province", b =>

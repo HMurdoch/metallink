@@ -29,37 +29,39 @@ public sealed class CustomersController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [HttpPost]
+    [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
-        [FromBody] CreateCustomerRequest request,
+        [FromBody] CustomerDto dto,
         CancellationToken cancellationToken)
     {
-        if (request == null)
+        if (dto == null)
             return BadRequest("Request body is required.");
 
         // If client didn't send account number, generate it
-        if (!request.AccountNumber.HasValue || request.AccountNumber.Value <= 0)
+        if (!dto.AccountNumber.HasValue || dto.AccountNumber.Value <= 0)
         {
-            request.AccountNumber = await _customerRepository.GetNextAccountNumberAsync(cancellationToken);
+            dto.AccountNumber = await _customerRepository.GetNextAccountNumberAsync(cancellationToken);
         }
 
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        // IMPORTANT: use object-initializer to match the record definition
         var command = new CreateCustomerCommand
         {
-            CompanyId    = request.CompanyId,
-            SiteId       = request.SiteId,
-            FirstName    = request.FirstName,
-            LastName     = request.LastName,
-            IsCompany    = request.IsCompany,
-            IdNumber     = request.IdNumber,
-            AccountNumber = request.AccountNumber,
-            PriceCode     = request.PriceCode,
-            PhoneNumber   = request.PhoneNumber,
-            MobileNumber  = request.MobileNumber,
-            Email         = request.Email,
-            Taxable       = request.Taxable
+            CompanyId = dto.CompanyId, // long? → long?
+            SiteId = dto.SiteId, // long? → long?
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            IsCompany = dto.IsCompany,
+            IdNumber = dto.IdNumber,
+            AccountNumber = dto.AccountNumber,
+            PriceCode = dto.PriceCode,
+            PhoneNumber = dto.PhoneNumber,
+            MobileNumber = dto.MobileNumber,
+            Email = dto.Email,
+            Taxable = dto.Taxable
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -140,16 +142,16 @@ public sealed class CustomersController : ControllerBase
         if (dto.SiteId.HasValue)
             customer.SiteId = dto.SiteId.Value;
 
-        customer.FirstName     = dto.FirstName;
-        customer.LastName      = dto.LastName;
-        customer.IsCompany     = dto.IsCompany;
-        customer.IdNumber      = dto.IdNumber;
+        customer.FirstName = dto.FirstName;
+        customer.LastName = dto.LastName;
+        customer.IsCompany = dto.IsCompany;
+        customer.IdNumber = dto.IdNumber;
         customer.AccountNumber = dto.AccountNumber;
-        customer.PriceCode     = dto.PriceCode;
-        customer.PhoneNumber   = dto.PhoneNumber;
-        customer.MobileNumber  = dto.MobileNumber;
-        customer.Email         = dto.Email;
-        customer.Taxable       = dto.Taxable;
+        customer.PriceCode = dto.PriceCode;
+        customer.PhoneNumber = dto.PhoneNumber;
+        customer.MobileNumber = dto.MobileNumber;
+        customer.Email = dto.Email;
+        customer.Taxable = dto.Taxable;
 
         customer.UpdatedTime = DateTime.UtcNow;
 
@@ -158,9 +160,9 @@ public sealed class CustomersController : ControllerBase
         {
             customer.Site.AddressLine1 = dto.AddressLine1;
             customer.Site.AddressLine2 = dto.AddressLine2;
-            customer.Site.Suburb       = dto.Suburb;
-            customer.Site.City         = dto.City;
-            customer.Site.PostalCode   = dto.PostalCode;
+            customer.Site.Suburb = dto.Suburb;
+            customer.Site.City = dto.City;
+            customer.Site.PostalCode = dto.PostalCode;
 
             // DTO uses long? but Site uses int?
             if (dto.ProvinceId.HasValue)
@@ -189,45 +191,4 @@ public sealed class CustomersController : ControllerBase
         var next = await _customerRepository.GetNextAccountNumberAsync(ct);
         return Ok(next);
     }
-
-}
-
-// ---------------------------------------------------------------------
-// DTO used when creating customers via API
-// ---------------------------------------------------------------------
-public sealed class CreateCustomerRequest
-{
-    // NEW: link to company (required in your new design)
-    public long CompanyId { get; set; }
-
-    // Optional branch / site (align with domain: long?)
-    public long SiteId { get; set; }
-
-    public string FirstName { get; set; } = string.Empty;
-    public string LastName  { get; set; } = string.Empty;
-    public bool   IsCompany { get; set; }
-
-    // Kept for now in case you still send it from UI when capturing companies
-    public string? CompanyName  { get; set; }
-
-    public string? IdNumber      { get; set; }
-    
-    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
-    public long? AccountNumber { get; set; }
-    public string? PriceCode     { get; set; }
-
-    // Address fields are no longer on Customer in the DB/schema,
-    // but we keep them here for now in case you still use them
-    // when creating/updating companies/sites from the UI.
-    public string? AddressLine1  { get; set; }
-    public string? AddressLine2  { get; set; }
-    public string? Suburb        { get; set; }
-    public string? City          { get; set; }
-    public string? PostalCode    { get; set; }
-
-    public string? PhoneNumber   { get; set; }
-    public string? MobileNumber  { get; set; }
-    public string? Email         { get; set; }
-    public bool Taxable { get; set; } = true;
-
 }

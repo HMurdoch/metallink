@@ -36,11 +36,16 @@ public sealed class SearchCustomersQueryHandler
                 var province = site?.Province;
                 var country  = site?.Country;
 
-                var addressLine1 = site?.AddressLine1;
-                var addressLine2 = site?.AddressLine2;
-                var suburb       = site?.Suburb;
-                var city         = site?.City;
-                var postalCode   = site?.PostalCode;
+                var addressLine1 = site?.AddressLine1 ?? string.Empty;
+                var addressLine2 = site?.AddressLine2 ?? string.Empty;
+                var suburb       = site?.Suburb ?? string.Empty;
+                var city         = site?.City ?? string.Empty;
+                var postalCode   = site?.PostalCode ?? string.Empty;
+                
+                var provinceId = province?.ProvinceId;
+                var provinceName = province?.ProvinceName;
+                var countryId = country?.CountryId;
+                var countryName = country?.Name;
 
                 return new CustomerDto
                 {

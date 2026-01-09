@@ -9,11 +9,11 @@ public class Customer
     public long CustomerId { get; set; }
 
     // Company
-    public long CompanyId { get; set; }
-    public Company Company { get; set; } = null!;
+    public long? CompanyId { get; set; }
+    public Company? Company { get; set; } = null!;
 
     // Site
-    public long SiteId { get; set; }           // DB is NOT NULL, but we keep this optional in code for now
+    public long? SiteId { get; set; }           // DB is NOT NULL, but we keep this optional in code for now
     public Site? Site { get; set; }
 
     // Names

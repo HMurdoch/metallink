@@ -314,6 +314,7 @@ public class CustomerRepository : ICustomerRepository
             return;
 
         customer.IsActive = false;
+        customer.UpdatedTime = DateTime.UtcNow;
         await _db.SaveChangesAsync(cancellationToken);
     }
 }

@@ -57,12 +57,12 @@ public class MetalLinkDbContext : DbContext
             // Company is required
             entity.Property(c => c.CompanyId)
                   .HasColumnName("company_id")
-                  .IsRequired(); // long + required
+                  .IsRequired(false); // long + required
 
             // Site is required (your business rule)
             entity.Property(c => c.SiteId)
                   .HasColumnName("site_id")
-                  .IsRequired(); // ✅ NO IsRequired(false)
+                  .IsRequired(false); // ✅ NO IsRequired(false)
 
             entity.Property(c => c.FirstName)
                   .HasColumnName("first_name")

@@ -1,8 +1,8 @@
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using MetalLink.Application.Interfaces;
 using MetalLink.Shared.Customers;
+
+using MetalLink.Domain.Entities;
 
 namespace MetalLink.Application.Customers.Queries;
 
@@ -27,14 +27,14 @@ public sealed class GetCustomerByIdQueryHandler
         if (customer == null)
             return null;
 
-        var company = customer.Company;
-        var site    = customer.Site;
+        var company = customer.Company ?? new Company();
+        var site    = customer.Site ?? new Site();
 
-        var addressLine1 = site?.AddressLine1;
-        var addressLine2 = site?.AddressLine2;
-        var suburb       = site?.Suburb;
-        var city         = site?.City;
-        var postalCode   = site?.PostalCode;
+        var addressLine1 = site.AddressLine1 ?? string.Empty;
+        var addressLine2 = site.AddressLine2 ?? string.Empty;
+        var suburb       = site.Suburb ?? string.Empty;
+        var city         = site.City ?? string.Empty;
+        var postalCode   = site.PostalCode ?? string.Empty;
 
         var dto = new CustomerDto
         {
@@ -46,25 +46,25 @@ public sealed class GetCustomerByIdQueryHandler
             LastName      = customer.LastName,
             IsCompany     = customer.IsCompany,
 
-            CompanyName   = company?.CompanyName,
-            VatNumber     = company?.VatNumber,
+            CompanyName   = company.CompanyName,
+            VatNumber     = company.VatNumber,
 
             Taxable       = customer.Taxable,
 
-            SiteName      = site?.SiteName,
-            SiteCode      = site?.SiteCode,
+            SiteName      = site.SiteName,
+            SiteCode      = site.SiteCode,
 
-            AddressLine1  = site?.AddressLine1,
-            AddressLine2  = site?.AddressLine2,
-            Suburb        = site?.Suburb,
-            City          = site?.City,
-            PostalCode    = site?.PostalCode,
+            AddressLine1  = site.AddressLine1,
+            AddressLine2  = site.AddressLine2,
+            Suburb        = site.Suburb,
+            City          = site.City,
+            PostalCode    = site.PostalCode,
 
-            ProvinceId    = site?.ProvinceId,
-            ProvinceName  = site?.Province?.ProvinceName,
+            ProvinceId    = site.ProvinceId,
+            ProvinceName  = site.Province?.ProvinceName,
 
-            CountryId     = site?.CountryId,
-            CountryName   = site?.Country?.Name,
+            CountryId     = site.CountryId,
+            CountryName   = site.Country?.Name,
 
             IdNumber      = customer.IdNumber,
             AccountNumber = customer.AccountNumber,
