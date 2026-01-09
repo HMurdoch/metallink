@@ -2,13 +2,10 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using MetalLink.Desktop.Services;
 using MetalLink.Shared.Companies;
 using MetalLink.Shared.Sites;
-using MetalLink.Shared.Provinces;
-using MetalLink.Shared.Locations;
 using MetalLink.Shared.Customers;
-using Avalonia.Threading;
+using MetalLink.Desktop.Services;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -17,21 +14,7 @@ namespace MetalLink.Desktop.ViewModels;
 public partial class MainWindowViewModel
 {
     // Lazy-created services (we already have _apiClient in the core partial)
-    private CompanyService? _companyService;
-    private SiteService? _siteService;
-    private ProvinceService? _provinceService;
-
-    private CompanyService CompanyService =>
-        _companyService ??= new CompanyService(_apiClient);
-
-    private SiteService SiteService =>
-        _siteService ??= new SiteService(_apiClient);
-
-    private ProvinceService ProvinceService =>
-        _provinceService ??= new ProvinceService(_apiClient);
-
     // ----- Customer -----
-    private long? _pendingSelectSiteId;
     private bool _suppressLetterApply;
 
     private void OnEditCustomer(Shared.Customers.CustomerDto? customer)
@@ -74,6 +57,8 @@ public partial class MainWindowViewModel
         // Try to locate the company in the cached lookup list.
         // First by ID, then (if needed) by name.
         CompanyLookupDto? company = null;
+
+        SyncPriceCodeDropdownFromNewPriceCode();
 
         if (customer.CompanyId.HasValue)
         {
@@ -118,49 +103,76 @@ public partial class MainWindowViewModel
         _ = LoadNewSitesAndSelectAsync(customer.SiteId);
     }
 
+    private void ClearCustomerSearch()
+    {
+        SearchCustomerIdText = string.Empty;
+        SearchSiteIdText = string.Empty;
+        SearchFirstNameText = string.Empty;
+        SearchLastNameText = string.Empty;
+        SearchCompanyNameText = string.Empty;
+        SearchIdNumberText = string.Empty;
+        SearchAddressLine1Text = string.Empty;
+        SearchAddressLine2Text = string.Empty;
+        SearchSuburbText = string.Empty;
+        SearchCityText = string.Empty;
+        SearchPostalCodeText = string.Empty;
+        SearchPhoneNumberText = string.Empty;
+        SearchMobileNumberText = string.Empty;
+        SearchEmailText = string.Empty;
+
+        // ✅ IMPORTANT: reset dropdowns
+        SearchPriceCode = null;
+        SearchTaxable = true;
+
+        // Optional: reset site/company dropdowns if used
+        SelectedSearchCompany = null;
+        SelectedSearchSite = null;
+
+        // Optional: reload all customers
+        //_ = SearchCustomersAsync();
+    }
+
     private async Task OnDeleteCustomerAsync(CustomerDto? customer)
     {
         if (customer == null)
             return;
 
-        // TODO: show your confirm dialog here
-
-        await _customerService.SoftDeleteCustomerAsync(customer.CustomerId);
-
-        CustomerSearchResults.Remove(customer);
-        StatusMessage = $"Customer {customer.FirstName} {customer.LastName} was deleted (soft delete).";
-    }
-
-    private async Task LoadNewSitesAndSelectAsync(long? siteId)
-    {
-        NewSiteSuggestions.Clear();
-
-        if (SelectedNewCompany == null)
-        {
-            SelectedNewSite = null;
+        if (IsBusy)
             return;
-        }
 
+        var ok = await ConfirmAsync($"Are you sure you want to delete - {customer.FirstName} {customer.LastName} ?");
+        if (!ok)
+            return;
+
+        IsBusy = true;
         try
         {
-            var url = $"api/sites/lookup?companyId={SelectedNewCompany.CompanyId}&term=";
-            var sites = await _apiClient.GetAsync<List<SiteLookupDto>>(url);
+            StatusMessage = "[STATUS] Deleting customer...";
 
-            if (sites != null)
+            await _customerService.SoftDeleteCustomerAsync(customer.CustomerId);
+
+            CustomerSearchResults.Remove(customer);
+
+            if (FoundCustomer?.CustomerId == customer.CustomerId)
             {
-                foreach (var s in sites.OrderBy(s => s.SiteName))
-                    NewSiteSuggestions.Add(s);
+                FoundCustomer = null;
             }
 
-            SelectedNewSite = siteId.HasValue
-                ? NewSiteSuggestions.FirstOrDefault(s => s.SiteId == siteId.Value)
-                : null;
+            // If we were editing this customer, reset the form
+            if (EditingCustomerId == customer.CustomerId)
+            {
+                await ClearNewCustomerFormAsync();
+            }
+
+            StatusMessage = $"[STATUS] Customer {customer.FirstName} {customer.LastName} deleted (soft).";
         }
         catch (Exception ex)
         {
-            StatusMessage = $"[STATUS] Load sites failed: {ex.Message}";
-            NewSiteSuggestions.Clear();
-            SelectedNewSite = null;
+            StatusMessage = $"[STATUS] Delete customer failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 
@@ -185,7 +197,7 @@ public partial class MainWindowViewModel
             NewAccountNumber = null;
         }
 
-        NewPriceCode = string.Empty;
+        SelectedPriceCodeChar = null;
         NewPhoneNumber = string.Empty;
         NewMobileNumber = string.Empty;
         NewEmail = string.Empty;
@@ -218,64 +230,6 @@ public partial class MainWindowViewModel
             NewAccountNumber = null;
             OnPropertyChanged(nameof(NewAccountNumberDisplay));
         }
-    }
-
-    private void AddCompanyToCachesAndSelect(CompanyLookupDto createdCompany)
-    {
-        // 1) Add/update in master cache
-        var existing = _allCompanies.FirstOrDefault(c => c.CompanyId == createdCompany.CompanyId);
-        if (existing != null)
-        {
-            var idx = _allCompanies.IndexOf(existing);
-            if (idx >= 0) _allCompanies[idx] = createdCompany;
-        }
-        else
-        {
-            _allCompanies.Add(createdCompany);
-        }
-
-        // 2) Keep master cache sorted (optional but helps)
-        var sorted = _allCompanies.OrderBy(c => c.CompanyName).ToList();
-        _allCompanies.Clear();
-        foreach (var c in sorted) _allCompanies.Add(c);
-
-        // 3) Rebuild letter list (simple rebuild)
-        _companyLetterFilters.Clear();
-        _companyLetterFilters.Add("ALL");
-
-        var letters = _allCompanies
-            .Select(c => c.CompanyName?.FirstOrDefault() ?? '\0')
-            .Where(ch => ch != '\0')
-            .Select(ch => char.ToUpperInvariant(ch))
-            .Distinct()
-            .OrderBy(ch => ch);
-
-        foreach (var ch in letters)
-            _companyLetterFilters.Add(ch.ToString());
-
-        _companyLettersLoaded = true;
-        _companyLettersLoading = false;
-
-        // 4) Switch the letter filter to the new company's letter
-        var first = createdCompany.CompanyName?.FirstOrDefault();
-        var letterStr = first.HasValue ? char.ToUpperInvariant(first.Value).ToString() : "ALL";
-        if (!CompanyLetterFilters.Contains(letterStr))
-            letterStr = "ALL";
-
-        _suppressLetterApply = true;
-        SelectedCompanyLetter = letterStr;
-        _suppressLetterApply = false;
-
-        // 5) Refresh both the dropdown + results grid from the cache
-        ApplyCompanyLetterFilter();
-
-        CompanyResults.Clear();
-        foreach (var c in SearchCompanySuggestions.OrderBy(x => x.CompanyName))
-            CompanyResults.Add(c);
-
-        // 6) Select the created company in BOTH selectors
-        SelectedSearchCompany = SearchCompanySuggestions.FirstOrDefault(c => c.CompanyId == createdCompany.CompanyId);
-        SelectedCompany = CompanyResults.FirstOrDefault(c => c.CompanyId == createdCompany.CompanyId);
     }
 
     private string _searchAccountNumberText = string.Empty;
@@ -323,7 +277,7 @@ public partial class MainWindowViewModel
             LastName = NewLastName,
             IdNumber = NewIdNumber,
             AccountNumber = NewAccountNumber,
-            PriceCode = NewPriceCode,
+            PriceCode = SelectedPriceCodeChar?.Code.Trim(),
             PhoneNumber = NewPhoneNumber,
             MobileNumber = NewMobileNumber,
             Email = NewEmail,

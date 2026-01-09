@@ -1,6 +1,7 @@
 // MetalLink.Desktop/ViewModels/Properties/CustomerProperties.cs
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using MetalLink.Shared.Customers;
 using MetalLink.Shared.Locations;
 
@@ -474,5 +475,63 @@ public partial class MainWindowViewModel
     {
         get => _searchTaxable;
         set { _searchTaxable = value; OnPropertyChanged(); }
+    }
+
+    public sealed record PriceCodeOption(string Code, string Label);
+
+    public ObservableCollection<PriceCodeOption> PriceCodeOptions { get; } =
+    [
+        new("A", "Price A"),
+        new("B", "Price B"),
+        new("C", "Price C"),
+    ];
+
+    private void SyncPriceCodeDropdownFromNewPriceCode()
+    {
+        var code = (NewPriceCode ?? "").Trim();
+        SelectedPriceCodeChar = PriceCodeOptions.FirstOrDefault(x => x.Code == code);
+    }
+
+    private void SyncNewPriceCodeFromDropdown()
+    {
+        NewPriceCode = SelectedPriceCodeChar?.Code; // "A" / "B" / "C" / null
+    }
+
+
+    private PriceCodeOption? _selectedPriceCodeChar;
+
+    public PriceCodeOption? SelectedPriceCodeChar
+    {
+        get => _selectedPriceCodeChar;
+        set
+        {
+            if (_selectedPriceCodeChar == value) return;
+            _selectedPriceCodeChar = value;
+            OnPropertyChanged();
+
+            NewPriceCode = _selectedPriceCodeChar?.Code;
+
+            // if you have CanCreate/CanUpdate checks depending on it, notify here too
+            (CreateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+        }
+    }
+
+    // For search panel
+    private PriceCodeOption? _searchPriceCode;
+
+    public PriceCodeOption? SearchPriceCode
+    {
+        get => _searchPriceCode;
+        set
+        {
+            if (_searchPriceCode == value) return;
+            _searchPriceCode = value;
+            OnPropertyChanged();
+
+            // IMPORTANT: search depends on this
+            (SearchCustomersCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)
+                ?.NotifyCanExecuteChanged();
+        }
     }
 }

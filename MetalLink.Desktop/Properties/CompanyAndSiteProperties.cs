@@ -9,16 +9,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Threading;
-using MetalLink.Shared.Companies;
 
 namespace MetalLink.Desktop.ViewModels;
 
 public partial class MainWindowViewModel
 {
-    // =====================================================
-    // COMPANY & SITE - STATE (bind these in your View)
-    // =====================================================
-
     // Company search inputs
     private string? _companySearchLetter = "ALL";
 

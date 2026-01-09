@@ -95,6 +95,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand LogTicketCommand { get; }
     public ICommand ClearNewCustomerCommand { get; }
     public ICommand UpdateCustomerCommand { get; }
+    public ICommand SearchCustomersCommand { get; }
 
     public MainWindowViewModel(App app)
     {
@@ -176,6 +177,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         OnPropertyChanged(nameof(NewAccountNumberDisplay));
 
         UpdateCustomerCommand = new AsyncRelayCommand(OnUpdateCustomerAsync, () => CanUpdateCustomer);
+        SearchCustomersCommand = new AsyncRelayCommand(SearchCustomerAsync);
 
         // Camera commands
         CaptureWbFrontBeforeCommand = new AsyncCommand(() =>
@@ -347,17 +349,12 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             {
                 CustomerId = customerId,
                 SiteId = siteId,
-                FirstName = string.IsNullOrWhiteSpace(SearchFirstNameText) ? null : SearchFirstNameText,
-                LastName = string.IsNullOrWhiteSpace(SearchLastNameText) ? null : SearchLastNameText,
-                CompanyName = string.IsNullOrWhiteSpace(SearchCompanyNameText) ? null : SearchCompanyNameText,
-                IdNumber = string.IsNullOrWhiteSpace(SearchIdNumberText) ? null : SearchIdNumberText,
+                FirstName = string.IsNullOrWhiteSpace(SearchFirstNameText) ? null : SearchFirstNameText.Trim(),
+                LastName = string.IsNullOrWhiteSpace(SearchLastNameText) ? null : SearchLastNameText.Trim(),
+                CompanyName = string.IsNullOrWhiteSpace(SearchCompanyNameText) ? null : SearchCompanyNameText.Trim(),
+                IdNumber = string.IsNullOrWhiteSpace(SearchIdNumberText) ? null : SearchIdNumberText.Trim(),
                 AccountNumber = ParseAccountNumberOrNull(SearchAccountNumberText),
-                PriceCode = string.IsNullOrWhiteSpace(SearchPriceCodeText) ? null : SearchPriceCodeText,
-                AddressLine1 = string.IsNullOrWhiteSpace(SearchAddressLine1Text) ? null : SearchAddressLine1Text,
-                AddressLine2 = string.IsNullOrWhiteSpace(SearchAddressLine2Text) ? null : SearchAddressLine2Text,
-                Suburb = string.IsNullOrWhiteSpace(SearchSuburbText) ? null : SearchSuburbText,
-                City = string.IsNullOrWhiteSpace(SearchCityText) ? null : SearchCityText,
-                PostalCode = string.IsNullOrWhiteSpace(SearchPostalCodeText) ? null : SearchPostalCodeText,
+                PriceCode = string.IsNullOrEmpty(SearchPriceCode?.Code) ? null : SearchPriceCode.Code.Trim(),
                 PhoneNumber = string.IsNullOrWhiteSpace(SearchPhoneNumberText) ? null : SearchPhoneNumberText,
                 MobileNumber = string.IsNullOrWhiteSpace(SearchMobileNumberText) ? null : SearchMobileNumberText,
                 Email = string.IsNullOrWhiteSpace(SearchEmailText) ? null : SearchEmailText,
@@ -498,7 +495,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
                 Email = NewEmail!,
                 PhoneNumber = string.IsNullOrWhiteSpace(NewPhoneNumber) ? null : NewPhoneNumber,
                 MobileNumber = string.IsNullOrWhiteSpace(NewMobileNumber) ? null : NewMobileNumber,
-                PriceCode = string.IsNullOrWhiteSpace(NewPriceCode) ? null : NewPriceCode,
+                PriceCode = string.IsNullOrEmpty(SelectedPriceCodeChar?.Code) ? null : SelectedPriceCodeChar.Code.Trim(),
                 AddressLine1 = string.IsNullOrWhiteSpace(NewAddressLine1) ? null : NewAddressLine1,
                 AddressLine2 = string.IsNullOrWhiteSpace(NewAddressLine2) ? null : NewAddressLine2,
                 Suburb = string.IsNullOrWhiteSpace(NewSuburb) ? null : NewSuburb,
@@ -509,10 +506,10 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
                 CompanyId = NewIsCompany && SelectedNewCompany != null
                                     ? SelectedNewCompany.CompanyId
-                                    : 0,   // or throw if you prefer
+                                    : null,
                 SiteId = NewIsCompany && SelectedNewSite != null
                                     ? SelectedNewSite.SiteId
-                                    : 0
+                                    : null
             };
 
             Console.WriteLine($"CreateCustomer: IsCompany={NewIsCompany}, CompanyId={SelectedNewCompany?.CompanyId}, SiteId={SelectedNewSite?.SiteId}");
@@ -525,17 +522,28 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
                 StatusMessage = "Customer create failed - API returned no result.";
                 return;
             }
-            else
-            {
-                StatusMessage = "Customer could not be created.";
-            }
 
             // store raw number and refresh displayed padded text
             _newAccountNumber = created.AccountNumber;
             OnPropertyChanged(nameof(NewAccountNumber));
 
             StatusMessage = $"Customer {created.FirstName} {created.LastName} created successfully (Account {NewAccountNumber}).";
-
+    
+            var refreshed = await _customerService.GetCustomerByIdAsync(created.CustomerId);
+            refreshed ??= dto;
+        
+            var existing = CustomerSearchResults.FirstOrDefault(c => c.CustomerId == dto.CustomerId);
+            if (existing != null)
+            {
+                var index = CustomerSearchResults.IndexOf(existing);
+                if (index >= 0)
+                    CustomerSearchResults[index] = refreshed; // replace item (forces UI refresh)
+            }
+            else
+            {
+                CustomerSearchResults.Add(refreshed);
+            }
+            
             // if you want the form cleared except the new account number, you can adjust here;
             // right now you probably still call ClearNewCustomerForm();
             await ClearNewCustomerFormAsync();

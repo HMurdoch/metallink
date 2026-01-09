@@ -9,7 +9,12 @@ public partial class ConfirmDialog : Window
     public ConfirmDialog(string message)
     {
         InitializeComponent();
-        this.FindControl<TextBlock>("MessageText").Text = message;
+
+        var messageTextBlock = this.FindControl<TextBlock>("MessageText");
+        if (messageTextBlock is not null)
+        {
+            messageTextBlock.Text = message;
+        }
     }
 
     private void InitializeComponent()

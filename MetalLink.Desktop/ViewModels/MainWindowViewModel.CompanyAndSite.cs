@@ -6,14 +6,120 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
 using MetalLink.Shared.Companies;
 using MetalLink.Shared.Sites;
-using MetalLink.Desktop.Services;
 using Avalonia.Threading;
 using System.Collections.Generic;
+using MetalLink.Desktop.Services;
 
 namespace MetalLink.Desktop.ViewModels;
 
 public partial class MainWindowViewModel
 {
+    private CompanyService? _companyService;
+    private SiteService? _siteService;
+    private ProvinceService? _provinceService;
+
+    private CompanyService CompanyService =>
+        _companyService ??= new CompanyService(_apiClient);
+
+    private SiteService SiteService =>
+        _siteService ??= new SiteService(_apiClient);
+
+    private ProvinceService ProvinceService =>
+        _provinceService ??= new ProvinceService(_apiClient);
+
+    private long? _pendingSelectSiteId;
+
+    private async Task LoadNewSitesAndSelectAsync(long? siteId)
+    {
+        NewSiteSuggestions.Clear();
+
+        if (SelectedNewCompany == null)
+        {
+            SelectedNewSite = null;
+            return;
+        }
+
+        try
+        {
+            var url = $"api/sites/lookup?companyId={SelectedNewCompany.CompanyId}&term=";
+            var sites = await _apiClient.GetAsync<List<SiteLookupDto>>(url);
+
+            if (sites != null)
+            {
+                foreach (var s in sites.OrderBy(s => s.SiteName))
+                    NewSiteSuggestions.Add(s);
+            }
+
+            SelectedNewSite = siteId.HasValue
+                ? NewSiteSuggestions.FirstOrDefault(s => s.SiteId == siteId.Value)
+                : null;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Load sites failed: {ex.Message}";
+            NewSiteSuggestions.Clear();
+            SelectedNewSite = null;
+        }
+    }
+
+    private void AddCompanyToCachesAndSelect(CompanyLookupDto createdCompany)
+    {
+        // 1) Add/update in master cache
+        var existing = _allCompanies.FirstOrDefault(c => c.CompanyId == createdCompany.CompanyId);
+        if (existing != null)
+        {
+            var idx = _allCompanies.IndexOf(existing);
+            if (idx >= 0) _allCompanies[idx] = createdCompany;
+        }
+        else
+        {
+            _allCompanies.Add(createdCompany);
+        }
+
+        // 2) Keep master cache sorted (optional but helps)
+        var sorted = _allCompanies.OrderBy(c => c.CompanyName).ToList();
+        _allCompanies.Clear();
+        foreach (var c in sorted) _allCompanies.Add(c);
+
+        // 3) Rebuild letter list (simple rebuild)
+        _companyLetterFilters.Clear();
+        _companyLetterFilters.Add("ALL");
+
+        var letters = _allCompanies
+            .Select(c => c.CompanyName?.FirstOrDefault() ?? '\0')
+            .Where(ch => ch != '\0')
+            .Select(ch => char.ToUpperInvariant(ch))
+            .Distinct()
+            .OrderBy(ch => ch);
+
+        foreach (var ch in letters)
+            _companyLetterFilters.Add(ch.ToString());
+
+        _companyLettersLoaded = true;
+        _companyLettersLoading = false;
+
+        // 4) Switch the letter filter to the new company's letter
+        var first = createdCompany.CompanyName?.FirstOrDefault();
+        var letterStr = first.HasValue ? char.ToUpperInvariant(first.Value).ToString() : "ALL";
+        if (!CompanyLetterFilters.Contains(letterStr))
+            letterStr = "ALL";
+
+        _suppressLetterApply = true;
+        SelectedCompanyLetter = letterStr;
+        _suppressLetterApply = false;
+
+        // 5) Refresh both the dropdown + results grid from the cache
+        ApplyCompanyLetterFilter();
+
+        CompanyResults.Clear();
+        foreach (var c in SearchCompanySuggestions.OrderBy(x => x.CompanyName))
+            CompanyResults.Add(c);
+
+        // 6) Select the created company in BOTH selectors
+        SelectedSearchCompany = SearchCompanySuggestions.FirstOrDefault(c => c.CompanyId == createdCompany.CompanyId);
+        SelectedCompany = CompanyResults.FirstOrDefault(c => c.CompanyId == createdCompany.CompanyId);
+    }
+
     private void ClearCompanyEditor()
     {
         EditingCompanyId = null; // if you have it; otherwise just use a bool flag
@@ -95,6 +201,7 @@ public partial class MainWindowViewModel
     public IAsyncRelayCommand ClearCompanyFormCommand { get; private set; } = null!;
     public IAsyncRelayCommand UpdateCompany2Command { get; private set; } = null!;
     public IRelayCommand ClearSiteFormCommand { get; private set; } = null!;
+    public IRelayCommand ClearCustomerSearchCommand { get; private set; } = null!;
 
 
     /// <summary>
@@ -116,6 +223,7 @@ public partial class MainWindowViewModel
             DeleteCompanyCommand = new AsyncRelayCommand<CompanyLookupDto>(DeleteCompanyAsync);
             ClearCompanyFormCommand = new AsyncRelayCommand(ct => ClearCompanyFormAsync(ct));
             UpdateCompany2Command = new AsyncRelayCommand(ct => UpdateCompanyAsync(ct), () => CanUpdateCompany);
+            ClearCustomerSearchCommand = new RelayCommand(ClearCustomerSearch);
             ClearSiteFormCommand = new RelayCommand(ClearSiteForm);
     }
 
