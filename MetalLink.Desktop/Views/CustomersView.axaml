@@ -22,6 +22,8 @@
     <Style Selector="TextBox">
       <Setter Property="BorderBrush" Value="#444a55" />
       <Setter Property="BorderThickness" Value="1" />
+      <!-- Match button text size -->
+      <Setter Property="FontSize" Value="11" />
     </Style>
 
     <Style Selector="TextBox:focus">
@@ -33,28 +35,126 @@
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="BorderBrush" Value="#444a55" />
       <Setter Property="BorderThickness" Value="1" />
+      <!-- Match button text size -->
+      <Setter Property="FontSize" Value="11" />
     </Style>
 
     <Style Selector="ComboBox:focus">
       <Setter Property="BorderBrush" Value="#5c7cfa" />
     </Style>
+
+    <!-- DataGrid overall -->
+    <Style Selector="DataGrid">
+      <Setter Property="Background" Value="{StaticResource Brush.PanelBackground}" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+      <Setter Property="GridLinesVisibility" Value="Horizontal" />
+      <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="VerticalGridLinesBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <!-- DataGrid cells: force same font size as row-action buttons -->
+    <Style Selector="DataGridCell">
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+
+    <!-- Header row (slightly larger + bold) -->
+    <Style Selector="DataGridColumnHeader">
+      <Setter Property="Background" Value="{StaticResource Brush.NavBackground}" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.TextMuted}" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+
+    <!-- Rows: subtle hover + blue selection -->
+    <Style Selector="DataGridRow">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions>
+            <BrushTransition Property="Background" Duration="0:0:0.12" />
+          </Transitions>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="DataGridRow:pointerover">
+      <Setter Property="Background" Value="#20FFFFFF" />
+    </Style>
+
+    <Style Selector="DataGridRow:selected">
+      <Setter Property="Background" Value="#303B82F6" />
+    </Style>
+
+    <!-- Row action buttons in the results grid -->
+    <Style Selector="Button.row-action">
+      <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+      <Setter Property="Background" Value="#30333A" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Padding" Value="6,2" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+      <Setter Property="RenderTransform">
+        <Setter.Value>
+          <ScaleTransform ScaleX="1" ScaleY="1" />
+        </Setter.Value>
+      </Setter>
+
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions>
+            <BrushTransition Property="Background" Duration="0:0:0.10" />
+            <BrushTransition Property="BorderBrush" Duration="0:0:0.10" />
+          </Transitions>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="Button.row-action:pointerover">
+      <Setter Property="Background" Value="#3A4150" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.AccentGradient}" />
+    </Style>
+
+    <Style Selector="Button.row-action:pressed">
+      <Setter Property="RenderTransform">
+        <Setter.Value>
+          <ScaleTransform ScaleX="0.97" ScaleY="0.97" />
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="Button.row-action:disabled">
+      <Setter Property="Background" Value="#2A2D34" />
+      <Setter Property="Foreground" Value="#80838C" />
+      <Setter Property="BorderBrush" Value="#3A3D45" />
+    </Style>
   </UserControl.Styles>
 
-  <Border Background="#1f2229" Padding="16">
+  <Border Background="{StaticResource Brush.MainBackground}" Padding="16">
     <ScrollViewer>
       <StackPanel Spacing="16">
 
         <!-- Header -->
-        <TextBlock
-            Text="Customers"
-            FontSize="20"
-            FontWeight="Bold"
-            Foreground="#f5f5f5" />
+        <StackPanel Spacing="4">
+          <TextBlock
+              Text="Customers"
+              FontSize="20"
+              FontWeight="Bold"
+              Foreground="{StaticResource Brush.TextPrimary}" />
+          <Border Height="2"
+                  Margin="0,0,0,8"
+                  CornerRadius="1"
+                  Background="{StaticResource Brush.AccentGradient}" />
+        </StackPanel>
 
         <!-- SEARCH EXISTING CUSTOMER -->
-        <Border Background="#252932" Padding="12" CornerRadius="4">
+        <Border Background="{StaticResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
-            <TextBlock Text="Search existing customer" Foreground="#f5f5f5" FontWeight="Bold" />
+            <TextBlock Text="Search existing customer" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" />
 
             <!-- 2-column search grid -->
             <Grid Margin="0,8,0,0">
@@ -183,6 +283,7 @@
                   Content="Clear"
                   Command="{Binding ClearCustomerSearchCommand}" />
                 <Button
+                  Classes="primary"
                   Margin="0,8,0,0"
                   HorizontalAlignment="Center"
                   Width="100"
@@ -208,26 +309,26 @@
                 <DataGridTextColumn Header="Mobile" Binding="{Binding MobileNumber}" IsReadOnly="True" />
                 <DataGridTextColumn Header="Email" Binding="{Binding Email}" IsReadOnly="True" />
 
-                <!-- NEW: Action buttons -->
+                <!-- Action buttons -->
                 <DataGridTemplateColumn Header="">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
                       <StackPanel Orientation="Horizontal" Spacing="4">
                         <Button
+                            Classes="row-action"
                             Content="Log Ticket"
-                            Padding="4,0"
                             Command="{Binding DataContext.LogTicketCommand,
                                               RelativeSource={RelativeSource AncestorType=UserControl}}"
                             CommandParameter="{Binding}" />
                         <Button
+                            Classes="row-action"
                             Content="Edit"
-                            Padding="4,0"
                             Command="{Binding DataContext.EditCustomerCommand,
                                               RelativeSource={RelativeSource AncestorType=UserControl}}"
                             CommandParameter="{Binding}" />
                         <Button
+                            Classes="row-action"
                             Content="Delete"
-                            Padding="4,0"
                             Command="{Binding DataContext.DeleteCustomerCommand,
                                               RelativeSource={RelativeSource AncestorType=UserControl}}"
                             CommandParameter="{Binding}" />
@@ -239,7 +340,7 @@
             </DataGrid>
 
             <!-- Selected customer detail table -->
-            <Border Margin="0,12,0,0" Padding="8" Background="#1f2229" CornerRadius="4">
+            <Border Margin="0,12,0,0" Padding="8" Background="{StaticResource Brush.MainBackground}" CornerRadius="4">
               <Grid>
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="Auto" />
@@ -264,54 +365,54 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Customer ID" Foreground="#c0c4cf" Margin="0,0,8,2" />
-                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedCustomerIdDisplay}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedCustomerIdDisplay}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="First Name" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedFirstName}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedFirstName}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Last Name" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedLastName}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedLastName}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Company Name" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedCompanyName}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedCompanyName}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Site Name" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedSiteName}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedSiteName}" Foreground="#f5f5f5" FontSize="11" />
 
                 <!-- NEW: Taxable under Company Name -->
                 <TextBlock Grid.Row="5" Grid.Column="0" Text="Taxable" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedTaxable}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedTaxable}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="6" Grid.Column="0" Text="ID Number" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SelectedIdNumber}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SelectedIdNumber}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="7" Grid.Column="0" Text="Account Number" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding SelectedAccountNumberFormatted}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding SelectedAccountNumberFormatted}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="8" Grid.Column="0" Text="Price Code" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding SelectedPriceCode}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding SelectedPriceCode}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="9" Grid.Column="0" Text="Phone" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding SelectedPhoneNumber}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding SelectedPhoneNumber}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="10" Grid.Column="0" Text="Mobile" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding SelectedMobileNumber}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding SelectedMobileNumber}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="11" Grid.Column="0" Text="Email" Foreground="#c0c4cf" Margin="0,4,8,0" />
-                <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding SelectedEmail}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding SelectedEmail}" Foreground="#f5f5f5" FontSize="11" />
 
                 <!-- Site address (read-only, from Site/CAS) -->
                 <TextBlock Grid.Row="12" Grid.Column="0" Text="Site Address" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="12" Grid.Column="1" Text="{Binding CustomerSiteAddressSummary}" Foreground="#f5f5f5" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="12" Grid.Column="1" Text="{Binding CustomerSiteAddressSummary}" Foreground="#f5f5f5" FontSize="11" TextWrapping="Wrap" />
               </Grid>
             </Border>
           </StackPanel>
         </Border>
 
         <!-- CREATE NEW CUSTOMER -->
-        <Border Background="#252932" Padding="12" CornerRadius="4">
+        <Border Background="{StaticResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
-            <TextBlock Text="Create/Edit customer" Foreground="#f5f5f5" FontWeight="Bold" />
+            <TextBlock Text="Create/Edit customer" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" />
 
             <Grid Margin="0,8,0,0">
               <Grid.ColumnDefinitions>
@@ -440,6 +541,7 @@
                     Command="{Binding ClearNewCustomerCommand}" />
 
                 <Button
+                    Classes="primary"
                     Width="100"
                     Content="Create"
                     Command="{Binding CreateCustomerCommand}"
@@ -447,6 +549,7 @@
                     IsVisible="{Binding IsCreateMode}" />
 
                 <Button
+                    Classes="primary"
                     Width="100"
                     Content="Update"
                     Command="{Binding UpdateCustomerCommand}"

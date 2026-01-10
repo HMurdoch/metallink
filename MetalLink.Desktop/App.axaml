@@ -6,10 +6,93 @@
   <!-- Global styles -->
   <Application.Styles>
     <!-- Fluent base theme -->
-    <!-- <FluentTheme /> -->
     <FluentTheme />
     <!-- DataGrid theme (important for DataGrid to look right) -->
     <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+
+    <!-- Primary button styles -->
+    <Style Selector="Button.primary">
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Background" Value="{DynamicResource Brush.AccentGradient}" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="12,6" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+      <Setter Property="RenderTransform">
+        <Setter.Value>
+          <ScaleTransform ScaleX="1" ScaleY="1" />
+        </Setter.Value>
+      </Setter>
+
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions>
+            <BrushTransition Property="Background" Duration="0:0:0.15" />
+          </Transitions>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="Button.primary:pointerover">
+      <Setter Property="RenderTransform">
+        <Setter.Value>
+          <ScaleTransform ScaleX="1.03" ScaleY="1.03" />
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="Button.primary:pressed">
+      <Setter Property="Background">
+        <Setter.Value>
+          <SolidColorBrush Color="{DynamicResource Color.PrimaryBlueDark}" />
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="Button.primary:disabled">
+      <Setter Property="Background" Value="#555A64" />
+      <Setter Property="Foreground" Value="#B0B4BD" />
+    </Style>
   </Application.Styles>
+
+  <!-- Brand colors / brushes and shared styles -->
+  <Application.Resources>
+    <!-- Brand colors (tune to match MetalLink logo exactly) -->
+    <Color x:Key="Color.PrimaryBlue">#1E88E5</Color>
+    <Color x:Key="Color.LightBlue">#8EC5FC</Color>
+    <Color x:Key="Color.PrimaryBlueDark">#0D47A1</Color>
+
+    <!-- Dark theme neutrals -->
+    <Color x:Key="Color.BackgroundDark">#1F2229</Color>
+    <Color x:Key="Color.NavBackground">#20232A</Color>
+    <Color x:Key="Color.StatusBackground">#181A20</Color>
+    <Color x:Key="Color.PanelDark">#252932</Color>
+    <Color x:Key="Color.TextPrimary">#F5F5F5</Color>
+    <Color x:Key="Color.TextMuted">#C0C4CF</Color>
+    <Color x:Key="Color.BorderSubtle">#3A404A</Color>
+
+    <!-- Brushes -->
+    <LinearGradientBrush x:Key="Brush.AppBackground"
+                         StartPoint="0,0" EndPoint="0,1">
+      <GradientStop Color="{StaticResource Color.PrimaryBlueDark}" Offset="0" />
+      <GradientStop Color="{StaticResource Color.BackgroundDark}" Offset="0.25" />
+      <GradientStop Color="{StaticResource Color.BackgroundDark}" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="Brush.AccentGradient"
+                         StartPoint="0,0" EndPoint="1,0">
+      <GradientStop Color="{StaticResource Color.PrimaryBlue}" Offset="0" />
+      <GradientStop Color="{StaticResource Color.LightBlue}" Offset="1" />
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="Brush.NavBackground" Color="{StaticResource Color.NavBackground}" />
+    <SolidColorBrush x:Key="Brush.MainBackground" Color="{StaticResource Color.BackgroundDark}" />
+    <SolidColorBrush x:Key="Brush.PanelBackground" Color="{StaticResource Color.PanelDark}" />
+    <SolidColorBrush x:Key="Brush.StatusBackground" Color="{StaticResource Color.StatusBackground}" />
+    <SolidColorBrush x:Key="Brush.BorderSubtle" Color="{StaticResource Color.BorderSubtle}" />
+    <SolidColorBrush x:Key="Brush.TextPrimary" Color="{StaticResource Color.TextPrimary}" />
+    <SolidColorBrush x:Key="Brush.TextMuted" Color="{StaticResource Color.TextMuted}" />
+  </Application.Resources>
 
 </Application>

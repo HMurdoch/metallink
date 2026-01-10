@@ -9,7 +9,40 @@
     </DataTemplate>
   </UserControl.Resources>
 
-  <Border Background="#1f2229" Padding="16">
+  <UserControl.Styles>
+    <!-- Text inputs/dropdowns: match entity button text size -->
+    <Style Selector="TextBox">
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+
+    <Style Selector="ComboBox">
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+
+    <!-- DataGrid font sizes: rows slightly smaller than headers -->
+    <Style Selector="DataGrid">
+      <Setter Property="Background" Value="{StaticResource Brush.PanelBackground}" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+      <Setter Property="GridLinesVisibility" Value="Horizontal" />
+      <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="VerticalGridLinesBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style Selector="DataGridCell">
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+
+    <Style Selector="DataGridColumnHeader">
+      <Setter Property="Background" Value="{StaticResource Brush.NavBackground}" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.TextMuted}" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+  </UserControl.Styles>
+
+  <Border Background="{StaticResource Brush.MainBackground}" Padding="16">
     <ScrollViewer>
       <StackPanel Spacing="16">
 

@@ -6,19 +6,34 @@
         Width="400" Height="260"
         Title="Metal Link - Login">
 
+  <Window.Styles>
+    <!-- Match main app typography: labels slightly larger/bolder than field text -->
+    <Style Selector="TextBox">
+      <!-- Same as entity text boxes / grid rows -->
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+
+    <Style Selector="TextBlock.login-label">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+  </Window.Styles>
+
   <StackPanel Margin="20" Spacing="10">
     <TextBlock Text="Metal Link Login"
                FontSize="18"
+               FontWeight="Bold"
                HorizontalAlignment="Center" />
 
-    <TextBlock Text="Username" />
+    <TextBlock Classes="login-label" Text="Username" />
     <TextBox Text="{Binding Username}" />
 
-    <TextBlock Text="Password" />
+    <TextBlock Classes="login-label" Text="Password" />
     <TextBox Text="{Binding Password}"
              PasswordChar="•" />
 
     <Button Content="Login"
+            Classes="primary"
             HorizontalAlignment="Right"
             Width="100"
             Command="{Binding LoginCommand}" />
