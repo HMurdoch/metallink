@@ -29,6 +29,7 @@ public partial class MainWindowViewModel
     private int _animatedTotalTicketsInDb;
     private int _animatedTotalCompaniesInDb;
     private int _animatedTotalSitesInDb;
+    private int _animatedTotalProductsInDb;
 
     // Charts
     public ISeries[] TicketsByTypeSeries { get; set; } = System.Array.Empty<ISeries>();
@@ -142,6 +143,12 @@ public partial class MainWindowViewModel
     {
         get => _animatedTotalSitesInDb;
         set { _animatedTotalSitesInDb = value; OnPropertyChanged(); }
+    }
+
+    public int AnimatedTotalProductsInDb
+    {
+        get => _animatedTotalProductsInDb;
+        set { _animatedTotalProductsInDb = value; OnPropertyChanged(); }
     }
 
     public bool HasUnsavedChanges => HasUnsavedNewCustomer || HasUnsavedTicket;

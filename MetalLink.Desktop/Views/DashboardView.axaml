@@ -22,7 +22,7 @@
 
         <!-- Two-column stats layout -->
         <Grid ColumnDefinitions="*,*"
-              RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+              RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
               ColumnSpacing="12"
               RowSpacing="12">
 
@@ -75,6 +75,18 @@
           <Border Grid.Row="2" Grid.Column="1"
                   Background="#252932" Padding="10" CornerRadius="4">
             <StackPanel>
+              <TextBlock Text="Total products in system:"
+                         Foreground="#9fa4b2" FontSize="12" />
+              <TextBlock Text="{Binding AnimatedTotalProductsInDb}"
+                         Foreground="#f5f5f5"
+                         FontSize="18"
+                         FontWeight="Bold" />
+            </StackPanel>
+          </Border>
+
+          <Border Grid.Row="3" Grid.Column="0"
+                  Background="#252932" Padding="10" CornerRadius="4">
+            <StackPanel>
               <TextBlock Text="Total sites in system:"
                          Foreground="#9fa4b2" FontSize="12" />
               <TextBlock Text="{Binding AnimatedTotalSitesInDb}"
@@ -84,8 +96,8 @@
             </StackPanel>
           </Border>
 
-          <!-- Row 2: Last customer / last ticket -->
-          <Border Grid.Row="3" Grid.Column="0"
+          <!-- Row 3: Last customer / last ticket -->
+          <Border Grid.Row="4" Grid.Column="0"
                   Background="#252932" Padding="10" CornerRadius="4">
             <StackPanel Spacing="4">
               <TextBlock Text="Last customer loaded:" Foreground="#9fa4b2" FontSize="12" />
@@ -95,7 +107,7 @@
             </StackPanel>
           </Border>
 
-          <Border Grid.Row="3" Grid.Column="1"
+          <Border Grid.Row="4" Grid.Column="1"
                   Background="#252932" Padding="10" CornerRadius="4">
             <StackPanel Spacing="4">
               <TextBlock Text="Last ticket created:" Foreground="#9fa4b2" FontSize="12" />
@@ -105,8 +117,8 @@
             </StackPanel>
           </Border>
 
-          <!-- Row 3: Session counters -->
-          <Border Grid.Row="4" Grid.Column="0"
+          <!-- Row 4: Session counters -->
+          <Border Grid.Row="5" Grid.Column="0"
                   Background="#252932" Padding="10" CornerRadius="4">
             <StackPanel>
               <TextBlock Text="Customers loaded this session:"
@@ -119,7 +131,7 @@
             </StackPanel>
           </Border>
 
-          <Border Grid.Row="4" Grid.Column="1"
+          <Border Grid.Row="5" Grid.Column="1"
                   Background="#252932" Padding="10" CornerRadius="4">
             <StackPanel>
               <TextBlock Text="Tickets created this session:"
@@ -132,8 +144,8 @@
             </StackPanel>
           </Border>
 
-          <!-- Row 4: Documents summary (full width) -->
-          <Border Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
+          <!-- Row 5: Documents summary (full width) -->
+          <Border Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2"
                   Background="#252932" Padding="10" CornerRadius="4">
             <StackPanel Spacing="6">
               <TextBlock Text="Documents summary:" Foreground="#9fa4b2" FontSize="12" />

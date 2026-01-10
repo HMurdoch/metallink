@@ -44,7 +44,7 @@ public partial class MainWindowViewModel
     // Company cache used for letter filtering and dropdowns
     private readonly ObservableCollection<CompanyLookupDto> _allCompanies = new();
 
-    // Dashboard stats for companies/sites
+    // Dashboard stats for companies/sites/products
     private int _totalCompaniesInDb;
     public int TotalCompaniesInDb
     {
@@ -57,6 +57,13 @@ public partial class MainWindowViewModel
     {
         get => _totalSitesInDb;
         set { _totalSitesInDb = value; OnPropertyChanged(); }
+    }
+
+    private int _totalProductsInDb;
+    public int TotalProductsInDb
+    {
+        get => _totalProductsInDb;
+        set { _totalProductsInDb = value; OnPropertyChanged(); }
     }
 
     private CompanyLookupDto? _selectedCompany;

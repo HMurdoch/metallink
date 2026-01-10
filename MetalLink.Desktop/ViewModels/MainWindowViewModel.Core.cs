@@ -891,11 +891,13 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             TotalTicketsInDb = health.ticketsCount;
             TotalCompaniesInDb = health.companiesCount;
             TotalSitesInDb = health.sitesCount;
+            TotalProductsInDb = health.productsCount;
 
             _ = AnimateCounterAsync(TotalCustomersInDb, v => AnimatedTotalCustomersInDb = v);
             _ = AnimateCounterAsync(TotalTicketsInDb, v => AnimatedTotalTicketsInDb = v);
             _ = AnimateCounterAsync(TotalCompaniesInDb, v => AnimatedTotalCompaniesInDb = v);
             _ = AnimateCounterAsync(TotalSitesInDb, v => AnimatedTotalSitesInDb = v);
+            _ = AnimateCounterAsync(TotalProductsInDb, v => AnimatedTotalProductsInDb = v);
         }
     }
 
@@ -947,5 +949,6 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         public int ticketsCount { get; set; }
         public int companiesCount { get; set; }
         public int sitesCount { get; set; }
+        public int productsCount { get; set; }
     }
 }
