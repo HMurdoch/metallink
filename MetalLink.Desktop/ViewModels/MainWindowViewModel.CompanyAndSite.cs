@@ -6,26 +6,20 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
 using MetalLink.Shared.Companies;
 using MetalLink.Shared.Sites;
+using MetalLink.Shared.Customers;
 using Avalonia.Threading;
 using System.Collections.Generic;
+using System.Net.Http;
 using MetalLink.Desktop.Services;
 
 namespace MetalLink.Desktop.ViewModels;
 
 public partial class MainWindowViewModel
 {
-    private CompanyService? _companyService;
     private SiteService? _siteService;
-    private ProvinceService? _provinceService;
-
-    private CompanyService CompanyService =>
-        _companyService ??= new CompanyService(_apiClient);
 
     private SiteService SiteService =>
         _siteService ??= new SiteService(_apiClient);
-
-    private ProvinceService ProvinceService =>
-        _provinceService ??= new ProvinceService(_apiClient);
 
     private long? _pendingSelectSiteId;
 
@@ -41,8 +35,10 @@ public partial class MainWindowViewModel
 
         try
         {
-            var url = $"api/sites/lookup?companyId={SelectedNewCompany.CompanyId}&term=";
-            var sites = await _apiClient.GetAsync<List<SiteLookupDto>>(url);
+            var sites = await SiteService.LookupSitesForCompanyAsync(
+                SelectedNewCompany.CompanyId,
+                term: string.Empty,
+                CancellationToken.None);
 
             if (sites != null)
             {
@@ -59,6 +55,43 @@ public partial class MainWindowViewModel
             StatusMessage = $"[STATUS] Load sites failed: {ex.Message}";
             NewSiteSuggestions.Clear();
             SelectedNewSite = null;
+        }
+    }
+
+    private async Task LoadSitesForSelectedCompanyAsync()
+    {
+        if (SelectedSearchCompany == null)
+        {
+            SearchSiteSuggestions.Clear();
+            SelectedSearchSite = null;
+            IsSearchSiteEnabled = false;
+            return;
+        }
+
+        try
+        {
+            IsSearchSiteEnabled = true;
+
+            SearchSiteSuggestions.Clear();
+            SelectedSearchSite = null;
+
+            var sites = await SiteService.LookupSitesForCompanyAsync(
+                SelectedSearchCompany.CompanyId,
+                term: "",
+                CancellationToken.None);
+
+            if (sites != null)
+            {
+                foreach (var s in sites.OrderBy(x => x.SiteName))
+                    SearchSiteSuggestions.Add(s);
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "[STATUS] Load sites failed: " + ex.Message;
+            SearchSiteSuggestions.Clear();
+            SelectedSearchSite = null;
+            IsSearchSiteEnabled = false;
         }
     }
 
@@ -104,9 +137,7 @@ public partial class MainWindowViewModel
         if (!CompanyLetterFilters.Contains(letterStr))
             letterStr = "ALL";
 
-        _suppressLetterApply = true;
         SelectedCompanyLetter = letterStr;
-        _suppressLetterApply = false;
 
         // 5) Refresh both the dropdown + results grid from the cache
         ApplyCompanyLetterFilter();
@@ -118,6 +149,80 @@ public partial class MainWindowViewModel
         // 6) Select the created company in BOTH selectors
         SelectedSearchCompany = SearchCompanySuggestions.FirstOrDefault(c => c.CompanyId == createdCompany.CompanyId);
         SelectedCompany = CompanyResults.FirstOrDefault(c => c.CompanyId == createdCompany.CompanyId);
+    }
+
+    private void ApplyNewCompanyLetterFilter()
+    {
+        if (!_companyLettersLoaded)
+            return;
+
+        var selectedId = SelectedNewCompany?.CompanyId;
+
+        var letter = (SelectedNewCompanyLetter ?? "ALL").Trim();
+
+        NewCompanySuggestions.Clear();
+
+        IEnumerable<CompanyLookupDto> query = _allCompanies.AsEnumerable();
+
+        if (!letter.Equals("ALL", StringComparison.OrdinalIgnoreCase) && letter.Length > 0)
+        {
+            var ch = char.ToUpperInvariant(letter[0]);
+            query = query.Where(c =>
+                !string.IsNullOrWhiteSpace(c.CompanyName) &&
+                char.ToUpperInvariant(c.CompanyName![0]) == ch);
+        }
+
+        foreach (var c in query.OrderBy(c => c.CompanyName))
+            NewCompanySuggestions.Add(c);
+
+        // ✅ preserve selection by ID
+        if (selectedId.HasValue)
+            SelectedNewCompany = NewCompanySuggestions.FirstOrDefault(x => x.CompanyId == selectedId.Value);
+    }
+
+    private async Task LoadNewSitesForSelectedCompanyAsync()
+    {
+        if (SelectedNewCompany == null)
+        {
+            NewSiteSuggestions.Clear();
+            SelectedNewSite = null;
+            return;
+        }
+
+        try
+        {
+            var sites = await SiteService.LookupSitesForCompanyAsync(
+                SelectedNewCompany.CompanyId,
+                term: "",
+                CancellationToken.None);
+
+            NewSiteSuggestions.Clear();
+
+            if (sites != null)
+            {
+                foreach (var s in sites.OrderBy(s => s.SiteName))
+                    NewSiteSuggestions.Add(s);
+            }
+
+            // If we were editing and want to auto-select an existing SiteId
+            if (_pendingSelectSiteId.HasValue)
+            {
+                SelectedNewSite = NewSiteSuggestions
+                    .FirstOrDefault(s => s.SiteId == _pendingSelectSiteId.Value);
+
+                _pendingSelectSiteId = null;
+            }
+            else if (SelectedNewSite != null && !NewSiteSuggestions.Contains(SelectedNewSite))
+            {
+                SelectedNewSite = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Load sites failed: {ex.Message}";
+            NewSiteSuggestions.Clear();
+            SelectedNewSite = null;
+        }
     }
 
     private void ClearCompanyEditor()
@@ -201,7 +306,6 @@ public partial class MainWindowViewModel
     public IAsyncRelayCommand ClearCompanyFormCommand { get; private set; } = null!;
     public IAsyncRelayCommand UpdateCompany2Command { get; private set; } = null!;
     public IRelayCommand ClearSiteFormCommand { get; private set; } = null!;
-    public IRelayCommand ClearCustomerSearchCommand { get; private set; } = null!;
 
 
     /// <summary>
@@ -221,9 +325,10 @@ public partial class MainWindowViewModel
             CreateSiteForSelectedCompanyCommand = new AsyncRelayCommand(ct => CreateSiteForSelectedCompanyAsync(ct), () => CanCreateSite);
             EditCompanyCommand = new RelayCommand<CompanyLookupDto>(OnEditCompany);
             DeleteCompanyCommand = new AsyncRelayCommand<CompanyLookupDto>(DeleteCompanyAsync);
+            EditSiteCommand = new RelayCommand<SiteLookupDto>(OnEditSite);
+            DeleteSiteCommand = new AsyncRelayCommand<SiteLookupDto>(OnDeleteSiteAsync);
             ClearCompanyFormCommand = new AsyncRelayCommand(ct => ClearCompanyFormAsync(ct));
             UpdateCompany2Command = new AsyncRelayCommand(ct => UpdateCompanyAsync(ct), () => CanUpdateCompany);
-            ClearCustomerSearchCommand = new RelayCommand(ClearCustomerSearch);
             ClearSiteFormCommand = new RelayCommand(ClearSiteForm);
     }
 
@@ -531,15 +636,6 @@ public partial class MainWindowViewModel
         return Task.CompletedTask;
     }
 
-    private async Task<bool> ConfirmAsync(string message)
-    {
-        var owner = (Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
-        if (owner == null) return false;
-
-        var dlg = new MetalLink.Desktop.Views.ConfirmDialog(message);
-        return await dlg.ShowDialog<bool>(owner);
-    }
-
     private async Task DeleteCompanyAsync(CompanyLookupDto? company, CancellationToken ct = default)
     {
         if (company == null) return;
@@ -708,11 +804,43 @@ public partial class MainWindowViewModel
     private async Task OnDeleteSiteAsync(SiteLookupDto? site, CancellationToken ct = default)
     {
         if (site == null) return;
+        if (IsBusy) return;
 
-        // TODO: call API to delete site
-        StatusMessage = "[STATUS] Delete site not wired yet.";
-        Console.WriteLine(StatusMessage);
-        await Task.CompletedTask;
+        var ok = await ConfirmAsync($"Are you sure you want to delete site '{site.SiteName}'?");
+        if (!ok) return;
+
+        IsBusy = true;
+        try
+        {
+            StatusMessage = "[STATUS] Deleting site...";
+            await _app.CompanyAndSiteService.DeleteSiteAsync(site.SiteId, ct);
+
+            // Remove from results grid
+            var row = SiteResults.FirstOrDefault(x => x.SiteId == site.SiteId);
+            if (row != null) SiteResults.Remove(row);
+
+            // Clear selection if it was the deleted site
+            if (SelectedSite?.SiteId == site.SiteId)
+            {
+                SelectedSite = null;
+                ClearSiteForm();
+            }
+
+            StatusMessage = "[STATUS] Site deleted (soft).";
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("400"))
+        {
+            // Handle the validation error from the API
+            StatusMessage = "[STATUS] Cannot delete the last active site. A company must have at least one active site.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Delete failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     private async Task CancelSiteEditAsync(CancellationToken ct = default)
@@ -864,9 +992,6 @@ public partial class MainWindowViewModel
         }
     }
 
-
-    private readonly ObservableCollection<CompanyLookupDto> _allCompanies = new();
-
     private async Task LoadCompaniesAndLettersAsync()
     {
         try
@@ -909,8 +1034,6 @@ public partial class MainWindowViewModel
         }
     }
 
-    private bool _companyLettersLoaded;
-    private bool _restoringSearchCompanySelection;
     private void ApplyCompanyLetterFilter()
     {
         if (!_companyLettersLoaded) return;
@@ -936,13 +1059,48 @@ public partial class MainWindowViewModel
         if (selectedId.HasValue)
         {
             var match = SearchCompanySuggestions.FirstOrDefault(x => x.CompanyId == selectedId.Value);
-
-            _restoringSearchCompanySelection = true;
             SelectedSearchCompany = match;
-            _restoringSearchCompanySelection = false;
         }
     }
 
+
+    private async Task LoadSelectedCustomerSiteAddressAsync(CustomerDto? customer, CancellationToken ct = default)
+    {
+        if (customer?.CompanyId == null || customer.SiteId == null)
+        {
+            CustomerSiteAddressSummary = string.Empty;
+            return;
+        }
+
+        try
+        {
+            var sites = await _app.SiteService.LookupSitesForCompanyAsync(
+                customer.CompanyId.Value,
+                term: string.Empty,
+                ct);
+
+            var site = sites?.FirstOrDefault(s => s.SiteId == customer.SiteId.Value);
+            if (site == null)
+            {
+                CustomerSiteAddressSummary = string.Empty;
+                return;
+            }
+
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(site.AddressLine1)) parts.Add(site.AddressLine1);
+            if (!string.IsNullOrWhiteSpace(site.AddressLine2)) parts.Add(site.AddressLine2);
+            if (!string.IsNullOrWhiteSpace(site.Suburb))       parts.Add(site.Suburb);
+            if (!string.IsNullOrWhiteSpace(site.City))         parts.Add(site.City);
+            if (!string.IsNullOrWhiteSpace(site.PostalCode))   parts.Add(site.PostalCode);
+
+            CustomerSiteAddressSummary = string.Join(", ", parts);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Failed to load site address: {ex.Message}";
+            CustomerSiteAddressSummary = string.Empty;
+        }
+    }
 
     private void PostUI(Action action)
     {

@@ -25,21 +25,9 @@ public sealed class CustomerDto
     // Tax – now on Customer (not Company)
     public bool Taxable { get; set; }
 
-    // Site / address (all from Site, NOT Customer)
-    public string SiteName     { get; set; } = string.Empty;
-    public string SiteCode     { get; set; } = string.Empty;
-    public string? AddressLine1 { get; set; }
-    public string? AddressLine2 { get; set; }
-    public string? Suburb       { get; set; }
-    public string? City         { get; set; }
-    public string? PostalCode   { get; set; }
-
-    // Province / Country
-    public long?    ProvinceId   { get; set; }
-    public string? ProvinceName { get; set; }
-
-    public long?    CountryId    { get; set; }
-    public string? CountryName  { get; set; }
+    // Site (address belongs to Site, not Customer)
+    public string SiteName { get; set; } = string.Empty;
+    public string SiteCode { get; set; } = string.Empty;
 
     // Identity / account
     public string? IdNumber      { get; set; }

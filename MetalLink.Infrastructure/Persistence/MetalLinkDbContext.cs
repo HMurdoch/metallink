@@ -15,6 +15,8 @@ public class MetalLinkDbContext : DbContext
       public DbSet<Operator> Operators => Set<Operator>();
       public DbSet<CustomerDocument> CustomerDocuments => Set<CustomerDocument>();
       public DbSet<Ticket> Tickets => Set<Ticket>();
+      public DbSet<Product> Products => Set<Product>();
+      public DbSet<Price> Prices => Set<Price>();
 
       // NEW sets
       public DbSet<Company> Companies => Set<Company>();
@@ -36,6 +38,8 @@ public class MetalLinkDbContext : DbContext
             ConfigureSite(modelBuilder);
             ConfigureProvince(modelBuilder);
             ConfigureCountry(modelBuilder);
+            ConfigureProduct(modelBuilder);
+            ConfigurePrice(modelBuilder);
       }
 
       // -------------------------
@@ -648,5 +652,121 @@ public class MetalLinkDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(t => t.SiteId)
                   .HasConstraintName("fk_tickets_site_id_sites");
+      }
+
+      // -------------------------
+      // PRODUCT
+      // -------------------------
+
+      private static void ConfigureProduct(ModelBuilder modelBuilder)
+      {
+            var entity = modelBuilder.Entity<Product>();
+
+            entity.ToTable("products", schema: "metal_link");
+
+            entity.HasKey(p => p.ProductId)
+                  .HasName("pk_products_product_id");
+
+            entity.Property(p => p.ProductId)
+                  .HasColumnName("product_id")
+                  .ValueGeneratedOnAdd();
+
+            entity.Property(p => p.ProductCode)
+                  .HasColumnName("product_code")
+                  .HasMaxLength(50);
+
+            entity.Property(p => p.ProductName)
+                  .HasColumnName("product_name")
+                  .IsRequired()
+                  .HasMaxLength(200);
+
+            entity.Property(p => p.Grade)
+                  .HasColumnName("grade")
+                  .HasColumnType("numeric(18,2)")
+                  .HasDefaultValue(0m);
+
+            entity.Property(p => p.IsActive)
+                  .HasColumnName("is_active")
+                  .IsRequired();
+
+            entity.Property(p => p.CreatedTime)
+                  .HasDefaultValueSql("now()")
+                  .HasColumnName("created_time")
+                  .ValueGeneratedOnAdd()
+                  .IsRequired();
+
+            entity.Property(p => p.UpdatedTime)
+                  .HasDefaultValueSql("now()")
+                  .HasColumnName("updated_time")
+                  .ValueGeneratedOnAddOrUpdate()
+                  .IsRequired();
+
+            entity.HasIndex(p => p.ProductName)
+                  .HasDatabaseName("products_product_name_idx");
+
+            entity.HasIndex(p => p.ProductCode)
+                  .HasDatabaseName("products_product_code_idx");
+      }
+
+      // -------------------------
+      // PRICE
+      // -------------------------
+
+      private static void ConfigurePrice(ModelBuilder modelBuilder)
+      {
+            var entity = modelBuilder.Entity<Price>();
+
+            entity.ToTable("prices", schema: "metal_link");
+
+            entity.HasKey(p => p.PriceId)
+                  .HasName("pk_prices_price_id");
+
+            entity.Property(p => p.PriceId)
+                  .HasColumnName("price_id")
+                  .ValueGeneratedOnAdd();
+
+            entity.Property(p => p.ProductId)
+                  .HasColumnName("product_id")
+                  .IsRequired();
+
+            entity.Property(p => p.PriceA)
+                  .HasColumnName("price_a")
+                  .HasColumnType("numeric(18,2)")
+                  .IsRequired();
+
+            entity.Property(p => p.PriceB)
+                  .HasColumnName("price_b")
+                  .HasColumnType("numeric(18,2)")
+                  .IsRequired();
+
+            entity.Property(p => p.PriceC)
+                  .HasColumnName("price_c")
+                  .HasColumnType("numeric(18,2)")
+                  .IsRequired();
+
+            entity.Property(p => p.IsActive)
+                  .HasColumnName("is_active")
+                  .IsRequired();
+
+            entity.Property(p => p.CreatedTime)
+                  .HasDefaultValueSql("now()")
+                  .HasColumnName("created_time")
+                  .ValueGeneratedOnAdd()
+                  .IsRequired();
+
+            entity.Property(p => p.UpdatedTime)
+                  .HasDefaultValueSql("now()")
+                  .HasColumnName("updated_time")
+                  .ValueGeneratedOnAddOrUpdate()
+                  .IsRequired();
+
+            entity.HasIndex(p => p.ProductId)
+                  .HasDatabaseName("prices_product_id_idx");
+
+            // FK → Product
+            entity.HasOne(p => p.Product)
+                  .WithMany()
+                  .HasForeignKey(p => p.ProductId)
+                  .HasConstraintName("fk_prices_product_id_products");
       }
 }

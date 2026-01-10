@@ -16,6 +16,7 @@ public partial class App : Application
     public AuthService AuthService { get; private set; } = null!;
     public CustomerService CustomerService { get; private set; } = null!;
     public CompanyAndSiteService CompanyAndSiteService { get; private set; } = null!;
+    public ProductsAndPricesService ProductsAndPricesService { get; private set; } = null!;
     public TicketService TicketService { get; private set; } = null!;
     public IScaleService ScaleService { get; private set; } = null!;
     public DocumentService DocumentService { get; private set; } = null!;
@@ -23,6 +24,7 @@ public partial class App : Application
     public TicketReportService TicketReportService { get; private set; } = null!;
     public ISignaturePadService SignaturePadService { get; private set; } = null!;
     public SiteService SiteService { get; private set; } = null!;
+    public ProvinceService ProvinceService { get; private set; } = null!;
 
 
     public override void Initialize()
@@ -37,6 +39,7 @@ public partial class App : Application
         AuthService = new AuthService(AuthState);
         CustomerService = new CustomerService(ApiClient, AuthState);
         CompanyAndSiteService = new CompanyAndSiteService(ApiClient, AuthState);
+        ProductsAndPricesService = new ProductsAndPricesService(ApiClient, AuthState);
         TicketService = new TicketService(ApiClient, AuthState);
         ScaleService = new MockScaleService();
         DocumentService = new DocumentService(ApiClient, AuthState);
@@ -44,6 +47,7 @@ public partial class App : Application
         TicketReportService = new TicketReportService(AuthState);
         SignaturePadService = new MockSignaturePadService(); // swap to real device later
         SiteService = new SiteService(ApiClient);
+        ProvinceService = new ProvinceService(ApiClient);
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {

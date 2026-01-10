@@ -27,11 +27,11 @@ public class CustomerRepository : ICustomerRepository
         CancellationToken cancellationToken = default)
     {
         return await _db.Customers
-            .Include(c => c.Company)
-            .Include(c => c.Site)
-                .ThenInclude(s => s.Province)
-            .Include(c => c.Site)
-                .ThenInclude(s => s.Country)
+            .Include(c => c.Company!)
+            .Include(c => c.Site!)
+                .ThenInclude(s => s!.Province!)
+            .Include(c => c.Site!)
+                .ThenInclude(s => s!.Country!)
             .FirstOrDefaultAsync(c => c.CustomerId == customerId, cancellationToken);
     }
 
@@ -40,9 +40,9 @@ public class CustomerRepository : ICustomerRepository
         CancellationToken cancellationToken = default)
     {
         return await _db.Customers
-            .Include(c => c.Company)
-            .Include(c => c.Site)
-                .ThenInclude(s => s.Province)
+            .Include(c => c.Company!)
+            .Include(c => c.Site!)
+                .ThenInclude(s => s!.Province!)
             .FirstOrDefaultAsync(
                 c => c.AccountNumber == accountNumber,
                 cancellationToken);
@@ -75,11 +75,11 @@ public class CustomerRepository : ICustomerRepository
         const int MaxResults = 500;
 
         var query = _db.Customers
-            .Include(c => c.Company)
-            .Include(c => c.Site)
-                .ThenInclude(s => s.Province)
-            .Include(c => c.Site)
-                .ThenInclude(s => s.Country)
+            .Include(c => c.Company!)
+            .Include(c => c.Site!)
+                .ThenInclude(s => s!.Province!)
+            .Include(c => c.Site!)
+                .ThenInclude(s => s!.Country!)
             .Where(c => c.IsActive)
             .AsQueryable();
 

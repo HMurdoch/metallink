@@ -1,11 +1,9 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MetalLink.Application.Customers.Commands;
 using MetalLink.Application.Customers.Queries;
 using MetalLink.Shared.Customers;
 using MetalLink.Application.Interfaces;
-using System.Text.Json.Serialization;
 
 namespace MetalLink.Api.Controllers;
 
@@ -36,9 +34,6 @@ public sealed class CustomersController : ControllerBase
         [FromBody] CustomerDto dto,
         CancellationToken cancellationToken)
     {
-        if (dto == null)
-            return BadRequest("Request body is required.");
-
         // If client didn't send account number, generate it
         if (!dto.AccountNumber.HasValue || dto.AccountNumber.Value <= 0)
         {
@@ -125,9 +120,6 @@ public sealed class CustomersController : ControllerBase
         [FromBody] CustomerDto dto,
         CancellationToken cancellationToken)
     {
-        if (dto == null)
-            return BadRequest("Request body is required.");
-
         if (dto.CustomerId <= 0)
             return BadRequest("CustomerId is required.");
 
@@ -155,25 +147,7 @@ public sealed class CustomersController : ControllerBase
 
         customer.UpdatedTime = DateTime.UtcNow;
 
-        // ---- Update Site fields too (because your UI edits address lines, and those live on Site)
-        if (customer.Site != null)
-        {
-            customer.Site.AddressLine1 = dto.AddressLine1;
-            customer.Site.AddressLine2 = dto.AddressLine2;
-            customer.Site.Suburb = dto.Suburb;
-            customer.Site.City = dto.City;
-            customer.Site.PostalCode = dto.PostalCode;
-
-            // DTO uses long? but Site uses int?
-            if (dto.ProvinceId.HasValue)
-                customer.Site.ProvinceId = (int)dto.ProvinceId.Value;
-
-            if (dto.CountryId.HasValue)
-                customer.Site.CountryId = (int)dto.CountryId.Value;
-
-            customer.Site.UpdatedTime = DateTime.UtcNow;
-        }
-
+        // Address, province and country belong to Site; update them via Site endpoints, not customer update.
         await _customerRepository.UpdateAsync(customer, cancellationToken);
         return NoContent();
     }

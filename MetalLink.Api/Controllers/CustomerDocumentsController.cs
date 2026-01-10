@@ -35,7 +35,7 @@ public sealed class CustomerDocumentsController : ControllerBase
         [FromForm] UploadCustomerDocumentForm form,
         CancellationToken cancellationToken)
     {
-        if (form.File is null || form.File.Length == 0)
+        if (form.File.Length == 0)
         {
             return BadRequest(new { message = "File is required." });
         }

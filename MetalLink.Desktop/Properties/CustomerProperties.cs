@@ -1,9 +1,7 @@
 // MetalLink.Desktop/ViewModels/Properties/CustomerProperties.cs
-using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using MetalLink.Shared.Customers;
-using MetalLink.Shared.Locations;
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -17,7 +15,6 @@ public partial class MainWindowViewModel
     private string _searchLastNameText = string.Empty;
     private string _searchCompanyNameText = string.Empty;
     private string _searchIdNumberText = string.Empty;
-    private string _searchPriceCodeText = string.Empty;
     private string _searchAddressLine1Text = string.Empty;
     private string _searchAddressLine2Text = string.Empty;
     private string _searchSuburbText = string.Empty;
@@ -91,12 +88,6 @@ public partial class MainWindowViewModel
         set { _searchIdNumberText = value; OnPropertyChanged(); }
     }
 
-    public string SearchPriceCodeText
-    {
-        get => _searchPriceCodeText;
-        set { _searchPriceCodeText = value; OnPropertyChanged(); }
-    }
-
     public string SearchAddressLine1Text
     {
         get => _searchAddressLine1Text;
@@ -164,20 +155,6 @@ public partial class MainWindowViewModel
         get => _totalTicketsInDb;
         set { _totalTicketsInDb = value; OnPropertyChanged(); }
     }
-
-    private int _totalCompaniesInDb;
-    public int TotalCompaniesInDb
-    {
-        get => _totalCompaniesInDb;
-        set { _totalCompaniesInDb = value; OnPropertyChanged(); }
-    }
-
-    private int _totalSitesInDb;
-    public int TotalSitesInDb
-    {
-        get => _totalSitesInDb;
-        set { _totalSitesInDb = value; OnPropertyChanged(); }
-    }
     // --- Loaded / selected customer driving the details panel ---
 
     public CustomerDto? FoundCustomer
@@ -197,17 +174,13 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(SelectedIdNumber));
             OnPropertyChanged(nameof(SelectedAccountNumber));
             OnPropertyChanged(nameof(SelectedPriceCode));
-            OnPropertyChanged(nameof(SelectedAddressLine1));
-            OnPropertyChanged(nameof(SelectedAddressLine2));
-            OnPropertyChanged(nameof(SelectedSuburb));
-            OnPropertyChanged(nameof(SelectedCity));
-            OnPropertyChanged(nameof(SelectedPostalCode));
             OnPropertyChanged(nameof(SelectedPhoneNumber));
             OnPropertyChanged(nameof(SelectedMobileNumber));
             OnPropertyChanged(nameof(SelectedEmail));
-            OnPropertyChanged(nameof(SelectedProvinceName));
-            OnPropertyChanged(nameof(SelectedCountryName));
             OnPropertyChanged(nameof(SelectedTaxable));
+
+            // Load site address summary (from CAS/Site) for customer details panel
+            _ = LoadSelectedCustomerSiteAddressAsync(_foundCustomer);
         }
     }
 
@@ -228,17 +201,10 @@ public partial class MainWindowViewModel
     public string SelectedIdNumber       => FoundCustomer?.IdNumber ?? string.Empty;
     public long? SelectedAccountNumber  => FoundCustomer?.AccountNumber;
     public string SelectedPriceCode      => FoundCustomer?.PriceCode ?? string.Empty;
-    public string SelectedAddressLine1   => FoundCustomer?.AddressLine1 ?? string.Empty;
-    public string SelectedAddressLine2   => FoundCustomer?.AddressLine2 ?? string.Empty;
-    public string SelectedSuburb         => FoundCustomer?.Suburb ?? string.Empty;
-    public string SelectedCity           => FoundCustomer?.City ?? string.Empty;
-    public string SelectedPostalCode     => FoundCustomer?.PostalCode ?? string.Empty;
     public string SelectedPhoneNumber    => FoundCustomer?.PhoneNumber ?? string.Empty;
     public string SelectedMobileNumber   => FoundCustomer?.MobileNumber ?? string.Empty;
     public string SelectedEmail          => FoundCustomer?.Email ?? string.Empty;
-    public string SelectedProvinceName => FoundCustomer?.ProvinceName ?? string.Empty;
-    public string SelectedCountryName  => FoundCustomer?.CountryName  ?? string.Empty;
-    public bool   SelectedTaxable      => FoundCustomer?.Taxable ?? false;
+    public bool   SelectedTaxable        => FoundCustomer?.Taxable ?? false;
 
 
     // --- New customer form properties ---
@@ -344,8 +310,6 @@ public partial class MainWindowViewModel
     public string NewAccountNumberDisplay =>
         NewAccountNumber.HasValue ? NewAccountNumber.Value.ToString("D8") : string.Empty;
 
-    public bool IsAccountNumberReadOnly => true;
-
     private string? _newPriceCode;
     public string? NewPriceCode
     {
@@ -353,71 +317,6 @@ public partial class MainWindowViewModel
         set
         {
             _newPriceCode = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
-            OnPropertyChanged(nameof(HasUnsavedChanges));
-        }
-    }
-
-    private string _newAddressLine1 = string.Empty;
-    public string NewAddressLine1
-    {
-        get => _newAddressLine1;
-        set
-        {
-            _newAddressLine1 = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
-            OnPropertyChanged(nameof(HasUnsavedChanges));
-        }
-    }
-
-    private string _newAddressLine2 = string.Empty;
-    public string NewAddressLine2
-    {
-        get => _newAddressLine2;
-        set
-        {
-            _newAddressLine2 = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
-            OnPropertyChanged(nameof(HasUnsavedChanges));
-        }
-    }
-
-    private string _newSuburb = string.Empty;
-    public string NewSuburb
-    {
-        get => _newSuburb;
-        set
-        {
-            _newSuburb = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
-            OnPropertyChanged(nameof(HasUnsavedChanges));
-        }
-    }
-
-    private string _newCity = string.Empty;
-    public string NewCity
-    {
-        get => _newCity;
-        set
-        {
-            _newCity = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
-            OnPropertyChanged(nameof(HasUnsavedChanges));
-        }
-    }
-
-    private string _newPostalCode = string.Empty;
-    public string NewPostalCode
-    {
-        get => _newPostalCode;
-        set
-        {
-            _newPostalCode = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
@@ -491,12 +390,6 @@ public partial class MainWindowViewModel
         var code = (NewPriceCode ?? "").Trim();
         SelectedPriceCodeChar = PriceCodeOptions.FirstOrDefault(x => x.Code == code);
     }
-
-    private void SyncNewPriceCodeFromDropdown()
-    {
-        NewPriceCode = SelectedPriceCodeChar?.Code; // "A" / "B" / "C" / null
-    }
-
 
     private PriceCodeOption? _selectedPriceCodeChar;
 

@@ -15,7 +15,6 @@ public partial class MainWindowViewModel
 {
     // Lazy-created services (we already have _apiClient in the core partial)
     // ----- Customer -----
-    private bool _suppressLetterApply;
 
     private void OnEditCustomer(Shared.Customers.CustomerDto? customer)
     {
@@ -32,7 +31,7 @@ public partial class MainWindowViewModel
         NewLastName = customer.LastName ?? string.Empty;
 
         // -----------------------
-        // Basic contact / address
+        // Basic contact
         // -----------------------
         NewIdNumber = customer.IdNumber ?? string.Empty;
         NewAccountNumber = customer.AccountNumber;
@@ -41,11 +40,6 @@ public partial class MainWindowViewModel
         NewPhoneNumber = customer.PhoneNumber ?? string.Empty;
         NewMobileNumber = customer.MobileNumber ?? string.Empty;
         NewEmail = customer.Email ?? string.Empty;
-        NewAddressLine1 = customer.AddressLine1 ?? string.Empty;
-        NewAddressLine2 = customer.AddressLine2 ?? string.Empty;
-        NewSuburb = customer.Suburb ?? string.Empty;
-        NewCity = customer.City ?? string.Empty;
-        NewPostalCode = customer.PostalCode ?? string.Empty;
 
         // -----------------------
         // Company / site mode
@@ -282,11 +276,6 @@ public partial class MainWindowViewModel
             MobileNumber = NewMobileNumber,
             Email = NewEmail,
             Taxable = NewTaxable,
-            AddressLine1 = NewAddressLine1,
-            AddressLine2 = NewAddressLine2,
-            Suburb = NewSuburb,
-            City = NewCity,
-            PostalCode = NewPostalCode,
             IsCompany = NewIsCompany,
 
             // We KNOW these are non-null if NewIsCompany is true
@@ -347,155 +336,10 @@ public partial class MainWindowViewModel
             $"Logging ticket for customer {customer.FirstName} {customer.LastName} - ({customer.CustomerId:D8}).";
     }
 
-    // ----- Search Customers: Site -----
-
-    private bool _isSearchSiteEnabled;
-
-    public bool IsSearchSiteEnabled
-    {
-        get => _isSearchSiteEnabled;
-        set
-        {
-            if (_isSearchSiteEnabled == value) return;
-            _isSearchSiteEnabled = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private bool _isNewSiteEnabled;
-
-    public bool IsNewSiteEnabled
-    {
-        get => _isNewSiteEnabled;
-        set
-        {
-            _isNewSiteEnabled = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(IsNewSiteEnabled));
-        }
-    }
-
-
-    private ObservableCollection<SiteLookupDto> _searchSiteSuggestions = new();
-
-    public ObservableCollection<SiteLookupDto> SearchSiteSuggestions
-    {
-        get => _searchSiteSuggestions;
-        set
-        {
-            _searchSiteSuggestions = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private SiteLookupDto? _selectedSearchSite;
-
-    public SiteLookupDto? SelectedSearchSite
-    {
-        get => _selectedSearchSite;
-        set
-        {
-            if (_selectedSearchSite == value) return;
-
-            _selectedSearchSite = value;
-            OnPropertyChanged();
-
-            if (value != null)
-            {
-                SearchSiteIdText = value.SiteId.ToString();
-            }
-            else
-            {
-                SearchSiteIdText = string.Empty;
-            }
-        }
-    }
-
-    private async Task LoadSitesForSelectedCompanyAsync()
-    {
-        if (SelectedSearchCompany == null)
-        {
-            SearchSiteSuggestions.Clear();
-            SelectedSearchSite = null;
-            IsSearchSiteEnabled = false;
-            return;
-        }
-
-        try
-        {
-            IsSearchSiteEnabled = true;
-
-            SearchSiteSuggestions.Clear();
-            SelectedSearchSite = null;
-
-            var sites = await SiteService.LookupSitesForCompanyAsync(
-                SelectedSearchCompany.CompanyId,
-                term: "",
-                CancellationToken.None);
-
-            if (sites != null)
-            {
-                foreach (var s in sites.OrderBy(x => x.SiteName))
-                    SearchSiteSuggestions.Add(s);
-            }
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"[STATUS] Load sites failed: {ex.Message}";
-            SearchSiteSuggestions.Clear();
-            SelectedSearchSite = null;
-            IsSearchSiteEnabled = false;
-        }
-    }
-
     // =====================================================
     // CREATE CUSTOMER – COMPANY + SITE (LETTER FILTER)
     // =====================================================
 
-    private ObservableCollection<CompanyLookupDto> _newCompanySuggestions = new();
-
-    public ObservableCollection<CompanyLookupDto> NewCompanySuggestions
-    {
-        get => _newCompanySuggestions;
-        set
-        {
-            _newCompanySuggestions = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private CompanyLookupDto? _selectedNewCompany;
-
-    public CompanyLookupDto? SelectedNewCompany
-    {
-        get => _selectedNewCompany;
-        set
-        {
-            if (_selectedNewCompany == value) return;
-
-            _selectedNewCompany = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(CanCreateCustomer));
-
-            if (value != null)
-            {
-                // This string is what CreateCustomerAsync uses.
-                NewCompanyName = value.CompanyName;
-
-                SelectedNewSite = null;
-                NewSiteSuggestions.Clear();
-
-                // Load sites for the selected company
-                _ = LoadNewSitesForSelectedCompanyAsync();
-            }
-            else
-            {
-                NewCompanyName = null;
-                NewSiteSuggestions.Clear();
-                SelectedNewSite = null;
-            }
-        }
-    }
 
     /// <summary>
     /// Rebuilds NewCompanySuggestions based on SelectedNewCompanyLetter.
@@ -515,64 +359,7 @@ public partial class MainWindowViewModel
         }
     }
 
-    private void ApplyNewCompanyLetterFilter()
-    {
-        if (!_companyLettersLoaded)
-            return;
 
-        var selectedId = SelectedNewCompany?.CompanyId;
-
-        var letter = (SelectedNewCompanyLetter ?? "ALL").Trim();
-
-        NewCompanySuggestions.Clear();
-
-        IEnumerable<CompanyLookupDto> query = _allCompanies.AsEnumerable();
-
-        if (!letter.Equals("ALL", StringComparison.OrdinalIgnoreCase) && letter.Length > 0)
-        {
-            var ch = char.ToUpperInvariant(letter[0]);
-            query = query.Where(c =>
-                !string.IsNullOrWhiteSpace(c.CompanyName) &&
-                char.ToUpperInvariant(c.CompanyName![0]) == ch);
-        }
-
-        foreach (var c in query.OrderBy(c => c.CompanyName))
-            NewCompanySuggestions.Add(c);
-
-        // ✅ preserve selection by ID
-        if (selectedId.HasValue)
-            SelectedNewCompany = NewCompanySuggestions.FirstOrDefault(x => x.CompanyId == selectedId.Value);
-    }
-
-
-    private ObservableCollection<SiteLookupDto> _newSiteSuggestions = new();
-
-    public ObservableCollection<SiteLookupDto> NewSiteSuggestions
-    {
-        get => _newSiteSuggestions;
-        set
-        {
-            _newSiteSuggestions = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private SiteLookupDto? _selectedNewSite;
-
-    public SiteLookupDto? SelectedNewSite
-    {
-        get => _selectedNewSite;
-        set
-        {
-            if (_selectedNewSite == value) return;
-
-            _selectedNewSite = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(CanCreateCustomer));
-
-            UpdateNewLocationFromSelectedSite();
-        }
-    }
 
     private void UpdateNewLocationFromSelectedSite()
     {
@@ -645,267 +432,4 @@ public partial class MainWindowViewModel
     public bool IsCreateMode => !IsEditMode;
 
 
-    /// <summary>
-    /// Loads all sites for the SelectedNewCompany into NewSiteSuggestions.
-    /// </summary>
-    private async Task LoadNewSitesForSelectedCompanyAsync()
-    {
-        if (SelectedNewCompany == null)
-        {
-            NewSiteSuggestions.Clear();
-            SelectedNewSite = null;
-            return;
-        }
-
-        try
-        {
-            var sites = await SiteService.LookupSitesForCompanyAsync(
-                SelectedNewCompany.CompanyId,
-                term: "",
-                CancellationToken.None);
-
-            NewSiteSuggestions.Clear();
-
-            if (sites != null)
-            {
-                foreach (var s in sites.OrderBy(s => s.SiteName))
-                    NewSiteSuggestions.Add(s);
-            }
-
-            // If we were editing and want to auto-select an existing SiteId
-            if (_pendingSelectSiteId.HasValue)
-            {
-                SelectedNewSite = NewSiteSuggestions
-                    .FirstOrDefault(s => s.SiteId == _pendingSelectSiteId.Value);
-
-                _pendingSelectSiteId = null;
-            }
-            else if (SelectedNewSite != null && !NewSiteSuggestions.Contains(SelectedNewSite))
-            {
-                SelectedNewSite = null;
-            }
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"[STATUS] Load sites failed: {ex.Message}";
-            NewSiteSuggestions.Clear();
-            SelectedNewSite = null;
-        }
-    }
-
-    // --------------------
-    // Provinces (dropdown)
-    // --------------------
-
-    private ObservableCollection<ProvinceDto> _provinces = new();
-
-    public ObservableCollection<ProvinceDto> Provinces
-    {
-        get => _provinces;
-        set
-        {
-            _provinces = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private ProvinceDto? _selectedProvince;
-
-    public ProvinceDto? SelectedProvince
-    {
-        get => _selectedProvince;
-        set
-        {
-            _selectedProvince = value;
-            OnPropertyChanged();
-
-            // If later you capture a "NewSiteProvinceId", set it here
-            // NewSiteProvinceId = value?.ProvinceId;
-        }
-    }
-
-
-    private ProvinceDto? _newProvince;
-
-    public ProvinceDto? NewProvince
-    {
-        get => _newProvince;
-        set
-        {
-            _newProvince = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private ProvinceDto? _searchProvince;
-
-    public ProvinceDto? SearchProvince
-    {
-        get => _searchProvince;
-        set
-        {
-            _searchProvince = value;
-            OnPropertyChanged();
-        }
-    }
-
-    // 🔹 NEW: search-only provinces (includes "ALL")
-    private ObservableCollection<ProvinceDto> _searchProvinces = new();
-
-    public ObservableCollection<ProvinceDto> SearchProvinces
-    {
-        get => _searchProvinces;
-        set
-        {
-            _searchProvinces = value;
-            OnPropertyChanged();
-        }
-    }
-
-    // Countries (dropdown) – for now just South Africa, but shaped for future API
-    private ObservableCollection<CountryDto> _countries = new();
-
-    public ObservableCollection<CountryDto> Countries
-    {
-        get => _countries;
-        set
-        {
-            _countries = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private CountryDto? _selectedCountry;
-
-    public CountryDto? SelectedCountry
-    {
-        get => _selectedCountry;
-        set
-        {
-            _selectedCountry = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private CountryDto? _newCountry;
-
-    public CountryDto? NewCountry
-    {
-        get => _newCountry;
-        set
-        {
-            _newCountry = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private CountryDto? _searchCountry;
-
-    public CountryDto? SearchCountry
-    {
-        get => _searchCountry;
-        set
-        {
-            _searchCountry = value;
-            OnPropertyChanged();
-        }
-    }
-
-    // 🔹 NEW: search-only countries (includes "ALL")
-    private ObservableCollection<CountryDto> _searchCountries = new();
-
-    public ObservableCollection<CountryDto> SearchCountries
-    {
-        get => _searchCountries;
-        set
-        {
-            _searchCountries = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public void InitializeCountries()
-    {
-        // Avoid re-initialising if already done
-        if (Countries.Count > 0 && SearchCountries.Count > 0)
-            return;
-
-        Countries.Clear();
-        SearchCountries.Clear();
-
-        // Real country row
-        var southAfrica = new CountryDto
-        {
-            CountryId = 1,
-            CountryName = "South Africa",
-            CountryCode = "ZA"
-        };
-
-        Countries.Add(southAfrica);
-
-        // 🔹 Search list: add real country, then insert "ALL" at the top
-        SearchCountries.Add(southAfrica);
-
-        var allCountry = new CountryDto
-        {
-            CountryId = 0,
-            CountryName = "ALL",
-            CountryCode = "ALL"
-        };
-
-        // ALL at index 0
-        SearchCountries.Insert(0, allCountry);
-
-        // 🔹 Defaults
-        // Create/Edit → South Africa
-        _selectedCountry = southAfrica;
-        NewCountry = southAfrica;
-        OnPropertyChanged(nameof(SelectedCountry));
-        OnPropertyChanged(nameof(NewCountry));
-
-        // Search → ALL (meaning "no country filter")
-        SearchCountry = allCountry;
-        OnPropertyChanged(nameof(SearchCountry));
-    }
-
-    public async Task LoadProvincesAsync()
-    {
-        var items = await ProvinceService.GetAllAsync();
-
-        Provinces.Clear();
-        SearchProvinces.Clear();
-
-        if (items != null)
-        {
-            foreach (var p in items)
-            {
-                Provinces.Add(p);
-                SearchProvinces.Add(p);
-            }
-        }
-
-        // 🔹 Add "ALL" to the top of the SEARCH list only
-        var allProvince = new ProvinceDto
-        {
-            ProvinceId = 0,
-            ProvinceName = "ALL",
-            ProvinceCode = "ALL"
-        };
-
-        SearchProvinces.Insert(0, allProvince);
-
-        // 🔹 Default create/edit → Gauteng
-        var gauteng = Provinces.FirstOrDefault(p => p.ProvinceName == "Gauteng");
-        if (gauteng is not null)
-        {
-            _selectedProvince = gauteng;
-            NewProvince = gauteng;
-            OnPropertyChanged(nameof(SelectedProvince));
-            OnPropertyChanged(nameof(NewProvince));
-        }
-
-        // 🔹 Default search → ALL (meaning "no province filter")
-        SearchProvince = allProvince;
-        OnPropertyChanged(nameof(SearchProvince));
-    }
 }

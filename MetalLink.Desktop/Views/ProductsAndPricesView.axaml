@@ -1,0 +1,195 @@
+<UserControl
+  x:Class="MetalLink.Desktop.Views.ProductsAndPricesView"
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <UserControl.Resources>
+    <DataTemplate x:Key="ProductLookupTemplate">
+      <TextBlock Text="{Binding ProductName}" />
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <Border Background="#1f2229" Padding="16">
+    <ScrollViewer>
+      <StackPanel Spacing="16">
+
+        <!-- Header -->
+        <TextBlock
+          Text="Products"
+          FontSize="20"
+          FontWeight="Bold"
+          Foreground="#f5f5f5" />
+
+        <!-- Search Products -->
+        <Border Background="#252932" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="10">
+            <TextBlock Text="Search product" Foreground="#f5f5f5" FontWeight="Bold" />
+
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+              <StackPanel Grid.Column="0" Spacing="6">
+                <TextBlock Text="Product" Foreground="#c0c4cf" />
+                <Grid ColumnDefinitions="70,*,*">
+                  <ComboBox
+                    Grid.Column="0"
+                    ItemsSource="{Binding ProductLetterFilters}"
+                    SelectedItem="{Binding SelectedProductLetter}" />
+
+                  <ComboBox
+                    Grid.Column="1"
+                    Margin="4,0,0,0"
+                    HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding SearchProductSuggestions}"
+                    SelectedItem="{Binding SelectedSearchProduct}"
+                    ItemTemplate="{StaticResource ProductLookupTemplate}" />
+                </Grid>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Button Content="Search"
+                          Command="{Binding SearchProductsCommand}"
+                          HorizontalAlignment="Left"
+                          Width="100" />
+                  <Button Content="Refresh"
+                          Command="{Binding RefreshProductsCommand}"
+                          HorizontalAlignment="Left"
+                          Width="100" />
+                </StackPanel>
+              </StackPanel>
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <!-- Product Results -->
+        <Border Background="#252932" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Results" Foreground="#f5f5f5" FontWeight="Bold" />
+
+            <DataGrid
+              AutoGenerateColumns="False"
+              ItemsSource="{Binding ProductResults}"
+              SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+              Height="220">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Product ID" Binding="{Binding ProductId}" IsReadOnly="True" Width="100" />
+                <DataGridTextColumn Header="Product Code" Binding="{Binding ProductCode}" IsReadOnly="True" Width="120" />
+                <DataGridTextColumn Header="Product Name" Binding="{Binding ProductName}" IsReadOnly="True" Width="*" />
+                <DataGridTextColumn Header="Gradient" Binding="{Binding Grade, StringFormat='{}{0:N2}'}" IsReadOnly="True" Width="150" />
+                <DataGridTemplateColumn Header="" Width="160">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Button
+                          Content="Edit"
+                          Padding="6,2"
+                          Command="{Binding DataContext.EditProductCommand,
+                                            RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          CommandParameter="{Binding}" />
+
+                        <Button
+                          Content="Delete"
+                          Padding="6,2"
+                          Command="{Binding DataContext.DeleteProductCommand,
+                                            RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          CommandParameter="{Binding}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+              </DataGrid.Columns>
+            </DataGrid>
+          </StackPanel>
+        </Border>
+
+        <!-- Create/Edit Product -->
+        <Border Background="#252932" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="10">
+            <TextBlock Text="Create/Edit Product" Foreground="#f5f5f5" FontWeight="Bold" />
+
+            <Border Padding="12" Background="#2A2F38" CornerRadius="6">
+              <StackPanel Spacing="10">
+
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+
+                  <StackPanel Grid.Row="0" Grid.Column="0" Spacing="6">
+                    <TextBlock Text="Product code" Foreground="#c0c4cf" />
+                    <TextBox
+                      Watermark="Product code"
+                      Text="{Binding ProductCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                  </StackPanel>
+
+                  <StackPanel Grid.Row="0" Grid.Column="1" Spacing="6">
+                    <TextBlock Text="Product name" Foreground="#c0c4cf" />
+                    <TextBox
+                      Watermark="Product name"
+                      Text="{Binding ProductName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                  </StackPanel>
+
+                  <StackPanel Grid.Row="1" Grid.Column="0" Spacing="6">
+                    <TextBlock Text="Gradient (optional)" Foreground="#c0c4cf" />
+                    <TextBox
+                      Watermark="Gradient"
+                      Text="{Binding ProductGrade, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                  </StackPanel>
+
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                  <Button Width="100"
+                          HorizontalContentAlignment="Center"
+                          Content="Clear"
+                          Command="{Binding ClearProductFormCommand}" />
+
+                  <Button Width="100"
+                          HorizontalContentAlignment="Center"
+                          Content="Create"
+                          Command="{Binding CreateProductCommand}"
+                          IsVisible="{Binding IsProductCreateMode}" />
+
+                  <Button Width="100"
+                          HorizontalContentAlignment="Center"
+                          Content="Update"
+                          Command="{Binding UpdateProductCommand}"
+                          IsVisible="{Binding !IsProductCreateMode}" />
+                </StackPanel>
+
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <!-- Edit Price -->
+        <Border Background="#252932" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="10">
+            <TextBlock Text="Edit Price" Foreground="#f5f5f5" FontWeight="Bold" />
+
+            <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto" ColumnSpacing="10" RowSpacing="10">
+
+              <!-- Row 0 -->
+              <StackPanel Grid.Row="0" Grid.Column="0" Spacing="6">
+                <TextBlock Text="Price A" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding PriceA, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+
+              <StackPanel Grid.Row="0" Grid.Column="1" Spacing="6">
+                <TextBlock Text="Price B" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding PriceB, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+
+              <StackPanel Grid.Row="0" Grid.Column="2" Spacing="6">
+                <TextBlock Text="Price C" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding PriceC, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+
+            </Grid>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+              <Button Width="100"
+                      HorizontalContentAlignment="Center"
+                      Content="Update"
+                      Command="{Binding UpdatePriceCommand}" />
+            </StackPanel>
+
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </Border>
+</UserControl>

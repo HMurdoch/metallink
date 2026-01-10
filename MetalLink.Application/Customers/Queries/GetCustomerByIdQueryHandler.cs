@@ -30,12 +30,6 @@ public sealed class GetCustomerByIdQueryHandler
         var company = customer.Company ?? new Company();
         var site    = customer.Site ?? new Site();
 
-        var addressLine1 = site.AddressLine1 ?? string.Empty;
-        var addressLine2 = site.AddressLine2 ?? string.Empty;
-        var suburb       = site.Suburb ?? string.Empty;
-        var city         = site.City ?? string.Empty;
-        var postalCode   = site.PostalCode ?? string.Empty;
-
         var dto = new CustomerDto
         {
             CustomerId    = customer.CustomerId,
@@ -53,18 +47,6 @@ public sealed class GetCustomerByIdQueryHandler
 
             SiteName      = site.SiteName,
             SiteCode      = site.SiteCode,
-
-            AddressLine1  = site.AddressLine1,
-            AddressLine2  = site.AddressLine2,
-            Suburb        = site.Suburb,
-            City          = site.City,
-            PostalCode    = site.PostalCode,
-
-            ProvinceId    = site.ProvinceId,
-            ProvinceName  = site.Province?.ProvinceName,
-
-            CountryId     = site.CountryId,
-            CountryName   = site.Country?.Name,
 
             IdNumber      = customer.IdNumber,
             AccountNumber = customer.AccountNumber,

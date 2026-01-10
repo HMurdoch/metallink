@@ -53,9 +53,13 @@
       <ColumnDefinition Width="260"/>
       <ColumnDefinition Width="*"/>
     </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
 
     <!-- Left navigation -->
-    <Border Grid.Column="0" Background="#20232a">
+    <Border Grid.Column="0" Grid.RowSpan="2" Background="#20232a">
       <DockPanel>
 
         <!-- Top header -->
@@ -94,8 +98,32 @@
     </Border>
 
     <!-- Main content -->
-    <Grid Grid.Column="1" Background="#1f2229">
+    <Grid Grid.Column="1" Grid.Row="0" Background="#1f2229">
       <ContentControl Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}}"/>
     </Grid>
+
+    <!-- Bottom status bar -->
+    <Border Grid.Row="1" Grid.ColumnSpan="2" Background="#181a20" Padding="8,4">
+      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="16">
+        <!-- Main status message -->
+        <TextBlock Grid.Column="0"
+                   Text="{Binding StatusMessage}"
+                   Foreground="#c0c4cf"
+                   VerticalAlignment="Center"
+                   TextTrimming="CharacterEllipsis" />
+
+        <!-- Customers loaded this session -->
+        <TextBlock Grid.Column="1"
+                   Text="{Binding CustomersLoadedCount, StringFormat='Customers loaded: {0}'}"
+                   Foreground="#9fa4b2"
+                   VerticalAlignment="Center" />
+
+        <!-- Tickets created this session -->
+        <TextBlock Grid.Column="2"
+                   Text="{Binding TicketsCreatedCount, StringFormat='Tickets created: {0}'}"
+                   Foreground="#9fa4b2"
+                   VerticalAlignment="Center" />
+      </Grid>
+    </Border>
   </Grid>
 </Window>

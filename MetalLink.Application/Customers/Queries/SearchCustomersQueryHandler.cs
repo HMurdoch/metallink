@@ -36,22 +36,11 @@ public sealed class SearchCustomersQueryHandler
                 var province = site?.Province;
                 var country  = site?.Country;
 
-                var addressLine1 = site?.AddressLine1 ?? string.Empty;
-                var addressLine2 = site?.AddressLine2 ?? string.Empty;
-                var suburb       = site?.Suburb ?? string.Empty;
-                var city         = site?.City ?? string.Empty;
-                var postalCode   = site?.PostalCode ?? string.Empty;
-                
-                var provinceId = province?.ProvinceId;
-                var provinceName = province?.ProvinceName;
-                var countryId = country?.CountryId;
-                var countryName = country?.Name;
-
                 return new CustomerDto
                 {
                     CustomerId = c.CustomerId,
                     CompanyId  = c.CompanyId,
-                    SiteId = c.SiteId,
+                    SiteId     = c.SiteId,
 
                     FullName  = c.FullName,
                     FirstName = c.FirstName,
@@ -62,20 +51,8 @@ public sealed class SearchCustomersQueryHandler
                     VatNumber   = company?.VatNumber,
                     Taxable     = c.Taxable,
 
-                    SiteName = site?.SiteName,
-                    SiteCode = site?.SiteCode,
-
-                    AddressLine1 = addressLine1,
-                    AddressLine2 = addressLine2,
-                    Suburb       = suburb,
-                    City         = city,
-                    PostalCode   = postalCode,
-
-                    ProvinceId   = province?.ProvinceId,
-                    ProvinceName = province?.ProvinceName,
-
-                    CountryId    = country?.CountryId,
-                    CountryName  = country?.Name,
+                    SiteName = site?.SiteName ?? string.Empty,
+                    SiteCode = site?.SiteCode ?? string.Empty,
 
                     IdNumber      = c.IdNumber,
                     AccountNumber = c.AccountNumber,

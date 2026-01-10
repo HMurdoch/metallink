@@ -36,8 +36,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     private readonly AuthState _authState;
     private readonly ApiClient _apiClient;
     private readonly CustomerService _customerService;
-    private readonly CompanyAndSiteService _companyAndSiteService;
     private readonly TicketService _ticketService;
+    private readonly ProvinceService _provinceService;
     private readonly IScaleService _scaleService;
     private readonly DocumentService _documentService;
     private readonly ICameraService _cameraService;
@@ -94,6 +94,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand DeleteCustomerCommand { get; }
     public ICommand LogTicketCommand { get; }
     public ICommand ClearNewCustomerCommand { get; }
+    public ICommand ClearCustomerSearchCommand { get; }
     public ICommand UpdateCustomerCommand { get; }
     public ICommand SearchCustomersCommand { get; }
 
@@ -103,8 +104,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         _authState = app.AuthState;
         _apiClient = app.ApiClient;
         _customerService = app.CustomerService;
-        _companyAndSiteService = app.CompanyAndSiteService;
         _ticketService = app.TicketService;
+        _provinceService = app.ProvinceService;
         _scaleService = app.ScaleService;
         _documentService = app.DocumentService;
         _cameraService = app.CameraService;
@@ -172,6 +173,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         DeleteCustomerCommand = new AsyncRelayCommand<CustomerDto>(execute: OnDeleteCustomerAsync);
         LogTicketCommand = new RelayCommand<CustomerDto>(OnLogTicket);
         ClearNewCustomerCommand = new AsyncRelayCommand(ClearNewCustomerFormAsync);
+        ClearCustomerSearchCommand = new RelayCommand(ClearCustomerSearch);
 
         Console.WriteLine($"Next account number = {NewAccountNumber}");
         OnPropertyChanged(nameof(NewAccountNumberDisplay));
@@ -237,6 +239,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
         InitializeCountries();
         InitializeCompanyAndSiteCommands();
+        InitializeProductsAndPricesCommands();
         _ = LoadProvincesAsync();
     }
 
@@ -260,6 +263,15 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     {
         // TODO: re-wire to real ticket creation if/when you want
         return Task.CompletedTask;
+    }
+
+    private async Task<bool> ConfirmAsync(string message)
+    {
+        var owner = (Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (owner == null) return false;
+
+        var dlg = new MetalLink.Desktop.Views.ConfirmDialog(message);
+        return await dlg.ShowDialog<bool>(owner);
     }
 
     private async Task CheckDbAsync()
@@ -496,11 +508,6 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
                 PhoneNumber = string.IsNullOrWhiteSpace(NewPhoneNumber) ? null : NewPhoneNumber,
                 MobileNumber = string.IsNullOrWhiteSpace(NewMobileNumber) ? null : NewMobileNumber,
                 PriceCode = string.IsNullOrEmpty(SelectedPriceCodeChar?.Code) ? null : SelectedPriceCodeChar.Code.Trim(),
-                AddressLine1 = string.IsNullOrWhiteSpace(NewAddressLine1) ? null : NewAddressLine1,
-                AddressLine2 = string.IsNullOrWhiteSpace(NewAddressLine2) ? null : NewAddressLine2,
-                Suburb = string.IsNullOrWhiteSpace(NewSuburb) ? null : NewSuburb,
-                City = string.IsNullOrWhiteSpace(NewCity) ? null : NewCity,
-                PostalCode = string.IsNullOrWhiteSpace(NewPostalCode) ? null : NewPostalCode,
                 IsCompany = NewIsCompany,
                 Taxable = NewTaxable,
 

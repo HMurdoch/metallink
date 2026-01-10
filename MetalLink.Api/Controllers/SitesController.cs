@@ -139,14 +139,31 @@ public sealed class SitesController : ControllerBase
         return NoContent();
     }
 
-    // DELETE /api/sites/{siteId}
+    // DELETE /api/sites/{siteId} (soft delete)
     [HttpDelete("{siteId:long}")]
     public async Task<IActionResult> Delete(long siteId, CancellationToken ct)
     {
         var site = await _db.Sites.FirstOrDefaultAsync(s => s.SiteId == siteId, ct);
         if (site == null) return NotFound();
+        
+        if (!site.IsActive)
+        {
+            return BadRequest("Site is already inactive.");
+        }
+
+        // Validation: Count total active sites for this company (including current one)
+        var totalActiveSites = await _db.Sites
+            .Where(s => s.CompanyId == site.CompanyId && s.IsActive)
+            .CountAsync(ct);
+
+        if (totalActiveSites <= 1)
+        {
+            return BadRequest("Cannot delete the last active site. A company must have at least one active site.");
+        }
 
         site.IsActive = false;
+        site.UpdatedTime = DateTimeOffset.UtcNow;
+        
         await _db.SaveChangesAsync(ct);
         return NoContent();
     }

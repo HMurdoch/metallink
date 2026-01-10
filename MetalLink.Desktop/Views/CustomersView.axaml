@@ -299,6 +299,10 @@
 
                 <TextBlock Grid.Row="11" Grid.Column="0" Text="Email" Foreground="#c0c4cf" Margin="0,4,8,0" />
                 <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding SelectedEmail}" Foreground="#f5f5f5" />
+
+                <!-- Site address (read-only, from Site/CAS) -->
+                <TextBlock Grid.Row="12" Grid.Column="0" Text="Site Address" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="12" Grid.Column="1" Text="{Binding CustomerSiteAddressSummary}" Foreground="#f5f5f5" TextWrapping="Wrap" />
               </Grid>
             </Border>
           </StackPanel>
