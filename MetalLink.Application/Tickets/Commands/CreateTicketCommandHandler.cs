@@ -47,7 +47,13 @@ public sealed class CreateTicketCommandHandler
             unitPricePerKg: request.UnitPricePerKg,
             currencyCode: request.CurrencyCode,
             productDescription: request.ProductDescription,
-            notes: request.Notes
+            notes: request.Notes,
+            vehicleRegistration: request.VehicleRegistration,
+            ofmWeighbridgeTicket: request.OfmWeighbridgeTicket,
+            foreignTicket: request.ForeignTicket,
+            ckNumber: request.CkNumber,
+            productId: request.ProductId,
+            currencyId: request.CurrencyId
         );
 
         await _ticketRepository.AddAsync(ticket, cancellationToken);
@@ -67,6 +73,15 @@ public sealed class CreateTicketCommandHandler
             UnitPricePerKg = ticket.UnitPricePerKg,
             TotalAmount = ticket.TotalAmount,
             CurrencyCode = ticket.CurrencyCode,
+            CurrencyId = ticket.CurrencyId,
+            ProductId = ticket.ProductId,
+            VehicleRegistration = ticket.VehicleRegistration,
+            OfmWeighbridgeTicket = ticket.OfmWeighbridgeTicket,
+            ForeignTicket = ticket.ForeignTicket,
+            CkNumber = ticket.CkNumber,
+            VatRate = ticket.VatRate,
+            VatAmount = ticket.VatAmount,
+            TotalInclVat = ticket.TotalInclVat,
             ProductDescription = ticket.ProductDescription,
             Notes = ticket.Notes,
             CreatedTime = ticket.CreatedTime,

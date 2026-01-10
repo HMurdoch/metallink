@@ -19,6 +19,7 @@ public class SectionToViewConverter : IValueConverter
             EnumMainSection.CompanyAndSites => new CompanyAndSiteView(),
             EnumMainSection.ProductsAndPrices => new ProductsAndPricesView(),
             EnumMainSection.Tickets => new TicketsView(),
+            EnumMainSection.TicketsSending => new TicketsView(), // TODO: separate Sending view later
             EnumMainSection.Documents => new DocumentsView(),
             EnumMainSection.Camera => new CameraView(),
             EnumMainSection.Reports => new ReportsView(),

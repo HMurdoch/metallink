@@ -3,6 +3,7 @@ using System;
 using MetalLink.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MetalLink.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(MetalLinkDbContext))]
-    partial class MetalLinkDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260110180505_Tickets_Refactor")]
+    partial class Tickets_Refactor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

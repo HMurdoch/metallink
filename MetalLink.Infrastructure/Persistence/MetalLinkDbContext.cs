@@ -15,8 +15,10 @@ public class MetalLinkDbContext : DbContext
       public DbSet<Operator> Operators => Set<Operator>();
       public DbSet<CustomerDocument> CustomerDocuments => Set<CustomerDocument>();
       public DbSet<Ticket> Tickets => Set<Ticket>();
+      public DbSet<TicketLine> TicketLines => Set<TicketLine>();
       public DbSet<Product> Products => Set<Product>();
       public DbSet<Price> Prices => Set<Price>();
+      public DbSet<Currency> Currencies => Set<Currency>();
 
       // NEW sets
       public DbSet<Company> Companies => Set<Company>();
@@ -32,6 +34,7 @@ public class MetalLinkDbContext : DbContext
             ConfigureOperator(modelBuilder);
             ConfigureCustomerDocument(modelBuilder);
             ConfigureTicket(modelBuilder);
+            ConfigureTicketLine(modelBuilder);
 
             // NEW
             ConfigureCompany(modelBuilder);
@@ -40,6 +43,7 @@ public class MetalLinkDbContext : DbContext
             ConfigureCountry(modelBuilder);
             ConfigureProduct(modelBuilder);
             ConfigurePrice(modelBuilder);
+            ConfigureCurrency(modelBuilder);
       }
 
       // -------------------------
@@ -230,6 +234,49 @@ public class MetalLinkDbContext : DbContext
                   // If Site also has these columns, repeat the same for Site
                   // if (entry.Entity is Site s) { ... }
             }
+      }
+
+      // -------------------------
+      // CURRENCY
+      // -------------------------
+
+      private static void ConfigureCurrency(ModelBuilder modelBuilder)
+      {
+            var entity = modelBuilder.Entity<Currency>();
+
+            entity.ToTable("currencies", schema: "metal_link");
+
+            entity.HasKey(c => c.CurrencyId)
+                  .HasName("pk_currencies_currency_id");
+
+            entity.Property(c => c.CurrencyId)
+                  .HasColumnName("currency_id")
+                  .ValueGeneratedOnAdd();
+
+            entity.Property(c => c.CurrencyCode)
+                  .HasColumnName("currency_code")
+                  .IsRequired()
+                  .HasMaxLength(10);
+
+            entity.Property(c => c.CurrencyDescription)
+                  .HasColumnName("currency_description")
+                  .IsRequired()
+                  .HasMaxLength(100);
+
+            entity.Property(c => c.IsActive)
+                  .HasColumnName("is_active")
+                  .IsRequired();
+
+            entity.Property(c => c.CreatedTime)
+                  .HasColumnName("created_time")
+                  .IsRequired();
+
+            entity.Property(c => c.UpdatedTime)
+                  .HasColumnName("updated_time")
+                  .IsRequired();
+
+            entity.HasIndex(c => c.CurrencyCode)
+                  .HasDatabaseName("currencies_currency_code_idx");
       }
 
       // -------------------------
@@ -601,8 +648,9 @@ public class MetalLinkDbContext : DbContext
                   .HasColumnType("numeric(18,4)")
                   .IsRequired();
 
+            // Header ex-VAT total (DB column total_amount_ex_vat)
             entity.Property(t => t.TotalAmount)
-                  .HasColumnName("total_amount")
+                  .HasColumnName("total_amount_ex_vat")
                   .HasColumnType("numeric(18,2)")
                   .IsRequired();
 
@@ -611,6 +659,14 @@ public class MetalLinkDbContext : DbContext
                   .IsRequired()
                   .HasMaxLength(10);
 
+            entity.Property(t => t.CurrencyId)
+                  .HasColumnName("currency_id")
+                  .IsRequired(false);
+
+            entity.Property(t => t.ProductId)
+                  .HasColumnName("product_id")
+                  .IsRequired(false);
+
             entity.Property(t => t.ProductDescription)
                   .HasColumnName("product_description")
                   .HasMaxLength(200);
@@ -618,6 +674,49 @@ public class MetalLinkDbContext : DbContext
             entity.Property(t => t.Notes)
                   .HasColumnName("notes")
                   .HasMaxLength(500);
+
+            entity.Property(t => t.VehicleRegistration)
+                  .HasColumnName("vehicle_registration")
+                  .HasMaxLength(50);
+
+            entity.Property(t => t.TrailerRegistration)
+                  .HasColumnName("trailer_registration")
+                  .HasMaxLength(50);
+
+            entity.Property(t => t.DriverName)
+                  .HasColumnName("driver_name")
+                  .HasMaxLength(100);
+
+            entity.Property(t => t.OfmWeighbridgeTicket)
+                  .HasColumnName("ofm_weighbridge_ticket")
+                  .HasMaxLength(50);
+
+            entity.Property(t => t.ForeignTicket)
+                  .HasColumnName("foreign_ticket")
+                  .HasMaxLength(50);
+
+            entity.Property(t => t.CkNumber)
+                  .HasColumnName("ck_number")
+                  .HasMaxLength(50);
+
+            entity.Property(t => t.VatRate)
+                  .HasColumnName("vat_rate")
+                  .HasColumnType("numeric(5,4)")
+                  .IsRequired();
+
+            entity.Property(t => t.VatAmount)
+                  .HasColumnName("vat_amount")
+                  .HasColumnType("numeric(18,2)")
+                  .IsRequired();
+
+            entity.Property(t => t.TotalInclVat)
+                  .HasColumnName("total_incl_vat")
+                  .HasColumnType("numeric(18,2)")
+                  .IsRequired();
+
+            entity.Property(t => t.IsActive)
+                  .HasColumnName("is_active")
+                  .IsRequired();
 
             entity.Property(t => t.CreatedTime)
                   .HasColumnName("created_time")
@@ -652,6 +751,108 @@ public class MetalLinkDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(t => t.SiteId)
                   .HasConstraintName("fk_tickets_site_id_sites");
+
+            // Optional: FK to Product
+            entity.HasOne<Product>()
+                  .WithMany()
+                  .HasForeignKey(t => t.ProductId)
+                  .HasConstraintName("fk_tickets_product_id_products");
+
+            // Optional: FK to Currency
+            entity.HasOne<Currency>()
+                  .WithMany()
+                  .HasForeignKey(t => t.CurrencyId)
+                  .HasConstraintName("fk_tickets_currency_id_currencies");
+
+            // Ticket ↔ TicketLines
+            entity.HasMany(t => t.Lines)
+                  .WithOne(l => l.Ticket)
+                  .HasForeignKey(l => l.TicketId)
+                  .HasConstraintName("fk_ticket_lines_ticket_id_tickets");
+      }
+
+      // -------------------------
+      // TICKET LINE
+      // -------------------------
+
+      private static void ConfigureTicketLine(ModelBuilder modelBuilder)
+      {
+            var entity = modelBuilder.Entity<TicketLine>();
+
+            entity.ToTable("ticket_lines", schema: "metal_link");
+
+            entity.HasKey(l => l.TicketLineId)
+                  .HasName("pk_ticket_lines_ticket_line_id");
+
+            entity.Property(l => l.TicketLineId)
+                  .HasColumnName("ticket_line_id")
+                  .ValueGeneratedOnAdd();
+
+            entity.Property(l => l.TicketId)
+                  .HasColumnName("ticket_id")
+                  .IsRequired();
+
+            entity.Property(l => l.ProductId)
+                  .HasColumnName("product_id")
+                  .IsRequired();
+
+            entity.Property(l => l.ProductName)
+                  .HasColumnName("product_name")
+                  .IsRequired()
+                  .HasMaxLength(200);
+
+            entity.Property(l => l.WeightKg)
+                  .HasColumnName("weight_kg")
+                  .HasColumnType("numeric(18,3)")
+                  .IsRequired();
+
+            entity.Property(l => l.UnitPricePerKg)
+                  .HasColumnName("unit_price_per_kg")
+                  .HasColumnType("numeric(18,4)")
+                  .IsRequired();
+
+            entity.Property(l => l.LineTotal)
+                  .HasColumnName("line_total")
+                  .HasColumnType("numeric(18,2)")
+                  .IsRequired();
+
+            entity.Property(l => l.VatAmount)
+                  .HasColumnName("vat_amount")
+                  .HasColumnType("numeric(18,2)")
+                  .IsRequired();
+
+            entity.Property(l => l.TotalInclVat)
+                  .HasColumnName("total_incl_vat")
+                  .HasColumnType("numeric(18,2)")
+                  .IsRequired();
+
+            entity.Property(l => l.IsActive)
+                  .HasColumnName("is_active")
+                  .IsRequired();
+
+            entity.Property(l => l.CreatedTime)
+                  .HasColumnName("created_time")
+                  .IsRequired();
+
+            entity.Property(l => l.UpdatedTime)
+                  .HasColumnName("updated_time")
+                  .IsRequired();
+
+            entity.HasIndex(l => l.TicketId)
+                  .HasDatabaseName("ticket_lines_ticket_id_idx");
+
+            entity.HasIndex(l => l.ProductId)
+                  .HasDatabaseName("ticket_lines_product_id_idx");
+
+            entity.HasOne(l => l.Ticket)
+                  .WithMany(t => t.Lines)
+                  .HasForeignKey(l => l.TicketId)
+                  .HasConstraintName("fk_ticket_lines_ticket_id_tickets");
+
+            entity.HasOne(l => l.Product)
+                  .WithMany()
+                  .HasForeignKey(l => l.ProductId)
+                  .HasConstraintName("fk_ticket_lines_product_id_products");
       }
 
       // -------------------------

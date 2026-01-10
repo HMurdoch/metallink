@@ -6,7 +6,8 @@ public enum EnumMainSection
     Customers,
     CompanyAndSites,
     ProductsAndPrices,
-    Tickets,
+    Tickets,        // Receiving
+    TicketsSending, // Sending / outbound
     Documents,
     Camera,
     Reports,

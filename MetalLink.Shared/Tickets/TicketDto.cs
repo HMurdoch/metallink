@@ -18,6 +18,20 @@ public sealed class TicketDto
     public decimal TotalAmount { get; set; }
     public string CurrencyCode { get; set; } = "ZAR";
 
+    public long? CurrencyId { get; set; }
+    public long? ProductId { get; set; }
+
+    // Header / vehicle details
+    public string? VehicleRegistration { get; set; }
+    public string? OfmWeighbridgeTicket { get; set; }
+    public string? ForeignTicket { get; set; }
+    public string? CkNumber { get; set; }
+
+    // VAT
+    public decimal VatRate { get; set; }
+    public decimal VatAmount { get; set; }
+    public decimal TotalInclVat { get; set; }
+
     public string? ProductDescription { get; set; }
     public string? Notes { get; set; }
 

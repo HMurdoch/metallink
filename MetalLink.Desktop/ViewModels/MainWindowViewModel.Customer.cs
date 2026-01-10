@@ -328,6 +328,12 @@ public partial class MainWindowViewModel
         // Pre-fill the Ticket screen with this customer's ID (optional)
         TicketCustomerIdText = customer.CustomerId.ToString("D8");
 
+        // Generate a fresh ticket number for this new ticket if none is set
+        if (string.IsNullOrWhiteSpace(TicketNumber))
+        {
+            TicketNumber = GenerateNextTicketNumber();
+        }
+
         // Switch to the Tickets section – this uses the same enum
         // you already use in ShowTicketsCommand.
         CurrentSection = EnumMainSection.Tickets;

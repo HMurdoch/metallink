@@ -197,7 +197,14 @@
                   Command="{Binding ShowProductsAndPricesCommand}"
                   Classes="NavButton SubNavButton" />                  
 
-          <Button Content="Tickets" Command="{Binding ShowTicketsCommand}" Classes="NavButton"/>
+          <Button Content="Tickets" Classes="NavButton"/>
+          <Button Content="Receiving"
+                  Command="{Binding ShowTicketsCommand}"
+                  Classes="NavButton SubNavButton"/>
+          <Button Content="Sending"
+                  Command="{Binding ShowTicketsSendingCommand}"
+                  Classes="NavButton SubNavButton"/>
+
           <Button Content="Documents" Command="{Binding ShowDocumentsCommand}" Classes="NavButton"/>
           <Button Content="Camera" Command="{Binding ShowCameraCommand}" Classes="NavButton"/>
           <Button Content="Reports" Command="{Binding ShowReportsCommand}" Classes="NavButton"/>

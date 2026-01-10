@@ -236,18 +236,11 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     file_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     content_type = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     storage_key = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    created_time = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    CustomerId1 = table.Column<long>(type: "bigint", nullable: true)
+                    created_time = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_customer_documents_customer_document_id", x => x.customer_document_id);
-                    table.ForeignKey(
-                        name: "FK_customer_documents_customers_CustomerId1",
-                        column: x => x.CustomerId1,
-                        principalSchema: "metal_link",
-                        principalTable: "customers",
-                        principalColumn: "customer_id");
                     table.ForeignKey(
                         name: "fk_customer_documents_customer_id_customers",
                         column: x => x.customer_id,
@@ -265,11 +258,8 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     ticket_id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     site_id = table.Column<long>(type: "bigint", nullable: false),
-                    SiteId1 = table.Column<long>(type: "bigint", nullable: false),
                     customer_id = table.Column<long>(type: "bigint", nullable: false),
-                    CustomerId1 = table.Column<long>(type: "bigint", nullable: false),
                     operator_id = table.Column<long>(type: "bigint", nullable: false),
-                    OperatorId1 = table.Column<long>(type: "bigint", nullable: false),
                     ticket_number = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     ticket_type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     first_weight_kg = table.Column<decimal>(type: "numeric(18,3)", nullable: true),
@@ -286,27 +276,6 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_tickets_ticket_id", x => x.ticket_id);
-                    table.ForeignKey(
-                        name: "FK_tickets_customers_CustomerId1",
-                        column: x => x.CustomerId1,
-                        principalSchema: "metal_link",
-                        principalTable: "customers",
-                        principalColumn: "customer_id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_tickets_operators_OperatorId1",
-                        column: x => x.OperatorId1,
-                        principalSchema: "metal_link",
-                        principalTable: "operators",
-                        principalColumn: "operator_id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_tickets_sites_SiteId1",
-                        column: x => x.SiteId1,
-                        principalSchema: "metal_link",
-                        principalTable: "sites",
-                        principalColumn: "site_id",
-                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "fk_tickets_customer_id_customers",
                         column: x => x.customer_id,
@@ -360,11 +329,6 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                 table: "customer_documents",
                 column: "customer_id");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_customer_documents_CustomerId1",
-                schema: "metal_link",
-                table: "customer_documents",
-                column: "CustomerId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_customers_company_id",
@@ -440,28 +404,10 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                 column: "site_code");
 
             migrationBuilder.CreateIndex(
-                name: "IX_tickets_CustomerId1",
-                schema: "metal_link",
-                table: "tickets",
-                column: "CustomerId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_tickets_operator_id",
                 schema: "metal_link",
                 table: "tickets",
                 column: "operator_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_tickets_OperatorId1",
-                schema: "metal_link",
-                table: "tickets",
-                column: "OperatorId1");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_tickets_SiteId1",
-                schema: "metal_link",
-                table: "tickets",
-                column: "SiteId1");
 
             migrationBuilder.CreateIndex(
                 name: "tickets_customer_id_idx",

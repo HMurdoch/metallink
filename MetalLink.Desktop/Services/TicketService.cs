@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MetalLink.Desktop.Auth;
@@ -26,6 +29,10 @@ public sealed class TicketService
         string currencyCode,
         string? productDescription,
         string? notes,
+        string? vehicleRegistration,
+        string? ofmWeighbridgeTicket,
+        string? foreignTicket,
+        string? ckNumber,
         CancellationToken cancellationToken = default)
     {
         var siteId = _authState.SiteId > 0 ? _authState.SiteId : 1;
@@ -46,7 +53,11 @@ public sealed class TicketService
             unitPricePerKg,
             currencyCode,
             productDescription,
-            notes
+            notes,
+            vehicleRegistration,
+            ofmWeighbridgeTicket,
+            foreignTicket,
+            ckNumber
         };
 
         return await _apiClient.PostAsync<object, TicketDto>(
@@ -54,5 +65,74 @@ public sealed class TicketService
             body,
             cancellationToken
         );
+    }
+
+    public async Task<IReadOnlyList<TicketLineDto>?> AddTicketLinesAsync(
+        long ticketId,
+        IEnumerable<(long ProductId, decimal WeightKg)> lines,
+        CancellationToken cancellationToken = default)
+    {
+        var payload = lines
+            .Select(l => new { productId = l.ProductId, weightKg = l.WeightKg })
+            .ToArray();
+
+        var result = await _apiClient.PostAsync<object, TicketLineDto[]>(
+            $"api/tickets/{ticketId}/lines",
+            payload,
+            cancellationToken
+        );
+
+        return result ?? Array.Empty<TicketLineDto>();
+    }
+
+    public async Task<IReadOnlyList<TicketLineDto>?> GetTicketLinesAsync(
+        long ticketId,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _apiClient.GetAsync<TicketLineDto[]>(
+            $"api/tickets/{ticketId}/lines",
+            cancellationToken);
+
+        return result ?? Array.Empty<TicketLineDto>();
+    }
+
+    public Task DeleteTicketLineAsync(
+        long ticketId,
+        long ticketLineId,
+        CancellationToken cancellationToken = default)
+    {
+        return _apiClient.DeleteAsync(
+            $"api/tickets/{ticketId}/lines/{ticketLineId}",
+            cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<TicketSearchResultDto>> SearchTicketsAsync(
+        TicketSearchRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _apiClient.PostAsync<TicketSearchRequestDto, TicketSearchResultDto[]>(
+            "api/tickets/search",
+            request,
+            cancellationToken);
+
+        return result ?? Array.Empty<TicketSearchResultDto>();
+    }
+
+    public async Task<TicketDto?> GetTicketByIdAsync(
+        long ticketId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _apiClient.GetAsync<TicketDto?>(
+            $"api/tickets/{ticketId}",
+            cancellationToken);
+    }
+
+    public Task DeleteTicketAsync(
+        long ticketId,
+        CancellationToken cancellationToken = default)
+    {
+        return _apiClient.DeleteAsync(
+            $"api/tickets/{ticketId}",
+            cancellationToken);
     }
 }

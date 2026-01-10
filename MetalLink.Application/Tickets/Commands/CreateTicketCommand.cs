@@ -14,5 +14,11 @@ public sealed record CreateTicketCommand(
     decimal UnitPricePerKg,
     string CurrencyCode,
     string? ProductDescription,
-    string? Notes
+    string? Notes,
+    string? VehicleRegistration,
+    string? OfmWeighbridgeTicket,
+    string? ForeignTicket,
+    string? CkNumber,
+    long? ProductId,
+    long? CurrencyId
 ) : IRequest<TicketDto>;

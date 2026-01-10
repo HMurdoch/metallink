@@ -51,6 +51,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand SearchCustomerCommand { get; }
     public ICommand CreateCustomerCommand { get; }
     public ICommand CreateTicketCommand { get; }
+    public ICommand AddReceivingLineCommand { get; }
+    public ICommand RemoveReceivingLineCommand { get; }
     public ICommand ReadWeighbridgeCommand { get; }
     public ICommand ReadPlatformCommand { get; }
     public ICommand LoadCustomerDocumentsCommand { get; }
@@ -62,6 +64,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand ShowCompanyAndSitesCommand { get; }
     public ICommand ShowProductsAndPricesCommand { get; }
     public ICommand ShowTicketsCommand { get; }
+    public ICommand ShowTicketsSendingCommand { get; }
     public ICommand ShowDocumentsCommand { get; }
     public ICommand ShowCameraCommand { get; }
     public ICommand ShowReportsCommand { get; }   // ✅ ADDED
@@ -79,6 +82,11 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
     // Ticket Report commands
     public ICommand DownloadTicketReportCommand { get; }
+
+    // Ticket search commands
+    public ICommand SearchTicketsCommand { get; }
+    public ICommand ClearTicketSearchCommand { get; }
+    public ICommand DeleteTicketCommand { get; }
 
     // Optional tab navigation commands
     public ICommand GoDashboardCommand { get; }
@@ -147,6 +155,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         SearchCustomerCommand = new AsyncCommand(SearchCustomerAsync);
         CreateCustomerCommand = new AsyncCommand(CreateCustomerAsync);
         CreateTicketCommand = new AsyncCommand(CreateTicketAsync);
+        AddReceivingLineCommand = new AsyncCommand(AddReceivingLineAsync);
+        RemoveReceivingLineCommand = new AsyncRelayCommand<ReceivingLineItem?>(RemoveReceivingLineAsync);
         ReadWeighbridgeCommand = new AsyncCommand(ReadWeighbridgeAsync);
         ReadPlatformCommand = new AsyncCommand(ReadPlatformAsync);
         LoadCustomerDocumentsCommand = new AsyncCommand(LoadCustomerDocumentsAsync);
@@ -162,6 +172,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             await ClearNewCustomerFormAsync(); // this fetches NewAccountNumber
         });
         ShowTicketsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Tickets);
+        ShowTicketsSendingCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.TicketsSending);
         ShowDocumentsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Documents);
         ShowCameraCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Camera);
 
@@ -202,6 +213,11 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
         // Ticket Report Command
         DownloadTicketReportCommand = new AsyncCommand(DownloadTicketReportAsync);
+
+        // Ticket search commands
+        SearchTicketsCommand = new AsyncCommand(SearchTicketsAsync);
+        ClearTicketSearchCommand = new RelayCommand(ClearTicketSearch);
+        DeleteTicketCommand = new AsyncRelayCommand<TicketSearchResultDto?>(DeleteTicketAsync);
 
         // Signature
         CaptureSignatureCommand = new AsyncCommand(CaptureSignatureAsync);
@@ -259,10 +275,124 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         return Task.CompletedTask;
     }
 
-    private Task CreateTicketAsync()
+    private async Task CreateTicketAsync()
     {
-        // TODO: re-wire to real ticket creation if/when you want
-        return Task.CompletedTask;
+        if (IsBusy) return;
+        IsBusy = true;
+        StatusMessage = "Creating ticket...";
+
+        try
+        {
+            // --- Basic validation ---
+            if (!long.TryParse(TicketCustomerIdText, out var customerId) || customerId <= 0)
+            {
+                StatusMessage = "Customer ID must be a valid positive number.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(TicketNumber))
+            {
+                StatusMessage = "Ticket Number is required.";
+                return;
+            }
+
+            if (!decimal.TryParse(NormalizeDecimalText(TicketUnitPriceText),
+                    System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out var unitPrice) || unitPrice < 0)
+            {
+                StatusMessage = "Unit price must be a valid non-negative number.";
+                return;
+            }
+
+            decimal? ParseWeight(string text)
+            {
+                if (string.IsNullOrWhiteSpace(text))
+                    return null;
+
+                if (decimal.TryParse(NormalizeDecimalText(text),
+                        System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out var value))
+                {
+                    return value;
+                }
+
+                throw new FormatException($"Invalid weight value: '{text}'.");
+            }
+
+            var firstWeight = ParseWeight(TicketFirstWeightText);
+            var secondWeight = ParseWeight(TicketSecondWeightText);
+
+            // --- Call API ---
+            var dto = await _ticketService.CreateTicketAsync(
+                customerId: customerId,
+                ticketType: string.IsNullOrWhiteSpace(TicketType) ? "weighbridge" : TicketType.Trim(),
+                ticketNumber: TicketNumber.Trim(),
+                firstWeightKg: firstWeight,
+                secondWeightKg: secondWeight,
+                unitPricePerKg: unitPrice,
+                currencyCode: string.IsNullOrWhiteSpace(TicketCurrencyCode) ? "ZAR" : TicketCurrencyCode.Trim(),
+                productDescription: string.IsNullOrWhiteSpace(TicketProductDescription) ? null : TicketProductDescription.Trim(),
+                notes: string.IsNullOrWhiteSpace(TicketNotes) ? null : TicketNotes.Trim(),
+                vehicleRegistration: string.IsNullOrWhiteSpace(TicketVehicleRegistration) ? null : TicketVehicleRegistration.Trim(),
+                ofmWeighbridgeTicket: string.IsNullOrWhiteSpace(TicketOfmWeighbridgeTicket) ? null : TicketOfmWeighbridgeTicket.Trim(),
+                foreignTicket: string.IsNullOrWhiteSpace(TicketForeignTicket) ? null : TicketForeignTicket.Trim(),
+                ckNumber: string.IsNullOrWhiteSpace(TicketCkNumber) ? null : TicketCkNumber.Trim()
+            );
+
+            if (dto == null)
+            {
+                StatusMessage = "Ticket create failed - API returned no result.";
+                return;
+            }
+
+            LastCreatedTicket = dto;
+            StatusMessage =
+                $"Ticket {dto.TicketNumber} created. Net {dto.NetWeightKg} kg, Total {dto.TotalAmount:0.00} {dto.CurrencyCode}.";
+
+            // Prepare for next ticket
+            TicketNumber = GenerateNextTicketNumber();
+            TicketFirstWeightText = string.Empty;
+            TicketSecondWeightText = string.Empty;
+            TicketUnitPriceText = string.Empty;
+            TicketProductDescription = string.Empty;
+            TicketNotes = string.Empty;
+            TicketVehicleRegistration = string.Empty;
+            TicketOfmWeighbridgeTicket = string.Empty;
+            TicketForeignTicket = string.Empty;
+            TicketCkNumber = string.Empty;
+        }
+        catch (System.Net.Http.HttpRequestException ex)
+        {
+            StatusMessage = $"Error calling API: {ex.Message}";
+        }
+        catch (FormatException ex)
+        {
+            StatusMessage = ex.Message;
+        }
+        catch (System.Exception ex)
+        {
+            StatusMessage = $"Error creating ticket: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private static string NormalizeDecimalText(string text)
+    {
+        // Accept both comma and dot as decimal separators and normalize to invariant culture
+        return text.Replace(',', '.').Trim();
+    }
+
+    private string GenerateNextTicketNumber()
+    {
+        // Simple client-side ticket number pattern:
+        // WB-<SiteId>-YYYYMMDD-HHMMSS
+        var siteId = _authState.SiteId > 0 ? _authState.SiteId : 1;
+        return $"WB-{siteId}-{DateTime.Now:yyyyMMdd-HHmmss}";
     }
 
     private async Task<bool> ConfirmAsync(string message)

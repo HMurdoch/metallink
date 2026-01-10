@@ -4,55 +4,180 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
   <UserControl.Styles>
+    <!-- Default textbox border + font to match Customers view -->
     <Style Selector="TextBox">
       <Setter Property="BorderBrush" Value="#444a55" />
       <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="FontSize" Value="11" />
     </Style>
 
     <Style Selector="TextBox:focus">
       <Setter Property="BorderBrush" Value="#5c7cfa" />
     </Style>
 
-    <!-- Customer ID -->
-    <!-- <Style Selector="#TicketCustomerIdBox">
+    <!-- Make ComboBox look/size similar to TextBox -->
+    <Style Selector="ComboBox">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="BorderBrush" Value="#444a55" />
-      <Style.Triggers>
-        <DataTrigger Binding="{Binding IsTicketCustomerIdInvalid}" Value="True">
-          <Setter Property="BorderBrush" Value="#ff5555" />
-        </DataTrigger>
-      </Style.Triggers>
-    </Style> -->
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
 
-    <!-- Ticket number -->
-    <!-- <Style Selector="#TicketNumberBox">
-      <Setter Property="BorderBrush" Value="#444a55" />
-      <Style.Triggers>
-        <DataTrigger Binding="{Binding IsTicketNumberInvalid}" Value="True">
-          <Setter Property="BorderBrush" Value="#ff5555" />
-        </DataTrigger>
-      </Style.Triggers>
-    </Style> -->
+    <Style Selector="ComboBox:focus">
+      <Setter Property="BorderBrush" Value="#5c7cfa" />
+    </Style>
 
-    <!-- Unit price -->
-    <!-- <Style Selector="#TicketUnitPriceBox">
-      <Setter Property="BorderBrush" Value="#444a55" />
-      <Style.Triggers>
-        <DataTrigger Binding="{Binding IsTicketUnitPriceInvalid}" Value="True">
-          <Setter Property="BorderBrush" Value="#ff5555" />
-        </DataTrigger>
-      </Style.Triggers>
-    </Style> -->
+    <!-- DataGrid overall styling to match Customers grid -->
+    <Style Selector="DataGrid">
+      <Setter Property="Background" Value="{StaticResource Brush.PanelBackground}" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+      <Setter Property="GridLinesVisibility" Value="Horizontal" />
+      <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="VerticalGridLinesBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style Selector="DataGridCell">
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+
+    <Style Selector="DataGridColumnHeader">
+      <Setter Property="Background" Value="{StaticResource Brush.NavBackground}" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.TextMuted}" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+
+    <Style Selector="DataGridRow">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions>
+            <BrushTransition Property="Background" Duration="0:0:0.12" />
+          </Transitions>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="DataGridRow:pointerover">
+      <Setter Property="Background" Value="#20FFFFFF" />
+    </Style>
+
+    <Style Selector="DataGridRow:selected">
+      <Setter Property="Background" Value="#303B82F6" />
+    </Style>
+
+    <!-- Row action buttons (for Delete in Receiving lines grid) -->
+    <Style Selector="Button.row-action">
+      <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+      <Setter Property="Background" Value="#30333A" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Padding" Value="6,2" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+      <Setter Property="RenderTransform">
+        <Setter.Value>
+          <ScaleTransform ScaleX="1" ScaleY="1" />
+        </Setter.Value>
+      </Setter>
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions>
+            <BrushTransition Property="Background" Duration="0:0:0.10" />
+            <BrushTransition Property="BorderBrush" Duration="0:0:0.10" />
+          </Transitions>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="Button.row-action:pointerover">
+      <Setter Property="Background" Value="#3A4150" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.AccentGradient}" />
+    </Style>
+
+    <Style Selector="Button.row-action:pressed">
+      <Setter Property="RenderTransform">
+        <Setter.Value>
+          <ScaleTransform ScaleX="0.97" ScaleY="0.97" />
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="Button.row-action:disabled">
+      <Setter Property="Background" Value="#2A2D34" />
+      <Setter Property="Foreground" Value="#80838C" />
+      <Setter Property="BorderBrush" Value="#3A3D45" />
+    </Style>
   </UserControl.Styles>
 
-  <Border Background="#1f2229" Padding="16">
+  <UserControl.Resources>
+    <DataTemplate x:Key="ReceivingProductLookupTemplate">
+      <TextBlock Text="{Binding ProductName}" />
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <Border Background="{StaticResource Brush.MainBackground}" Padding="16">
     <ScrollViewer>
       <StackPanel Spacing="16">
 
-        <TextBlock
-            Text="Tickets"
-            FontSize="22"
-            FontWeight="Bold"
-            Foreground="#f5f5f5" />
+        <!-- Header with animated glow (matching Customers header) -->
+        <StackPanel Spacing="4">
+          <Grid>
+            <TextBlock
+                Text="Tickets Receiving"
+                FontSize="20"
+                FontWeight="Bold"
+                Foreground="{StaticResource Brush.TextPrimary}" />
+            <!-- Animated glow overlay -->
+            <TextBlock
+                Text="Tickets Receiving"
+                FontSize="20"
+                FontWeight="Bold"
+                Foreground="#4a9eff"
+                Opacity="0">
+              <TextBlock.Styles>
+                <Style Selector="TextBlock">
+                  <Style.Animations>
+                    <Animation Duration="0:0:5" IterationCount="INFINITE" Delay="0:0:0">
+                      <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0" />
+                      </KeyFrame>
+                      <KeyFrame Cue="10%">
+                        <Setter Property="Opacity" Value="0.8" />
+                      </KeyFrame>
+                      <KeyFrame Cue="30%">
+                        <Setter Property="Opacity" Value="0.8" />
+                      </KeyFrame>
+                      <KeyFrame Cue="40%">
+                        <Setter Property="Opacity" Value="0" />
+                      </KeyFrame>
+                      <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="0" />
+                      </KeyFrame>
+                    </Animation>
+                  </Style.Animations>
+                </Style>
+              </TextBlock.Styles>
+            </TextBlock>
+          </Grid>
+          <Border Height="2"
+                  Margin="0,0,0,8"
+                  CornerRadius="1">
+            <Border.Background>
+              <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                <LinearGradientBrush.GradientStops>
+                  <GradientStop Color="#1E88E5" Offset="0" />
+                  <GradientStop Color="#8EC5FC" Offset="0.5" />
+                  <GradientStop Color="#1E88E5" Offset="1" />
+                </LinearGradientBrush.GradientStops>
+              </LinearGradientBrush>
+            </Border.Background>
+          </Border>
+        </StackPanel>
 
         <!-- Unsaved ticket changes hint -->
         <StackPanel Orientation="Horizontal"
@@ -68,107 +193,396 @@
                         FontSize="11" />
         </StackPanel>
 
-        <Border Background="#252932" Padding="12" CornerRadius="4">
+        <!-- SEARCH TICKETS -->
+        <Border Background="{StaticResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
+            <TextBlock Text="Search tickets"
+                       Foreground="{StaticResource Brush.TextPrimary}"
+                       FontWeight="Bold" />
 
-            <StackPanel Orientation="Horizontal" Spacing="8">
-              <TextBox
-                  x:Name="TicketCustomerIdBox"
-                  Width="150"
-                  Watermark="Customer ID"
-                  Text="{Binding TicketCustomerIdText}" />
-              <TextBox
-                  x:Name="TicketNumberBox"
-                  Width="140"
-                  Watermark="Ticket Number"
-                  Text="{Binding TicketNumber}" />
-              <TextBox
-                  Width="120"
-                  Watermark="Type (weighbridge)"
-                  Text="{Binding TicketType}" />
+            <Grid Margin="0,8,0,0">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+              </Grid.RowDefinitions>
+
+              <!-- Row 0: Customer ID / ID Number -->
+              <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Customer ID" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchTicketCustomerIdText}" />
+              </StackPanel>
+              <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
+                <TextBlock Text="ID Number" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchTicketIdNumberText}" />
+              </StackPanel>
+
+              <!-- Row 1: First / Last name -->
+              <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2">
+                <TextBlock Text="First Name" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchTicketFirstNameText}" />
+              </StackPanel>
+              <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Last Name" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchTicketLastNameText}" />
+              </StackPanel>
+
+              <!-- Row 2: Account / Ticket number -->
+              <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Account Number" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchTicketAccountNumberText}" />
+              </StackPanel>
+              <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Ticket Number" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchTicketNumberText}" />
+              </StackPanel>
+
+              <!-- Row 3: Ticket type / Created date range -->
+              <StackPanel Grid.Row="3" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Ticket Type" Foreground="#c0c4cf" />
+                <ComboBox
+                    ItemsSource="{Binding TicketTypeOptions}"
+                    SelectedItem="{Binding SelectedSearchTicketTypeOption}"
+                    HorizontalAlignment="Stretch">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding Display}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+
+              <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Created date range" Foreground="#c0c4cf" />
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <TextBox Grid.Column="0"
+                           Margin="0,0,4,0"
+                           Watermark="From (yyyy-mm-dd)"
+                           Text="{Binding SearchTicketCreatedFromText}" />
+                  <TextBox Grid.Column="1"
+                           Margin="4,0,0,0"
+                           Watermark="To (yyyy-mm-dd)"
+                           Text="{Binding SearchTicketCreatedToText}" />
+                </Grid>
+              </StackPanel>
+            </Grid>
+
+            <!-- Search buttons -->
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="8"
+                        Margin="0,8,0,0">
+              <Button
+                  Width="100"
+                  Content="Clear"
+                  Command="{Binding ClearTicketSearchCommand}" />
+              <Button
+                  Classes="primary"
+                  Width="100"
+                  Content="Search"
+                  Command="{Binding SearchTicketsCommand}" />
             </StackPanel>
+          </StackPanel>
+        </Border>
 
-            <StackPanel Orientation="Horizontal" Spacing="8">
+        <!-- RESULTS TABLE -->
+        <Border Background="{StaticResource Brush.PanelBackground}" Padding="12" CornerRadius="4" Margin="0,8,0,0">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Ticket results"
+                       Foreground="{StaticResource Brush.TextPrimary}"
+                       FontWeight="Bold" />
+
+            <DataGrid
+                AutoGenerateColumns="False"
+                ItemsSource="{Binding TicketSearchResults}"
+                SelectedItem="{Binding SelectedTicket, Mode=TwoWay}">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding TicketId}" Width="80" />
+                <DataGridTextColumn Header="Ticket #" Binding="{Binding TicketNumber}" Width="140" />
+                <DataGridTextColumn Header="Type" Binding="{Binding TicketType}" Width="100" />
+                <DataGridTextColumn Header="Customer ID" Binding="{Binding CustomerId}" Width="100" />
+                <DataGridTextColumn Header="First Name" Binding="{Binding FirstName}" Width="120" />
+                <DataGridTextColumn Header="Last Name" Binding="{Binding LastName}" Width="120" />
+                <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" Width="*" />
+                <DataGridTextColumn Header="Site" Binding="{Binding SiteName}" Width="160" />
+                <DataGridTextColumn Header="Net kg" Binding="{Binding NetWeightKg, StringFormat='{}{0:N2}'}" Width="100" />
+                <DataGridTextColumn Header="Total incl VAT" Binding="{Binding TotalInclVat, StringFormat='{}{0:N2}'}" Width="130" />
+                <DataGridTextColumn Header="Created" Binding="{Binding CreatedTime, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" />
+                <DataGridTemplateColumn Header="" Width="90">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="4">
+                        <Button
+                            Classes="row-action"
+                            Content="Delete"
+                            Command="{Binding DataContext.DeleteTicketCommand,
+                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+              </DataGrid.Columns>
+            </DataGrid>
+          </StackPanel>
+        </Border>
+
+        <!-- Selected ticket summary -->
+        <Border Background="{StaticResource Brush.PanelBackground}" Padding="10" CornerRadius="4" Margin="0,8,0,0">
+          <StackPanel Spacing="4">
+            <TextBlock Text="Selected ticket"
+                       Foreground="{StaticResource Brush.TextPrimary}"
+                       FontWeight="Bold" />
+            <TextBlock Text="{Binding SelectedTicketSummary}"
+                       Foreground="#c0c4cf"
+                       TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <!-- Existing create / receiving layout -->
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+
+          <!-- Left: ticket header and weights -->
+          <Border Grid.Column="0" Background="{StaticResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
+            <StackPanel Spacing="8">
+
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBox
+                    x:Name="TicketCustomerIdBox"
+                    Width="150"
+                    Watermark="Customer ID"
+                    Text="{Binding TicketCustomerIdText}" />
+                <TextBox
+                    x:Name="TicketNumberBox"
+                    Width="140"
+                    Watermark="Ticket Number"
+                    Text="{Binding TicketNumber}" />
+                <ComboBox
+                    Width="160"
+                    ItemsSource="{Binding TicketTypeOptions}"
+                    SelectedItem="{Binding SelectedTicketTypeOption}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding Display}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock
+                    Text="Customer ID and Ticket Number are required."
+                    Foreground="#ff8888"
+                    FontSize="11"
+                    VerticalAlignment="Center"
+                    IsVisible="{Binding IsTicketCustomerIdInvalid}" />
+              </StackPanel>
+
+              <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                <TextBox
+                    Width="120"
+                    Watermark="First Weight (kg)"
+                    Text="{Binding TicketFirstWeightText}" />
+                <TextBox
+                    Width="120"
+                    Watermark="Second Weight (kg)"
+                    Text="{Binding TicketSecondWeightText}" />
+
+                <Button
+                    Content="Read Weighbridge"
+                    Command="{Binding ReadWeighbridgeCommand}" />
+                <Button
+                    Content="Read Platform"
+                    Command="{Binding ReadPlatformCommand}" />
+              </StackPanel>
+
+              <!-- Header / vehicle details -->
+              <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                <TextBox
+                    Width="160"
+                    Watermark="Vehicle Reg (optional)"
+                    Text="{Binding TicketVehicleRegistration}" />
+                <TextBox
+                    Width="150"
+                    Watermark="OFM WB Ticket"
+                    Text="{Binding TicketOfmWeighbridgeTicket}" />
+                <TextBox
+                    Width="150"
+                    Watermark="Foreign Ticket"
+                    Text="{Binding TicketForeignTicket}" />
+                <TextBox
+                    Width="140"
+                    Watermark="CK Number"
+                    Text="{Binding TicketCkNumber}" />
+              </StackPanel>
+
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBox
+                    x:Name="TicketUnitPriceBox"
+                    Width="120"
+                    Watermark="Unit Price /kg"
+                    Text="{Binding TicketUnitPriceText}" />
+                <TextBox
+                    Width="80"
+                    Watermark="Currency"
+                    Text="{Binding TicketCurrencyCode}" />
+                <TextBox
+                    Width="240"
+                    Watermark="Product Description"
+                    Text="{Binding TicketProductDescription}" />
+              </StackPanel>
+
               <TextBlock
-                  Text="Customer ID and Ticket Number are required."
+                  Text="Unit price is required and must be numeric."
                   Foreground="#ff8888"
                   FontSize="11"
-                  VerticalAlignment="Center"
-                  IsVisible="{Binding IsTicketCustomerIdInvalid}" />
+                  IsVisible="{Binding IsTicketUnitPriceInvalid}" />
+
+              <StackPanel Spacing="4" Margin="0,8,0,0">
+                <TextBlock Text="Notes" Foreground="#c0c4cf" />
+                <TextBox
+                    Text="{Binding TicketNotes}"
+                    AcceptsReturn="True"
+                    TextWrapping="Wrap"
+                    Height="80" />
+              </StackPanel>
+
+              <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                <Button
+                    Content="Create Ticket"
+                    Command="{Binding CreateTicketCommand}" />
+              </StackPanel>
+
+              <Border Background="#1f2229" Padding="8" CornerRadius="4" Margin="0,8,0,0">
+                <TextBlock
+                    Text="{Binding LastCreatedTicketSummary}"
+                    Foreground="#c0c4cf"
+                    TextWrapping="Wrap" />
+              </Border>
             </StackPanel>
+          </Border>
 
-            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-              <TextBox
-                  Width="120"
-                  Watermark="First Weight (kg)"
-                  Text="{Binding TicketFirstWeightText}" />
-              <TextBox
-                  Width="120"
-                  Watermark="Second Weight (kg)"
-                  Text="{Binding TicketSecondWeightText}" />
+          <!-- Right: receiving lines + ticket report -->
+          <StackPanel Grid.Column="1" Spacing="10">
 
-              <Button
-                  Content="Read Weighbridge"
-                  Command="{Binding ReadWeighbridgeCommand}" />
-              <Button
-                  Content="Read Platform"
-                  Command="{Binding ReadPlatformCommand}" />
-            </StackPanel>
-
-            <StackPanel Orientation="Horizontal" Spacing="8">
-              <TextBox
-                  x:Name="TicketUnitPriceBox"
-                  Width="120"
-                  Watermark="Unit Price /kg"
-                  Text="{Binding TicketUnitPriceText}" />
-              <TextBox
-                  Width="80"
-                  Watermark="Currency"
-                  Text="{Binding TicketCurrencyCode}" />
-              <TextBox
-                  Width="240"
-                  Watermark="Product Description"
-                  Text="{Binding TicketProductDescription}" />
-            </StackPanel>
-
-            <TextBlock
-                Text="Unit price is required and must be numeric."
-                Foreground="#ff8888"
-                FontSize="11"
-                IsVisible="{Binding IsTicketUnitPriceInvalid}" />
-
-            <StackPanel Spacing="4" Margin="0,8,0,0">
-              <TextBlock Text="Notes" Foreground="#c0c4cf" />
-              <TextBox
-                  Text="{Binding TicketNotes}"
-                  AcceptsReturn="True"
-                  TextWrapping="Wrap"
-                  Height="80" />
-            </StackPanel>
-
-            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-              <Button
-                  Content="Create Ticket"
-                  Command="{Binding CreateTicketCommand}" />
-            </StackPanel>
-
-            <Border Background="#1f2229" Padding="8" CornerRadius="4" Margin="0,8,0,0">
-              <TextBlock
-                  Text="{Binding LastCreatedTicketSummary}"
-                  Foreground="#c0c4cf"
-                  TextWrapping="Wrap" />
-            </Border>
-
-            <Border Background="#252932"
+            <!-- Receiving line items -->
+            <Border Background="{StaticResource Brush.PanelBackground}"
                     Padding="10"
-                    CornerRadius="4"
-                    Margin="0,12,0,0">
-              <StackPanel Spacing="6">
-
-                <TextBlock Text="Ticket Report (PDF)"
+                    CornerRadius="4">
+              <StackPanel Spacing="8">
+                <TextBlock Text="Receiving lines"
                            FontSize="14"
                            FontWeight="Bold"
                            Foreground="#f5f5f5" />
+
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBox Width="220"
+                           Watermark="Search product..."
+                           Text="{Binding ReceivingProductSearchText, UpdateSourceTrigger=PropertyChanged}" />
+                  <ComboBox Width="220"
+                            ItemsSource="{Binding ReceivingProductSuggestions}"
+                            SelectedItem="{Binding ReceivingSelectedProduct}"
+                            ItemTemplate="{StaticResource ReceivingProductLookupTemplate}" />
+                  <TextBox Width="120"
+                           Watermark="Weight (kg)"
+                           Text="{Binding ReceivingWeightText}" />
+                  <Button Content="Add Line"
+                          Command="{Binding AddReceivingLineCommand}" />
+                </StackPanel>
+
+                <DataGrid AutoGenerateColumns="False"
+                          ItemsSource="{Binding ReceivingLines}"
+                          HeadersVisibility="Column"
+                          Margin="0,8,0,0"
+                          Height="200">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Product"
+                                        Binding="{Binding ProductName}"
+                                        Width="*" />
+                    <DataGridTextColumn Header="Weight (kg)"
+                                        Binding="{Binding WeightKg, StringFormat='{}{0:N2}'}"
+                                        Width="120" />
+                    <DataGridTextColumn Header="Unit Price /kg"
+                                        Binding="{Binding UnitPricePerKg, StringFormat='{}{0:N2}'}"
+                                        Width="140" />
+                    <DataGridTextColumn Header="Amount ex VAT"
+                                        Binding="{Binding LineTotal, StringFormat='{}{0:N2}'}"
+                                        Width="140" />
+                    <DataGridTextColumn Header="VAT (15%)"
+                                        Binding="{Binding VatAmount, StringFormat='{}{0:N2}'}"
+                                        Width="120" />
+                    <DataGridTextColumn Header="Amount incl VAT"
+                                        Binding="{Binding TotalInclVat, StringFormat='{}{0:N2}'}"
+                                        Width="150" />
+                    <DataGridTemplateColumn Header="" Width="90">
+                      <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                          <Button
+                            Classes="row-action"
+                            Content="Delete"
+                            Padding="6,2"
+                            Command="{Binding DataContext.RemoveReceivingLineCommand,
+                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
+                        </DataTemplate>
+                      </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                  </DataGrid.Columns>
+                </DataGrid>
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="16">
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="Total ex VAT"
+                               Foreground="#c0c4cf"
+                               FontSize="11" />
+                    <TextBlock Text="{Binding ReceivingTotalExclVat, StringFormat='{}{0:N2}'}"
+                               Foreground="#f5f5f5"
+                               FontWeight="Bold" />
+                  </StackPanel>
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="VAT"
+                               Foreground="#c0c4cf"
+                               FontSize="11" />
+                    <TextBlock Text="{Binding ReceivingTotalVat, StringFormat='{}{0:N2}'}"
+                               Foreground="#f5f5f5"
+                               FontWeight="Bold" />
+                  </StackPanel>
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="Total incl VAT"
+                               Foreground="#c0c4cf"
+                               FontSize="11" />
+                    <TextBlock Text="{Binding ReceivingTotalInclVat, StringFormat='{}{0:N2}'}"
+                               Foreground="#f5f5f5"
+                               FontWeight="Bold" />
+                  </StackPanel>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- Ticket report -->
+            <Border Background="{StaticResource Brush.PanelBackground}"
+                    Padding="12"
+                    CornerRadius="4">
+              <StackPanel Margin="2" Spacing="8">
+                <TextBlock Text="Ticket Report (PDF)"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           Foreground="#f5f5f5"
+                           Margin="0,0,0,4"/>
 
                 <StackPanel Orientation="Horizontal" Spacing="10">
                   <TextBlock Text="Ticket ID:"
@@ -176,58 +590,24 @@
                              VerticalAlignment="Center"
                              Foreground="#c0c4cf" />
                   <TextBox Text="{Binding TicketReportTicketIdText}"
-                           Width="150"
-                           Watermark="Ticket ID" />
+                           Width="120" />
                   <Button Content="Download Ticket PDF"
-                          Width="180"
+                          Width="170"
                           Command="{Binding DownloadTicketReportCommand}" />
                 </StackPanel>
 
                 <TextBlock Text="Last Ticket PDF Path:"
                            FontWeight="Bold"
-                           Margin="0,6,0,0"
-                           Foreground="#c0c4cf" />
+                           Foreground="#c0c4cf"
+                           Margin="0,10,0,0" />
                 <TextBlock Text="{Binding LastTicketReportPath}"
                            TextWrapping="Wrap"
-                           Foreground="#c0c4cf"
-                           FontSize="11" />
-                </StackPanel>
+                           Foreground="#e5e7eb" />
+              </StackPanel>
             </Border>
+
           </StackPanel>
-        </Border>
-
-      <Border Background="#252932"
-              Padding="12"
-              CornerRadius="4"
-              Margin="0,10,0,0">
-        <StackPanel Margin="2" Spacing="8">
-          <TextBlock Text="Ticket Report (PDF)"
-                     FontSize="16"
-                     FontWeight="Bold"
-                     Foreground="#f5f5f5"
-                     Margin="0,0,0,4"/>
-
-          <StackPanel Orientation="Horizontal" Spacing="10">
-            <TextBlock Text="Ticket ID:"
-                       Width="100"
-                       VerticalAlignment="Center"
-                       Foreground="#c0c4cf" />
-            <TextBox Text="{Binding TicketReportTicketIdText}"
-                     Width="120" />
-            <Button Content="Download Ticket PDF"
-                    Width="170"
-                    Command="{Binding DownloadTicketReportCommand}" />
-          </StackPanel>
-
-          <TextBlock Text="Last Ticket PDF Path:"
-                     FontWeight="Bold"
-                     Foreground="#c0c4cf"
-                     Margin="0,10,0,0" />
-          <TextBlock Text="{Binding LastTicketReportPath}"
-                     TextWrapping="Wrap"
-                     Foreground="#e5e7eb" />
-        </StackPanel>
-      </Border>
+        </Grid>
 
       </StackPanel>
     </ScrollViewer>
