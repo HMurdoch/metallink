@@ -120,10 +120,66 @@
     <Border Grid.Column="0" Grid.RowSpan="2" Background="{StaticResource Brush.NavBackground}">
       <DockPanel>
 
-        <!-- Top header -->
+        <!-- Top header with animated branding -->
         <StackPanel DockPanel.Dock="Top" Margin="12,12,12,8" Spacing="3">
-          <TextBlock Text="Metal Link Desktop" FontSize="16" FontWeight="Bold" Foreground="White"/>
-          <TextBlock Text="{Binding LoggedInUserDisplay}" FontSize="12" Foreground="#b7bcc9"/>
+          <Grid>
+            <!-- Base layer -->
+            <TextBlock Text="Metal Link Desktop" 
+                       FontSize="22" 
+                       FontWeight="Bold" 
+                       Foreground="#f5f5f5"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center" />
+            
+            <!-- Animated gradient overlay with color sweep -->
+            <TextBlock Text="Metal Link Desktop" 
+                       FontSize="22" 
+                       FontWeight="Bold"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"
+                       Opacity="0">
+              <TextBlock.Foreground>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                  <GradientStop Color="#1E88E5" Offset="0" />
+                  <GradientStop Color="#8EC5FC" Offset="0.3" />
+                  <GradientStop Color="#4FC3F7" Offset="0.5" />
+                  <GradientStop Color="#8EC5FC" Offset="0.7" />
+                  <GradientStop Color="#1E88E5" Offset="1" />
+                </LinearGradientBrush>
+              </TextBlock.Foreground>
+              <TextBlock.Styles>
+                <Style Selector="TextBlock">
+                  <Style.Animations>
+                    <!-- Color sweep animation with intensity variation -->
+                    <Animation Duration="0:0:3" IterationCount="INFINITE">
+                      <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0" />
+                      </KeyFrame>
+                      <KeyFrame Cue="15%">
+                        <Setter Property="Opacity" Value="0.7" />
+                      </KeyFrame>
+                      <KeyFrame Cue="30%">
+                        <Setter Property="Opacity" Value="0.95" />
+                      </KeyFrame>
+                      <KeyFrame Cue="50%">
+                        <Setter Property="Opacity" Value="0.95" />
+                      </KeyFrame>
+                      <KeyFrame Cue="65%">
+                        <Setter Property="Opacity" Value="0.7" />
+                      </KeyFrame>
+                      <KeyFrame Cue="80%">
+                        <Setter Property="Opacity" Value="0" />
+                      </KeyFrame>
+                      <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="0" />
+                      </KeyFrame>
+                    </Animation>
+                  </Style.Animations>
+                </Style>
+              </TextBlock.Styles>
+            </TextBlock>
+          </Grid>
+          <TextBlock Text="{Binding LoggedInUserDisplay}" FontSize="12" Foreground="#b7bcc9" TextAlignment="Center"/>
         </StackPanel>
 
         <!-- Navigation items -->
