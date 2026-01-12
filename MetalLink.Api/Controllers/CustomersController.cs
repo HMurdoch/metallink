@@ -265,9 +265,14 @@ public sealed class CustomersController : ControllerBase
         string imageType,
         CancellationToken cancellationToken)
     {
+        Console.WriteLine($"[API] DownloadImage called: customerId={customerId}, imageType={imageType}");
+        
         var customer = await _customerRepository.GetByIdAsync(customerId, cancellationToken);
         if (customer == null)
+        {
+            Console.WriteLine($"[API] Customer {customerId} not found");
             return NotFound("Customer not found");
+        }
 
         // Get the image path based on type
         string? imagePath = imageType.ToLower() switch
@@ -280,22 +285,32 @@ public sealed class CustomersController : ControllerBase
             _ => null
         };
 
+        Console.WriteLine($"[API] Image path for {imageType}: {imagePath}");
+
         if (string.IsNullOrWhiteSpace(imagePath))
+        {
+            Console.WriteLine($"[API] Image path is null or empty");
             return NotFound("Image not found");
+        }
 
         try
         {
             // Get pre-signed URL from storage
+            Console.WriteLine($"[API] Getting pre-signed URL for {imagePath}");
             var url = _fileStorage.GetFileUrl(imagePath, TimeSpan.FromMinutes(5));
+            Console.WriteLine($"[API] Pre-signed URL: {url}");
             
             // Download the image from storage
             using var httpClient = new HttpClient();
+            Console.WriteLine($"[API] Downloading image from storage...");
             var imageData = await httpClient.GetByteArrayAsync(url, cancellationToken);
+            Console.WriteLine($"[API] Downloaded {imageData.Length} bytes");
             
             return File(imageData, "image/png");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine($"[API] Error downloading image: {ex.Message}");
             return NotFound("Image file not found in storage");
         }
     }
