@@ -40,6 +40,13 @@ public class Customer
     // NEW: moved from Company → Customer (matches DB)
     public bool Taxable { get; set; } = true;
 
+    // Customer Images (stored in file storage)
+    public string? IdCardImagePath { get; set; }
+    public string? DriverLicenseImagePath { get; set; }
+    public string? PhotoImagePath { get; set; }
+    public string? SignatureImagePath { get; set; }
+    public string? FingerprintImagePath { get; set; }
+
     // Audit
     public bool     IsActive    { get; set; } = true;
     public DateTime? CreatedTime { get; set; }

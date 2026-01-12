@@ -54,4 +54,11 @@ public sealed class CustomerDto
     public bool     IsActive    { get; set; }
     public DateTime? CreatedTime { get; set; }
     public DateTime? UpdatedTime { get; set; }
+
+    // Customer Images (file storage paths)
+    public string? IdCardImagePath { get; set; }
+    public string? DriverLicenseImagePath { get; set; }
+    public string? PhotoImagePath { get; set; }
+    public string? SignatureImagePath { get; set; }
+    public string? FingerprintImagePath { get; set; }
 }
