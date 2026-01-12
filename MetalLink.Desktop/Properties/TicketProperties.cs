@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using MetalLink.Shared.Tickets;
+using MetalLink.Shared.Products;
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -91,6 +93,7 @@ public partial class MainWindowViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasUnsavedTicket));
             OnPropertyChanged(nameof(HasUnsavedChanges));
+            OnTicketTypeChanged(); // Trigger conditional logic
         }
     }
 
@@ -255,6 +258,138 @@ public partial class MainWindowViewModel
         {
             if (LastCreatedTicket == null) return "No ticket created yet.";
             return $"Ticket {LastCreatedTicket.TicketNumber}: Net {LastCreatedTicket.NetWeightKg} kg, Total {LastCreatedTicket.TotalAmount} {LastCreatedTicket.CurrencyCode}";
+        }
+    }
+
+    // --- Edit Mode Properties ---
+
+    private long? _editingTicketId;
+    public long? EditingTicketId
+    {
+        get => _editingTicketId;
+        set
+        {
+            _editingTicketId = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsTicketEditMode));
+            OnPropertyChanged(nameof(IsTicketCreateMode));
+            OnPropertyChanged(nameof(TicketSaveButtonText));
+        }
+    }
+
+    public bool IsTicketEditMode => EditingTicketId.HasValue;
+    public bool IsTicketCreateMode => !EditingTicketId.HasValue;
+    public string TicketSaveButtonText => IsTicketEditMode ? "Update Ticket" : "Create Ticket";
+
+    // --- Product Search Properties ---
+
+    private string _ticketProductSearchText = string.Empty;
+    public string TicketProductSearchText
+    {
+        get => _ticketProductSearchText;
+        set
+        {
+            _ticketProductSearchText = value;
+            OnPropertyChanged();
+            
+            // When text search changes, clear product letter filter to null/empty
+            // This allows substring search instead of showing ALL products
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                _selectedTicketProductLetter = string.Empty;
+                OnPropertyChanged(nameof(SelectedTicketProductLetter));
+            }
+        }
+    }
+
+    private string _selectedTicketProductLetter = "ALL";
+    public string SelectedTicketProductLetter
+    {
+        get => _selectedTicketProductLetter;
+        set
+        {
+            _selectedTicketProductLetter = value;
+            OnPropertyChanged();
+            
+            // When letter filter is selected, clear text search
+            if (!string.IsNullOrWhiteSpace(value) && !string.IsNullOrWhiteSpace(TicketProductSearchText))
+            {
+                _ticketProductSearchText = string.Empty;
+                OnPropertyChanged(nameof(TicketProductSearchText));
+            }
+            
+            // Filter products by letter
+            ApplyTicketProductFilter();
+        }
+    }
+
+    private ProductLookupDto? _selectedTicketProduct;
+    public ProductLookupDto? SelectedTicketProduct
+    {
+        get => _selectedTicketProduct;
+        set
+        {
+            _selectedTicketProduct = value;
+            OnPropertyChanged();
+            
+            // When product selected, update description
+            if (value != null)
+            {
+                TicketProductDescription = value.ProductName;
+            }
+        }
+    }
+
+    public ObservableCollection<ProductLookupDto> TicketProductSuggestions { get; } = new();
+
+    private void ApplyTicketProductFilter()
+    {
+        // This will be implemented in the ViewModel to filter products
+        // based on SelectedTicketProductLetter
+    }
+
+    // --- Currency Properties ---
+
+    private string _selectedCurrency = "ZAR";
+    public string SelectedCurrency
+    {
+        get => _selectedCurrency;
+        set
+        {
+            _selectedCurrency = value;
+            OnPropertyChanged();
+            TicketCurrencyCode = value;
+        }
+    }
+
+    public ObservableCollection<string> CurrencyOptions { get; } = new() { "ZAR", "USD", "EUR", "GBP" };
+
+    // --- Platform/Weighbridge Conditional Logic ---
+
+    public bool IsWeighbridgeMode => SelectedTicketTypeOption?.Key == "weighbridge";
+    public bool IsPlatformMode => SelectedTicketTypeOption?.Key == "platform";
+    
+    // Fields enabled based on ticket type
+    public bool AreWeightsEnabled => IsWeighbridgeMode;
+    public bool IsProductSelectionEnabled => IsWeighbridgeMode;
+    public bool AreVehicleFieldsEnabled => IsWeighbridgeMode;
+
+    // When ticket type changes, notify all conditional properties
+    private void OnTicketTypeChanged()
+    {
+        OnPropertyChanged(nameof(IsWeighbridgeMode));
+        OnPropertyChanged(nameof(IsPlatformMode));
+        OnPropertyChanged(nameof(AreWeightsEnabled));
+        OnPropertyChanged(nameof(IsProductSelectionEnabled));
+        OnPropertyChanged(nameof(AreVehicleFieldsEnabled));
+        
+        // Clear weights if switching to Platform mode
+        if (IsPlatformMode)
+        {
+            TicketFirstWeightText = string.Empty;
+            TicketSecondWeightText = string.Empty;
+            SelectedTicketProduct = null;
+            TicketProductSearchText = string.Empty;
         }
     }
 }
