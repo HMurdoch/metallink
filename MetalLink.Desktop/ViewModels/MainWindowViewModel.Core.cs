@@ -724,12 +724,15 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
             // API will allocate AccountNumber from the DB identity
             var created = await _customerService.CreateCustomerAsync(dto);
-
+            
             if (created == null)
             {
                 StatusMessage = "Customer create failed - API returned no result.";
                 return;
             }
+
+            // Upload images if captured
+            await UploadCustomerImagesAsync(created.CustomerId);
 
             // store raw number and refresh displayed padded text
             _newAccountNumber = created.AccountNumber;
@@ -1150,6 +1153,88 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     protected new void OnPropertyChanged([CallerMemberName] string? name = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+
+    // --- Image upload helpers ---
+
+    private async Task UploadCustomerImagesAsync(long customerId)
+    {
+        try
+        {
+            // Upload ID card if captured
+            if (IdCardImage != null)
+            {
+                var imageData = BitmapToBytes(IdCardImage);
+                if (imageData != null)
+                {
+                    await _customerService.UploadCustomerImageAsync(
+                        customerId, "idcard", imageData, "image/png");
+                }
+            }
+
+            // Upload driver license if captured
+            if (DriverLicenseImage != null)
+            {
+                var imageData = BitmapToBytes(DriverLicenseImage);
+                if (imageData != null)
+                {
+                    await _customerService.UploadCustomerImageAsync(
+                        customerId, "driverlicense", imageData, "image/png");
+                }
+            }
+
+            // Upload photo if captured
+            if (PhotoImage != null)
+            {
+                var imageData = BitmapToBytes(PhotoImage);
+                if (imageData != null)
+                {
+                    await _customerService.UploadCustomerImageAsync(
+                        customerId, "photo", imageData, "image/png");
+                }
+            }
+
+            // Upload signature if captured
+            if (SignatureImage != null)
+            {
+                var imageData = BitmapToBytes(SignatureImage);
+                if (imageData != null)
+                {
+                    await _customerService.UploadCustomerImageAsync(
+                        customerId, "signature", imageData, "image/png");
+                }
+            }
+
+            // Upload fingerprint if captured
+            if (FingerprintImage != null)
+            {
+                var imageData = BitmapToBytes(FingerprintImage);
+                if (imageData != null)
+                {
+                    await _customerService.UploadCustomerImageAsync(
+                        customerId, "fingerprint", imageData, "image/png");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error uploading images: {ex.Message}");
+            // Don't throw - images are optional
+        }
+    }
+
+    private byte[]? BitmapToBytes(Avalonia.Media.Imaging.Bitmap bitmap)
+    {
+        try
+        {
+            using var memoryStream = new MemoryStream();
+            bitmap.Save(memoryStream);
+            return memoryStream.ToArray();
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     // --- Nested helpers ---

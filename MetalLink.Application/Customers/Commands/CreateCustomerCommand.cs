@@ -20,4 +20,11 @@ public sealed record CreateCustomerCommand : IRequest<CustomerDto?>
 
     // NEW – customer-level taxable flag
     public bool Taxable { get; init; } = true;
+
+    // Customer image paths
+    public string? IdCardImagePath { get; init; }
+    public string? DriverLicenseImagePath { get; init; }
+    public string? PhotoImagePath { get; init; }
+    public string? SignatureImagePath { get; init; }
+    public string? FingerprintImagePath { get; init; }
 }

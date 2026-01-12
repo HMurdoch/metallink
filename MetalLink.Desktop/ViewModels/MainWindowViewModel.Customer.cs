@@ -300,6 +300,10 @@ public partial class MainWindowViewModel
         };
 
         await _customerService.UpdateCustomerAsync(dto);
+        
+        // Upload images if captured
+        await UploadCustomerImagesAsync(dto.CustomerId);
+        
         FoundCustomer = await _customerService.GetCustomerByIdAsync(dto.CustomerId);
 
         // Pull fresh copy from API (includes SiteName + AddressLine2 etc)

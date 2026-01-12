@@ -68,4 +68,33 @@ public sealed class CustomerService
             "api/customers/next-account-number",
             cancellationToken)!;
     }
+
+    /// <summary>
+    /// Uploads a customer image to the server and returns the storage path
+    /// </summary>
+    public async Task<string?> UploadCustomerImageAsync(
+        long customerId,
+        string imageType,
+        byte[] imageData,
+        string contentType = "image/png",
+        CancellationToken cancellationToken = default)
+    {
+        var request = new
+        {
+            ImageData = imageData,
+            ContentType = contentType
+        };
+
+        var response = await _apiClient.PostAsync<object, UploadImageResponse>(
+            $"api/customers/{customerId}/images/{imageType}",
+            request,
+            cancellationToken);
+
+        return response?.ImagePath;
+    }
+
+    private sealed class UploadImageResponse
+    {
+        public string? ImagePath { get; set; }
+    }
 }

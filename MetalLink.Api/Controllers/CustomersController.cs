@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using MetalLink.Application.Customers.Queries;
 using MetalLink.Shared.Customers;
 using MetalLink.Application.Interfaces;
+using System.Text;
 
 namespace MetalLink.Api.Controllers;
 
@@ -14,11 +15,13 @@ public sealed class CustomersController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ICustomerRepository _customerRepository;
+    private readonly IFileStorage _fileStorage;
 
-    public CustomersController(IMediator mediator, ICustomerRepository customerRepository)
+    public CustomersController(IMediator mediator, ICustomerRepository customerRepository, IFileStorage fileStorage)
     {
         _mediator = mediator;
         _customerRepository = customerRepository;
+        _fileStorage = fileStorage;
     }
 
     // -----------------------------
@@ -56,7 +59,14 @@ public sealed class CustomersController : ControllerBase
             PhoneNumber = dto.PhoneNumber,
             MobileNumber = dto.MobileNumber,
             Email = dto.Email,
-            Taxable = dto.Taxable
+            Taxable = dto.Taxable,
+            
+            // Image paths
+            IdCardImagePath = dto.IdCardImagePath,
+            DriverLicenseImagePath = dto.DriverLicenseImagePath,
+            PhotoImagePath = dto.PhotoImagePath,
+            SignatureImagePath = dto.SignatureImagePath,
+            FingerprintImagePath = dto.FingerprintImagePath
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -145,6 +155,18 @@ public sealed class CustomersController : ControllerBase
         customer.Email = dto.Email;
         customer.Taxable = dto.Taxable;
 
+        // Update image paths if provided
+        if (!string.IsNullOrWhiteSpace(dto.IdCardImagePath))
+            customer.IdCardImagePath = dto.IdCardImagePath;
+        if (!string.IsNullOrWhiteSpace(dto.DriverLicenseImagePath))
+            customer.DriverLicenseImagePath = dto.DriverLicenseImagePath;
+        if (!string.IsNullOrWhiteSpace(dto.PhotoImagePath))
+            customer.PhotoImagePath = dto.PhotoImagePath;
+        if (!string.IsNullOrWhiteSpace(dto.SignatureImagePath))
+            customer.SignatureImagePath = dto.SignatureImagePath;
+        if (!string.IsNullOrWhiteSpace(dto.FingerprintImagePath))
+            customer.FingerprintImagePath = dto.FingerprintImagePath;
+
         customer.UpdatedTime = DateTime.UtcNow;
 
         // Address, province and country belong to Site; update them via Site endpoints, not customer update.
@@ -165,4 +187,52 @@ public sealed class CustomersController : ControllerBase
         var next = await _customerRepository.GetNextAccountNumberAsync(ct);
         return Ok(next);
     }
+
+    // -----------------------------
+    // UPLOAD CUSTOMER IMAGE
+    // -----------------------------
+    [HttpPost("{customerId:long}/images/{imageType}")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UploadImage(
+        long customerId,
+        string imageType,
+        [FromBody] UploadImageRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.ImageData == null || request.ImageData.Length == 0)
+            return BadRequest("Image data is required");
+
+        // Validate image type
+        var validTypes = new[] { "idcard", "driverlicense", "photo", "signature", "fingerprint" };
+        if (!validTypes.Contains(imageType.ToLower()))
+            return BadRequest($"Invalid image type. Valid types: {string.Join(", ", validTypes)}");
+
+        // Generate storage key
+        var extension = request.ContentType switch
+        {
+            "image/jpeg" => "jpg",
+            "image/png" => "png",
+            "image/gif" => "gif",
+            _ => "jpg"
+        };
+        
+        var key = $"customers/{customerId}/{imageType}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.{extension}";
+
+        // Upload to storage
+        await _fileStorage.UploadAsync(
+            request.ImageData,
+            request.ContentType ?? "image/jpeg",
+            key,
+            cancellationToken);
+
+        // Return the storage key/path
+        return Ok(new { ImagePath = key });
+    }
+}
+
+public sealed class UploadImageRequest
+{
+    public byte[] ImageData { get; set; } = Array.Empty<byte>();
+    public string? ContentType { get; set; }
 }

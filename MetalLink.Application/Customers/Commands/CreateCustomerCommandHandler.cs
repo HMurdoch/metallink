@@ -47,7 +47,14 @@ public sealed class CreateCustomerCommandHandler
             Taxable       = request.Taxable,
             IsActive      = true,
             CreatedTime   = now,
-            UpdatedTime   = now
+            UpdatedTime   = now,
+            
+            // Image paths
+            IdCardImagePath = request.IdCardImagePath,
+            DriverLicenseImagePath = request.DriverLicenseImagePath,
+            PhotoImagePath = request.PhotoImagePath,
+            SignatureImagePath = request.SignatureImagePath,
+            FingerprintImagePath = request.FingerprintImagePath
         };
 
         await _customerRepository.AddAsync(customer, cancellationToken);
@@ -77,7 +84,14 @@ public sealed class CreateCustomerCommandHandler
 
             IsActive    = customer.IsActive,
             CreatedTime = customer.CreatedTime,
-            UpdatedTime = customer.UpdatedTime
+            UpdatedTime = customer.UpdatedTime,
+
+            // Image paths
+            IdCardImagePath = customer.IdCardImagePath,
+            DriverLicenseImagePath = customer.DriverLicenseImagePath,
+            PhotoImagePath = customer.PhotoImagePath,
+            SignatureImagePath = customer.SignatureImagePath,
+            FingerprintImagePath = customer.FingerprintImagePath
 
             // CompanyName, SiteName, address, Province, Country, etc.
             // are intentionally left null here – they will be filled by
