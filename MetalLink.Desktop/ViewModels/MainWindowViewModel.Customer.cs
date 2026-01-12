@@ -108,6 +108,7 @@ public partial class MainWindowViewModel
         SearchLastNameText = string.Empty;
         SearchCompanyNameText = string.Empty;
         SearchIdNumberText = string.Empty;
+        SearchAccountNumberText = string.Empty; // ✅ FIXED: Clear account number field
         SearchAddressLine1Text = string.Empty;
         SearchAddressLine2Text = string.Empty;
         SearchSuburbText = string.Empty;
@@ -124,6 +125,7 @@ public partial class MainWindowViewModel
         // Optional: reset site/company dropdowns if used
         SelectedSearchCompany = null;
         SelectedSearchSite = null;
+        SelectedCompanyLetter = "ALL"; // ✅ FIXED: Reset company letter filter
 
         // Optional: reload all customers
         //_ = SearchCustomersAsync();
@@ -590,6 +592,8 @@ public partial class MainWindowViewModel
 
     private async Task LoadSelectedCustomerImagesAsync(CustomerDto? customer)
     {
+        Console.WriteLine($"[DEBUG] LoadSelectedCustomerImagesAsync called for customer {customer?.CustomerId}");
+        
         // Clear existing images
         SelectedIdCardImage = null;
         SelectedDriverLicenseImage = null;
@@ -598,53 +602,86 @@ public partial class MainWindowViewModel
         SelectedFingerprintImage = null;
 
         if (customer == null)
+        {
+            Console.WriteLine($"[DEBUG] Customer is null, returning");
             return;
+        }
+
+        Console.WriteLine($"[DEBUG] Image paths - IdCard: {customer.IdCardImagePath}, DriverLicense: {customer.DriverLicenseImagePath}, Photo: {customer.PhotoImagePath}, Signature: {customer.SignatureImagePath}, Fingerprint: {customer.FingerprintImagePath}");
 
         try
         {
             // Download and display ID card image
             if (!string.IsNullOrWhiteSpace(customer.IdCardImagePath))
             {
+                Console.WriteLine($"[DEBUG] Downloading ID card image...");
                 var imageData = await _customerService.DownloadCustomerImageAsync(customer.CustomerId, "idcard");
+                Console.WriteLine($"[DEBUG] ID card image data: {imageData?.Length ?? 0} bytes");
                 if (imageData != null)
+                {
                     SelectedIdCardImage = LoadBitmapFromBytes(imageData);
+                    Console.WriteLine($"[DEBUG] ID card bitmap loaded: {SelectedIdCardImage != null}");
+                }
             }
 
             // Download and display driver license image
             if (!string.IsNullOrWhiteSpace(customer.DriverLicenseImagePath))
             {
+                Console.WriteLine($"[DEBUG] Downloading driver license image...");
                 var imageData = await _customerService.DownloadCustomerImageAsync(customer.CustomerId, "driverlicense");
+                Console.WriteLine($"[DEBUG] Driver license image data: {imageData?.Length ?? 0} bytes");
                 if (imageData != null)
+                {
                     SelectedDriverLicenseImage = LoadBitmapFromBytes(imageData);
+                    Console.WriteLine($"[DEBUG] Driver license bitmap loaded: {SelectedDriverLicenseImage != null}");
+                }
             }
 
             // Download and display photo
             if (!string.IsNullOrWhiteSpace(customer.PhotoImagePath))
             {
+                Console.WriteLine($"[DEBUG] Downloading photo image...");
                 var imageData = await _customerService.DownloadCustomerImageAsync(customer.CustomerId, "photo");
+                Console.WriteLine($"[DEBUG] Photo image data: {imageData?.Length ?? 0} bytes");
                 if (imageData != null)
+                {
                     SelectedPhotoImage = LoadBitmapFromBytes(imageData);
+                    Console.WriteLine($"[DEBUG] Photo bitmap loaded: {SelectedPhotoImage != null}");
+                }
             }
 
             // Download and display signature
             if (!string.IsNullOrWhiteSpace(customer.SignatureImagePath))
             {
+                Console.WriteLine($"[DEBUG] Downloading signature image...");
                 var imageData = await _customerService.DownloadCustomerImageAsync(customer.CustomerId, "signature");
+                Console.WriteLine($"[DEBUG] Signature image data: {imageData?.Length ?? 0} bytes");
                 if (imageData != null)
+                {
                     SelectedSignatureImage = LoadBitmapFromBytes(imageData);
+                    Console.WriteLine($"[DEBUG] Signature bitmap loaded: {SelectedSignatureImage != null}");
+                }
             }
 
             // Download and display fingerprint
             if (!string.IsNullOrWhiteSpace(customer.FingerprintImagePath))
             {
+                Console.WriteLine($"[DEBUG] Downloading fingerprint image...");
                 var imageData = await _customerService.DownloadCustomerImageAsync(customer.CustomerId, "fingerprint");
+                Console.WriteLine($"[DEBUG] Fingerprint image data: {imageData?.Length ?? 0} bytes");
                 if (imageData != null)
+                {
                     SelectedFingerprintImage = LoadBitmapFromBytes(imageData);
+                    Console.WriteLine($"[DEBUG] Fingerprint bitmap loaded: {SelectedFingerprintImage != null}");
+                }
             }
+            
+            Console.WriteLine($"[DEBUG] LoadSelectedCustomerImagesAsync completed");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading customer images: {ex.Message}");
+            Console.WriteLine($"[ERROR] Error loading customer images: {ex.Message}");
+            Console.WriteLine($"[ERROR] Stack trace: {ex.StackTrace}");
         }
     }
 }
