@@ -46,12 +46,19 @@ public sealed class ApiClient
         Console.WriteLine($"GET: {_httpClient.BaseAddress}{relativeUrl}");
 
         var response = await _httpClient.GetAsync(relativeUrl, cancellationToken);
-        var raw = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
+            var raw = await response.Content.ReadAsStringAsync(cancellationToken);
             throw new HttpRequestException(
                 $"API {(int)response.StatusCode} {response.ReasonPhrase}. Body: {raw}");
+        }
+
+        // Special handling for byte arrays (binary data like images)
+        if (typeof(TResponse) == typeof(byte[]))
+        {
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return (TResponse)(object)bytes;
         }
 
         return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken: cancellationToken);

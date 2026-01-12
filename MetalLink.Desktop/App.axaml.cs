@@ -23,6 +23,8 @@ public partial class App : Application
     public ICameraService CameraService { get; private set; } = null!;
     public TicketReportService TicketReportService { get; private set; } = null!;
     public ISignaturePadService SignaturePadService { get; private set; } = null!;
+    public IDocumentScanner DocumentScanner { get; private set; } = null!;
+    public IFingerprintScanner FingerprintScanner { get; private set; } = null!;
     public SiteService SiteService { get; private set; } = null!;
     public ProvinceService ProvinceService { get; private set; } = null!;
 
@@ -46,6 +48,8 @@ public partial class App : Application
         CameraService = new MockCameraService();
         TicketReportService = new TicketReportService(AuthState);
         SignaturePadService = new MockSignaturePadService(); // swap to real device later
+        DocumentScanner = new MockDocumentScanner();
+        FingerprintScanner = new MockFingerprintScanner();
         SiteService = new SiteService(ApiClient);
         ProvinceService = new ProvinceService(ApiClient);
 

@@ -106,6 +106,36 @@ public sealed class TicketService
             cancellationToken);
     }
 
+    public async Task<bool> UpdateTicketLineAsync(
+        long ticketId,
+        long ticketLineId,
+        long productId,
+        decimal weightKg,
+        decimal unitPricePerKg,
+        CancellationToken cancellationToken = default)
+    {
+        var body = new
+        {
+            productId,
+            weightKg,
+            unitPricePerKg
+        };
+
+        try
+        {
+            var response = await _apiClient.PutAsJsonAsync(
+                $"api/tickets/{ticketId}/lines/{ticketLineId}",
+                body,
+                cancellationToken);
+            
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public async Task<IReadOnlyList<TicketSearchResultDto>> SearchTicketsAsync(
         TicketSearchRequestDto request,
         CancellationToken cancellationToken = default)
