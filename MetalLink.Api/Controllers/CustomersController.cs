@@ -30,9 +30,6 @@ public sealed class CustomersController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [HttpPost]
-    [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
         [FromBody] CustomerDto dto,
         CancellationToken cancellationToken)
