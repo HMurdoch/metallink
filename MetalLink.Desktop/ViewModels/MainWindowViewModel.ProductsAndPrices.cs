@@ -17,7 +17,6 @@ public partial class MainWindowViewModel
     // Master cache for products (letter filtering)
     private readonly ObservableCollection<ProductLookupDto> _allProducts = new();
     private bool _productLettersLoaded = false;
-    private bool _productLettersLoading = false;
 
     // Commands
     public IAsyncRelayCommand SearchProductsCommand { get; private set; } = null!;
@@ -140,7 +139,7 @@ public partial class MainWindowViewModel
             var product = await _app.ProductsAndPricesService.CreateProductAsync(
                 new ProductDto
                 {
-                    ProductCode = string.IsNullOrWhiteSpace(ProductCode) ? null : ProductCode.Trim(),
+                    ProductCode = string.IsNullOrWhiteSpace(ProductCode) ? null! : ProductCode.Trim(),
                     ProductName = ProductName.Trim(),
                     Grade = ProductGrade,
                     IsActive = true
@@ -218,7 +217,7 @@ public partial class MainWindowViewModel
             var dto = new ProductDto
             {
                 ProductId = SelectedProduct.ProductId,
-                ProductCode = string.IsNullOrWhiteSpace(ProductCode) ? null : ProductCode.Trim(),
+                ProductCode = string.IsNullOrWhiteSpace(ProductCode) ? null! : ProductCode.Trim(),
                 ProductName = ProductName.Trim(),
                 Grade = ProductGrade,
                 IsActive = true
@@ -233,7 +232,7 @@ public partial class MainWindowViewModel
                 {
                     ProductId = SelectedProduct.ProductId,
                     ProductName = dto.ProductName,
-                    ProductCode = dto.ProductCode,
+                    ProductCode = dto.ProductCode!,
                     Grade = dto.Grade,
                     IsActive = true
                 };
@@ -247,7 +246,7 @@ public partial class MainWindowViewModel
             if (cache != null)
             {
                 cache.ProductName = dto.ProductName;
-                cache.ProductCode = dto.ProductCode;
+                cache.ProductCode = dto.ProductCode!;
                 cache.Grade = dto.Grade;
             }
 
@@ -366,7 +365,6 @@ public partial class MainWindowViewModel
             _productLetterFilters.Add(ch.ToString());
 
         _productLettersLoaded = true;
-        _productLettersLoading = false;
 
         var first = createdProduct.ProductName?.FirstOrDefault();
         var letterStr = first.HasValue ? char.ToUpperInvariant(first.Value).ToString() : "ALL";
@@ -436,7 +434,6 @@ public partial class MainWindowViewModel
                 _productLetterFilters.Add(ch.ToString());
 
             _productLettersLoaded = true;
-            _productLettersLoading = false;
 
             SelectedProductLetter ??= "ALL";
 
@@ -446,7 +443,6 @@ public partial class MainWindowViewModel
         {
             StatusMessage = $"[STATUS] Failed to load product letters: {ex.Message}";
             _productLettersLoaded = true;
-            _productLettersLoading = false;
         }
     }
 
