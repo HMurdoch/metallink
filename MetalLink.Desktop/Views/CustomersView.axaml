@@ -472,6 +472,69 @@
                 <TextBlock Grid.Row="12" Grid.Column="1" Text="{Binding CustomerSiteAddressSummary}" Foreground="#f5f5f5" FontSize="11" TextWrapping="Wrap" />
               </Grid>
             </Border>
+
+            <!-- Customer Images Display -->
+            <Border Margin="0,12,0,0" 
+                    Padding="12" 
+                    Background="#1f2937" 
+                    CornerRadius="4"
+                    BorderBrush="#4b5563"
+                    BorderThickness="1"
+                    IsVisible="{Binding SelectedCustomer, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <StackPanel Spacing="8">
+                <TextBlock Text="Customer Images" 
+                           FontWeight="Bold" 
+                           Foreground="{StaticResource Brush.TextPrimary}"
+                           FontSize="13"/>
+                
+                <UniformGrid Rows="2" Columns="3">
+                  <!-- ID Card -->
+                  <Border BorderBrush="#4b5563" BorderThickness="1" Margin="4" Background="#111827">
+                    <StackPanel>
+                      <TextBlock Text="ID Card" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
+                      <Image Source="{Binding SelectedIdCardImage}" 
+                             Width="200" Height="150" Stretch="Uniform" Margin="4"/>
+                    </StackPanel>
+                  </Border>
+                  
+                  <!-- Driver License -->
+                  <Border BorderBrush="#4b5563" BorderThickness="1" Margin="4" Background="#111827">
+                    <StackPanel>
+                      <TextBlock Text="Driver License" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
+                      <Image Source="{Binding SelectedDriverLicenseImage}" 
+                             Width="200" Height="150" Stretch="Uniform" Margin="4"/>
+                    </StackPanel>
+                  </Border>
+                  
+                  <!-- Photo -->
+                  <Border BorderBrush="#4b5563" BorderThickness="1" Margin="4" Background="#111827">
+                    <StackPanel>
+                      <TextBlock Text="Photo" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
+                      <Image Source="{Binding SelectedPhotoImage}" 
+                             Width="200" Height="150" Stretch="Uniform" Margin="4"/>
+                    </StackPanel>
+                  </Border>
+                  
+                  <!-- Signature -->
+                  <Border BorderBrush="#4b5563" BorderThickness="1" Margin="4" Background="#111827">
+                    <StackPanel>
+                      <TextBlock Text="Signature" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
+                      <Image Source="{Binding SelectedSignatureImage}" 
+                             Width="200" Height="150" Stretch="Uniform" Margin="4"/>
+                    </StackPanel>
+                  </Border>
+                  
+                  <!-- Fingerprint -->
+                  <Border BorderBrush="#4b5563" BorderThickness="1" Margin="4" Background="#111827">
+                    <StackPanel>
+                      <TextBlock Text="Fingerprint" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
+                      <Image Source="{Binding SelectedFingerprintImage}" 
+                             Width="200" Height="150" Stretch="Uniform" Margin="4"/>
+                    </StackPanel>
+                  </Border>
+                </UniformGrid>
+              </StackPanel>
+            </Border>
           </StackPanel>
         </Border>
 
@@ -583,7 +646,7 @@
               </StackPanel>
 
 
-              <!-- Row 8: Postal / Mobile -->
+              <!-- Row 5: Mobile / Email -->
               <StackPanel Grid.Row="5" Grid.Column="0" Spacing="2">
                 <TextBlock Text="Mobile" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding NewMobileNumber}" />
@@ -593,8 +656,75 @@
                 <TextBox Text="{Binding NewEmail}" />
               </StackPanel>
 
+              <!-- Customer Images Section -->
+              <Border Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2"
+                      Background="#1f2937" 
+                      Padding="12" 
+                      CornerRadius="4"
+                      Margin="0,16,0,0"
+                      BorderBrush="#4b5563"
+                      BorderThickness="1">
+                <StackPanel Spacing="12">
+                  <TextBlock Text="Customer Images (Optional)" 
+                             FontWeight="Bold" 
+                             Foreground="{StaticResource Brush.TextPrimary}"
+                             FontSize="13" />
+                  
+                  <!-- Row 1: ID Card, Driver License, Photo -->
+                  <UniformGrid Columns="3">
+                    <!-- ID Card -->
+                    <StackPanel Spacing="6" Margin="0,0,8,0">
+                      <TextBlock Text="ID Card" Foreground="#c0c4cf" FontSize="11" FontWeight="SemiBold"/>
+                      <Border BorderBrush="#4b5563" BorderThickness="1" Background="#111827" Height="100">
+                        <Image Source="{Binding IdCardImage}" Stretch="Uniform" Margin="4"/>
+                      </Border>
+                      <Button Content="📄 Scan ID" Command="{Binding CaptureIdCardCommand}" HorizontalAlignment="Stretch" FontSize="10"/>
+                    </StackPanel>
+                    
+                    <!-- Driver License -->
+                    <StackPanel Spacing="6" Margin="0,0,8,0">
+                      <TextBlock Text="Driver License" Foreground="#c0c4cf" FontSize="11" FontWeight="SemiBold"/>
+                      <Border BorderBrush="#4b5563" BorderThickness="1" Background="#111827" Height="100">
+                        <Image Source="{Binding DriverLicenseImage}" Stretch="Uniform" Margin="4"/>
+                      </Border>
+                      <Button Content="📄 Scan License" Command="{Binding CaptureDriverLicenseCommand}" HorizontalAlignment="Stretch" FontSize="10"/>
+                    </StackPanel>
+                    
+                    <!-- Photo -->
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="Photo" Foreground="#c0c4cf" FontSize="11" FontWeight="SemiBold"/>
+                      <Border BorderBrush="#4b5563" BorderThickness="1" Background="#111827" Height="100">
+                        <Image Source="{Binding PhotoImage}" Stretch="Uniform" Margin="4"/>
+                      </Border>
+                      <Button Content="📷 Take Photo" Command="{Binding CapturePhotoCommand}" HorizontalAlignment="Stretch" FontSize="10"/>
+                    </StackPanel>
+                  </UniformGrid>
+                  
+                  <!-- Row 2: Signature, Fingerprint -->
+                  <UniformGrid Columns="3" Margin="0,8,0,0">
+                    <!-- Signature -->
+                    <StackPanel Spacing="6" Margin="0,0,8,0">
+                      <TextBlock Text="Signature" Foreground="#c0c4cf" FontSize="11" FontWeight="SemiBold"/>
+                      <Border BorderBrush="#4b5563" BorderThickness="1" Background="#111827" Height="100">
+                        <Image Source="{Binding SignatureImage}" Stretch="Uniform" Margin="4"/>
+                      </Border>
+                      <Button Content="✍ Capture Signature" Command="{Binding CaptureSignatureCommand}" HorizontalAlignment="Stretch" FontSize="10"/>
+                    </StackPanel>
+                    
+                    <!-- Fingerprint -->
+                    <StackPanel Spacing="6" Margin="0,0,8,0">
+                      <TextBlock Text="Fingerprint" Foreground="#c0c4cf" FontSize="11" FontWeight="SemiBold"/>
+                      <Border BorderBrush="#4b5563" BorderThickness="1" Background="#111827" Height="100">
+                        <Image Source="{Binding FingerprintImage}" Stretch="Uniform" Margin="4"/>
+                      </Border>
+                      <Button Content="👆 Scan Fingerprint" Command="{Binding CaptureFingerprintCommand}" HorizontalAlignment="Stretch" FontSize="10"/>
+                    </StackPanel>
+                  </UniformGrid>
+                </StackPanel>
+              </Border>
+
               <StackPanel
-                  Grid.Row="6"
+                  Grid.Row="7"
                   Grid.Column="1"
                   Orientation="Horizontal"
                   HorizontalAlignment="Right"
