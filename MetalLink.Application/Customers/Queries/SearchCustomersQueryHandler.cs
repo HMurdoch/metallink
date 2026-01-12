@@ -64,7 +64,14 @@ public sealed class SearchCustomersQueryHandler
 
                     IsActive    = c.IsActive,
                     CreatedTime = c.CreatedTime,
-                    UpdatedTime = c.UpdatedTime
+                    UpdatedTime = c.UpdatedTime,
+
+                    // Image paths
+                    IdCardImagePath = c.IdCardImagePath,
+                    DriverLicenseImagePath = c.DriverLicenseImagePath,
+                    PhotoImagePath = c.PhotoImagePath,
+                    SignatureImagePath = c.SignatureImagePath,
+                    FingerprintImagePath = c.FingerprintImagePath
                 };
             })
             .ToArray();

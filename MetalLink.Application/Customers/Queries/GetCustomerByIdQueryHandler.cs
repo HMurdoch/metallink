@@ -58,7 +58,14 @@ public sealed class GetCustomerByIdQueryHandler
 
             IsActive      = customer.IsActive,
             CreatedTime   = customer.CreatedTime,
-            UpdatedTime   = customer.UpdatedTime
+            UpdatedTime   = customer.UpdatedTime,
+
+            // Image paths
+            IdCardImagePath = customer.IdCardImagePath,
+            DriverLicenseImagePath = customer.DriverLicenseImagePath,
+            PhotoImagePath = customer.PhotoImagePath,
+            SignatureImagePath = customer.SignatureImagePath,
+            FingerprintImagePath = customer.FingerprintImagePath
         };
 
         return dto;
