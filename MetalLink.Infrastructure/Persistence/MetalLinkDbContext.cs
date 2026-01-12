@@ -112,6 +112,27 @@ public class MetalLinkDbContext : DbContext
                   .HasColumnName("taxable")
                   .IsRequired();
 
+            // Image paths
+            entity.Property(c => c.IdCardImagePath)
+                  .HasColumnName("id_card_image_path")
+                  .HasMaxLength(500);
+
+            entity.Property(c => c.DriverLicenseImagePath)
+                  .HasColumnName("driver_license_image_path")
+                  .HasMaxLength(500);
+
+            entity.Property(c => c.PhotoImagePath)
+                  .HasColumnName("photo_image_path")
+                  .HasMaxLength(500);
+
+            entity.Property(c => c.SignatureImagePath)
+                  .HasColumnName("signature_image_path")
+                  .HasMaxLength(500);
+
+            entity.Property(c => c.FingerprintImagePath)
+                  .HasColumnName("fingerprint_image_path")
+                  .HasMaxLength(500);
+
             entity.Property(c => c.IsActive)
                   .HasColumnName("is_active")
                   .IsRequired();
@@ -585,10 +606,8 @@ public class MetalLinkDbContext : DbContext
             entity.HasIndex(d => d.CustomerId)
                   .HasDatabaseName("customer_documents_customer_id_idx");
 
-            entity.HasOne<Customer>()
-                  .WithMany()
-                  .HasForeignKey(d => d.CustomerId)
-                  .HasConstraintName("fk_customer_documents_customer_id_customers");
+            // Don't configure navigation - CustomerDocument doesn't have a Customer navigation property
+            // Just let EF use the CustomerId FK as-is
       }
 
       // -------------------------
@@ -608,17 +627,31 @@ public class MetalLinkDbContext : DbContext
                   .HasColumnName("ticket_id")
                   .ValueGeneratedOnAdd();
 
+            // Configure FK properties with ValueGeneratedNever to avoid shadow properties
             entity.Property(t => t.SiteId)
                   .HasColumnName("site_id")
-                  .IsRequired();
+                  .IsRequired()
+                  .ValueGeneratedNever();
 
             entity.Property(t => t.CustomerId)
                   .HasColumnName("customer_id")
-                  .IsRequired();
+                  .IsRequired()
+                  .ValueGeneratedNever();
 
             entity.Property(t => t.OperatorId)
                   .HasColumnName("operator_id")
-                  .IsRequired();
+                  .IsRequired()
+                  .ValueGeneratedNever();
+
+            entity.Property(t => t.ProductId)
+                  .HasColumnName("product_id")
+                  .IsRequired(false)
+                  .ValueGeneratedNever();
+
+            entity.Property(t => t.CurrencyId)
+                  .HasColumnName("currency_id")
+                  .IsRequired(false)
+                  .ValueGeneratedNever();
 
             entity.Property(t => t.TicketNumber)
                   .HasColumnName("ticket_number")
@@ -658,14 +691,6 @@ public class MetalLinkDbContext : DbContext
                   .HasColumnName("currency_code")
                   .IsRequired()
                   .HasMaxLength(10);
-
-            entity.Property(t => t.CurrencyId)
-                  .HasColumnName("currency_id")
-                  .IsRequired(false);
-
-            entity.Property(t => t.ProductId)
-                  .HasColumnName("product_id")
-                  .IsRequired(false);
 
             entity.Property(t => t.ProductDescription)
                   .HasColumnName("product_description")
@@ -736,33 +761,38 @@ public class MetalLinkDbContext : DbContext
             entity.HasIndex(t => t.SiteId)
                   .HasDatabaseName("tickets_site_id_idx");
 
-            entity.HasOne<Customer>()
-                  .WithMany()
+            entity.HasOne(t => t.Customer)
+                  .WithMany(c => c.Tickets)  // IMPORTANT: Use the reverse navigation!
                   .HasForeignKey(t => t.CustomerId)
-                  .HasConstraintName("fk_tickets_customer_id_customers");
+                  .HasConstraintName("fk_tickets_customer_id_customers")
+                  .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne<Operator>()
-                  .WithMany()
+            entity.HasOne(t => t.Operator)
+                  .WithMany()  // Operator doesn't have reverse navigation
                   .HasForeignKey(t => t.OperatorId)
-                  .HasConstraintName("fk_tickets_operator_id_operators");
+                  .HasConstraintName("fk_tickets_operator_id_operators")
+                  .OnDelete(DeleteBehavior.Restrict);
 
             // Optional: FK to Site for referential integrity
-            entity.HasOne<Site>()
-                  .WithMany()
+            entity.HasOne(t => t.Site)
+                  .WithMany()  // Site doesn't have reverse navigation
                   .HasForeignKey(t => t.SiteId)
-                  .HasConstraintName("fk_tickets_site_id_sites");
+                  .HasConstraintName("fk_tickets_site_id_sites")
+                  .OnDelete(DeleteBehavior.Restrict);
 
             // Optional: FK to Product
-            entity.HasOne<Product>()
-                  .WithMany()
+            entity.HasOne(t => t.Product)
+                  .WithMany()  // Product doesn't have reverse navigation
                   .HasForeignKey(t => t.ProductId)
-                  .HasConstraintName("fk_tickets_product_id_products");
+                  .HasConstraintName("fk_tickets_product_id_products")
+                  .OnDelete(DeleteBehavior.Restrict);
 
             // Optional: FK to Currency
-            entity.HasOne<Currency>()
-                  .WithMany()
+            entity.HasOne(t => t.Currency)
+                  .WithMany()  // Currency doesn't have reverse navigation
                   .HasForeignKey(t => t.CurrencyId)
-                  .HasConstraintName("fk_tickets_currency_id_currencies");
+                  .HasConstraintName("fk_tickets_currency_id_currencies")
+                  .OnDelete(DeleteBehavior.Restrict);
 
             // Ticket ↔ TicketLines
             entity.HasMany(t => t.Lines)
