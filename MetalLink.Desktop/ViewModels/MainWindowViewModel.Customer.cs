@@ -304,9 +304,7 @@ public partial class MainWindowViewModel
         // Upload images if captured
         await UploadCustomerImagesAsync(dto.CustomerId);
         
-        FoundCustomer = await _customerService.GetCustomerByIdAsync(dto.CustomerId);
-
-        // Pull fresh copy from API (includes SiteName + AddressLine2 etc)
+        // Pull fresh copy from API AFTER images are uploaded (includes SiteName + image paths etc)
         var refreshed = await _customerService.GetCustomerByIdAsync(dto.CustomerId);
 
         // Fallback if API returns null for any reason
@@ -324,7 +322,7 @@ public partial class MainWindowViewModel
             CustomerSearchResults.Add(refreshed);
         }
 
-        // update details panel immediately
+        // Update details panel immediately - this will trigger LoadSelectedCustomerImagesAsync
         FoundCustomer = refreshed;
 
 
