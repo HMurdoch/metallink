@@ -1159,66 +1159,88 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
     private async Task UploadCustomerImagesAsync(long customerId)
     {
+        Console.WriteLine($"[DEBUG] UploadCustomerImagesAsync called for customer {customerId}");
+        Console.WriteLine($"[DEBUG] IdCardImage: {(IdCardImage != null ? "present" : "null")}");
+        Console.WriteLine($"[DEBUG] DriverLicenseImage: {(DriverLicenseImage != null ? "present" : "null")}");
+        Console.WriteLine($"[DEBUG] PhotoImage: {(PhotoImage != null ? "present" : "null")}");
+        Console.WriteLine($"[DEBUG] SignatureImage: {(SignatureImage != null ? "present" : "null")}");
+        Console.WriteLine($"[DEBUG] FingerprintImage: {(FingerprintImage != null ? "present" : "null")}");
+        
         try
         {
             // Upload ID card if captured
             if (IdCardImage != null)
             {
+                Console.WriteLine($"[DEBUG] Converting IdCardImage to bytes...");
                 var imageData = BitmapToBytes(IdCardImage);
+                Console.WriteLine($"[DEBUG] IdCard imageData size: {imageData?.Length ?? 0} bytes");
                 if (imageData != null)
                 {
+                    Console.WriteLine($"[DEBUG] Uploading ID card...");
                     await _customerService.UploadCustomerImageAsync(
                         customerId, "idcard", imageData, "image/png");
+                    Console.WriteLine($"[DEBUG] ID card uploaded successfully");
                 }
             }
 
             // Upload driver license if captured
             if (DriverLicenseImage != null)
             {
+                Console.WriteLine($"[DEBUG] Uploading driver license...");
                 var imageData = BitmapToBytes(DriverLicenseImage);
                 if (imageData != null)
                 {
                     await _customerService.UploadCustomerImageAsync(
                         customerId, "driverlicense", imageData, "image/png");
+                    Console.WriteLine($"[DEBUG] Driver license uploaded successfully");
                 }
             }
 
             // Upload photo if captured
             if (PhotoImage != null)
             {
+                Console.WriteLine($"[DEBUG] Uploading photo...");
                 var imageData = BitmapToBytes(PhotoImage);
                 if (imageData != null)
                 {
                     await _customerService.UploadCustomerImageAsync(
                         customerId, "photo", imageData, "image/png");
+                    Console.WriteLine($"[DEBUG] Photo uploaded successfully");
                 }
             }
 
             // Upload signature if captured
             if (SignatureImage != null)
             {
+                Console.WriteLine($"[DEBUG] Uploading signature...");
                 var imageData = BitmapToBytes(SignatureImage);
                 if (imageData != null)
                 {
                     await _customerService.UploadCustomerImageAsync(
                         customerId, "signature", imageData, "image/png");
+                    Console.WriteLine($"[DEBUG] Signature uploaded successfully");
                 }
             }
 
             // Upload fingerprint if captured
             if (FingerprintImage != null)
             {
+                Console.WriteLine($"[DEBUG] Uploading fingerprint...");
                 var imageData = BitmapToBytes(FingerprintImage);
                 if (imageData != null)
                 {
                     await _customerService.UploadCustomerImageAsync(
                         customerId, "fingerprint", imageData, "image/png");
+                    Console.WriteLine($"[DEBUG] Fingerprint uploaded successfully");
                 }
             }
+            
+            Console.WriteLine($"[DEBUG] UploadCustomerImagesAsync completed");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error uploading images: {ex.Message}");
+            Console.WriteLine($"[ERROR] Error uploading images: {ex.Message}");
+            Console.WriteLine($"[ERROR] Stack trace: {ex.StackTrace}");
             // Don't throw - images are optional
         }
     }
