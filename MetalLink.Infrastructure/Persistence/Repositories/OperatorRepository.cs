@@ -13,6 +13,12 @@ public sealed class OperatorRepository : IOperatorRepository
         _dbContext = dbContext;
     }
 
+    public Task<Operator?> GetByIdAsync(int operatorId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Operators
+            .FirstOrDefaultAsync(o => o.OperatorId == operatorId && o.IsActive, cancellationToken);
+    }
+
     public Task<Operator?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
         return _dbContext.Operators
