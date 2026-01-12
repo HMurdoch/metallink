@@ -35,15 +35,12 @@ public sealed class TicketRepository : ITicketRepository
         TicketSearchRequestDto request,
         CancellationToken cancellationToken = default)
     {
+        // Use Include() now that we fixed the shadow property issue
         var query = _dbContext.Tickets
             .Include(t => t.Customer)
                 .ThenInclude(c => c.Company)
             .Include(t => t.Customer)
-                .ThenInclude(c => c.Site)!
-                    .ThenInclude(s => s.Province)
-            .Include(t => t.Customer)
-                .ThenInclude(c => c.Site)!
-                    .ThenInclude(s => s.Country)
+                .ThenInclude(c => c.Site)
             .Where(t => t.IsActive && t.Customer!.IsActive)
             .AsQueryable();
 
