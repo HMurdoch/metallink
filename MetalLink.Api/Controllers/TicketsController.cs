@@ -309,4 +309,85 @@ public sealed class TicketsController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPut("{ticketId:long}/lines/{lineId:long}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateTicketLine(
+        long ticketId, 
+        long lineId, 
+        [FromBody] UpdateTicketLineRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request == null)
+        {
+            return BadRequest(new { message = "Request body is required." });
+        }
+
+        // Validate input
+        if (request.WeightKg <= 0)
+        {
+            return BadRequest(new { message = "Weight must be greater than 0." });
+        }
+
+        if (request.UnitPricePerKg < 0)
+        {
+            return BadRequest(new { message = "Unit price cannot be negative." });
+        }
+
+        // Find the ticket and line directly from database
+        var ticket = await _db.Tickets
+            .FirstOrDefaultAsync(t => t.TicketId == ticketId && t.IsActive, cancellationToken);
+
+        if (ticket == null)
+        {
+            return NotFound(new { message = $"Ticket {ticketId} not found or inactive." });
+        }
+
+        // Find the ticket line from database
+        var line = await _db.TicketLines
+            .FirstOrDefaultAsync(l => l.TicketId == ticketId && l.TicketLineId == lineId && l.IsActive, cancellationToken);
+        
+        if (line == null)
+        {
+            return NotFound(new { message = $"Ticket line {lineId} not found or inactive." });
+        }
+
+        // Validate product exists
+        var product = await _db.Products.FindAsync(new object[] { request.ProductId }, cancellationToken);
+        if (product == null)
+        {
+            return BadRequest(new { message = $"Product {request.ProductId} not found." });
+        }
+
+        // Update the line
+        line.ProductId = request.ProductId;
+        line.WeightKg = request.WeightKg;
+        line.UnitPricePerKg = request.UnitPricePerKg;
+        line.UpdatedTime = DateTimeOffset.UtcNow;
+
+        // Recalculate line totals
+        line.LineTotal = line.WeightKg * line.UnitPricePerKg;
+        var vatRate = ticket.VatRate != 0 ? ticket.VatRate : 0.15m;
+        line.VatAmount = line.LineTotal * vatRate;
+        line.TotalInclVat = line.LineTotal + line.VatAmount;
+
+        // Recalculate ticket totals from all active lines
+        var allLines = await _db.TicketLines
+            .Where(l => l.TicketId == ticketId && l.IsActive)
+            .ToListAsync(cancellationToken);
+            
+        var totalExcl = allLines.Sum(l => l.LineTotal);
+        var totalVat = allLines.Sum(l => l.VatAmount);
+        var headerTotalIncl = allLines.Sum(l => l.TotalInclVat);
+
+        ticket.UpdateTotalsFromLines(vatRate, totalExcl, totalVat, headerTotalIncl);
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return Ok(new { message = "Ticket line updated successfully." });
+    }
 }
+
+public record UpdateTicketLineRequest(long ProductId, decimal WeightKg, decimal UnitPricePerKg);
