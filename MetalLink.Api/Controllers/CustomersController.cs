@@ -229,6 +229,52 @@ public sealed class CustomersController : ControllerBase
         // Return the storage key/path
         return Ok(new { ImagePath = key });
     }
+
+    // -----------------------------
+    // DOWNLOAD CUSTOMER IMAGE
+    // -----------------------------
+    [HttpGet("{customerId:long}/images/{imageType}")]
+    [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DownloadImage(
+        long customerId,
+        string imageType,
+        CancellationToken cancellationToken)
+    {
+        var customer = await _customerRepository.GetByIdAsync(customerId, cancellationToken);
+        if (customer == null)
+            return NotFound("Customer not found");
+
+        // Get the image path based on type
+        string? imagePath = imageType.ToLower() switch
+        {
+            "idcard" => customer.IdCardImagePath,
+            "driverlicense" => customer.DriverLicenseImagePath,
+            "photo" => customer.PhotoImagePath,
+            "signature" => customer.SignatureImagePath,
+            "fingerprint" => customer.FingerprintImagePath,
+            _ => null
+        };
+
+        if (string.IsNullOrWhiteSpace(imagePath))
+            return NotFound("Image not found");
+
+        try
+        {
+            // Get pre-signed URL from storage
+            var url = _fileStorage.GetFileUrl(imagePath, TimeSpan.FromMinutes(5));
+            
+            // Download the image from storage
+            using var httpClient = new HttpClient();
+            var imageData = await httpClient.GetByteArrayAsync(url, cancellationToken);
+            
+            return File(imageData, "image/png");
+        }
+        catch (Exception)
+        {
+            return NotFound("Image file not found in storage");
+        }
+    }
 }
 
 public sealed class UploadImageRequest

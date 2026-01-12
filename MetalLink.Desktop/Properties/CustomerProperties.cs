@@ -181,6 +181,9 @@ public partial class MainWindowViewModel
 
             // Load site address summary (from CAS/Site) for customer details panel
             _ = LoadSelectedCustomerSiteAddressAsync(_foundCustomer);
+            
+            // Load customer images if available
+            _ = LoadSelectedCustomerImagesAsync(_foundCustomer);
         }
     }
 
@@ -425,6 +428,119 @@ public partial class MainWindowViewModel
             // IMPORTANT: search depends on this
             (SearchCustomersCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)
                 ?.NotifyCanExecuteChanged();
+        }
+    }
+
+    // --- Customer Image Properties ---
+    
+    private Avalonia.Media.Imaging.Bitmap? _idCardImage;
+    public Avalonia.Media.Imaging.Bitmap? IdCardImage
+    {
+        get => _idCardImage;
+        set
+        {
+            _idCardImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _driverLicenseImage;
+    public Avalonia.Media.Imaging.Bitmap? DriverLicenseImage
+    {
+        get => _driverLicenseImage;
+        set
+        {
+            _driverLicenseImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _photoImage;
+    public Avalonia.Media.Imaging.Bitmap? PhotoImage
+    {
+        get => _photoImage;
+        set
+        {
+            _photoImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _signatureImage;
+    public Avalonia.Media.Imaging.Bitmap? SignatureImage
+    {
+        get => _signatureImage;
+        set
+        {
+            _signatureImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _fingerprintImage;
+    public Avalonia.Media.Imaging.Bitmap? FingerprintImage
+    {
+        get => _fingerprintImage;
+        set
+        {
+            _fingerprintImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // Selected customer image display properties
+    private Avalonia.Media.Imaging.Bitmap? _selectedIdCardImage;
+    public Avalonia.Media.Imaging.Bitmap? SelectedIdCardImage
+    {
+        get => _selectedIdCardImage;
+        set
+        {
+            _selectedIdCardImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _selectedDriverLicenseImage;
+    public Avalonia.Media.Imaging.Bitmap? SelectedDriverLicenseImage
+    {
+        get => _selectedDriverLicenseImage;
+        set
+        {
+            _selectedDriverLicenseImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _selectedPhotoImage;
+    public Avalonia.Media.Imaging.Bitmap? SelectedPhotoImage
+    {
+        get => _selectedPhotoImage;
+        set
+        {
+            _selectedPhotoImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _selectedSignatureImage;
+    public Avalonia.Media.Imaging.Bitmap? SelectedSignatureImage
+    {
+        get => _selectedSignatureImage;
+        set
+        {
+            _selectedSignatureImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _selectedFingerprintImage;
+    public Avalonia.Media.Imaging.Bitmap? SelectedFingerprintImage
+    {
+        get => _selectedFingerprintImage;
+        set
+        {
+            _selectedFingerprintImage = value;
+            OnPropertyChanged();
         }
     }
 }

@@ -589,4 +589,64 @@ public partial class MainWindowViewModel
             return null;
         }
     }
+
+    private async Task LoadSelectedCustomerImagesAsync(CustomerDto? customer)
+    {
+        // Clear existing images
+        SelectedIdCardImage = null;
+        SelectedDriverLicenseImage = null;
+        SelectedPhotoImage = null;
+        SelectedSignatureImage = null;
+        SelectedFingerprintImage = null;
+
+        if (customer == null)
+            return;
+
+        try
+        {
+            // Download and display ID card image
+            if (!string.IsNullOrWhiteSpace(customer.IdCardImagePath))
+            {
+                var imageData = await _customerService.DownloadCustomerImageAsync(customer.CustomerId, "idcard");
+                if (imageData != null)
+                    SelectedIdCardImage = LoadBitmapFromBytes(imageData);
+            }
+
+            // Download and display driver license image
+            if (!string.IsNullOrWhiteSpace(customer.DriverLicenseImagePath))
+            {
+                var imageData = await _customerService.DownloadCustomerImageAsync(customer.CustomerId, "driverlicense");
+                if (imageData != null)
+                    SelectedDriverLicenseImage = LoadBitmapFromBytes(imageData);
+            }
+
+            // Download and display photo
+            if (!string.IsNullOrWhiteSpace(customer.PhotoImagePath))
+            {
+                var imageData = await _customerService.DownloadCustomerImageAsync(customer.CustomerId, "photo");
+                if (imageData != null)
+                    SelectedPhotoImage = LoadBitmapFromBytes(imageData);
+            }
+
+            // Download and display signature
+            if (!string.IsNullOrWhiteSpace(customer.SignatureImagePath))
+            {
+                var imageData = await _customerService.DownloadCustomerImageAsync(customer.CustomerId, "signature");
+                if (imageData != null)
+                    SelectedSignatureImage = LoadBitmapFromBytes(imageData);
+            }
+
+            // Download and display fingerprint
+            if (!string.IsNullOrWhiteSpace(customer.FingerprintImagePath))
+            {
+                var imageData = await _customerService.DownloadCustomerImageAsync(customer.CustomerId, "fingerprint");
+                if (imageData != null)
+                    SelectedFingerprintImage = LoadBitmapFromBytes(imageData);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading customer images: {ex.Message}");
+        }
+    }
 }

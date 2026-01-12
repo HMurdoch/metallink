@@ -93,6 +93,26 @@ public sealed class CustomerService
         return response?.ImagePath;
     }
 
+    /// <summary>
+    /// Downloads a customer image from the server
+    /// </summary>
+    public async Task<byte[]?> DownloadCustomerImageAsync(
+        long customerId,
+        string imageType,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _apiClient.GetAsync<byte[]>(
+                $"api/customers/{customerId}/images/{imageType}",
+                cancellationToken);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private sealed class UploadImageResponse
     {
         public string? ImagePath { get; set; }
