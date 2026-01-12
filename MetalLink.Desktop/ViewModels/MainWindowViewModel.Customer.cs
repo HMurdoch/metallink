@@ -1,7 +1,10 @@
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Media.Imaging;
+using MetalLink.Desktop.Hardware;
 using MetalLink.Shared.Companies;
 using MetalLink.Shared.Sites;
 using MetalLink.Shared.Customers;
@@ -206,6 +209,13 @@ public partial class MainWindowViewModel
         SelectedNewCompany = null;
         NewSiteSuggestions.Clear();
         SelectedNewSite = null;
+
+        // Clear captured images
+        IdCardImage = null;
+        DriverLicenseImage = null;
+        PhotoImage = null;
+        SignatureImage = null;
+        FingerprintImage = null;
     }
 
     private async Task LoadNextAccountNumberAsync()
@@ -437,5 +447,142 @@ public partial class MainWindowViewModel
     // Convenience flag for binding Create button
     public bool IsCreateMode => !IsEditMode;
 
+    // --- Customer Image Capture Methods ---
 
+    private async Task CaptureIdCardAsync()
+    {
+        if (IsBusy) return;
+
+        IsBusy = true;
+        StatusMessage = "Scanning ID card...";
+
+        try
+        {
+            var result = await _app.DocumentScanner.ScanDocumentAsync(DocumentType.IdCard);
+            
+            if (result.IsSuccess && result.ImageData != null)
+            {
+                IdCardImage = LoadBitmapFromBytes(result.ImageData);
+                StatusMessage = "✓ ID card scanned successfully";
+            }
+            else
+            {
+                StatusMessage = $"Failed to scan ID card: {result.ErrorMessage}";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error scanning ID card: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task CaptureDriverLicenseAsync()
+    {
+        if (IsBusy) return;
+
+        IsBusy = true;
+        StatusMessage = "Scanning driver license...";
+
+        try
+        {
+            var result = await _app.DocumentScanner.ScanDocumentAsync(DocumentType.DriverLicense);
+            
+            if (result.IsSuccess && result.ImageData != null)
+            {
+                DriverLicenseImage = LoadBitmapFromBytes(result.ImageData);
+                StatusMessage = "✓ Driver license scanned successfully";
+            }
+            else
+            {
+                StatusMessage = $"Failed to scan driver license: {result.ErrorMessage}";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error scanning driver license: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task CapturePhotoAsync()
+    {
+        if (IsBusy) return;
+
+        IsBusy = true;
+        StatusMessage = "Capturing photo...";
+
+        try
+        {
+            var result = await _app.CameraService.CaptureAsync(CameraDeviceType.PlatformFront, "CustomerPhoto");
+            
+            if (result != null && result.ImageData != null)
+            {
+                PhotoImage = LoadBitmapFromBytes(result.ImageData);
+                StatusMessage = "✓ Photo captured successfully";
+            }
+            else
+            {
+                StatusMessage = "Failed to capture photo";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error capturing photo: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task CaptureFingerprintAsync()
+    {
+        if (IsBusy) return;
+
+        IsBusy = true;
+        StatusMessage = "Scanning fingerprint...";
+
+        try
+        {
+            var result = await _app.FingerprintScanner.CaptureAsync();
+            
+            if (result.IsSuccess && result.ImageData != null)
+            {
+                FingerprintImage = LoadBitmapFromBytes(result.ImageData);
+                StatusMessage = $"✓ Fingerprint scanned successfully (Quality: {result.Quality}%)";
+            }
+            else
+            {
+                StatusMessage = $"Failed to scan fingerprint: {result.ErrorMessage}";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error scanning fingerprint: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private Bitmap? LoadBitmapFromBytes(byte[] data)
+    {
+        try
+        {
+            using var stream = new MemoryStream(data);
+            return new Bitmap(stream);
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }
