@@ -226,6 +226,33 @@ public sealed class CustomersController : ControllerBase
             key,
             cancellationToken);
 
+        // Update the customer record with the image path
+        var customer = await _customerRepository.GetByIdAsync(customerId, cancellationToken);
+        if (customer != null)
+        {
+            switch (imageType.ToLower())
+            {
+                case "idcard":
+                    customer.IdCardImagePath = key;
+                    break;
+                case "driverlicense":
+                    customer.DriverLicenseImagePath = key;
+                    break;
+                case "photo":
+                    customer.PhotoImagePath = key;
+                    break;
+                case "signature":
+                    customer.SignatureImagePath = key;
+                    break;
+                case "fingerprint":
+                    customer.FingerprintImagePath = key;
+                    break;
+            }
+            
+            customer.UpdatedTime = DateTime.UtcNow;
+            await _customerRepository.UpdateAsync(customer, cancellationToken);
+        }
+
         // Return the storage key/path
         return Ok(new { ImagePath = key });
     }
