@@ -152,10 +152,6 @@
                           Command="{Binding SearchProductsCommand}"
                           HorizontalAlignment="Left"
                           Width="100" />
-                  <Button Content="Refresh"
-                          Command="{Binding RefreshProductsCommand}"
-                          HorizontalAlignment="Left"
-                          Width="100" />
                 </StackPanel>
               </StackPanel>
             </Grid>
