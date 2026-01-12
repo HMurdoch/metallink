@@ -2,7 +2,9 @@ using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using MetalLink.Desktop.Hardware;
 using MetalLink.Shared.Products;
 
 namespace MetalLink.Desktop.ViewModels;
@@ -65,7 +67,36 @@ public partial class MainWindowViewModel
         {
             _receivingProductSearchText = value;
             OnPropertyChanged();
+            
+            // When text search changes, clear letter filter to null/empty
+            // This allows substring search instead of showing ALL products
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                _selectedReceivingProductLetter = string.Empty;
+                OnPropertyChanged(nameof(SelectedReceivingProductLetter));
+            }
+            
             _ = SearchReceivingProductsAsync(value);
+        }
+    }
+
+    private string _selectedReceivingProductLetter = "ALL";
+    public string SelectedReceivingProductLetter
+    {
+        get => _selectedReceivingProductLetter;
+        set
+        {
+            _selectedReceivingProductLetter = value;
+            OnPropertyChanged();
+            
+            // When letter filter is selected, clear text search
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                _receivingProductSearchText = string.Empty;
+                OnPropertyChanged(nameof(ReceivingProductSearchText));
+            }
+            
+            _ = ApplyReceivingProductFilterAsync();
         }
     }
 
@@ -129,6 +160,50 @@ public partial class MainWindowViewModel
         catch (Exception ex)
         {
             StatusMessage = $"Error searching products: {ex.Message}";
+        }
+    }
+
+    private async Task ApplyReceivingProductFilterAsync()
+    {
+        try
+        {
+            // If letter filter is empty/null, don't load anything
+            // The search text will handle the filtering via SearchReceivingProductsAsync
+            if (string.IsNullOrWhiteSpace(SelectedReceivingProductLetter))
+            {
+                return;
+            }
+            
+            // Load all products from API
+            var results = await _app.ProductsAndPricesService.LookupProductsAsync(string.Empty);
+            
+            ReceivingProductSuggestions.Clear();
+            
+            if (SelectedReceivingProductLetter == "ALL")
+            {
+                // Show all products
+                foreach (var p in results)
+                {
+                    ReceivingProductSuggestions.Add(p);
+                }
+            }
+            else
+            {
+                // Filter by first letter
+                var filtered = results
+                    .Where(p => p.ProductName != null && 
+                           p.ProductName.StartsWith(SelectedReceivingProductLetter, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                foreach (var p in filtered)
+                {
+                    ReceivingProductSuggestions.Add(p);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error filtering products: {ex.Message}";
         }
     }
 
@@ -270,7 +345,12 @@ public partial class MainWindowViewModel
 
     private async Task RemoveReceivingLineAsync(ReceivingLineItem? line)
     {
-        if (line == null) return;
+        if (line == null)
+        {
+            StatusMessage = "No line item selected to remove.";
+            return;
+        }
+        
         if (IsBusy) return;
 
         IsBusy = true;
@@ -283,7 +363,11 @@ public partial class MainWindowViewModel
             ReceivingLines.Remove(line);
             RecalculateReceivingTotals();
 
-            StatusMessage = $"Removed line for product {line.ProductName}.";
+            StatusMessage = $"✓ Removed line for product {line.ProductName}";
+        }
+        catch (HttpRequestException ex)
+        {
+            StatusMessage = $"Network error removing ticket line: {ex.Message}";
         }
         catch (Exception ex)
         {
@@ -293,5 +377,97 @@ public partial class MainWindowViewModel
         {
             IsBusy = false;
         }
+    }
+
+    private Task SaveTicketAsync()
+    {
+        if (IsBusy) return Task.CompletedTask;
+
+        if (LastCreatedTicket == null || LastCreatedTicket.TicketId <= 0)
+        {
+            StatusMessage = "No ticket to save.";
+            return Task.CompletedTask;
+        }
+
+        IsBusy = true;
+        StatusMessage = "Saving ticket...";
+
+        try
+        {
+            // Ticket is saved on the server side when lines are added
+            // This command could trigger final validation or status update
+            StatusMessage = $"Ticket {LastCreatedTicket.TicketNumber} saved successfully.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error saving ticket: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+        
+        return Task.CompletedTask;
+    }
+
+    private void ClearTicket()
+    {
+        LastCreatedTicket = null;
+        ReceivingLines.Clear();
+        ReceivingWeightText = string.Empty;
+        ReceivingSelectedProduct = null;
+        ReceivingProductSearchText = string.Empty;
+        RecalculateReceivingTotals();
+        StatusMessage = "Ticket cleared.";
+    }
+
+    private async Task CaptureWeightAsync()
+    {
+        if (IsBusy) return;
+
+        IsBusy = true;
+        StatusMessage = "Capturing weight from scale...";
+
+        try
+        {
+            var reading = await _app.ScaleService.ReadOnceAsync(ScaleDeviceType.Weighbridge);
+            if (reading != null)
+            {
+                ReceivingWeightText = reading.WeightKg.ToString("F2");
+                StatusMessage = $"Weight captured: {reading.WeightKg:F2} kg";
+            }
+            else
+            {
+                StatusMessage = "Failed to capture weight: No reading available";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error capturing weight: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task CapturePlatePhotoAsync()
+    {
+        if (IsBusy) return;
+
+        StatusMessage = "Capturing plate photo...";
+        // TODO: Implement plate photo capture
+        await Task.Delay(100);
+        StatusMessage = "Plate photo capture not yet implemented.";
+    }
+
+    private async Task CaptureLoadPhotoAsync()
+    {
+        if (IsBusy) return;
+
+        StatusMessage = "Capturing load photo...";
+        // TODO: Implement load photo capture
+        await Task.Delay(100);
+        StatusMessage = "Load photo capture not yet implemented.";
     }
 }

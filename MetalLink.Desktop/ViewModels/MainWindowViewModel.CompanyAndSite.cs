@@ -336,9 +336,9 @@ public partial class MainWindowViewModel
     // IMPLEMENTATION (TODO hooks – wire to your services)
     // =====================================================
 
-    private async Task SearchCompaniesAsync(CancellationToken ct = default)
+    private Task SearchCompaniesAsync(CancellationToken ct = default)
     {
-        if (IsBusy) return;
+        if (IsBusy) return Task.CompletedTask;
         IsBusy = true;
 
         try
@@ -385,6 +385,8 @@ public partial class MainWindowViewModel
         {
             IsBusy = false;
         }
+        
+        return Task.CompletedTask;
     }
 
     private void ClearSiteForm()
@@ -749,11 +751,11 @@ public partial class MainWindowViewModel
                     {
                         CompanyId = SelectedCompany.CompanyId,
                         SiteName = SiteName.Trim(),
-                        SiteCode = string.IsNullOrWhiteSpace(SiteCode) ? null : SiteCode.Trim(),
-                        AddressLine1 = string.IsNullOrWhiteSpace(AddressLine1) ? null : AddressLine1.Trim(),
-                        AddressLine2 = string.IsNullOrWhiteSpace(AddressLine2) ? null : AddressLine2.Trim(),
-                        Suburb = string.IsNullOrWhiteSpace(Suburb) ? null : Suburb.Trim(),
-                        City = string.IsNullOrWhiteSpace(City) ? null : City.Trim(),
+                        SiteCode = string.IsNullOrWhiteSpace(SiteCode) ? null! : SiteCode.Trim(),
+                        AddressLine1 = string.IsNullOrWhiteSpace(AddressLine1) ? null! : AddressLine1.Trim(),
+                        AddressLine2 = string.IsNullOrWhiteSpace(AddressLine2) ? null! : AddressLine2.Trim(),
+                        Suburb = string.IsNullOrWhiteSpace(Suburb) ? null! : Suburb.Trim(),
+                        City = string.IsNullOrWhiteSpace(City) ? null! : City.Trim(),
                         PostalCode = string.IsNullOrWhiteSpace(PostalCode) ? null : PostalCode.Trim(),
                         ProvinceId = SelectedProvince?.ProvinceId,
                         CountryId = SelectedCountry?.CountryId,
@@ -963,7 +965,7 @@ public partial class MainWindowViewModel
                 {
                     CompanyId = SelectedCompany.CompanyId,
                     SiteName = NewSiteCreateName.Trim(),
-                    SiteCode = string.IsNullOrWhiteSpace(NewSiteCreateCode) ? null : NewSiteCreateCode.Trim(),
+                    SiteCode = string.IsNullOrWhiteSpace(NewSiteCreateCode) ? null! : NewSiteCreateCode.Trim(),
                     IsActive = true,
 
                     // use your existing NewCountry/NewProvince if you want,
