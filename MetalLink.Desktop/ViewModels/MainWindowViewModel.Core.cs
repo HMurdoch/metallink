@@ -87,6 +87,12 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand SearchTicketsCommand { get; }
     public ICommand ClearTicketSearchCommand { get; }
     public ICommand DeleteTicketCommand { get; }
+    public ICommand EditTicketCommand { get; }
+    public ICommand CancelEditTicketCommand { get; }
+    
+    // Ticket line commands
+    public ICommand EditTicketLineCommand { get; }
+    public ICommand DeleteTicketLineCommand { get; }
 
     // Optional tab navigation commands
     public ICommand GoDashboardCommand { get; }
@@ -97,6 +103,26 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
     // Signature command
     public ICommand CaptureSignatureCommand { get; }
+
+    // Ticket receiving commands
+    public ICommand AddLineCommand { get; }
+    public ICommand RemoveLineCommand { get; }
+    public ICommand SaveTicketCommand { get; }
+    public ICommand ClearTicketCommand { get; }
+    public ICommand CaptureWeightCommand { get; }
+    public ICommand CapturePlatePhotoCommand { get; }
+    public ICommand CaptureLoadPhotoCommand { get; }
+    public ICommand ClearSearchCommand { get; }
+    public ICommand PrintTicketCommand { get; }
+    public ICommand ScrollToAddLinesCommand { get; }
+    public ICommand SaveEditedTicketLineCommand { get; }
+    public ICommand CancelEditTicketLineCommand { get; }
+
+    // Customer image capture commands
+    public ICommand CaptureIdCardCommand { get; }
+    public ICommand CaptureDriverLicenseCommand { get; }
+    public ICommand CapturePhotoCommand { get; }
+    public ICommand CaptureFingerprintCommand { get; }
 
     public ICommand EditCustomerCommand { get; }
     public ICommand DeleteCustomerCommand { get; }
@@ -162,13 +188,23 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         LoadCustomerDocumentsCommand = new AsyncCommand(LoadCustomerDocumentsAsync);
         UploadCustomerDocumentCommand = new AsyncCommand(UploadCustomerDocumentAsync);
 
-        ShowCompanyAndSitesCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.CompanyAndSites);
+        ShowCompanyAndSitesCommand = ReactiveUI.ReactiveCommand.Create(() =>
+        {
+            CurrentSection = EnumMainSection.CompanyAndSites;
+            
+            // Trigger company data loading
+            _ = CompanyLetterFilters; // Lazy load trigger
+        });
         ShowProductsAndPricesCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.ProductsAndPrices);
         // Section navigation (used by menu)
         ShowDashboardCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Dashboard);
         ShowCustomersCommand = ReactiveUI.ReactiveCommand.CreateFromTask(async () =>
         {
             CurrentSection = EnumMainSection.Customers;
+            
+            // Trigger company data loading for dropdowns
+            _ = CompanyLetterFilters; // Lazy load trigger
+            
             await ClearNewCustomerFormAsync(); // this fetches NewAccountNumber
         });
         ShowTicketsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Tickets);
@@ -218,9 +254,37 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         SearchTicketsCommand = new AsyncCommand(SearchTicketsAsync);
         ClearTicketSearchCommand = new RelayCommand(ClearTicketSearch);
         DeleteTicketCommand = new AsyncRelayCommand<TicketSearchResultDto?>(DeleteTicketAsync);
+        EditTicketCommand = new RelayCommand<TicketSearchResultDto>(OnEditTicket);
+        CancelEditTicketCommand = new RelayCommand(OnCancelEditTicket);
+        
+        // Ticket line commands
+        EditTicketLineCommand = new RelayCommand<TicketLineDto>(OnEditTicketLine);
+        DeleteTicketLineCommand = new AsyncRelayCommand<TicketLineDto?>(DeleteTicketLineAsync);
 
         // Signature
         CaptureSignatureCommand = new AsyncCommand(CaptureSignatureAsync);
+
+        // Ticket receiving commands
+        AddLineCommand = new AsyncCommand(AddReceivingLineAsync);
+        RemoveLineCommand = new AsyncRelayCommand<ReceivingLineItem?>(RemoveReceivingLineAsync);
+        SaveTicketCommand = new AsyncCommand(SaveTicketAsync);
+        ClearTicketCommand = new RelayCommand(ClearTicket);
+        CaptureWeightCommand = new AsyncCommand(CaptureWeightAsync);
+        CapturePlatePhotoCommand = new AsyncCommand(CapturePlatePhotoAsync);
+        CaptureLoadPhotoCommand = new AsyncCommand(CaptureLoadPhotoAsync);
+        
+        // Ticket search commands (additional)
+        ClearSearchCommand = new RelayCommand(ClearTicketSearch);
+        PrintTicketCommand = new AsyncCommand(PrintTicketAsync);
+        ScrollToAddLinesCommand = new RelayCommand(ScrollToAddLines);
+        SaveEditedTicketLineCommand = new AsyncCommand(SaveEditedTicketLineAsync);
+        CancelEditTicketLineCommand = new RelayCommand(CancelEditTicketLine);
+
+        // Customer image capture commands
+        CaptureIdCardCommand = new AsyncCommand(CaptureIdCardAsync);
+        CaptureDriverLicenseCommand = new AsyncCommand(CaptureDriverLicenseAsync);
+        CapturePhotoCommand = new AsyncCommand(CapturePhotoAsync);
+        CaptureFingerprintCommand = new AsyncCommand(CaptureFingerprintAsync);
 
         // Optional tab navigation (unused in current XAML but kept for later)
         GoDashboardCommand = new AsyncCommand(() =>
@@ -393,6 +457,13 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         // WB-<SiteId>-YYYYMMDD-HHMMSS
         var siteId = _authState.SiteId > 0 ? _authState.SiteId : 1;
         return $"WB-{siteId}-{DateTime.Now:yyyyMMdd-HHmmss}";
+    }
+
+    private void ScrollToAddLines()
+    {
+        // TODO: Implement actual scrolling - requires view interaction
+        // For now, just provide user feedback
+        StatusMessage = "Please scroll down to the 'Add Product Lines' section to add line items";
     }
 
     private async Task<bool> ConfirmAsync(string message)
@@ -964,10 +1035,31 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     {
         if (IsBusy) return;
         IsBusy = true;
-        StatusMessage = "Capturing signature and uploading...";
 
         try
         {
+            // Check if we're in the Customer creation/edit section
+            if (CurrentSection == EnumMainSection.Customers)
+            {
+                StatusMessage = "Capturing signature...";
+                
+                var capture = await _signaturePadService.CaptureAsync("CustomerSignature");
+                
+                if (capture != null && capture.ImageData != null)
+                {
+                    SignatureImage = LoadBitmapFromBytes(capture.ImageData);
+                    StatusMessage = "✓ Signature captured successfully";
+                }
+                else
+                {
+                    StatusMessage = "Failed to capture signature";
+                }
+                return;
+            }
+
+            // Otherwise, we're in the Documents section - need a customer ID
+            StatusMessage = "Capturing signature and uploading...";
+
             // Use the same Customer ID as the Customer Documents section
             if (!long.TryParse(DocumentsCustomerIdText, out var customerId))
             {
@@ -979,14 +1071,14 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             const string documentType = "signature";
 
             // Simulate pad capture (currently using MockSignaturePadService)
-            var capture = await _signaturePadService.CaptureAsync(documentType);
-            LastSignatureCaptureSummary = capture.ToString();
+            var capture2 = await _signaturePadService.CaptureAsync(documentType);
+            LastSignatureCaptureSummary = capture2.ToString();
 
             // Upload as a normal customer document
             var doc = await _documentService.UploadDocumentAsync(
                 customerId,
-                capture.DocumentType,
-                capture.FilePath);
+                capture2.DocumentType,
+                capture2.FilePath);
 
             if (doc == null)
             {
