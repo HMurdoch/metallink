@@ -34,7 +34,7 @@ public sealed class SearchTicketsQueryHandler
                     TicketId = t.TicketId,
                     TicketNumber = t.TicketNumber,
                     TicketType = t.TicketType,
-                    CustomerId = t.CustomerId,
+                    CustomerId = t.CustomerId ?? 0,
                     FirstName = customer.FirstName,
                     LastName = customer.LastName,
                     CompanyName = company?.CompanyName,

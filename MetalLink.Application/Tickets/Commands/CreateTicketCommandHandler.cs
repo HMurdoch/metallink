@@ -24,10 +24,24 @@ public sealed class CreateTicketCommandHandler
 
     public async Task<TicketDto> Handle(CreateTicketCommand request, CancellationToken cancellationToken)
     {
-        var customer = await _customerRepository.GetByIdAsync(request.CustomerId, cancellationToken);
-        if (customer is null)
+        // Validate that either CustomerId or BuyerId is provided (but not both)
+        if (request.Status == "receiving" && request.CustomerId == null)
         {
-            throw new InvalidOperationException($"Customer {request.CustomerId} not found.");
+            throw new InvalidOperationException("CustomerId is required for receiving tickets.");
+        }
+        if (request.Status == "delivery" && request.BuyerId == null)
+        {
+            throw new InvalidOperationException("BuyerId is required for delivery tickets.");
+        }
+
+        // For receiving tickets, validate customer exists
+        if (request.CustomerId.HasValue)
+        {
+            var customer = await _customerRepository.GetByIdAsync(request.CustomerId.Value, cancellationToken);
+            if (customer is null)
+            {
+                throw new InvalidOperationException($"Customer {request.CustomerId} not found.");
+            }
         }
 
         var existing = await _ticketRepository.GetByTicketNumberAsync(request.TicketNumber, cancellationToken);
@@ -38,7 +52,6 @@ public sealed class CreateTicketCommandHandler
 
         var ticket = new Ticket(
             siteId: request.SiteId,
-            customerId: request.CustomerId,
             operatorId: request.OperatorId,
             ticketNumber: request.TicketNumber,
             ticketType: request.TicketType,
@@ -48,10 +61,17 @@ public sealed class CreateTicketCommandHandler
             currencyCode: request.CurrencyCode,
             productDescription: request.ProductDescription,
             notes: request.Notes,
+            status: request.Status,
+            customerId: request.CustomerId,
+            buyerId: request.BuyerId,
             vehicleRegistration: request.VehicleRegistration,
+            trailerRegistration: request.TrailerRegistration,
+            driverName: request.DriverName,
             ofmWeighbridgeTicket: request.OfmWeighbridgeTicket,
             foreignTicket: request.ForeignTicket,
             ckNumber: request.CkNumber,
+            deliveryNumber: request.DeliveryNumber,
+            rfidCardNumber: request.RfidCardNumber,
             productId: request.ProductId,
             currencyId: request.CurrencyId
         );
@@ -63,7 +83,8 @@ public sealed class CreateTicketCommandHandler
         {
             TicketId = ticket.TicketId,
             SiteId = ticket.SiteId,
-            CustomerId = ticket.CustomerId,
+            CustomerId = ticket.CustomerId ?? 0,
+            BuyerId = ticket.BuyerId,
             OperatorId = ticket.OperatorId,
             TicketNumber = ticket.TicketNumber,
             TicketType = ticket.TicketType,
@@ -76,9 +97,14 @@ public sealed class CreateTicketCommandHandler
             CurrencyId = ticket.CurrencyId,
             ProductId = ticket.ProductId,
             VehicleRegistration = ticket.VehicleRegistration,
+            TrailerRegistration = ticket.TrailerRegistration,
+            DriverName = ticket.DriverName,
             OfmWeighbridgeTicket = ticket.OfmWeighbridgeTicket,
             ForeignTicket = ticket.ForeignTicket,
             CkNumber = ticket.CkNumber,
+            DeliveryNumber = ticket.DeliveryNumber,
+            Status = ticket.Status,
+            RfidCardNumber = ticket.RfidCardNumber,
             VatRate = ticket.VatRate,
             VatAmount = ticket.VatAmount,
             TotalInclVat = ticket.TotalInclVat,

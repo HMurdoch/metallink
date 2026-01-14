@@ -28,7 +28,8 @@ public sealed class GetTicketByIdQueryHandler
         {
             TicketId = ticket.TicketId,
             SiteId = ticket.SiteId,
-            CustomerId = ticket.CustomerId,
+            CustomerId = ticket.CustomerId ?? 0,
+            BuyerId = ticket.BuyerId,
             OperatorId = ticket.OperatorId,
             TicketNumber = ticket.TicketNumber,
             TicketType = ticket.TicketType,
