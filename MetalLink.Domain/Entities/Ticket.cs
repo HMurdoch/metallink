@@ -9,8 +9,15 @@ public class Ticket
     public long TicketId { get; private set; }
     public long SiteId { get; private set; }
     public Site Site       { get; set; } = null!;
-    public long CustomerId { get; private set; }
-    public Customer Customer { get; set; } = null!;
+    
+    // For receiving tickets (buying from customers)
+    public long? CustomerId { get; private set; }
+    public Customer? Customer { get; set; }
+    
+    // For sending/delivery tickets (selling to buyers)
+    public long? BuyerId { get; private set; }
+    public Buyer? Buyer { get; set; }
+    
     public long OperatorId { get; private set; }
     public Operator Operator { get; set; } = null!;
 
@@ -31,6 +38,11 @@ public class Ticket
     public string? OfmWeighbridgeTicket { get; private set; }
     public string? ForeignTicket { get; private set; }
     public string? CkNumber { get; private set; }
+    public string? DeliveryNumber { get; private set; }
+    
+    // Ticket status and RFID
+    public string Status { get; private set; } = "receiving"; // "receiving" or "delivery"
+    public string? RfidCardNumber { get; private set; }
 
     // Weights
     public decimal? FirstWeightKg { get; private set; }   // weighbridge: gross, platform: net
@@ -54,6 +66,7 @@ public class Ticket
 
     // Navigation
     public ICollection<TicketLine> Lines { get; private set; } = new List<TicketLine>();
+    public ICollection<StockMovement> StockMovements { get; private set; } = new List<StockMovement>();
 
     public DateTimeOffset CreatedTime { get; private set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedTime { get; private set; } = DateTimeOffset.UtcNow;
@@ -62,7 +75,6 @@ public class Ticket
 
     public Ticket(
         long siteId,
-        long customerId,
         long operatorId,
         string ticketNumber,
         string ticketType,
@@ -72,18 +84,31 @@ public class Ticket
         string currencyCode,
         string? productDescription,
         string? notes,
+        string status = "receiving",
+        long? customerId = null,
+        long? buyerId = null,
         string? vehicleRegistration = null,
         string? trailerRegistration = null,
         string? driverName = null,
         string? ofmWeighbridgeTicket = null,
         string? foreignTicket = null,
         string? ckNumber = null,
+        string? deliveryNumber = null,
+        string? rfidCardNumber = null,
         long? productId = null,
         long? currencyId = null)
     {
         SiteId = siteId;
-        CustomerId = customerId;
         OperatorId = operatorId;
+        
+        // Either CustomerId (receiving) or BuyerId (sending) must be set
+        if (status == "receiving" && customerId == null)
+            throw new ArgumentException("CustomerId is required for receiving tickets", nameof(customerId));
+        if (status == "delivery" && buyerId == null)
+            throw new ArgumentException("BuyerId is required for delivery tickets", nameof(buyerId));
+            
+        CustomerId = customerId;
+        BuyerId = buyerId;
         TicketNumber = ticketNumber;
         TicketType = ticketType;
         FirstWeightKg = firstWeightKg;
@@ -101,6 +126,9 @@ public class Ticket
         OfmWeighbridgeTicket = ofmWeighbridgeTicket;
         ForeignTicket = foreignTicket;
         CkNumber = ckNumber;
+        DeliveryNumber = deliveryNumber;
+        Status = status;
+        RfidCardNumber = rfidCardNumber;
 
         CalculateNetAndTotal();
     }
