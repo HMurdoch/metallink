@@ -115,6 +115,9 @@
 *.dbmdl.user
 *.sln.docstates
 
+*.md
+*.txt
+
 # NuGet
 packages/
 *.nupkg
