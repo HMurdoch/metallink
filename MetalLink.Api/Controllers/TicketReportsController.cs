@@ -43,7 +43,7 @@ public class TicketReportsController : ControllerBase
             SiteId = ticket.SiteId,
             SiteName = "Metal Link Site",   // TODO: map real SiteName if you have a Site table
 
-            CustomerId = ticket.CustomerId,
+            CustomerId = ticket.CustomerId ?? 0,
             CustomerName = "Unknown",          // TODO: map from related customer entity
             CustomerAccountNumber = null,      // TODO
             CustomerPriceCode = null,          // TODO
