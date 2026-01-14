@@ -1,5 +1,5 @@
 <UserControl
-    x:Class="MetalLink.Desktop.Views.TicketsView"
+    x:Class="MetalLink.Desktop.Views.TicketsReceivingView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
@@ -128,13 +128,13 @@
         <StackPanel Spacing="4">
           <Grid>
             <TextBlock
-                Text="{Binding TicketsPageHeading}"
+                Text="Ticket Receiving"
                 FontSize="20"
                 FontWeight="Bold"
                 Foreground="{StaticResource Brush.TextPrimary}" />
             <!-- Animated glow overlay -->
             <TextBlock
-                Text="{Binding TicketsPageHeading}"
+                Text="Ticket Receiving"
                 FontSize="20"
                 FontWeight="Bold"
                 Foreground="#4a9eff"
@@ -202,21 +202,21 @@
               <!-- Row 0: Customer ID / ID Number -->
               <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
                 <TextBlock Text="Customer ID" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchTicketCustomerIdText}" />
+                <TextBox Text="{Binding SearchReceivingTicketCustomerIdText}" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
                 <TextBlock Text="ID Number" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchTicketIdNumberText}" />
+                <TextBox Text="{Binding SearchReceivingTicketIdNumberText}" />
               </StackPanel>
 
               <!-- Row 1: First / Last name -->
               <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2">
                 <TextBlock Text="First Name" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchTicketFirstNameText}" />
+                <TextBox Text="{Binding SearchReceivingTicketFirstNameText}" />
               </StackPanel>
               <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Last Name" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchTicketLastNameText}" />
+                <TextBox Text="{Binding SearchReceivingTicketLastNameText}" />
               </StackPanel>
 
               <!-- Row 2: Company (Letter + Dropdown in single column) / Account Number -->
@@ -244,7 +244,7 @@
               </StackPanel>
               <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Account Number" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchTicketAccountNumberText}" />
+                <TextBox Text="{Binding SearchReceivingTicketAccountNumberText}" />
               </StackPanel>
 
               <!-- Row 3: Site / [can be used for something else or blank] -->
@@ -265,7 +265,7 @@
               <!-- Row 4: Ticket Number / Ticket type -->
               <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2">
                 <TextBlock Text="Ticket Number" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchTicketNumberText}" />
+                <TextBox Text="{Binding SearchReceivingTicketNumberText}" />
               </StackPanel>
               <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Ticket Type" Foreground="#c0c4cf" />
@@ -290,12 +290,12 @@
               <Button
                   Width="100"
                   Content="Clear"
-                  Command="{Binding ClearTicketSearchCommand}" />
+                  Command="{Binding ClearReceivingTicketSearchCommand}" />
               <Button
                   Classes="primary"
                   Width="100"
                   Content="Search"
-                  Command="{Binding SearchTicketsCommand}" />
+                  Command="{Binding SearchReceivingTicketsCommand}" />
             </StackPanel>
           </StackPanel>
         </Border>
@@ -309,8 +309,8 @@
 
             <DataGrid
                 AutoGenerateColumns="False"
-                ItemsSource="{Binding TicketSearchResults}"
-                SelectedItem="{Binding SelectedTicket, Mode=TwoWay}">
+                ItemsSource="{Binding ReceivingTicketSearchResults}"
+                SelectedItem="{Binding SelectedReceivingTicket, Mode=TwoWay}">
               <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding TicketId}" Width="80" />
                 <DataGridTextColumn Header="Ticket #" Binding="{Binding TicketNumber}" Width="140" />
@@ -339,7 +339,7 @@
                         <Button
                             Classes="row-action"
                             Content="Delete"
-                            Command="{Binding DataContext.DeleteTicketCommand,
+                            Command="{Binding DataContext.DeleteReceivingTicketCommand,
                                               RelativeSource={RelativeSource AncestorType=UserControl}}"
                             CommandParameter="{Binding}" />
                       </StackPanel>
@@ -356,7 +356,7 @@
                 Padding="12" 
                 CornerRadius="4" 
                 Margin="0,8,0,0"
-                IsVisible="{Binding HasSelectedTicket}">
+                IsVisible="{Binding HasSelectedReceivingTicket}">
           <StackPanel Spacing="12">
             
             <!-- Ticket Details Header -->
@@ -366,7 +366,7 @@
                        FontWeight="Bold" />
 
             <!-- Ticket Details Grid (3 columns) -->
-            <Grid IsVisible="{Binding SelectedTicketDetails, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <Grid IsVisible="{Binding SelectedReceivingTicketDetails, Converter={x:Static ObjectConverters.IsNotNull}}">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
@@ -383,43 +383,43 @@
               <!-- Row 0 -->
               <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
                 <TextBlock Text="Ticket Number" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedTicketDetails.TicketNumber}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.TicketNumber}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Ticket Type" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedTicketDetails.TicketType}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.TicketType}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2">
                 <TextBlock Text="Customer ID" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedTicketDetails.CustomerId, StringFormat='{}{0:D8}'}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.CustomerId, StringFormat='{}{0:D8}'}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
 
               <!-- Row 1 -->
               <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="Vehicle Registration" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedTicketDetails.VehicleRegistration}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.VehicleRegistration}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="OFM Weighbridge Ticket" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedTicketDetails.OfmWeighbridgeTicket}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.OfmWeighbridgeTicket}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="1" Grid.Column="2" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="Foreign Ticket" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedTicketDetails.ForeignTicket}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.ForeignTicket}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
 
               <!-- Row 2 -->
               <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="First Weight (kg)" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedTicketDetails.FirstWeightKg, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.FirstWeightKg, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="Second Weight (kg)" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedTicketDetails.SecondWeightKg, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.SecondWeightKg, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="2" Grid.Column="2" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="Net Weight (kg)" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedTicketDetails.NetWeightKg, StringFormat='{}{0:N2}'}" 
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.NetWeightKg, StringFormat='{}{0:N2}'}" 
                            Foreground="#4a9eff" 
                            FontWeight="Bold" 
                            FontSize="13" />
@@ -428,32 +428,32 @@
               <!-- Row 3 -->
               <StackPanel Grid.Row="3" Grid.Column="0" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="Unit Price /kg" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedTicketDetails.UnitPricePerKg, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.UnitPricePerKg, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="Total (ex VAT)" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedTicketDetails.TotalAmount, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.TotalAmount, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="3" Grid.Column="2" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="VAT Amount" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedTicketDetails.VatAmount, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.VatAmount, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
 
               <!-- Row 4 -->
               <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="Total (incl VAT)" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedTicketDetails.TotalInclVat, StringFormat='{}{0:N2}'}" 
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.TotalInclVat, StringFormat='{}{0:N2}'}" 
                            Foreground="#4a9eff" 
                            FontWeight="Bold" 
                            FontSize="13" />
               </StackPanel>
               <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="Currency" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedTicketDetails.CurrencyCode}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.CurrencyCode}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="4" Grid.Column="2" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="Created" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedTicketDetails.CreatedTime, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.CreatedTime, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
             </Grid>
 
@@ -466,7 +466,7 @@
 
               <DataGrid
                   AutoGenerateColumns="False"
-                  ItemsSource="{Binding SelectedTicketLines}"
+                  ItemsSource="{Binding SelectedReceivingTicketLines}"
                   HeadersVisibility="Column"
                   MaxHeight="250">
                 <DataGrid.Columns>
@@ -592,7 +592,7 @@
                   <TextBlock Text="Total ex VAT"
                              Foreground="#c0c4cf"
                              FontSize="11" />
-                  <TextBlock Text="{Binding SelectedTicketLinesTotalExVat, StringFormat='{}{0:N2}'}"
+                  <TextBlock Text="{Binding SelectedReceivingTicketLinesTotalExVat, StringFormat='{}{0:N2}'}"
                              Foreground="#4a9eff"
                              FontWeight="Bold" />
                 </StackPanel>
@@ -600,7 +600,7 @@
                   <TextBlock Text="VAT"
                              Foreground="#c0c4cf"
                              FontSize="11" />
-                  <TextBlock Text="{Binding SelectedTicketLinesTotalVat, StringFormat='{}{0:N2}'}"
+                  <TextBlock Text="{Binding SelectedReceivingTicketLinesTotalVat, StringFormat='{}{0:N2}'}"
                              Foreground="#4a9eff"
                              FontWeight="Bold" />
                 </StackPanel>
@@ -608,7 +608,7 @@
                   <TextBlock Text="Total incl VAT"
                              Foreground="#c0c4cf"
                              FontSize="11" />
-                  <TextBlock Text="{Binding SelectedTicketLinesTotalInclVat, StringFormat='{}{0:N2}'}"
+                  <TextBlock Text="{Binding SelectedReceivingTicketLinesTotalInclVat, StringFormat='{}{0:N2}'}"
                              Foreground="#4a9eff"
                              FontWeight="Bold" />
                 </StackPanel>

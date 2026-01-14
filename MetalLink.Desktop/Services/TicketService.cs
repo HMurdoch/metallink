@@ -8,6 +8,12 @@ using MetalLink.Shared.Tickets;
 
 namespace MetalLink.Desktop.Services;
 
+/// <summary>
+/// LEGACY: This service uses the old unified Ticket system.
+/// Used primarily for search/history functionality that queries both receiving and sending tickets.
+/// For new ticket creation, use TicketReceivingService or TicketSendingService instead.
+/// </summary>
+[Obsolete("Use TicketReceivingService or TicketSendingService for new development")]
 public sealed class TicketService
 {
     private readonly ApiClient _apiClient;
