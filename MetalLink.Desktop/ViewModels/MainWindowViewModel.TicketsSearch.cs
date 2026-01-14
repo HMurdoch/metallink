@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using MetalLink.Desktop.Properties;
 using MetalLink.Shared.Products;
 using MetalLink.Shared.Tickets;
 

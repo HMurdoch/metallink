@@ -37,6 +37,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     private readonly ApiClient _apiClient;
     private readonly CustomerService _customerService;
     private readonly TicketService _ticketService;
+    private readonly TicketReceivingService _ticketReceivingService;
+    private readonly TicketSendingService _ticketSendingService;
     private readonly ProvinceService _provinceService;
     private readonly IScaleService _scaleService;
     private readonly DocumentService _documentService;
@@ -64,6 +66,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand ShowCompanyAndSitesCommand { get; }
     public ICommand ShowProductsAndPricesCommand { get; }
     public ICommand ShowTicketsCommand { get; }
+    public ICommand ShowTicketsReceivingCommand { get; }
     public ICommand ShowTicketsSendingCommand { get; }
     public ICommand ShowDocumentsCommand { get; }
     public ICommand ShowCameraCommand { get; }
@@ -89,6 +92,18 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand DeleteTicketCommand { get; }
     public ICommand EditTicketCommand { get; }
     public ICommand CancelEditTicketCommand { get; }
+    
+    // Receiving ticket search commands
+    public ICommand SearchReceivingTicketsCommand { get; }
+    public ICommand ClearReceivingTicketSearchCommand { get; }
+    public ICommand DeleteReceivingTicketCommand { get; }
+    public ICommand PrintReceivingTicketCommand { get; }
+    
+    // Sending ticket search commands
+    public ICommand SearchSendingTicketsCommand { get; }
+    public ICommand ClearSendingTicketSearchCommand { get; }
+    public ICommand DeleteSendingTicketCommand { get; }
+    public ICommand PrintSendingTicketCommand { get; }
     
     // Ticket line commands
     public ICommand EditTicketLineCommand { get; }
@@ -139,6 +154,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         _apiClient = app.ApiClient;
         _customerService = app.CustomerService;
         _ticketService = app.TicketService;
+        _ticketReceivingService = app.TicketReceivingService;
+        _ticketSendingService = app.TicketSendingService;
         _provinceService = app.ProvinceService;
         _scaleService = app.ScaleService;
         _documentService = app.DocumentService;
@@ -207,7 +224,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             
             await ClearNewCustomerFormAsync(); // this fetches NewAccountNumber
         });
-        ShowTicketsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Tickets);
+        ShowTicketsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.TicketsReceiving);
+        ShowTicketsReceivingCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.TicketsReceiving);
         ShowTicketsSendingCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.TicketsSending);
         ShowDocumentsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Documents);
         ShowCameraCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Camera);
@@ -256,6 +274,18 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         DeleteTicketCommand = new AsyncRelayCommand<TicketSearchResultDto?>(DeleteTicketAsync);
         EditTicketCommand = new RelayCommand<TicketSearchResultDto>(OnEditTicket);
         CancelEditTicketCommand = new RelayCommand(OnCancelEditTicket);
+        
+        // Receiving ticket search commands
+        SearchReceivingTicketsCommand = new AsyncCommand(SearchReceivingTicketsAsync);
+        ClearReceivingTicketSearchCommand = new RelayCommand(ClearReceivingTicketSearch);
+        DeleteReceivingTicketCommand = new AsyncRelayCommand<TicketSearchResultDto?>(DeleteReceivingTicketAsync);
+        PrintReceivingTicketCommand = new AsyncCommand(PrintReceivingTicketAsync);
+        
+        // Sending ticket search commands
+        SearchSendingTicketsCommand = new AsyncCommand(SearchSendingTicketsAsync);
+        ClearSendingTicketSearchCommand = new RelayCommand(ClearSendingTicketSearch);
+        DeleteSendingTicketCommand = new AsyncRelayCommand<TicketSearchResultDto?>(DeleteSendingTicketAsync);
+        PrintSendingTicketCommand = new AsyncCommand(PrintSendingTicketAsync);
         
         // Ticket line commands
         EditTicketLineCommand = new RelayCommand<TicketLineDto>(OnEditTicketLine);

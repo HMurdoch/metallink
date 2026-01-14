@@ -350,7 +350,7 @@ public partial class MainWindowViewModel
 
         // Switch to the Tickets section – this uses the same enum
         // you already use in ShowTicketsCommand.
-        CurrentSection = EnumMainSection.Tickets;
+        CurrentSection = EnumMainSection.TicketsReceiving;
 
         StatusMessage =
             $"Logging ticket for customer {customer.FirstName} {customer.LastName} - ({customer.CustomerId:D8}).";

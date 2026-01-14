@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using MetalLink.Desktop.Hardware;
 using MetalLink.Shared.Products;
+using MetalLink.Shared.Tickets;
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -33,9 +34,15 @@ public partial class MainWindowViewModel
         {
             _receivingLines = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(HasUnsavedTicketReceiving));
             RecalculateReceivingTotals();
         }
     }
+
+    public bool HasUnsavedTicketReceiving => 
+        _receivingLines.Count > 0 || 
+        !string.IsNullOrWhiteSpace(ReceivingWeightText) ||
+        ReceivingSelectedProduct != null;
 
     private ObservableCollection<ProductLookupDto> _receivingProductSuggestions = new();
     public ObservableCollection<ProductLookupDto> ReceivingProductSuggestions
@@ -469,5 +476,291 @@ public partial class MainWindowViewModel
         // TODO: Implement load photo capture
         await Task.Delay(100);
         StatusMessage = "Load photo capture not yet implemented.";
+    }
+
+    // --- Receiving Ticket Search Properties ---
+
+    private string _searchReceivingTicketCustomerIdText = string.Empty;
+    private string _searchReceivingTicketIdNumberText = string.Empty;
+    private string _searchReceivingTicketFirstNameText = string.Empty;
+    private string _searchReceivingTicketLastNameText = string.Empty;
+    private string _searchReceivingTicketAccountNumberText = string.Empty;
+    private string _searchReceivingTicketNumberText = string.Empty;
+    private string _searchReceivingTicketTypeKey = "Receiving";
+    private string _searchReceivingTicketCreatedFromText = string.Empty;
+    private string _searchReceivingTicketCreatedToText = string.Empty;
+
+    public string SearchReceivingTicketCustomerIdText
+    {
+        get => _searchReceivingTicketCustomerIdText;
+        set { _searchReceivingTicketCustomerIdText = value ?? string.Empty; OnPropertyChanged(); }
+    }
+
+    public string SearchReceivingTicketIdNumberText
+    {
+        get => _searchReceivingTicketIdNumberText;
+        set { _searchReceivingTicketIdNumberText = value ?? string.Empty; OnPropertyChanged(); }
+    }
+
+    public string SearchReceivingTicketFirstNameText
+    {
+        get => _searchReceivingTicketFirstNameText;
+        set { _searchReceivingTicketFirstNameText = value ?? string.Empty; OnPropertyChanged(); }
+    }
+
+    public string SearchReceivingTicketLastNameText
+    {
+        get => _searchReceivingTicketLastNameText;
+        set { _searchReceivingTicketLastNameText = value ?? string.Empty; OnPropertyChanged(); }
+    }
+
+    public string SearchReceivingTicketAccountNumberText
+    {
+        get => _searchReceivingTicketAccountNumberText;
+        set { _searchReceivingTicketAccountNumberText = value ?? string.Empty; OnPropertyChanged(); }
+    }
+
+    public string SearchReceivingTicketNumberText
+    {
+        get => _searchReceivingTicketNumberText;
+        set { _searchReceivingTicketNumberText = value ?? string.Empty; OnPropertyChanged(); }
+    }
+
+    public string SearchReceivingTicketTypeKey
+    {
+        get => _searchReceivingTicketTypeKey;
+        set { _searchReceivingTicketTypeKey = value ?? string.Empty; OnPropertyChanged(); }
+    }
+
+    public string SearchReceivingTicketCreatedFromText
+    {
+        get => _searchReceivingTicketCreatedFromText;
+        set { _searchReceivingTicketCreatedFromText = value ?? string.Empty; OnPropertyChanged(); }
+    }
+
+    public string SearchReceivingTicketCreatedToText
+    {
+        get => _searchReceivingTicketCreatedToText;
+        set { _searchReceivingTicketCreatedToText = value ?? string.Empty; OnPropertyChanged(); }
+    }
+
+    // --- Receiving Search Results ---
+
+    public ObservableCollection<TicketSearchResultDto> ReceivingTicketSearchResults { get; } = new();
+
+    private TicketSearchResultDto? _selectedReceivingTicket;
+    public TicketSearchResultDto? SelectedReceivingTicket
+    {
+        get => _selectedReceivingTicket;
+        set
+        {
+            _selectedReceivingTicket = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SelectedReceivingTicketSummary));
+            OnPropertyChanged(nameof(HasSelectedReceivingTicket));
+            
+            if (value != null)
+            {
+                _ = LoadSelectedReceivingTicketDetailsAsync(value.TicketId);
+            }
+            else
+            {
+                SelectedReceivingTicketLines.Clear();
+                SelectedReceivingTicketDetails = null;
+            }
+        }
+    }
+
+    public bool HasSelectedReceivingTicket => SelectedReceivingTicket != null;
+
+    public string SelectedReceivingTicketSummary
+    {
+        get
+        {
+            if (SelectedReceivingTicket is null)
+                return "No ticket selected.";
+
+            return $"Ticket {SelectedReceivingTicket.TicketNumber} ({SelectedReceivingTicket.TicketType}) - " +
+                   $"Customer {SelectedReceivingTicket.CustomerId}, Net {SelectedReceivingTicket.NetWeightKg:N2} kg, " +
+                   $"Total {SelectedReceivingTicket.TotalInclVat:N2}";
+        }
+    }
+
+    private TicketDto? _selectedReceivingTicketDetails;
+    public TicketDto? SelectedReceivingTicketDetails
+    {
+        get => _selectedReceivingTicketDetails;
+        set
+        {
+            _selectedReceivingTicketDetails = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ObservableCollection<TicketLineDto> SelectedReceivingTicketLines { get; } = new();
+
+    public decimal SelectedReceivingTicketLinesTotalExVat => SelectedReceivingTicketLines.Sum(l => l.LineTotal);
+    public decimal SelectedReceivingTicketLinesTotalVat => SelectedReceivingTicketLines.Sum(l => l.VatAmount);
+    public decimal SelectedReceivingTicketLinesTotalInclVat => SelectedReceivingTicketLines.Sum(l => l.TotalInclVat);
+
+    private async Task LoadSelectedReceivingTicketDetailsAsync(long ticketId)
+    {
+        try
+        {
+            var details = await _ticketService.GetTicketByIdAsync(ticketId);
+            SelectedReceivingTicketDetails = details;
+
+            var lines = await _ticketService.GetTicketLinesAsync(ticketId);
+            SelectedReceivingTicketLines.Clear();
+            if (lines != null)
+            {
+                foreach (var line in lines)
+                {
+                    SelectedReceivingTicketLines.Add(line);
+                }
+            }
+            
+            OnPropertyChanged(nameof(SelectedReceivingTicketLinesTotalExVat));
+            OnPropertyChanged(nameof(SelectedReceivingTicketLinesTotalVat));
+            OnPropertyChanged(nameof(SelectedReceivingTicketLinesTotalInclVat));
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error loading ticket details: {ex.Message}";
+        }
+    }
+
+    private async Task SearchReceivingTicketsAsync()
+    {
+        if (IsBusy) return;
+
+        IsBusy = true;
+        StatusMessage = "Searching receiving tickets...";
+
+        try
+        {
+            var request = new TicketReceivingSearchRequestDto
+            {
+                CustomerId = ParseLongOrNull(SearchReceivingTicketCustomerIdText),
+                FirstName = string.IsNullOrWhiteSpace(SearchReceivingTicketFirstNameText) ? null : SearchReceivingTicketFirstNameText.Trim(),
+                LastName = string.IsNullOrWhiteSpace(SearchReceivingTicketLastNameText) ? null : SearchReceivingTicketLastNameText.Trim(),
+                IdNumber = string.IsNullOrWhiteSpace(SearchReceivingTicketIdNumberText) ? null : SearchReceivingTicketIdNumberText.Trim(),
+                AccountNumber = ParseLongOrNull(SearchReceivingTicketAccountNumberText),
+                SearchTerm = string.IsNullOrWhiteSpace(SearchReceivingTicketNumberText) ? null : SearchReceivingTicketNumberText.Trim(),
+                StartDate = ParseDateOrNull(SearchReceivingTicketCreatedFromText),
+                EndDate = ParseDateOrNull(SearchReceivingTicketCreatedToText)
+            };
+
+            var results = await _ticketReceivingService.SearchTicketsReceivingAsync(request);
+
+            ReceivingTicketSearchResults.Clear();
+            foreach (var t in results)
+            {
+                // Map TicketReceivingDto to TicketSearchResultDto for UI compatibility
+                var searchResult = new TicketSearchResultDto
+                {
+                    TicketId = t.TicketReceivingId,
+                    TicketNumber = t.TicketNumber,
+                    TicketType = t.TicketType,
+                    CustomerId = t.CustomerId,
+                    FirstName = t.CustomerName.Split(' ').FirstOrDefault() ?? "",
+                    LastName = t.CustomerName.Contains(' ') ? t.CustomerName.Substring(t.CustomerName.IndexOf(' ') + 1) : "",
+                    NetWeightKg = t.NetWeightKg,
+                    TotalExclVat = t.TotalAmount,
+                    VatAmount = 0, // Not available in TicketReceivingDto
+                    TotalInclVat = t.TotalAmount,
+                    CreatedTime = t.CreatedTime
+                };
+                ReceivingTicketSearchResults.Add(searchResult);
+            }
+
+            SelectedReceivingTicket = ReceivingTicketSearchResults.FirstOrDefault();
+
+            StatusMessage = $"Loaded {ReceivingTicketSearchResults.Count} receiving ticket(s).";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Receiving ticket search failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void ClearReceivingTicketSearch()
+    {
+        SearchReceivingTicketCustomerIdText = string.Empty;
+        SearchReceivingTicketIdNumberText = string.Empty;
+        SearchReceivingTicketFirstNameText = string.Empty;
+        SearchReceivingTicketLastNameText = string.Empty;
+        SearchReceivingTicketAccountNumberText = string.Empty;
+        SearchReceivingTicketNumberText = string.Empty;
+        SearchReceivingTicketTypeKey = "Receiving";
+        SearchReceivingTicketCreatedFromText = string.Empty;
+        SearchReceivingTicketCreatedToText = string.Empty;
+
+        ReceivingTicketSearchResults.Clear();
+        SelectedReceivingTicket = null;
+    }
+
+    private async Task DeleteReceivingTicketAsync(TicketSearchResultDto? ticket)
+    {
+        var target = ticket ?? SelectedReceivingTicket;
+        if (target is null) return;
+        if (IsBusy) return;
+
+        var ok = await ConfirmAsync($"Are you sure you want to delete ticket {target.TicketNumber}?");
+        if (!ok) return;
+
+        IsBusy = true;
+        try
+        {
+            await _ticketService.DeleteTicketAsync(target.TicketId);
+
+            ReceivingTicketSearchResults.Remove(target);
+            if (ReferenceEquals(SelectedReceivingTicket, target))
+            {
+                SelectedReceivingTicket = ReceivingTicketSearchResults.FirstOrDefault();
+            }
+
+            StatusMessage = $"Ticket {target.TicketNumber} deleted (soft).";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Delete ticket failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task PrintReceivingTicketAsync()
+    {
+        if (IsBusy) return;
+
+        if (SelectedReceivingTicket == null)
+        {
+            StatusMessage = "Please select a ticket to print.";
+            return;
+        }
+
+        IsBusy = true;
+        StatusMessage = $"Printing ticket {SelectedReceivingTicket.TicketNumber}...";
+
+        try
+        {
+            await Task.Delay(500);
+            StatusMessage = $"Ticket {SelectedReceivingTicket.TicketNumber} print not yet implemented.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error printing ticket: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 }
