@@ -3,6 +3,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using MetalLink.Desktop.Auth;
@@ -14,6 +16,7 @@ public sealed class ApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly AuthState _authState;
+    private readonly JsonSerializerOptions _jsonOptions;
 
     public ApiClient(AuthState authState)
     {
@@ -21,6 +24,14 @@ public sealed class ApiClient
         _httpClient = new HttpClient
         {
             BaseAddress = new Uri(ApiConfig.BaseUrl)
+        };
+        
+        // Configure JSON serialization to handle camelCase from API
+        _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = false
         };
     }
 
@@ -61,7 +72,7 @@ public sealed class ApiClient
             return (TResponse)(object)bytes;
         }
 
-        return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken: cancellationToken);
+        return await response.Content.ReadFromJsonAsync<TResponse>(_jsonOptions, cancellationToken: cancellationToken);
     }
 
 
@@ -75,6 +86,7 @@ public sealed class ApiClient
         var response = await _httpClient.PostAsJsonAsync(
             relativeUrl,
             requestBody,
+            _jsonOptions,
             cancellationToken);
 
         var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -97,6 +109,7 @@ public sealed class ApiClient
         }
 
         return await response.Content.ReadFromJsonAsync<TResponse>(
+            _jsonOptions,
             cancellationToken: cancellationToken);
     }
 

@@ -7,54 +7,57 @@ namespace MetalLink.Domain.Entities;
 /// </summary>
 public class TicketReceivingLine
 {
-    public long TicketReceivingLineId { get; private set; }
+    public int ReceivingTicketLineId { get; private set; }
 
-    public long TicketReceivingId { get; private set; }
+    public int ReceivingTicketId { get; private set; }
     public TicketReceiving TicketReceiving { get; set; } = null!;
 
-    public long ProductId { get; private set; }
+    public int ProductId { get; private set; }
     public Product Product { get; set; } = null!;
 
-    public decimal WeightKg { get; private set; }
+    public decimal NetWeightKg { get; private set; }
     public decimal UnitPricePerKg { get; private set; }
-    public decimal LineTotal { get; private set; }
 
     public string? Notes { get; private set; }
 
     public bool IsActive { get; private set; } = true;
     public DateTimeOffset CreatedTime { get; private set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset UpdatedTime { get; private set; } = DateTimeOffset.UtcNow;
+    public int CreatedByOperatorId { get; private set; }
 
     private TicketReceivingLine() { }
 
     public TicketReceivingLine(
-        long ticketReceivingId,
-        long productId,
-        decimal weightKg,
+        int receivingTicketId,
+        int productId,
+        decimal netWeightKg,
         decimal unitPricePerKg,
+        int createdByOperatorId,
         string? notes = null)
     {
-        TicketReceivingId = ticketReceivingId;
+        ReceivingTicketId = receivingTicketId;
         ProductId = productId;
-        WeightKg = weightKg;
+        NetWeightKg = netWeightKg;
         UnitPricePerKg = unitPricePerKg;
-        LineTotal = weightKg * unitPricePerKg;
+        CreatedByOperatorId = createdByOperatorId;
         Notes = notes;
     }
 
-    public void UpdateWeight(decimal weightKg)
+    public void UpdateWeight(decimal netWeightKg)
     {
-        WeightKg = weightKg;
-        LineTotal = weightKg * UnitPricePerKg;
+        NetWeightKg = netWeightKg;
+        UpdatedTime = DateTimeOffset.UtcNow;
     }
 
     public void UpdatePrice(decimal unitPricePerKg)
     {
         UnitPricePerKg = unitPricePerKg;
-        LineTotal = WeightKg * unitPricePerKg;
+        UpdatedTime = DateTimeOffset.UtcNow;
     }
 
     public void SoftDelete()
     {
         IsActive = false;
+        UpdatedTime = DateTimeOffset.UtcNow;
     }
 }

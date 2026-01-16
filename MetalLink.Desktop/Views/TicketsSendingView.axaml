@@ -247,7 +247,7 @@
                 <TextBox Text="{Binding SearchSendingTicketAccountNumberText}" />
               </StackPanel>
 
-              <!-- Row 3: Site / [can be used for something else or blank] -->
+              <!-- Row 3: Site / Ticket Number -->
               <StackPanel Grid.Row="3" Grid.Column="0" Spacing="2">
                 <TextBlock Text="Site" Foreground="#c0c4cf" />
                 <ComboBox
@@ -261,24 +261,9 @@
                   </ComboBox.ItemTemplate>
                 </ComboBox>
               </StackPanel>
-
-              <!-- Row 4: Ticket Number / Ticket type -->
-              <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2">
+              <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Ticket Number" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding SearchSendingTicketNumberText}" />
-              </StackPanel>
-              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2">
-                <TextBlock Text="Ticket Type" Foreground="#c0c4cf" />
-                <ComboBox
-                    ItemsSource="{Binding TicketTypeOptions}"
-                    SelectedItem="{Binding SelectedSearchTicketTypeOption}"
-                    HorizontalAlignment="Stretch">
-                  <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                      <TextBlock Text="{Binding Display}" />
-                    </DataTemplate>
-                  </ComboBox.ItemTemplate>
-                </ComboBox>
               </StackPanel>
             </Grid>
 
@@ -312,20 +297,20 @@
                 ItemsSource="{Binding SendingTicketSearchResults}"
                 SelectedItem="{Binding SelectedSendingTicket, Mode=TwoWay}">
               <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding TicketId}" Width="80" />
-                <DataGridTextColumn Header="Ticket #" Binding="{Binding TicketNumber}" Width="140" />
-                <DataGridTextColumn Header="Type" Binding="{Binding TicketType}" Width="100" />
-                <DataGridTextColumn Header="Customer ID" Binding="{Binding CustomerId}" Width="100" />
-                <DataGridTextColumn Header="First Name" Binding="{Binding FirstName}" Width="120" />
-                <DataGridTextColumn Header="Last Name" Binding="{Binding LastName}" Width="120" />
-                <DataGridTextColumn Header="Account #" Binding="{Binding AccountNumber}" Width="100" />
-                <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" Width="*" />
-                <DataGridTextColumn Header="Site" Binding="{Binding SiteName}" Width="160" />
-                <DataGridTextColumn Header="Net kg" Binding="{Binding NetWeightKg, StringFormat='{}{0:N2}'}" Width="100" />
-                <DataGridTextColumn Header="Total excl VAT" Binding="{Binding TotalExclVat, StringFormat='{}{0:N2}'}" Width="120" />
-                <DataGridTextColumn Header="VAT" Binding="{Binding VatAmount, StringFormat='{}{0:N2}'}" Width="100" />
-                <DataGridTextColumn Header="Total incl VAT" Binding="{Binding TotalInclVat, StringFormat='{}{0:N2}'}" Width="130" />
-                <DataGridTextColumn Header="Created" Binding="{Binding CreatedTime, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" />
+                <DataGridTextColumn Header="ID" Binding="{Binding TicketId}" Width="80" IsReadOnly="True" />
+                <DataGridTextColumn Header="Ticket #" Binding="{Binding TicketNumber}" Width="140" IsReadOnly="True" />
+                <DataGridTextColumn Header="Customer ID" Binding="{Binding CustomerId}" Width="100" IsReadOnly="True" />
+                <DataGridTextColumn Header="First Name" Binding="{Binding FirstName}" Width="120" IsReadOnly="True" />
+                <DataGridTextColumn Header="Last Name" Binding="{Binding LastName}" Width="120" IsReadOnly="True" />
+                <DataGridTextColumn Header="Account #" Binding="{Binding AccountNumber}" Width="100" IsReadOnly="True" />
+                <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" Width="*" IsReadOnly="True" />
+                <DataGridTextColumn Header="Site" Binding="{Binding SiteName}" Width="160" IsReadOnly="True" />
+                <DataGridTextColumn Header="Net KG" Binding="{Binding NetWeightKg, StringFormat='{}{0:N2}'}" Width="100" IsReadOnly="True" />
+                <DataGridTextColumn Header="Price" Binding="{Binding Price, StringFormat='{}{0:N2}'}" Width="100" IsReadOnly="True" />
+                <DataGridTextColumn Header="Total excl VAT" Binding="{Binding TotalExclVat, StringFormat='{}{0:N2}'}" Width="120" IsReadOnly="True" />
+                <DataGridTextColumn Header="VAT" Binding="{Binding VatAmount, StringFormat='{}{0:N2}'}" Width="100" IsReadOnly="True" />
+                <DataGridTextColumn Header="Total incl VAT" Binding="{Binding TotalInclVat, StringFormat='{}{0:N2}'}" Width="130" IsReadOnly="True" />
+                <DataGridTextColumn Header="Created" Binding="{Binding CreatedTime, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" IsReadOnly="True" />
                 <DataGridTemplateColumn Header="" Width="140">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
@@ -385,10 +370,6 @@
                 <TextBlock Text="Ticket Number" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
                 <TextBlock Text="{Binding SelectedSendingTicketDetails.TicketNumber}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
-              <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
-                <TextBlock Text="Ticket Type" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.TicketType}" Foreground="#f5f5f5" FontSize="11" />
-              </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2">
                 <TextBlock Text="Customer ID" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
                 <TextBlock Text="{Binding SelectedSendingTicketDetails.CustomerId, StringFormat='{}{0:D8}'}" Foreground="#f5f5f5" FontSize="11" />
@@ -431,29 +412,27 @@
                 <TextBlock Text="{Binding SelectedSendingTicketDetails.UnitPricePerKg, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2" Margin="0,8,0,0">
-                <TextBlock Text="Total (ex VAT)" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.TotalAmount, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="3" Grid.Column="2" Spacing="2" Margin="0,8,0,0">
-                <TextBlock Text="VAT Amount" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.VatAmount, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="Currency" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
+                <TextBlock Text="{Binding SelectedSendingTicketDetails.CurrencyCode}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
 
               <!-- Row 4 -->
               <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2" Margin="0,8,0,0">
+                <TextBlock Text="Total (ex VAT)" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
+                <TextBlock Text="{Binding SelectedSendingTicketDetails.TotalAmount, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
+              </StackPanel>
+              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2" Margin="0,8,0,0">
+                <TextBlock Text="VAT Amount" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
+                <TextBlock Text="{Binding SelectedSendingTicketDetails.VatAmount, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
+              </StackPanel>
+              <StackPanel Grid.Row="4" Grid.Column="2" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="Total (incl VAT)" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
                 <TextBlock Text="{Binding SelectedSendingTicketDetails.TotalInclVat, StringFormat='{}{0:N2}'}" 
                            Foreground="#4a9eff" 
                            FontWeight="Bold" 
                            FontSize="13" />
-              </StackPanel>
-              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2" Margin="0,8,0,0">
-                <TextBlock Text="Currency" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.CurrencyCode}" Foreground="#f5f5f5" FontSize="11" />
-              </StackPanel>
-              <StackPanel Grid.Row="4" Grid.Column="2" Spacing="2" Margin="0,8,0,0">
-                <TextBlock Text="Created" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.CreatedTime, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
             </Grid>
 
@@ -583,34 +562,36 @@
               </Border>
 
               <!-- Totals Summary for Selected Ticket Lines -->
-              <StackPanel Orientation="Horizontal"
+              <StackPanel Orientation="Vertical"
                           HorizontalAlignment="Right"
-                          Spacing="16"
+                          Spacing="8"
                           Margin="0,8,0,0"
                           IsVisible="{Binding SelectedSendingTicketLines.Count}">
-                <StackPanel Spacing="2">
-                  <TextBlock Text="Total ex VAT"
-                             Foreground="#c0c4cf"
-                             FontSize="11" />
-                  <TextBlock Text="{Binding SelectedSendingTicketLinesTotalExVat, StringFormat='{}{0:N2}'}"
-                             Foreground="#4a9eff"
-                             FontWeight="Bold" />
-                </StackPanel>
-                <StackPanel Spacing="2">
-                  <TextBlock Text="VAT"
-                             Foreground="#c0c4cf"
-                             FontSize="11" />
-                  <TextBlock Text="{Binding SelectedSendingTicketLinesTotalVat, StringFormat='{}{0:N2}'}"
-                             Foreground="#4a9eff"
-                             FontWeight="Bold" />
-                </StackPanel>
-                <StackPanel Spacing="2">
-                  <TextBlock Text="Total incl VAT"
-                             Foreground="#c0c4cf"
-                             FontSize="11" />
-                  <TextBlock Text="{Binding SelectedSendingTicketLinesTotalInclVat, StringFormat='{}{0:N2}'}"
-                             Foreground="#4a9eff"
-                             FontWeight="Bold" />
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="Total ex VAT"
+                               Foreground="#c0c4cf"
+                               FontSize="11" />
+                    <TextBlock Text="{Binding SelectedSendingTicketLinesTotalExVat, StringFormat='{}{0:N2}'}"
+                               Foreground="#4a9eff"
+                               FontWeight="Bold" />
+                  </StackPanel>
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="VAT"
+                               Foreground="#c0c4cf"
+                               FontSize="11" />
+                    <TextBlock Text="{Binding SelectedSendingTicketLinesTotalVat, StringFormat='{}{0:N2}'}"
+                               Foreground="#4a9eff"
+                               FontWeight="Bold" />
+                  </StackPanel>
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="Total incl VAT"
+                               Foreground="#c0c4cf"
+                               FontSize="11" />
+                    <TextBlock Text="{Binding SelectedSendingTicketLinesTotalInclVat, StringFormat='{}{0:N2}'}"
+                               Foreground="#4a9eff"
+                               FontWeight="Bold" />
+                  </StackPanel>
                 </StackPanel>
               </StackPanel>
             </StackPanel>
@@ -655,22 +636,7 @@
                 <TextBox Text="{Binding TicketNumber}" IsReadOnly="True" />
               </StackPanel>
 
-              <!-- Row 1: Ticket Type / [blank] -->
-              <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2">
-                <TextBlock Text="Ticket Type" Foreground="#c0c4cf" />
-                <ComboBox
-                    ItemsSource="{Binding TicketTypeOptions}"
-                    SelectedItem="{Binding SelectedTicketTypeOption}"
-                    HorizontalAlignment="Stretch">
-                  <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                      <TextBlock Text="{Binding Display}" />
-                    </DataTemplate>
-                  </ComboBox.ItemTemplate>
-                </ComboBox>
-              </StackPanel>
-
-              <!-- Row 2: Product Search Text / Product Letter + Dropdown -->
+              <!-- Row 1: Product Search Text / Product Letter + Dropdown -->
               <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2" IsEnabled="{Binding IsProductSelectionEnabled}">
                 <TextBlock Text="Product Search" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding TicketProductSearchText}" Watermark="Search products..." />

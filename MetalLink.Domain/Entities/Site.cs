@@ -5,16 +5,16 @@ namespace MetalLink.Domain.Entities;
 
 public class Site
 {
-    public long SiteId { get; set; }
+    public int SiteId { get; set; }
 
-    public long CompanyId { get; set; }
-    public Company Company { get; set; } = null!;
+    public int? CompanyId { get; set; }
+    public Company? Company { get; set; }
 
-    public int? ProvinceId { get; set; }
-    public Province? Province { get; set; } = null!;
+    public int ProvinceId { get; set; }
+    public Province Province { get; set; } = null!;
 
-    public int? CountryId { get; set; }
-    public Country? Country { get; set; } = null!;
+    public int CountryId { get; set; }
+    public Country Country { get; set; } = null!;
 
     public string SiteName { get; set; } = string.Empty;
     public string SiteCode { get; set; } = string.Empty;
@@ -25,7 +25,8 @@ public class Site
     public string? City        { get; set; }
     public string? PostalCode  { get; set; }
 
-    public bool     IsActive    { get; set; } = true;
+    public int CreatedByOperatorId { get; set; }
+    public bool IsActive { get; set; } = true;
     public DateTimeOffset CreatedTime { get; set; }
     public DateTimeOffset UpdatedTime { get; set; }
 

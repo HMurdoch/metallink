@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using MetalLink.Application.Interfaces;
 using MetalLink.Domain.Entities;
 using MetalLink.Shared.Tickets;
@@ -8,51 +6,71 @@ using MetalLink.Shared.Tickets;
 namespace MetalLink.Api.Controllers;
 
 [ApiController]
-[Route("api/tickets-receiving")]
-[Authorize]
+[Route("api/[controller]")]
 public class TicketsReceivingController : ControllerBase
 {
     private readonly ITicketReceivingRepository _ticketReceivingRepo;
     private readonly ICustomerRepository _customerRepo;
-    private readonly IProductRepository _productRepo;
     private readonly IUnitOfWork _unitOfWork;
 
     public TicketsReceivingController(
         ITicketReceivingRepository ticketReceivingRepo,
         ICustomerRepository customerRepo,
-        IProductRepository productRepo,
         IUnitOfWork unitOfWork)
     {
         _ticketReceivingRepo = ticketReceivingRepo;
         _customerRepo = customerRepo;
-        _productRepo = productRepo;
         _unitOfWork = unitOfWork;
     }
 
-    /// <summary>
-    /// Create a new receiving ticket
-    /// </summary>
+    [HttpGet("{id}")]
+    public async Task<ActionResult<TicketReceivingDto>> GetTicketReceiving(int id)
+    {
+        var ticket = await _ticketReceivingRepo.GetByIdAsync(id);
+        if (ticket == null)
+            return NotFound($"Ticket with ID {id} not found.");
+
+        return Ok(MapToDto(ticket));
+    }
+
+    [HttpPost("search")]
+    public async Task<ActionResult<List<TicketSearchResultDto>>> SearchTicketsReceiving([FromBody] TicketReceivingSearchRequestDto request)
+    {
+        var tickets = await _ticketReceivingRepo.SearchAsync(
+            searchTerm: request.SearchTerm,
+            customerId: request.CustomerId,
+            firstName: request.FirstName,
+            lastName: request.LastName,
+            idNumber: request.IdNumber,
+            accountNumber: request.AccountNumber,
+            startDate: request.StartDate,
+            endDate: request.EndDate,
+            pageNumber: request.PageNumber,
+            pageSize: request.PageSize
+        );
+
+        var results = new List<TicketSearchResultDto>();
+        foreach (var ticket in tickets)
+        {
+            results.Add(await MapToSearchResultDtoAsync(ticket));
+        }
+        
+        return Ok(results);
+    }
+
     [HttpPost]
     public async Task<ActionResult<TicketReceivingDto>> CreateTicketReceiving([FromBody] CreateTicketReceivingDto dto)
     {
-        // Validate customer exists
         var customer = await _customerRepo.GetByIdAsync(dto.CustomerId);
         if (customer == null)
             return BadRequest($"Customer with ID {dto.CustomerId} not found.");
 
-        // Create the ticket entity
         var ticket = new TicketReceiving(
-            companyId: dto.CompanyId,
-            siteId: dto.SiteId,
             customerId: dto.CustomerId,
+            ticketTypeId: dto.TicketTypeId,
             ticketNumber: dto.TicketNumber,
-            ticketType: dto.TicketType,
             netWeightKg: dto.NetWeightKg,
-            unitPricePerKg: dto.UnitPricePerKg,
-            currencyCode: dto.CurrencyCode,
             createdByOperatorId: dto.CreatedByOperatorId,
-            productId: dto.ProductId,
-            productDescription: dto.ProductDescription,
             firstWeightKg: dto.FirstWeightKg,
             secondWeightKg: dto.SecondWeightKg,
             vehicleRegistration: dto.VehicleRegistration,
@@ -64,144 +82,49 @@ public class TicketsReceivingController : ControllerBase
         await _ticketReceivingRepo.AddAsync(ticket);
         await _unitOfWork.SaveChangesAsync();
 
-        // Map to DTO
         var result = await _ticketReceivingRepo.GetByIdAsync(ticket.TicketReceivingId);
         return Ok(MapToDto(result!));
     }
 
-    /// <summary>
-    /// Get a receiving ticket by ID
-    /// </summary>
-    [HttpGet("{id:long}")]
-    public async Task<ActionResult<TicketReceivingDto>> GetTicketReceivingById(long id)
+    [HttpPost("{id}/lines")]
+    public async Task<ActionResult<TicketReceivingDto>> AddLineItem(int id, [FromBody] CreateTicketReceivingLineDto dto)
     {
         var ticket = await _ticketReceivingRepo.GetByIdAsync(id);
         if (ticket == null)
-            return NotFound($"Ticket receiving with ID {id} not found.");
+            return NotFound($"Ticket with ID {id} not found.");
 
-        return Ok(MapToDto(ticket));
+        var line = new TicketReceivingLine(
+            receivingTicketId: id,
+            productId: dto.ProductId,
+            netWeightKg: dto.NetWeightKg,
+            unitPricePerKg: dto.UnitPricePerKg,
+            createdByOperatorId: 1,
+            notes: dto.Notes
+        );
+
+        ticket.AddLine(line);
+        await _ticketReceivingRepo.UpdateAsync(ticket);
+        await _unitOfWork.SaveChangesAsync();
+
+        var result = await _ticketReceivingRepo.GetByIdAsync(id);
+        return Ok(MapToDto(result!));
     }
 
-    /// <summary>
-    /// Search for receiving tickets
-    /// </summary>
-    [HttpPost("search")]
-    public async Task<ActionResult<List<TicketReceivingDto>>> SearchTicketsReceiving([FromBody] TicketReceivingSearchRequestDto request)
+    [HttpGet("{id}/count")]
+    public async Task<ActionResult<long>> GetSearchCount([FromQuery] TicketReceivingSearchRequestDto request)
     {
-        var tickets = await _ticketReceivingRepo.SearchAsync(
+        var count = await _ticketReceivingRepo.GetCountAsync(
             searchTerm: request.SearchTerm,
-            companyId: request.CompanyId,
-            siteId: request.SiteId,
             customerId: request.CustomerId,
             firstName: request.FirstName,
             lastName: request.LastName,
             idNumber: request.IdNumber,
             accountNumber: request.AccountNumber,
-            productId: request.ProductId,
             startDate: request.StartDate,
-            endDate: request.EndDate,
-            deliveryStatus: request.DeliveryStatus,
-            pageNumber: request.PageNumber,
-            pageSize: request.PageSize
+            endDate: request.EndDate
         );
 
-        var results = tickets.Select(MapToDto).ToList();
-        return Ok(results);
-    }
-
-    /// <summary>
-    /// Update a receiving ticket
-    /// </summary>
-    [HttpPut("{id:long}")]
-    public async Task<ActionResult<TicketReceivingDto>> UpdateTicketReceiving(long id, [FromBody] CreateTicketReceivingDto dto)
-    {
-        var ticket = await _ticketReceivingRepo.GetByIdAsync(id);
-        if (ticket == null)
-            return NotFound($"Ticket receiving with ID {id} not found.");
-
-        ticket.UpdateWeights(dto.FirstWeightKg, dto.SecondWeightKg, dto.NetWeightKg);
-        ticket.UpdatePrice(dto.UnitPricePerKg);
-
-        await _unitOfWork.SaveChangesAsync();
-
-        var updated = await _ticketReceivingRepo.GetByIdAsync(id);
-        return Ok(MapToDto(updated!));
-    }
-
-    /// <summary>
-    /// Delete a receiving ticket
-    /// </summary>
-    [HttpDelete("{id:long}")]
-    public async Task<IActionResult> DeleteTicketReceiving(long id)
-    {
-        var ticket = await _ticketReceivingRepo.GetByIdAsync(id);
-        if (ticket == null)
-            return NotFound($"Ticket receiving with ID {id} not found.");
-
-        ticket.SoftDelete(DateTimeOffset.UtcNow);
-        await _unitOfWork.SaveChangesAsync();
-
-        return NoContent();
-    }
-
-    /// <summary>
-    /// Add lines to a platform receiving ticket
-    /// </summary>
-    [HttpPost("{ticketId:long}/lines")]
-    public async Task<ActionResult<List<TicketReceivingLineDto>>> AddLines(long ticketId, [FromBody] List<AddTicketLineRequest> lines)
-    {
-        var ticket = await _ticketReceivingRepo.GetByIdAsync(ticketId);
-        if (ticket == null)
-            return NotFound($"Ticket receiving with ID {ticketId} not found.");
-
-        foreach (var lineReq in lines)
-        {
-            var line = new TicketReceivingLine(
-                ticketReceivingId: ticketId,
-                productId: lineReq.ProductId,
-                weightKg: lineReq.WeightKg,
-                unitPricePerKg: lineReq.UnitPricePerKg ?? ticket.UnitPricePerKg,
-                notes: lineReq.Notes
-            );
-
-            ticket.AddLine(line);
-        }
-
-        await _unitOfWork.SaveChangesAsync();
-
-        var updated = await _ticketReceivingRepo.GetByIdAsync(ticketId);
-        var resultLines = updated!.Lines.Select(l => new TicketReceivingLineDto
-        {
-            TicketReceivingLineId = l.TicketReceivingLineId,
-            TicketReceivingId = l.TicketReceivingId,
-            ProductId = l.ProductId,
-            ProductCode = l.Product?.ProductCode ?? "",
-            ProductName = l.Product?.ProductName ?? "",
-            WeightKg = l.WeightKg,
-            UnitPricePerKg = l.UnitPricePerKg,
-            LineTotal = l.LineTotal,
-            Notes = l.Notes,
-            IsActive = l.IsActive,
-            CreatedTime = l.CreatedTime
-        }).ToList();
-
-        return Ok(resultLines);
-    }
-
-    /// <summary>
-    /// Update delivery status
-    /// </summary>
-    [HttpPut("{id:long}/status")]
-    public async Task<IActionResult> UpdateDeliveryStatus(long id, [FromBody] UpdateDeliveryStatusRequest request)
-    {
-        var ticket = await _ticketReceivingRepo.GetByIdAsync(id);
-        if (ticket == null)
-            return NotFound($"Ticket receiving with ID {id} not found.");
-
-        ticket.UpdateDeliveryStatus(request.DeliveryStatus);
-        await _unitOfWork.SaveChangesAsync();
-
-        return NoContent();
+        return Ok(count);
     }
 
     private TicketReceivingDto MapToDto(TicketReceiving ticket)
@@ -209,67 +132,63 @@ public class TicketsReceivingController : ControllerBase
         return new TicketReceivingDto
         {
             TicketReceivingId = ticket.TicketReceivingId,
-            CompanyId = ticket.CompanyId,
-            SiteId = ticket.SiteId,
             CustomerId = ticket.CustomerId,
             CustomerName = ticket.Customer?.FullName ?? "",
             TicketNumber = ticket.TicketNumber,
-            TicketType = ticket.TicketType,
+            TicketTypeId = ticket.TicketTypeId,
             FirstWeightKg = ticket.FirstWeightKg,
             SecondWeightKg = ticket.SecondWeightKg,
             NetWeightKg = ticket.NetWeightKg,
-            UnitPricePerKg = ticket.UnitPricePerKg,
-            TotalAmount = ticket.TotalAmount,
-            CurrencyCode = ticket.CurrencyCode,
-            ProductId = ticket.ProductId,
-            ProductCode = ticket.Product?.ProductCode,
-            ProductName = ticket.Product?.ProductName,
-            ProductDescription = ticket.ProductDescription,
+            InvoiceNumber = ticket.InvoiceNumber,
             VehicleRegistration = ticket.VehicleRegistration,
             TrailerRegistration = ticket.TrailerRegistration,
             DriverName = ticket.DriverName,
             OfmWeighbridgeTicket = ticket.OfmWeighbridgeTicket,
-            ForeignTicket = ticket.ForeignTicket,
             CkNumber = ticket.CkNumber,
             DeliveryNumber = ticket.DeliveryNumber,
-            RfidTag = ticket.RfidTag,
-            RfidFirstScan = ticket.RfidFirstScan,
-            RfidSecondScan = ticket.RfidSecondScan,
-            DeliveryStatus = ticket.DeliveryStatus,
+            ForeignTicket = ticket.ForeignTicket,
             Notes = ticket.Notes,
-            PlatePhotoUrl = ticket.PlatePhotoUrl,
-            LoadPhotoUrl = ticket.LoadPhotoUrl,
-            Lines = ticket.Lines?.Select(l => new TicketReceivingLineDto
-            {
-                TicketReceivingLineId = l.TicketReceivingLineId,
-                TicketReceivingId = l.TicketReceivingId,
-                ProductId = l.ProductId,
-                ProductCode = l.Product?.ProductCode ?? "",
-                ProductName = l.Product?.ProductName ?? "",
-                WeightKg = l.WeightKg,
-                UnitPricePerKg = l.UnitPricePerKg,
-                LineTotal = l.LineTotal,
-                Notes = l.Notes,
-                IsActive = l.IsActive,
-                CreatedTime = l.CreatedTime
-            }).ToList() ?? new List<TicketReceivingLineDto>(),
             IsActive = ticket.IsActive,
             CreatedTime = ticket.CreatedTime,
             UpdatedTime = ticket.UpdatedTime,
-            CreatedByOperatorId = ticket.CreatedByOperatorId
+            CreatedByOperatorId = ticket.CreatedByOperatorId,
+            Lines = ticket.Lines?.Select(l => new TicketReceivingLineDto
+            {
+                ReceivingTicketLineId = l.ReceivingTicketLineId,
+                ReceivingTicketId = l.ReceivingTicketId,
+                ProductId = l.ProductId,
+                ProductCode = l.Product?.ProductCode ?? "",
+                ProductName = l.Product?.ProductName ?? "",
+                NetWeightKg = l.NetWeightKg,
+                UnitPricePerKg = l.UnitPricePerKg,
+                Notes = l.Notes,
+                IsActive = l.IsActive,
+                CreatedTime = l.CreatedTime
+            }).ToList() ?? new List<TicketReceivingLineDto>()
         };
     }
-}
 
-public class AddTicketLineRequest
-{
-    public long ProductId { get; set; }
-    public decimal WeightKg { get; set; }
-    public decimal? UnitPricePerKg { get; set; }
-    public string? Notes { get; set; }
-}
-
-public class UpdateDeliveryStatusRequest
-{
-    public string DeliveryStatus { get; set; } = string.Empty;
+    private async Task<TicketSearchResultDto> MapToSearchResultDtoAsync(TicketReceiving ticket)
+    {
+        var accountNumber = ticket.Customer?.AccountNumber?.ToString("D8");
+        
+        return new TicketSearchResultDto
+        {
+            TicketId = ticket.TicketReceivingId,
+            TicketNumber = ticket.TicketNumber,
+            TicketType = ticket.TicketType?.TicketTypeName ?? "Unknown",
+            CustomerId = ticket.CustomerId,
+            FirstName = ticket.Customer?.FirstName,
+            LastName = ticket.Customer?.LastName,
+            CompanyName = ticket.Customer?.Company?.CompanyName,
+            SiteName = ticket.Customer?.Site?.SiteName,
+            AccountNumber = accountNumber,
+            NetWeightKg = ticket.NetWeightKg,
+            Price = 0, // TODO: Calculate from line items
+            TotalExclVat = 0, // TODO: Calculate from line items
+            VatAmount = 0,
+            TotalInclVat = 0,
+            CreatedTime = ticket.CreatedTime
+        };
+    }
 }

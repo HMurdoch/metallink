@@ -43,7 +43,7 @@ public sealed class GetCustomerByIdQueryHandler
             CompanyName   = company.CompanyName,
             VatNumber     = company.VatNumber,
 
-            Taxable       = customer.Taxable,
+            IsTaxable       = customer.IsTaxable,
 
             SiteName      = site.SiteName,
             SiteCode      = site.SiteCode,
@@ -60,12 +60,7 @@ public sealed class GetCustomerByIdQueryHandler
             CreatedTime   = customer.CreatedTime,
             UpdatedTime   = customer.UpdatedTime,
 
-            // Image paths
-            IdCardImagePath = customer.IdCardImagePath,
-            DriverLicenseImagePath = customer.DriverLicenseImagePath,
-            PhotoImagePath = customer.PhotoImagePath,
-            SignatureImagePath = customer.SignatureImagePath,
-            FingerprintImagePath = customer.FingerprintImagePath
+            ImagePathId = customer.ImagePathId
         };
 
         return dto;

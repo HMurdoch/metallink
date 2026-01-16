@@ -141,7 +141,7 @@ public partial class MainWindowViewModel
                 {
                     ProductCode = string.IsNullOrWhiteSpace(ProductCode) ? null! : ProductCode.Trim(),
                     ProductName = ProductName.Trim(),
-                    Grade = ProductGrade,
+                    Grade = ProductGrade > 0 ? ProductGrade.ToString() : null,
                     IsActive = true
                 },
                 ct);
@@ -190,7 +190,7 @@ public partial class MainWindowViewModel
 
         ProductCode = product.ProductCode ?? "";
         ProductName = product.ProductName ?? "";
-        ProductGrade = product.Grade;
+        ProductGrade = string.IsNullOrEmpty(product.Grade) ? 0 : decimal.Parse(product.Grade);
 
         OnPropertyChanged(nameof(IsProductEditMode));
         OnPropertyChanged(nameof(IsProductCreateMode));
@@ -219,7 +219,7 @@ public partial class MainWindowViewModel
                 ProductId = SelectedProduct.ProductId,
                 ProductCode = string.IsNullOrWhiteSpace(ProductCode) ? null! : ProductCode.Trim(),
                 ProductName = ProductName.Trim(),
-                Grade = ProductGrade,
+                Grade = ProductGrade > 0 ? ProductGrade.ToString() : null,
                 IsActive = true
             };
 
@@ -563,8 +563,8 @@ public partial class MainWindowViewModel
                     EditingPriceId.Value,
                     new PriceDto
                     {
-                        PriceId = EditingPriceId.Value,
-                        ProductId = SelectedProduct.ProductId,
+                        PriceId = (int)EditingPriceId.Value,
+                        ProductId = (int)SelectedProduct.ProductId,
                         PriceA = PriceA,
                         PriceB = PriceB,
                         PriceC = PriceC,

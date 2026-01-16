@@ -40,8 +40,7 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, LoginRes
             Token = token,
             Username = op.Username,
             DisplayName = op.DisplayName,
-            Role = op.Role,
-            SiteId = op.SiteId
+            Role = op.Role
         };
     }
 }

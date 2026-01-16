@@ -45,8 +45,8 @@ public sealed class CustomersController : ControllerBase
 
         var command = new CreateCustomerCommand
         {
-            CompanyId = dto.CompanyId, // long? → long?
-            SiteId = dto.SiteId, // long? → long?
+            CompanyId = dto.CompanyId,
+            SiteId = dto.SiteId,
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             IsCompany = dto.IsCompany,
@@ -56,14 +56,7 @@ public sealed class CustomersController : ControllerBase
             PhoneNumber = dto.PhoneNumber,
             MobileNumber = dto.MobileNumber,
             Email = dto.Email,
-            Taxable = dto.Taxable,
-            
-            // Image paths
-            IdCardImagePath = dto.IdCardImagePath,
-            DriverLicenseImagePath = dto.DriverLicenseImagePath,
-            PhotoImagePath = dto.PhotoImagePath,
-            SignatureImagePath = dto.SignatureImagePath,
-            FingerprintImagePath = dto.FingerprintImagePath
+            IsTaxable = dto.Taxable
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -98,11 +91,11 @@ public sealed class CustomersController : ControllerBase
     // -----------------------------
     // GET BY ID
     // -----------------------------
-    [HttpGet("{customerId:long}")]
+    [HttpGet("{customerId:int}")]
     [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(
-        long customerId,
+        int customerId,
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
@@ -150,29 +143,17 @@ public sealed class CustomersController : ControllerBase
         customer.PhoneNumber = dto.PhoneNumber;
         customer.MobileNumber = dto.MobileNumber;
         customer.Email = dto.Email;
-        customer.Taxable = dto.Taxable;
+        customer.IsTaxable = dto.Taxable;
 
-        // Update image paths if provided
-        if (!string.IsNullOrWhiteSpace(dto.IdCardImagePath))
-            customer.IdCardImagePath = dto.IdCardImagePath;
-        if (!string.IsNullOrWhiteSpace(dto.DriverLicenseImagePath))
-            customer.DriverLicenseImagePath = dto.DriverLicenseImagePath;
-        if (!string.IsNullOrWhiteSpace(dto.PhotoImagePath))
-            customer.PhotoImagePath = dto.PhotoImagePath;
-        if (!string.IsNullOrWhiteSpace(dto.SignatureImagePath))
-            customer.SignatureImagePath = dto.SignatureImagePath;
-        if (!string.IsNullOrWhiteSpace(dto.FingerprintImagePath))
-            customer.FingerprintImagePath = dto.FingerprintImagePath;
-
-        customer.UpdatedTime = DateTime.UtcNow;
+        customer.UpdatedTime = DateTimeOffset.UtcNow;
 
         // Address, province and country belong to Site; update them via Site endpoints, not customer update.
         await _customerRepository.UpdateAsync(customer, cancellationToken);
         return NoContent();
     }
 
-    [HttpDelete("{customerId:long}")]
-    public async Task<IActionResult> SoftDelete(long customerId, CancellationToken cancellationToken)
+    [HttpDelete("{customerId:int}")]
+    public async Task<IActionResult> SoftDelete(int customerId, CancellationToken cancellationToken)
     {
         await _customerRepository.SoftDeleteAsync(customerId, cancellationToken);
         return NoContent();
@@ -188,11 +169,11 @@ public sealed class CustomersController : ControllerBase
     // -----------------------------
     // UPLOAD CUSTOMER IMAGE
     // -----------------------------
-    [HttpPost("{customerId:long}/images/{imageType}")]
+    [HttpPost("{customerId:int}/images/{imageType}")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UploadImage(
-        long customerId,
+        int customerId,
         string imageType,
         [FromBody] UploadImageRequest request,
         CancellationToken cancellationToken)
@@ -214,7 +195,7 @@ public sealed class CustomersController : ControllerBase
             _ => "jpg"
         };
         
-        var key = $"customers/{customerId}/{imageType}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.{extension}";
+        var key = $"customers/{customerId}/{imageType}_{DateTimeOffset.UtcNow:yyyyMMdd_HHmmss}.{extension}";
 
         // Upload to storage
         await _fileStorage.UploadAsync(
@@ -227,26 +208,32 @@ public sealed class CustomersController : ControllerBase
         var customer = await _customerRepository.GetByIdAsync(customerId, cancellationToken);
         if (customer != null)
         {
+            // Create or update ImagePath entity
+            if (customer.ImagePath == null)
+            {
+                customer.ImagePath = new MetalLink.Domain.Entities.ImagePath();
+            }
+
             switch (imageType.ToLower())
             {
                 case "idcard":
-                    customer.IdCardImagePath = key;
+                    customer.ImagePath.IdCardImagePath = key;
                     break;
                 case "driverlicense":
-                    customer.DriverLicenseImagePath = key;
+                    customer.ImagePath.DriverLicenseImagePath = key;
                     break;
                 case "photo":
-                    customer.PhotoImagePath = key;
+                    customer.ImagePath.PhotoImagePath = key;
                     break;
                 case "signature":
-                    customer.SignatureImagePath = key;
+                    customer.ImagePath.SignatureImagePath = key;
                     break;
                 case "fingerprint":
-                    customer.FingerprintImagePath = key;
+                    customer.ImagePath.FingerprintImagePath = key;
                     break;
             }
             
-            customer.UpdatedTime = DateTime.UtcNow;
+            customer.UpdatedTime = DateTimeOffset.UtcNow;
             await _customerRepository.UpdateAsync(customer, cancellationToken);
         }
 
@@ -257,11 +244,11 @@ public sealed class CustomersController : ControllerBase
     // -----------------------------
     // DOWNLOAD CUSTOMER IMAGE
     // -----------------------------
-    [HttpGet("{customerId:long}/images/{imageType}")]
+    [HttpGet("{customerId:int}/images/{imageType}")]
     [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DownloadImage(
-        long customerId,
+        int customerId,
         string imageType,
         CancellationToken cancellationToken)
     {
@@ -274,14 +261,20 @@ public sealed class CustomersController : ControllerBase
             return NotFound("Customer not found");
         }
 
-        // Get the image path based on type
+        // Get the image path based on type from ImagePath entity
+        if (customer.ImagePath == null)
+        {
+            Console.WriteLine($"[API] ImagePath not found for customer {customerId}");
+            return NotFound("Image not found");
+        }
+
         string? imagePath = imageType.ToLower() switch
         {
-            "idcard" => customer.IdCardImagePath,
-            "driverlicense" => customer.DriverLicenseImagePath,
-            "photo" => customer.PhotoImagePath,
-            "signature" => customer.SignatureImagePath,
-            "fingerprint" => customer.FingerprintImagePath,
+            "idcard" => customer.ImagePath.IdCardImagePath,
+            "driverlicense" => customer.ImagePath.DriverLicenseImagePath,
+            "photo" => customer.ImagePath.PhotoImagePath,
+            "signature" => customer.ImagePath.SignatureImagePath,
+            "fingerprint" => customer.ImagePath.FingerprintImagePath,
             _ => null
         };
 

@@ -49,7 +49,7 @@ public sealed class SearchCustomersQueryHandler
 
                     CompanyName = company?.CompanyName,
                     VatNumber   = company?.VatNumber,
-                    Taxable     = c.Taxable,
+                    IsTaxable     = c.IsTaxable,
 
                     SiteName = site?.SiteName ?? string.Empty,
                     SiteCode = site?.SiteCode ?? string.Empty,
@@ -66,12 +66,7 @@ public sealed class SearchCustomersQueryHandler
                     CreatedTime = c.CreatedTime,
                     UpdatedTime = c.UpdatedTime,
 
-                    // Image paths
-                    IdCardImagePath = c.IdCardImagePath,
-                    DriverLicenseImagePath = c.DriverLicenseImagePath,
-                    PhotoImagePath = c.PhotoImagePath,
-                    SignatureImagePath = c.SignatureImagePath,
-                    FingerprintImagePath = c.FingerprintImagePath
+                    ImagePathId = c.ImagePathId
                 };
             })
             .ToArray();

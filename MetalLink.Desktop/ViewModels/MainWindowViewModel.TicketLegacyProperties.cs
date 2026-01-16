@@ -130,4 +130,47 @@ public partial class MainWindowViewModel
         get => _selectedTicketTypeOption;
         set { _selectedTicketTypeOption = value; OnPropertyChanged(); }
     }
+
+    // Button text property
+    private string _createOrUpdateButtonText = "Create Ticket";
+    public string CreateOrUpdateButtonText
+    {
+        get => _createOrUpdateButtonText;
+        set { _createOrUpdateButtonText = value; OnPropertyChanged(); }
+    }
+
+    // Currency options
+    private System.Collections.ObjectModel.ObservableCollection<string> _currencyOptions = new();
+    public System.Collections.ObjectModel.ObservableCollection<string> CurrencyOptions
+    {
+        get => _currencyOptions;
+        set { _currencyOptions = value; OnPropertyChanged(); }
+    }
+
+    private string _selectedCurrency = "ZAR";
+    public string SelectedCurrency
+    {
+        get => _selectedCurrency;
+        set { _selectedCurrency = value; OnPropertyChanged(); }
+    }
+
+    // Initialize TicketTypeOptions if not already done (Receiving only: weighbridge and platform)
+    public void InitializeTicketTypeOptions()
+    {
+        if (TicketTypeOptions.Count == 0)
+        {
+            TicketTypeOptions.Add(new Properties.TicketTypeOption { Key = "weighbridge", Display = "Weighbridge" });
+            TicketTypeOptions.Add(new Properties.TicketTypeOption { Key = "platform", Display = "Platform" });
+        }
+    }
+
+    // Initialize CurrencyOptions
+    public void InitializeCurrencyOptions()
+    {
+        if (CurrencyOptions.Count == 0)
+        {
+            CurrencyOptions.Add("ZAR");
+            // Add other currencies as needed in the future
+        }
+    }
 }

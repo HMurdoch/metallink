@@ -1,50 +1,43 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MetalLink.Domain.Entities;
 
-/// <summary>
-/// Represents a buyer/merchant that purchases scrap metal from us (outbound/sending).
-/// Similar to Customer, but for the opposite flow.
-/// </summary>
 public class Buyer
 {
-    public long BuyerId { get; set; }
+    public int BuyerId { get; set; }
 
-    // Company details
-    public long? CompanyId { get; set; }
-    public Company? Company { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
 
-    public long? SiteId { get; set; }
-    public Site? Site { get; set; }
+    public string FullName => string.Join(" ", new[] { FirstName, LastName }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
-    // Buyer details
-    public string? BuyerName { get; set; }
-    public string? ContactPerson { get; set; }
-    public bool IsCompany { get; set; } = true;
-
-    // Identifiers
-    public string? RegistrationNumber { get; set; }  // Company registration
-    public string? VatNumber { get; set; }
+    public string? IdNumber { get; set; }
     public long? AccountNumber { get; set; }
+
+    public int CompanyId { get; set; }
+    public Company Company { get; set; } = null!;
+
+    public int SiteId { get; set; }
+    public Site Site { get; set; } = null!;
+
+    public bool IsTaxable { get; set; }
     public string? PriceCode { get; set; }
 
-    // Contact information
     public string? PhoneNumber { get; set; }
     public string? MobileNumber { get; set; }
     public string? Email { get; set; }
-    public string? Address { get; set; }
 
-    // Business details
-    public bool Taxable { get; set; } = true;
-    public string? PaymentTerms { get; set; }  // e.g., "30 days", "COD"
-    public string? Notes { get; set; }
+    public int? ImagePathId { get; set; }
+    public ImagePath? ImagePath { get; set; }
 
-    // Audit fields
+    public int CreatedByOperatorId { get; set; }
+
     public bool IsActive { get; set; } = true;
-    public DateTimeOffset? CreatedTime { get; set; }
-    public DateTimeOffset? UpdatedTime { get; set; }
+    public DateTimeOffset CreatedTime { get; set; }
+    public DateTimeOffset UpdatedTime { get; set; }
 
-    // Navigation
+    // Navigation (legacy)
     public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
 }

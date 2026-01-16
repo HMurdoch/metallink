@@ -179,6 +179,14 @@ public partial class MainWindowViewModel
         return long.TryParse(t, out var v) ? v : null;
     }
 
+    private int? ParseIntOrNull(string text)
+    {
+        var t = (text ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(t)) return null;
+        if (t.All(c => c == '0')) return null;
+        return int.TryParse(t, out var v) ? v : null;
+    }
+
     private DateTimeOffset? ParseDateOrNull(string text)
     {
         var t = (text ?? string.Empty).Trim();
@@ -517,8 +525,12 @@ public partial class MainWindowViewModel
         // Set letter filter to the first letter of the product for quick filtering
         EditLineSelectedProductLetter = line.ProductName?.Substring(0, 1).ToUpper() ?? "ALL";
         
-        // Load product based on the line's product
-        _ = LoadEditLineProductAsync(line.ProductId);
+        // Load product based on the line's product and apply filter
+        _ = Task.Run(async () =>
+        {
+            await ApplyEditLineProductFilterAsync();
+            await LoadEditLineProductAsync(line.ProductId);
+        });
         
         StatusMessage = $"Editing line item: {line.ProductName}";
     }

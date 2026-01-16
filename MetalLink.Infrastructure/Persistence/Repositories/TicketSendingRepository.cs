@@ -20,10 +20,8 @@ public class TicketSendingRepository : ITicketSendingRepository
     public async Task<TicketSending?> GetByIdAsync(long ticketSendingId)
     {
         return await _context.Set<TicketSending>()
-            .Include(t => t.Company)
-            .Include(t => t.Site)
             .Include(t => t.Buyer)
-            .Include(t => t.Product)
+            .Include(t => t.TicketType)
             .Include(t => t.Lines)
                 .ThenInclude(l => l.Product)
             .FirstOrDefaultAsync(t => t.TicketSendingId == ticketSendingId && t.IsActive);
@@ -32,10 +30,8 @@ public class TicketSendingRepository : ITicketSendingRepository
     public async Task<TicketSending?> GetByTicketNumberAsync(string ticketNumber)
     {
         return await _context.Set<TicketSending>()
-            .Include(t => t.Company)
-            .Include(t => t.Site)
             .Include(t => t.Buyer)
-            .Include(t => t.Product)
+            .Include(t => t.TicketType)
             .Include(t => t.Lines)
                 .ThenInclude(l => l.Product)
             .FirstOrDefaultAsync(t => t.TicketNumber == ticketNumber && t.IsActive);
@@ -58,52 +54,43 @@ public class TicketSendingRepository : ITicketSendingRepository
         int pageSize = 50)
     {
         var query = _context.Set<TicketSending>()
-            .Include(t => t.Company)
-            .Include(t => t.Site)
             .Include(t => t.Buyer)
-            .Include(t => t.Product)
+            .Include(t => t.Lines)
+                .ThenInclude(l => l.Product)
             .Where(t => t.IsActive);
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             query = query.Where(t => 
                 t.TicketNumber.Contains(searchTerm) ||
-                (t.Buyer.BuyerName != null && t.Buyer.BuyerName.Contains(searchTerm)) ||
+                (t.Buyer.FirstName != null && t.Buyer.FirstName.Contains(searchTerm)) ||
+                (t.Buyer.LastName != null && t.Buyer.LastName.Contains(searchTerm)) ||
                 (t.VehicleRegistration != null && t.VehicleRegistration.Contains(searchTerm)));
         }
-
-        if (companyId.HasValue)
-            query = query.Where(t => t.CompanyId == companyId.Value);
-
-        if (siteId.HasValue)
-            query = query.Where(t => t.SiteId == siteId.Value);
 
         if (buyerId.HasValue)
             query = query.Where(t => t.BuyerId == buyerId.Value);
 
         if (!string.IsNullOrWhiteSpace(firstName))
-            query = query.Where(t => t.Buyer.BuyerName != null && t.Buyer.BuyerName.Contains(firstName));
+            query = query.Where(t => t.Buyer.FirstName != null && t.Buyer.FirstName.Contains(firstName));
 
         if (!string.IsNullOrWhiteSpace(lastName))
-            query = query.Where(t => t.Buyer.BuyerName != null && t.Buyer.BuyerName.Contains(lastName));
+            query = query.Where(t => t.Buyer.LastName != null && t.Buyer.LastName.Contains(lastName));
 
         if (!string.IsNullOrWhiteSpace(idNumber))
-            query = query.Where(t => t.Buyer.RegistrationNumber != null && t.Buyer.RegistrationNumber.Contains(idNumber));
+            query = query.Where(t => (t.Buyer.FirstName != null && t.Buyer.FirstName.Contains(idNumber)) || (t.Buyer.LastName != null && t.Buyer.LastName.Contains(idNumber)));
 
         if (accountNumber.HasValue)
             query = query.Where(t => t.Buyer.AccountNumber == accountNumber.Value);
 
         if (productId.HasValue)
-            query = query.Where(t => t.ProductId == productId.Value);
+            query = query.Where(t => t.Lines.Any(l => l.ProductId == productId.Value));
 
         if (startDate.HasValue)
             query = query.Where(t => t.CreatedTime >= startDate.Value);
 
         if (endDate.HasValue)
             query = query.Where(t => t.CreatedTime <= endDate.Value);
-
-        if (!string.IsNullOrWhiteSpace(deliveryStatus))
-            query = query.Where(t => t.DeliveryStatus == deliveryStatus);
 
         return await query
             .OrderByDescending(t => t.CreatedTime)
@@ -133,42 +120,34 @@ public class TicketSendingRepository : ITicketSendingRepository
         {
             query = query.Where(t => 
                 t.TicketNumber.Contains(searchTerm) ||
-                (t.Buyer.BuyerName != null && t.Buyer.BuyerName.Contains(searchTerm)) ||
+                (t.Buyer.FirstName != null && t.Buyer.FirstName.Contains(searchTerm)) ||
+                (t.Buyer.LastName != null && t.Buyer.LastName.Contains(searchTerm)) ||
                 (t.VehicleRegistration != null && t.VehicleRegistration.Contains(searchTerm)));
         }
-
-        if (companyId.HasValue)
-            query = query.Where(t => t.CompanyId == companyId.Value);
-
-        if (siteId.HasValue)
-            query = query.Where(t => t.SiteId == siteId.Value);
 
         if (buyerId.HasValue)
             query = query.Where(t => t.BuyerId == buyerId.Value);
 
         if (!string.IsNullOrWhiteSpace(firstName))
-            query = query.Where(t => t.Buyer.BuyerName != null && t.Buyer.BuyerName.Contains(firstName));
+            query = query.Where(t => t.Buyer.FirstName != null && t.Buyer.FirstName.Contains(firstName));
 
         if (!string.IsNullOrWhiteSpace(lastName))
-            query = query.Where(t => t.Buyer.BuyerName != null && t.Buyer.BuyerName.Contains(lastName));
+            query = query.Where(t => t.Buyer.LastName != null && t.Buyer.LastName.Contains(lastName));
 
         if (!string.IsNullOrWhiteSpace(idNumber))
-            query = query.Where(t => t.Buyer.RegistrationNumber != null && t.Buyer.RegistrationNumber.Contains(idNumber));
+            query = query.Where(t => (t.Buyer.FirstName != null && t.Buyer.FirstName.Contains(idNumber)) || (t.Buyer.LastName != null && t.Buyer.LastName.Contains(idNumber)));
 
         if (accountNumber.HasValue)
             query = query.Where(t => t.Buyer.AccountNumber == accountNumber.Value);
 
         if (productId.HasValue)
-            query = query.Where(t => t.ProductId == productId.Value);
+            query = query.Where(t => t.Lines.Any(l => l.ProductId == productId.Value));
 
         if (startDate.HasValue)
             query = query.Where(t => t.CreatedTime >= startDate.Value);
 
         if (endDate.HasValue)
             query = query.Where(t => t.CreatedTime <= endDate.Value);
-
-        if (!string.IsNullOrWhiteSpace(deliveryStatus))
-            query = query.Where(t => t.DeliveryStatus == deliveryStatus);
 
         return await query.CountAsync();
     }

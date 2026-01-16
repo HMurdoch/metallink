@@ -18,8 +18,8 @@ public class PricesController : ControllerBase
     }
 
     // GET /api/prices/product/{productId} - Get single price for a product
-    [HttpGet("product/{productId:long}")]
-    public async Task<ActionResult<PriceDto>> GetByProductId(long productId, CancellationToken ct)
+    [HttpGet("product/{productId:int}")]
+    public async Task<ActionResult<PriceDto>> GetByProductId(int productId, CancellationToken ct)
     {
         var price = await _db.Prices
             .Where(p => p.ProductId == productId && p.IsActive)
@@ -44,8 +44,8 @@ public class PricesController : ControllerBase
     }
 
     // GET /api/prices/{priceId}
-    [HttpGet("{priceId:long}")]
-    public async Task<ActionResult<PriceDto>> GetById(long priceId, CancellationToken ct)
+    [HttpGet("{priceId:int}")]
+    public async Task<ActionResult<PriceDto>> GetById(int priceId, CancellationToken ct)
     {
         var price = await _db.Prices
             .FirstOrDefaultAsync(p => p.PriceId == priceId, ct);
@@ -96,9 +96,9 @@ public class PricesController : ControllerBase
     }
 
     // PUT /api/prices/{priceId}
-    [HttpPut("{priceId:long}")]
+    [HttpPut("{priceId:int}")]
     public async Task<IActionResult> Update(
-        long priceId,
+        int priceId,
         [FromBody] PriceDto dto,
         CancellationToken ct)
     {
@@ -116,8 +116,8 @@ public class PricesController : ControllerBase
     }
 
     // DELETE /api/prices/{priceId} (soft delete)
-    [HttpDelete("{priceId:long}")]
-    public async Task<IActionResult> Delete(long priceId, CancellationToken ct)
+    [HttpDelete("{priceId:int}")]
+    public async Task<IActionResult> Delete(int priceId, CancellationToken ct)
     {
         var price = await _db.Prices.FirstOrDefaultAsync(p => p.PriceId == priceId, ct);
         if (price == null)

@@ -50,8 +50,8 @@ public class ProductsController : ControllerBase
     }
 
     // GET /api/products/{productId}
-    [HttpGet("{productId:long}")]
-    public async Task<ActionResult<ProductDto>> GetById(long productId, CancellationToken ct)
+    [HttpGet("{productId:int}")]
+    public async Task<ActionResult<ProductDto>> GetById(int productId, CancellationToken ct)
     {
         var product = await _db.Products
             .FirstOrDefaultAsync(p => p.ProductId == productId, ct);
@@ -83,7 +83,7 @@ public class ProductsController : ControllerBase
         {
             ProductCode = dto.ProductCode.Trim(),
             ProductName = dto.ProductName.Trim(),
-            Grade = dto.Grade ?? 0,
+            Grade = dto.Grade,
             IsActive = true,
             CreatedTime = DateTimeOffset.UtcNow,
             UpdatedTime = DateTimeOffset.UtcNow
@@ -115,9 +115,9 @@ public class ProductsController : ControllerBase
     }
 
     // PUT /api/products/{productId}
-    [HttpPut("{productId:long}")]
+    [HttpPut("{productId:int}")]
     public async Task<IActionResult> Update(
-        long productId,
+        int productId,
         [FromBody] ProductDto dto,
         CancellationToken ct)
     {
@@ -135,8 +135,8 @@ public class ProductsController : ControllerBase
     }
 
     // DELETE /api/products/{productId} (soft delete)
-    [HttpDelete("{productId:long}")]
-    public async Task<IActionResult> Delete(long productId, CancellationToken ct)
+    [HttpDelete("{productId:int}")]
+    public async Task<IActionResult> Delete(int productId, CancellationToken ct)
     {
         var product = await _db.Products.FirstOrDefaultAsync(p => p.ProductId == productId, ct);
         if (product == null)

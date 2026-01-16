@@ -40,4 +40,5 @@ public interface ITicketReceivingRepository
     Task<TicketReceiving> AddAsync(TicketReceiving ticket);
     Task UpdateAsync(TicketReceiving ticket);
     Task<string> GenerateTicketNumberAsync(long siteId);
+    Task<string?> GetLastTicketNumberByPrefixAsync(string prefix);
 }

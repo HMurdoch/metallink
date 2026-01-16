@@ -278,7 +278,7 @@ public partial class MainWindowViewModel
 
         var dto = new CustomerDto
         {
-            CustomerId = EditingCustomerId.Value,
+            CustomerId = (int)EditingCustomerId.Value,
             FirstName = NewFirstName,
             LastName = NewLastName,
             IdNumber = NewIdNumber,
@@ -293,11 +293,11 @@ public partial class MainWindowViewModel
             // We KNOW these are non-null if NewIsCompany is true
             // because of the validation above.
             CompanyId = SelectedNewCompany != null
-                ? SelectedNewCompany.CompanyId
+                ? (int?)SelectedNewCompany.CompanyId
                 : null, // will be null for non-company customers
 
             SiteId = SelectedNewSite != null
-                ? SelectedNewSite.SiteId
+                ? (int?)SelectedNewSite.SiteId
                 : null
         };
 
@@ -388,9 +388,9 @@ public partial class MainWindowViewModel
             return;
 
         // 🔹 Province: match by Id into the Provinces collection
-        if (SelectedNewSite.ProvinceId.HasValue && Provinces is { Count: > 0 })
+        if (SelectedNewSite.ProvinceId > 0 && Provinces is { Count: > 0 })
         {
-            var province = Provinces.FirstOrDefault(p => p.ProvinceId == SelectedNewSite.ProvinceId.Value);
+            var province = Provinces.FirstOrDefault(p => p.ProvinceId == SelectedNewSite.ProvinceId);
 
             if (province != null)
             {
@@ -399,9 +399,9 @@ public partial class MainWindowViewModel
         }
 
         // 🔹 Country: match by Id into the Countries collection
-        if (SelectedNewSite.CountryId.HasValue && Countries is { Count: > 0 })
+        if (SelectedNewSite.CountryId > 0 && Countries is { Count: > 0 })
         {
-            var country = Countries.FirstOrDefault(c => c.CountryId == SelectedNewSite.CountryId.Value);
+            var country = Countries.FirstOrDefault(c => c.CountryId == SelectedNewSite.CountryId);
 
             if (country != null)
             {

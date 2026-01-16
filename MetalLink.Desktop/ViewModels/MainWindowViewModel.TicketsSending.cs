@@ -295,7 +295,7 @@ public partial class MainWindowViewModel
 
         try
         {
-            var lines = new[] { (SendingSelectedProduct.ProductId, weightKg) };
+            var lines = new[] { ((long)SendingSelectedProduct.ProductId, weightKg) };
 
             var created = await _ticketService.AddTicketLinesAsync(
                 LastCreatedTicket.TicketId,
@@ -426,6 +426,17 @@ public partial class MainWindowViewModel
         SendingSelectedProduct = null;
         SendingProductSearchText = string.Empty;
         RecalculateSendingTotals();
+        
+        // Initialize type options and set defaults
+        InitializeTicketTypeOptions();
+        SelectedTicketTypeOption = TicketTypeOptions.FirstOrDefault(t => t.Key == "weighbridge");
+        
+        // Initialize currency options and set default to ZAR
+        InitializeCurrencyOptions();
+        SelectedCurrency = "ZAR";
+        
+        CreateOrUpdateButtonText = "Create Ticket";
+        
         StatusMessage = "Ticket cleared.";
     }
 
@@ -587,8 +598,8 @@ public partial class MainWindowViewModel
         }
     }
 
-    private TicketDto? _selectedSendingTicketDetails;
-    public TicketDto? SelectedSendingTicketDetails
+    private TicketSendingDto? _selectedSendingTicketDetails;
+    public TicketSendingDto? SelectedSendingTicketDetails
     {
         get => _selectedSendingTicketDetails;
         set
@@ -598,20 +609,35 @@ public partial class MainWindowViewModel
         }
     }
 
-    public ObservableCollection<TicketLineDto> SelectedSendingTicketLines { get; } = new();
+    public ObservableCollection<TicketSendingLineDto> SelectedSendingTicketLines { get; } = new();
 
-    public decimal SelectedSendingTicketLinesTotalExVat => SelectedSendingTicketLines.Sum(l => l.LineTotal);
-    public decimal SelectedSendingTicketLinesTotalVat => SelectedSendingTicketLines.Sum(l => l.VatAmount);
-    public decimal SelectedSendingTicketLinesTotalInclVat => SelectedSendingTicketLines.Sum(l => l.TotalInclVat);
+    public decimal SelectedSendingTicketLinesTotalExVat => SelectedSendingTicketLines.Sum(l => l.NetWeightKg * l.UnitPricePerKg);
+    public decimal SelectedSendingTicketLinesTotalVat => 0m; // TODO: Calculate VAT based on business rules
+    public decimal SelectedSendingTicketLinesTotalInclVat => SelectedSendingTicketLinesTotalExVat; // TODO: Add VAT calculation
 
     private async Task LoadSelectedSendingTicketDetailsAsync(long ticketId)
     {
         try
         {
-            var details = await _ticketService.GetTicketByIdAsync(ticketId);
+            var details = await _ticketSendingService.GetTicketSendingByIdAsync(ticketId);
             SelectedSendingTicketDetails = details;
 
-            var lines = await _ticketService.GetTicketLinesAsync(ticketId);
+            // Populate form fields from loaded ticket
+            if (details != null)
+            {
+                // Set ticket type
+                InitializeTicketTypeOptions();
+                var ticketTypeOption = TicketTypeOptions.FirstOrDefault(t => t.Key == details.TicketTypeName);
+                if (ticketTypeOption != null)
+                {
+                    SelectedTicketTypeOption = ticketTypeOption;
+                }
+                
+                // Set button text to Update
+                CreateOrUpdateButtonText = "Update Ticket";
+            }
+
+            var lines = await _ticketSendingService.GetTicketSendingLinesAsync(ticketId);
             SelectedSendingTicketLines.Clear();
             if (lines != null)
             {
@@ -637,12 +663,15 @@ public partial class MainWindowViewModel
 
         IsBusy = true;
         StatusMessage = "Searching sending tickets...";
+        
+        // Initialize ticket type options for search dropdown
+        InitializeTicketTypeOptions();
 
         try
         {
             var request = new TicketSendingSearchRequestDto
             {
-                BuyerId = ParseLongOrNull(SearchSendingTicketCustomerIdText),
+                BuyerId = ParseIntOrNull(SearchSendingTicketCustomerIdText),
                 FirstName = string.IsNullOrWhiteSpace(SearchSendingTicketFirstNameText) ? null : SearchSendingTicketFirstNameText.Trim(),
                 LastName = string.IsNullOrWhiteSpace(SearchSendingTicketLastNameText) ? null : SearchSendingTicketLastNameText.Trim(),
                 IdNumber = string.IsNullOrWhiteSpace(SearchSendingTicketIdNumberText) ? null : SearchSendingTicketIdNumberText.Trim(),
@@ -657,22 +686,7 @@ public partial class MainWindowViewModel
             SendingTicketSearchResults.Clear();
             foreach (var t in results)
             {
-                // Map TicketSendingDto to TicketSearchResultDto for UI compatibility
-                var searchResult = new TicketSearchResultDto
-                {
-                    TicketId = t.TicketSendingId,
-                    TicketNumber = t.TicketNumber,
-                    TicketType = t.TicketType,
-                    CustomerId = t.BuyerId,
-                    FirstName = t.BuyerName.Split(' ').FirstOrDefault() ?? "",
-                    LastName = t.BuyerName.Contains(' ') ? t.BuyerName.Substring(t.BuyerName.IndexOf(' ') + 1) : "",
-                    NetWeightKg = t.NetWeightKg,
-                    TotalExclVat = t.TotalAmount,
-                    VatAmount = 0, // Not available in TicketSendingDto
-                    TotalInclVat = t.TotalAmount,
-                    CreatedTime = t.CreatedTime
-                };
-                SendingTicketSearchResults.Add(searchResult);
+                SendingTicketSearchResults.Add(t);
             }
 
             SelectedSendingTicket = SendingTicketSearchResults.FirstOrDefault();

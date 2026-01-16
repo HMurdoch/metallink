@@ -706,11 +706,11 @@ public partial class MainWindowViewModel
         City = site.City ?? "";
         PostalCode = site.PostalCode ?? "";
 
-        if (site.ProvinceId.HasValue)
-            SelectedProvince = Provinces.FirstOrDefault(p => p.ProvinceId == site.ProvinceId.Value);
+        if (site.ProvinceId > 0)
+            SelectedProvince = Provinces.FirstOrDefault(p => p.ProvinceId == site.ProvinceId);
 
-        if (site.CountryId.HasValue)
-            SelectedCountry = Countries.FirstOrDefault(c => c.CountryId == site.CountryId.Value);
+        if (site.CountryId > 0)
+            SelectedCountry = Countries.FirstOrDefault(c => c.CountryId == site.CountryId);
 
         // fallback defaults if null
         if (SelectedProvince == null || SelectedCountry == null)
@@ -749,7 +749,7 @@ public partial class MainWindowViewModel
                 await _app.SiteService.CreateSiteAsync(
                     new SiteCreateDto
                     {
-                        CompanyId = SelectedCompany.CompanyId,
+                        CompanyId = (int)SelectedCompany.CompanyId,
                         SiteName = SiteName.Trim(),
                         SiteCode = string.IsNullOrWhiteSpace(SiteCode) ? null! : SiteCode.Trim(),
                         AddressLine1 = string.IsNullOrWhiteSpace(AddressLine1) ? null! : AddressLine1.Trim(),
@@ -963,7 +963,7 @@ public partial class MainWindowViewModel
             var created = await _app.SiteService.CreateSiteAsync(
                 new SiteCreateDto
                 {
-                    CompanyId = SelectedCompany.CompanyId,
+                    CompanyId = (int)SelectedCompany.CompanyId,
                     SiteName = NewSiteCreateName.Trim(),
                     SiteCode = string.IsNullOrWhiteSpace(NewSiteCreateCode) ? null! : NewSiteCreateCode.Trim(),
                     IsActive = true,

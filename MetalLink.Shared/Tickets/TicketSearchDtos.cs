@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Serialization;
 
 namespace MetalLink.Shared.Tickets;
 
@@ -34,9 +35,11 @@ public sealed class TicketSearchResultDto
     public string? CompanyName { get; set; }
     public string? SiteName { get; set; }
 
-    public long? AccountNumber { get; set; }
+    [JsonConverter(typeof(AccountNumberConverter))]
+    public string? AccountNumber { get; set; }
 
     public decimal NetWeightKg { get; set; }
+    public decimal Price { get; set; }
     public decimal TotalExclVat { get; set; }
     public decimal VatAmount { get; set; }
     public decimal TotalInclVat { get; set; }

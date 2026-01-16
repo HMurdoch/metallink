@@ -20,7 +20,7 @@ public sealed class SitesController : ControllerBase
     // GET /api/sites/lookup?companyId=8&term=
     [HttpGet("lookup")]
     public async Task<ActionResult<List<SiteLookupDto>>> Lookup(
-        [FromQuery] long companyId,
+        [FromQuery] int companyId,
         [FromQuery] string? term = null,
         CancellationToken ct = default)
     {
@@ -42,8 +42,8 @@ public sealed class SitesController : ControllerBase
                 SiteId = s.SiteId,
                 CompanyId = s.CompanyId,
                 SiteName = s.SiteName,
-                ProvinceId = s.ProvinceId,
-                CountryId = s.CountryId,
+                ProvinceId = s.ProvinceId ?? 0,
+                CountryId = s.CountryId ?? 0,
                 IsActive = s.IsActive,
 
                 SiteCode = s.SiteCode,
@@ -109,8 +109,8 @@ public sealed class SitesController : ControllerBase
             Suburb = entity.Suburb,
             City = entity.City,
             PostalCode = entity.PostalCode,
-            ProvinceId = entity.ProvinceId,
-            CountryId = entity.CountryId,
+            ProvinceId = entity.ProvinceId ?? 0,
+            CountryId = entity.CountryId ?? 0,
             IsActive = entity.IsActive
         };
 
@@ -118,8 +118,8 @@ public sealed class SitesController : ControllerBase
     }
 
     // PUT /api/sites/{siteId}
-    [HttpPut("{siteId:long}")]
-    public async Task<IActionResult> Update(long siteId, [FromBody] SiteLookupDto dto, CancellationToken ct)
+    [HttpPut("{siteId:int}")]
+    public async Task<IActionResult> Update(int siteId, [FromBody] SiteLookupDto dto, CancellationToken ct)
     {
         var site = await _db.Sites.FirstOrDefaultAsync(s => s.SiteId == siteId, ct);
         if (site == null) return NotFound();
@@ -140,8 +140,8 @@ public sealed class SitesController : ControllerBase
     }
 
     // DELETE /api/sites/{siteId} (soft delete)
-    [HttpDelete("{siteId:long}")]
-    public async Task<IActionResult> Delete(long siteId, CancellationToken ct)
+    [HttpDelete("{siteId:int}")]
+    public async Task<IActionResult> Delete(int siteId, CancellationToken ct)
     {
         var site = await _db.Sites.FirstOrDefaultAsync(s => s.SiteId == siteId, ct);
         if (site == null) return NotFound();

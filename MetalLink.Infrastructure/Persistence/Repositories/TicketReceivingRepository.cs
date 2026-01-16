@@ -20,10 +20,8 @@ public class TicketReceivingRepository : ITicketReceivingRepository
     public async Task<TicketReceiving?> GetByIdAsync(long ticketReceivingId)
     {
         return await _context.Set<TicketReceiving>()
-            .Include(t => t.Company)
-            .Include(t => t.Site)
             .Include(t => t.Customer)
-            .Include(t => t.Product)
+            .Include(t => t.TicketType)
             .Include(t => t.Lines)
                 .ThenInclude(l => l.Product)
             .FirstOrDefaultAsync(t => t.TicketReceivingId == ticketReceivingId && t.IsActive);
@@ -32,10 +30,8 @@ public class TicketReceivingRepository : ITicketReceivingRepository
     public async Task<TicketReceiving?> GetByTicketNumberAsync(string ticketNumber)
     {
         return await _context.Set<TicketReceiving>()
-            .Include(t => t.Company)
-            .Include(t => t.Site)
             .Include(t => t.Customer)
-            .Include(t => t.Product)
+            .Include(t => t.TicketType)
             .Include(t => t.Lines)
                 .ThenInclude(l => l.Product)
             .FirstOrDefaultAsync(t => t.TicketNumber == ticketNumber && t.IsActive);
@@ -58,10 +54,8 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         int pageSize = 50)
     {
         var query = _context.Set<TicketReceiving>()
-            .Include(t => t.Company)
-            .Include(t => t.Site)
             .Include(t => t.Customer)
-            .Include(t => t.Product)
+            .Include(t => t.TicketType)
             .Where(t => t.IsActive);
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -71,12 +65,6 @@ public class TicketReceivingRepository : ITicketReceivingRepository
                 t.Customer.FullName.Contains(searchTerm) ||
                 (t.VehicleRegistration != null && t.VehicleRegistration.Contains(searchTerm)));
         }
-
-        if (companyId.HasValue)
-            query = query.Where(t => t.CompanyId == companyId.Value);
-
-        if (siteId.HasValue)
-            query = query.Where(t => t.SiteId == siteId.Value);
 
         if (customerId.HasValue)
             query = query.Where(t => t.CustomerId == customerId.Value);
@@ -93,17 +81,11 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         if (accountNumber.HasValue)
             query = query.Where(t => t.Customer.AccountNumber == accountNumber.Value);
 
-        if (productId.HasValue)
-            query = query.Where(t => t.ProductId == productId.Value);
-
         if (startDate.HasValue)
             query = query.Where(t => t.CreatedTime >= startDate.Value);
 
         if (endDate.HasValue)
             query = query.Where(t => t.CreatedTime <= endDate.Value);
-
-        if (!string.IsNullOrWhiteSpace(deliveryStatus))
-            query = query.Where(t => t.DeliveryStatus == deliveryStatus);
 
         return await query
             .OrderByDescending(t => t.CreatedTime)
@@ -137,12 +119,6 @@ public class TicketReceivingRepository : ITicketReceivingRepository
                 (t.VehicleRegistration != null && t.VehicleRegistration.Contains(searchTerm)));
         }
 
-        if (companyId.HasValue)
-            query = query.Where(t => t.CompanyId == companyId.Value);
-
-        if (siteId.HasValue)
-            query = query.Where(t => t.SiteId == siteId.Value);
-
         if (customerId.HasValue)
             query = query.Where(t => t.CustomerId == customerId.Value);
 
@@ -158,17 +134,11 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         if (accountNumber.HasValue)
             query = query.Where(t => t.Customer.AccountNumber == accountNumber.Value);
 
-        if (productId.HasValue)
-            query = query.Where(t => t.ProductId == productId.Value);
-
         if (startDate.HasValue)
             query = query.Where(t => t.CreatedTime >= startDate.Value);
 
         if (endDate.HasValue)
             query = query.Where(t => t.CreatedTime <= endDate.Value);
-
-        if (!string.IsNullOrWhiteSpace(deliveryStatus))
-            query = query.Where(t => t.DeliveryStatus == deliveryStatus);
 
         return await query.CountAsync();
     }
@@ -207,5 +177,15 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         }
 
         return $"{prefix}-{nextNumber:D6}";
+    }
+
+    public async Task<string?> GetLastTicketNumberByPrefixAsync(string prefix)
+    {
+        var lastTicket = await _context.Set<TicketReceiving>()
+            .Where(t => t.TicketNumber.StartsWith(prefix + "-"))
+            .OrderByDescending(t => t.TicketNumber)
+            .FirstOrDefaultAsync();
+
+        return lastTicket?.TicketNumber;
     }
 }

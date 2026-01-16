@@ -294,7 +294,7 @@ public partial class MainWindowViewModel
 
         try
         {
-            var lines = new[] { (ReceivingSelectedProduct.ProductId, weightKg) };
+            var lines = new[] { ((long)ReceivingSelectedProduct.ProductId, weightKg) };
 
             var created = await _ticketService.AddTicketLinesAsync(
                 LastCreatedTicket.TicketId,
@@ -425,6 +425,17 @@ public partial class MainWindowViewModel
         ReceivingSelectedProduct = null;
         ReceivingProductSearchText = string.Empty;
         RecalculateReceivingTotals();
+        
+        // Initialize type options and set defaults
+        InitializeTicketTypeOptions();
+        SelectedTicketTypeOption = TicketTypeOptions.FirstOrDefault(t => t.Key == "weighbridge");
+        
+        // Initialize currency options and set default to ZAR
+        InitializeCurrencyOptions();
+        SelectedCurrency = "ZAR";
+        
+        CreateOrUpdateButtonText = "Create Ticket";
+        
         StatusMessage = "Ticket cleared.";
     }
 
@@ -610,6 +621,21 @@ public partial class MainWindowViewModel
             var details = await _ticketService.GetTicketByIdAsync(ticketId);
             SelectedReceivingTicketDetails = details;
 
+            // Populate form fields from loaded ticket
+            if (details != null)
+            {
+                // Set ticket type
+                InitializeTicketTypeOptions();
+                var ticketTypeOption = TicketTypeOptions.FirstOrDefault(t => t.Key == details.TicketType);
+                if (ticketTypeOption != null)
+                {
+                    SelectedTicketTypeOption = ticketTypeOption;
+                }
+                
+                // Set button text to Update
+                CreateOrUpdateButtonText = "Update Ticket";
+            }
+
             var lines = await _ticketService.GetTicketLinesAsync(ticketId);
             SelectedReceivingTicketLines.Clear();
             if (lines != null)
@@ -636,12 +662,15 @@ public partial class MainWindowViewModel
 
         IsBusy = true;
         StatusMessage = "Searching receiving tickets...";
+        
+        // Initialize ticket type options for search dropdown
+        InitializeTicketTypeOptions();
 
         try
         {
             var request = new TicketReceivingSearchRequestDto
             {
-                CustomerId = ParseLongOrNull(SearchReceivingTicketCustomerIdText),
+                CustomerId = ParseIntOrNull(SearchReceivingTicketCustomerIdText),
                 FirstName = string.IsNullOrWhiteSpace(SearchReceivingTicketFirstNameText) ? null : SearchReceivingTicketFirstNameText.Trim(),
                 LastName = string.IsNullOrWhiteSpace(SearchReceivingTicketLastNameText) ? null : SearchReceivingTicketLastNameText.Trim(),
                 IdNumber = string.IsNullOrWhiteSpace(SearchReceivingTicketIdNumberText) ? null : SearchReceivingTicketIdNumberText.Trim(),
@@ -656,22 +685,7 @@ public partial class MainWindowViewModel
             ReceivingTicketSearchResults.Clear();
             foreach (var t in results)
             {
-                // Map TicketReceivingDto to TicketSearchResultDto for UI compatibility
-                var searchResult = new TicketSearchResultDto
-                {
-                    TicketId = t.TicketReceivingId,
-                    TicketNumber = t.TicketNumber,
-                    TicketType = t.TicketType,
-                    CustomerId = t.CustomerId,
-                    FirstName = t.CustomerName.Split(' ').FirstOrDefault() ?? "",
-                    LastName = t.CustomerName.Contains(' ') ? t.CustomerName.Substring(t.CustomerName.IndexOf(' ') + 1) : "",
-                    NetWeightKg = t.NetWeightKg,
-                    TotalExclVat = t.TotalAmount,
-                    VatAmount = 0, // Not available in TicketReceivingDto
-                    TotalInclVat = t.TotalAmount,
-                    CreatedTime = t.CreatedTime
-                };
-                ReceivingTicketSearchResults.Add(searchResult);
+                ReceivingTicketSearchResults.Add(t);
             }
 
             SelectedReceivingTicket = ReceivingTicketSearchResults.FirstOrDefault();

@@ -2,8 +2,7 @@ namespace MetalLink.Domain.Entities;
 
 public class Operator
 {
-    public long OperatorId { get; private set; }
-    public long SiteId { get; private set; }
+    public int OperatorId { get; private set; }
 
     public string Username { get; private set; } = string.Empty;
     public string DisplayName { get; private set; } = string.Empty;
@@ -14,15 +13,16 @@ public class Operator
     // Simple role string for now: "Admin", "Operator", "Supervisor"
     public string Role { get; private set; } = "Operator";
 
+    public int CreatedByOperatorId { get; private set; } = 1;
+
     public bool IsActive { get; private set; } = true;
     public DateTimeOffset CreatedTime { get; private set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedTime { get; private set; } = DateTimeOffset.UtcNow;
 
     private Operator() { }
 
-    public Operator(long siteId, string username, string displayName, string passwordHash, string role = "Operator")
+    public Operator(string username, string displayName, string passwordHash, string role = "Operator")
     {
-        SiteId = siteId;
         Username = username;
         DisplayName = displayName;
         PasswordHash = passwordHash;

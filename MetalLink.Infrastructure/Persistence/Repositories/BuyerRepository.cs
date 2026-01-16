@@ -10,10 +10,12 @@ namespace MetalLink.Infrastructure.Persistence.Repositories;
 public class BuyerRepository : IBuyerRepository
 {
     private readonly MetalLinkDbContext _context;
+    private readonly IAccountNumberGenerator _accountNumberGenerator;
 
-    public BuyerRepository(MetalLinkDbContext context)
+    public BuyerRepository(MetalLinkDbContext context, IAccountNumberGenerator accountNumberGenerator)
     {
         _context = context;
+        _accountNumberGenerator = accountNumberGenerator;
     }
 
     public async Task<Buyer?> GetByIdAsync(long buyerId)
@@ -38,7 +40,8 @@ public class BuyerRepository : IBuyerRepository
             .Include(b => b.Company)
             .Include(b => b.Site)
             .Where(b => b.IsActive)
-            .OrderBy(b => b.BuyerName)
+            .OrderBy(b => b.LastName)
+            .ThenBy(b => b.FirstName)
             .ToListAsync();
     }
 
@@ -52,13 +55,14 @@ public class BuyerRepository : IBuyerRepository
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             query = query.Where(b =>
-                (b.BuyerName != null && b.BuyerName.Contains(searchTerm)) ||
-                (b.ContactPerson != null && b.ContactPerson.Contains(searchTerm)) ||
+                (b.FirstName != null && b.FirstName.Contains(searchTerm)) ||
+                (b.LastName != null && b.LastName.Contains(searchTerm)) ||
                 (b.AccountNumber != null && b.AccountNumber.ToString().Contains(searchTerm)));
         }
 
         return await query
-            .OrderBy(b => b.BuyerName)
+            .OrderBy(b => b.LastName)
+            .ThenBy(b => b.FirstName)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -66,6 +70,11 @@ public class BuyerRepository : IBuyerRepository
 
     public async Task<Buyer> AddAsync(Buyer buyer)
     {
+        if (!buyer.AccountNumber.HasValue)
+        {
+            buyer.AccountNumber = await _accountNumberGenerator.GetNextAsync();
+        }
+
         await _context.Set<Buyer>().AddAsync(buyer);
         return buyer;
     }

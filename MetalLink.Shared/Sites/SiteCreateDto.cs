@@ -2,7 +2,7 @@ namespace MetalLink.Shared.Sites;
 
 public sealed class SiteCreateDto
 {
-    public long CompanyId { get; set; }
+    public int CompanyId { get; set; }
     public string SiteName { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
 

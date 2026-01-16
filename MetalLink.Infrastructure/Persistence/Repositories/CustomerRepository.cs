@@ -23,7 +23,7 @@ public class CustomerRepository : ICustomerRepository
     // -------------------------------------------------
 
     public async Task<Customer?> GetByIdAsync(
-        long customerId,
+        int customerId,
         CancellationToken cancellationToken = default)
     {
         return await _db.Customers
@@ -169,7 +169,7 @@ public class CustomerRepository : ICustomerRepository
         if (request.Taxable.HasValue)
         {
             var taxable = request.Taxable.Value;
-            query = query.Where(c => c.Taxable == taxable);
+            query = query.Where(c => c.IsTaxable == taxable);
         }
 
         if (!string.IsNullOrWhiteSpace(request.AddressLine1))
@@ -254,8 +254,8 @@ public class CustomerRepository : ICustomerRepository
     // -------------------------------------------------
 
     public async Task<IReadOnlyList<Customer>> SearchAsync(
-        long? customerId,
-        long? siteId,
+        int? customerId,
+        int? siteId,
         string? firstName,
         string? lastName,
         string? companyName,
@@ -305,7 +305,7 @@ public class CustomerRepository : ICustomerRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task SoftDeleteAsync(long customerId, CancellationToken cancellationToken = default)
+    public async Task SoftDeleteAsync(int customerId, CancellationToken cancellationToken = default)
     {
         var customer = await _db.Customers
             .FirstOrDefaultAsync(c => c.CustomerId == customerId, cancellationToken);
@@ -314,7 +314,7 @@ public class CustomerRepository : ICustomerRepository
             return;
 
         customer.IsActive = false;
-        customer.UpdatedTime = DateTime.UtcNow;
+        customer.UpdatedTime = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync(cancellationToken);
     }
 }

@@ -114,11 +114,9 @@ app.Use(async (context, next) =>
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<MetalLinkDbContext>();
-    var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
 
     // Apply pending migrations
     await dbContext.Database.MigrateAsync();
-    await DbSeeder.SeedAsync(dbContext, passwordHasher);
 }
 
 // Swagger

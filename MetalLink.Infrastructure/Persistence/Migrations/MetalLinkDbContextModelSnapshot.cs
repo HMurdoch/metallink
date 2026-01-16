@@ -22,6 +22,122 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("MetalLink.Domain.Entities.Buyer", b =>
+                {
+                    b.Property<long>("BuyerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("buyer_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("BuyerId"));
+
+                    b.Property<long?>("AccountNumber")
+                        .HasColumnType("bigint")
+                        .HasColumnName("account_number");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("text")
+                        .HasColumnName("address");
+
+                    b.Property<string>("BuyerName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("buyer_name");
+
+                    b.Property<long?>("CompanyId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("ContactPerson")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("contact_person");
+
+                    b.Property<DateTimeOffset?>("CreatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("email");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsCompany")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_company");
+
+                    b.Property<string>("MobileNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("mobile_number");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("PaymentTerms")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("payment_terms");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("phone_number");
+
+                    b.Property<string>("PriceCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("price_code");
+
+                    b.Property<string>("RegistrationNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("registration_number");
+
+                    b.Property<long?>("SiteId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("site_id");
+
+                    b.Property<bool>("Taxable")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("taxable");
+
+                    b.Property<DateTimeOffset?>("UpdatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time");
+
+                    b.Property<string>("VatNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("vat_number");
+
+                    b.HasKey("BuyerId")
+                        .HasName("pk_buyers_buyer_id");
+
+                    b.HasIndex("AccountNumber")
+                        .HasDatabaseName("buyers_account_number_idx");
+
+                    b.HasIndex("BuyerName")
+                        .HasDatabaseName("buyers_buyer_name_idx");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("SiteId");
+
+                    b.ToTable("buyers", "metal_link");
+                });
+
             modelBuilder.Entity("MetalLink.Domain.Entities.Company", b =>
                 {
                     b.Property<long>("CompanyId")
@@ -189,15 +305,30 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnName("created_time")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<string>("DriverLicenseImagePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("driver_license_image_path");
+
                     b.Property<string>("Email")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("email");
 
+                    b.Property<string>("FingerprintImagePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("fingerprint_image_path");
+
                     b.Property<string>("FirstName")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("first_name");
+
+                    b.Property<string>("IdCardImagePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("id_card_image_path");
 
                     b.Property<string>("IdNumber")
                         .HasMaxLength(20)
@@ -227,10 +358,20 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("phone_number");
 
+                    b.Property<string>("PhotoImagePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("photo_image_path");
+
                     b.Property<string>("PriceCode")
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)")
                         .HasColumnName("price_code");
+
+                    b.Property<string>("SignatureImagePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("signature_image_path");
 
                     b.Property<long?>("SiteId")
                         .HasColumnType("bigint")
@@ -613,6 +754,376 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.ToTable("sites", "metal_link");
                 });
 
+            modelBuilder.Entity("MetalLink.Domain.Entities.StockMovement", b =>
+                {
+                    b.Property<long>("StockMovementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("stock_movement_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("StockMovementId"));
+
+                    b.Property<string>("CounterpartyName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("counterparty_name");
+
+                    b.Property<string>("CounterpartyType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("counterparty_type");
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("ZAR")
+                        .HasColumnName("currency_code");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("MovementType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("movement_type");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("product_id");
+
+                    b.Property<decimal>("QuantityKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("quantity_kg");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("reference_number");
+
+                    b.Property<long>("SiteId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("site_id");
+
+                    b.Property<long>("TicketId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("ticket_id");
+
+                    b.Property<long?>("TicketLineId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("ticket_line_id");
+
+                    b.Property<decimal>("UnitPricePerKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unit_price_per_kg");
+
+                    b.Property<DateTimeOffset>("UpdatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time");
+
+                    b.HasKey("StockMovementId")
+                        .HasName("pk_stock_movements_stock_movement_id");
+
+                    b.HasIndex("MovementType")
+                        .HasDatabaseName("stock_movements_movement_type_idx");
+
+                    b.HasIndex("ProductId")
+                        .HasDatabaseName("stock_movements_product_id_idx");
+
+                    b.HasIndex("SiteId")
+                        .HasDatabaseName("stock_movements_site_id_idx");
+
+                    b.HasIndex("TicketId")
+                        .HasDatabaseName("stock_movements_ticket_id_idx");
+
+                    b.HasIndex("TicketLineId");
+
+                    b.ToTable("stock_movements", "metal_link");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.StockMovementReceiving", b =>
+                {
+                    b.Property<long>("StockMovementReceivingId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("stock_movement_receiving_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("StockMovementReceivingId"));
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("ZAR")
+                        .HasColumnName("currency_code");
+
+                    b.Property<long>("CustomerId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("customer_name");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<DateTimeOffset>("MovementDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("movement_date");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("product_id");
+
+                    b.Property<decimal>("QuantityKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("quantity_kg");
+
+                    b.Property<long>("SiteId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("site_id");
+
+                    b.Property<string>("TicketNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("ticket_number");
+
+                    b.Property<long>("TicketReceivingId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("ticket_receiving_id");
+
+                    b.Property<long?>("TicketReceivingLineId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("ticket_receiving_line_id");
+
+                    b.Property<decimal>("TotalValue")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_value");
+
+                    b.Property<decimal>("UnitPricePerKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unit_price_per_kg");
+
+                    b.Property<DateTimeOffset>("UpdatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time");
+
+                    b.HasKey("StockMovementReceivingId")
+                        .HasName("pk_stock_movements_receiving");
+
+                    b.HasIndex("MovementDate")
+                        .HasDatabaseName("stock_movements_receiving_movement_date_idx");
+
+                    b.HasIndex("ProductId")
+                        .HasDatabaseName("stock_movements_receiving_product_id_idx");
+
+                    b.HasIndex("SiteId")
+                        .HasDatabaseName("stock_movements_receiving_site_id_idx");
+
+                    b.HasIndex("TicketReceivingId");
+
+                    b.HasIndex("TicketReceivingLineId");
+
+                    b.ToTable("stock_movements_receiving", "metal_link");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.StockMovementSending", b =>
+                {
+                    b.Property<long>("StockMovementSendingId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("stock_movement_sending_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("StockMovementSendingId"));
+
+                    b.Property<long>("BuyerId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("buyer_id");
+
+                    b.Property<string>("BuyerName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("buyer_name");
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("ZAR")
+                        .HasColumnName("currency_code");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<DateTimeOffset>("MovementDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("movement_date");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("product_id");
+
+                    b.Property<decimal>("QuantityKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("quantity_kg");
+
+                    b.Property<long>("SiteId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("site_id");
+
+                    b.Property<string>("TicketNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("ticket_number");
+
+                    b.Property<long>("TicketSendingId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("ticket_sending_id");
+
+                    b.Property<long?>("TicketSendingLineId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("ticket_sending_line_id");
+
+                    b.Property<decimal>("TotalValue")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_value");
+
+                    b.Property<decimal>("UnitPricePerKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unit_price_per_kg");
+
+                    b.Property<DateTimeOffset>("UpdatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time");
+
+                    b.HasKey("StockMovementSendingId")
+                        .HasName("pk_stock_movements_sending");
+
+                    b.HasIndex("MovementDate")
+                        .HasDatabaseName("stock_movements_sending_movement_date_idx");
+
+                    b.HasIndex("ProductId")
+                        .HasDatabaseName("stock_movements_sending_product_id_idx");
+
+                    b.HasIndex("SiteId")
+                        .HasDatabaseName("stock_movements_sending_site_id_idx");
+
+                    b.HasIndex("TicketSendingId");
+
+                    b.HasIndex("TicketSendingLineId");
+
+                    b.ToTable("stock_movements_sending", "metal_link");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.StockOnHand", b =>
+                {
+                    b.Property<long>("StockOnHandId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("stock_on_hand_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("StockOnHandId"));
+
+                    b.Property<decimal>("AverageUnitCost")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("average_unit_cost");
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time");
+
+                    b.Property<DateTimeOffset?>("LastMovementDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_movement_date");
+
+                    b.Property<string>("LastMovementType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("last_movement_type");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("product_id");
+
+                    b.Property<decimal>("QuantityOnHandKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("quantity_on_hand_kg");
+
+                    b.Property<long>("SiteId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("site_id");
+
+                    b.Property<decimal>("TotalReceivedKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_received_kg");
+
+                    b.Property<decimal>("TotalSentKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_sent_kg");
+
+                    b.Property<decimal>("TotalValue")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_value");
+
+                    b.Property<DateTimeOffset>("UpdatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time");
+
+                    b.HasKey("StockOnHandId")
+                        .HasName("pk_stock_on_hand");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("SiteId", "ProductId")
+                        .IsUnique()
+                        .HasDatabaseName("stock_on_hand_site_product_idx");
+
+                    b.ToTable("stock_on_hand", "metal_link");
+                });
+
             modelBuilder.Entity("MetalLink.Domain.Entities.Ticket", b =>
                 {
                     b.Property<long>("TicketId")
@@ -621,6 +1132,10 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnName("ticket_id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("TicketId"));
+
+                    b.Property<long?>("BuyerId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("buyer_id");
 
                     b.Property<string>("CkNumber")
                         .HasMaxLength(50)
@@ -641,9 +1156,14 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("currency_id");
 
-                    b.Property<long>("CustomerId")
+                    b.Property<long?>("CustomerId")
                         .HasColumnType("bigint")
                         .HasColumnName("customer_id");
+
+                    b.Property<string>("DeliveryNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("delivery_number");
 
                     b.Property<string>("DriverName")
                         .HasMaxLength(100)
@@ -690,6 +1210,11 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("product_id");
 
+                    b.Property<string>("RfidCardNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("rfid_card_number");
+
                     b.Property<decimal?>("SecondWeightKg")
                         .HasColumnType("numeric(18,3)")
                         .HasColumnName("second_weight_kg");
@@ -697,6 +1222,14 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.Property<long>("SiteId")
                         .HasColumnType("bigint")
                         .HasColumnName("site_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("receiving")
+                        .HasColumnName("status");
 
                     b.Property<string>("TicketNumber")
                         .IsRequired()
@@ -746,6 +1279,8 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
 
                     b.HasKey("TicketId")
                         .HasName("pk_tickets_ticket_id");
+
+                    b.HasIndex("BuyerId");
 
                     b.HasIndex("CurrencyId");
 
@@ -833,6 +1368,445 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.ToTable("ticket_lines", "metal_link");
                 });
 
+            modelBuilder.Entity("MetalLink.Domain.Entities.TicketReceiving", b =>
+                {
+                    b.Property<long>("TicketReceivingId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("ticket_receiving_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("TicketReceivingId"));
+
+                    b.Property<string>("CkNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("ck_number");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("company_id");
+
+                    b.Property<long>("CreatedByOperatorId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("created_by_operator_id");
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time");
+
+                    b.Property<long>("CustomerId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("DeliveryNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("delivery_number");
+
+                    b.Property<string>("DriverName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("driver_name");
+
+                    b.Property<decimal?>("FirstWeightKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("first_weight_kg");
+
+                    b.Property<string>("ForeignTicket")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("foreign_ticket");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<int>("InvoiceNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("invoice_number");
+
+                    b.Property<decimal>("NetWeightKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("net_weight_kg");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("OfmWeighbridgeTicket")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("ofm_weighbridge_ticket");
+
+                    b.Property<decimal?>("SecondWeightKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("second_weight_kg");
+
+                    b.Property<long>("SiteId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("site_id");
+
+                    b.Property<string>("TicketNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("ticket_number");
+
+                    b.Property<string>("TicketType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("weighbridge")
+                        .HasColumnName("ticket_type");
+
+                    b.Property<string>("TrailerRegistration")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("trailer_registration");
+
+                    b.Property<DateTimeOffset>("UpdatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time");
+
+                    b.Property<string>("VehicleRegistration")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("vehicle_registration");
+
+                    b.HasKey("TicketReceivingId")
+                        .HasName("pk_tickets_receiving");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("CreatedTime")
+                        .HasDatabaseName("tickets_receiving_created_time_idx");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("tickets_receiving_customer_id_idx");
+
+                    b.HasIndex("SiteId")
+                        .HasDatabaseName("tickets_receiving_site_id_idx");
+
+                    b.HasIndex("TicketNumber")
+                        .IsUnique()
+                        .HasDatabaseName("tickets_receiving_ticket_number_idx");
+
+                    b.ToTable("tickets_receiving", "metal_link");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.TicketReceivingLine", b =>
+                {
+                    b.Property<long>("TicketReceivingLineId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("ticket_receiving_line_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("TicketReceivingLineId"));
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<decimal>("LineTotal")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("line_total");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("product_id");
+
+                    b.Property<long>("TicketReceivingId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("ticket_receiving_id");
+
+                    b.Property<decimal>("UnitPricePerKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unit_price_per_kg");
+
+                    b.Property<decimal>("WeightKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("weight_kg");
+
+                    b.HasKey("TicketReceivingLineId")
+                        .HasName("pk_ticket_receiving_lines");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("TicketReceivingId")
+                        .HasDatabaseName("tickets_receiving_lines_ticket_receiving_id_idx");
+
+                    b.ToTable("tickets_receiving_lines", "metal_link");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.TicketSending", b =>
+                {
+                    b.Property<long>("TicketSendingId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("ticket_sending_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("TicketSendingId"));
+
+                    b.Property<long>("BuyerId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("buyer_id");
+
+                    b.Property<string>("CkNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("ck_number");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("company_id");
+
+                    b.Property<long>("CreatedByOperatorId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("created_by_operator_id");
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("ZAR")
+                        .HasColumnName("currency_code");
+
+                    b.Property<string>("DeliveryNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("delivery_number");
+
+                    b.Property<string>("DeliveryStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("pending")
+                        .HasColumnName("delivery_status");
+
+                    b.Property<string>("DriverName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("driver_name");
+
+                    b.Property<decimal?>("FirstWeightKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("first_weight_kg");
+
+                    b.Property<string>("ForeignTicket")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("foreign_ticket");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LoadPhotoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("load_photo_url");
+
+                    b.Property<decimal>("NetWeightKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("net_weight_kg");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("OfmWeighbridgeTicket")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("ofm_weighbridge_ticket");
+
+                    b.Property<string>("PlatePhotoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("plate_photo_url");
+
+                    b.Property<string>("ProductDescription")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("product_description");
+
+                    b.Property<long?>("ProductId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("product_id");
+
+                    b.Property<DateTimeOffset?>("RfidFirstScan")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("rfid_first_scan");
+
+                    b.Property<DateTimeOffset?>("RfidSecondScan")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("rfid_second_scan");
+
+                    b.Property<string>("RfidTag")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("rfid_tag");
+
+                    b.Property<decimal?>("SecondWeightKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("second_weight_kg");
+
+                    b.Property<long>("SiteId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("site_id");
+
+                    b.Property<string>("TicketNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("ticket_number");
+
+                    b.Property<string>("TicketType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("weighbridge")
+                        .HasColumnName("ticket_type");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_amount");
+
+                    b.Property<string>("TrailerRegistration")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("trailer_registration");
+
+                    b.Property<decimal>("UnitPricePerKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unit_price_per_kg");
+
+                    b.Property<long?>("UpdatedByOperatorId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("updated_by_operator_id");
+
+                    b.Property<DateTimeOffset>("UpdatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time");
+
+                    b.Property<string>("VehicleRegistration")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("vehicle_registration");
+
+                    b.HasKey("TicketSendingId")
+                        .HasName("pk_tickets_sending");
+
+                    b.HasIndex("BuyerId")
+                        .HasDatabaseName("tickets_sending_buyer_id_idx");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("CreatedTime")
+                        .HasDatabaseName("tickets_sending_created_time_idx");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("SiteId")
+                        .HasDatabaseName("tickets_sending_site_id_idx");
+
+                    b.HasIndex("TicketNumber")
+                        .IsUnique()
+                        .HasDatabaseName("tickets_sending_ticket_number_idx");
+
+                    b.ToTable("tickets_sending", "metal_link");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.TicketSendingLine", b =>
+                {
+                    b.Property<long>("TicketSendingLineId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("ticket_sending_line_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("TicketSendingLineId"));
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<decimal>("LineTotal")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("line_total");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("product_id");
+
+                    b.Property<long>("TicketSendingId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("ticket_sending_id");
+
+                    b.Property<decimal>("UnitPricePerKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unit_price_per_kg");
+
+                    b.Property<decimal>("WeightKg")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("weight_kg");
+
+                    b.HasKey("TicketSendingLineId")
+                        .HasName("pk_ticket_sending_lines");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("TicketSendingId")
+                        .HasDatabaseName("ticket_sending_lines_ticket_sending_id_idx");
+
+                    b.ToTable("ticket_sending_lines", "metal_link");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.Buyer", b =>
+                {
+                    b.HasOne("MetalLink.Domain.Entities.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId");
+
+                    b.HasOne("MetalLink.Domain.Entities.Site", "Site")
+                        .WithMany()
+                        .HasForeignKey("SiteId");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Site");
+                });
+
             modelBuilder.Entity("MetalLink.Domain.Entities.Customer", b =>
                 {
                     b.HasOne("MetalLink.Domain.Entities.Company", "Company")
@@ -898,8 +1872,132 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.Navigation("Province");
                 });
 
+            modelBuilder.Entity("MetalLink.Domain.Entities.StockMovement", b =>
+                {
+                    b.HasOne("MetalLink.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.Site", "Site")
+                        .WithMany()
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.Ticket", "Ticket")
+                        .WithMany("StockMovements")
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.TicketLine", "TicketLine")
+                        .WithMany()
+                        .HasForeignKey("TicketLineId");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Site");
+
+                    b.Navigation("Ticket");
+
+                    b.Navigation("TicketLine");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.StockMovementReceiving", b =>
+                {
+                    b.HasOne("MetalLink.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.Site", "Site")
+                        .WithMany()
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.TicketReceiving", "TicketReceiving")
+                        .WithMany("StockMovements")
+                        .HasForeignKey("TicketReceivingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.TicketReceivingLine", "TicketReceivingLine")
+                        .WithMany()
+                        .HasForeignKey("TicketReceivingLineId");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Site");
+
+                    b.Navigation("TicketReceiving");
+
+                    b.Navigation("TicketReceivingLine");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.StockMovementSending", b =>
+                {
+                    b.HasOne("MetalLink.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.Site", "Site")
+                        .WithMany()
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.TicketSending", "TicketSending")
+                        .WithMany("StockMovements")
+                        .HasForeignKey("TicketSendingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.TicketSendingLine", "TicketSendingLine")
+                        .WithMany()
+                        .HasForeignKey("TicketSendingLineId");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Site");
+
+                    b.Navigation("TicketSending");
+
+                    b.Navigation("TicketSendingLine");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.StockOnHand", b =>
+                {
+                    b.HasOne("MetalLink.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.Site", "Site")
+                        .WithMany()
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Site");
+                });
+
             modelBuilder.Entity("MetalLink.Domain.Entities.Ticket", b =>
                 {
+                    b.HasOne("MetalLink.Domain.Entities.Buyer", "Buyer")
+                        .WithMany("Tickets")
+                        .HasForeignKey("BuyerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_tickets_buyer_id_buyers");
+
                     b.HasOne("MetalLink.Domain.Entities.Currency", "Currency")
                         .WithMany()
                         .HasForeignKey("CurrencyId")
@@ -910,7 +2008,6 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .WithMany("Tickets")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
                         .HasConstraintName("fk_tickets_customer_id_customers");
 
                     b.HasOne("MetalLink.Domain.Entities.Operator", "Operator")
@@ -932,6 +2029,8 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_tickets_site_id_sites");
+
+                    b.Navigation("Buyer");
 
                     b.Navigation("Currency");
 
@@ -963,6 +2062,115 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("Ticket");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.TicketReceiving", b =>
+                {
+                    b.HasOne("MetalLink.Domain.Entities.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId");
+
+                    b.HasOne("MetalLink.Domain.Entities.Site", "Site")
+                        .WithMany()
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Site");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.TicketReceivingLine", b =>
+                {
+                    b.HasOne("MetalLink.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.TicketReceiving", "TicketReceiving")
+                        .WithMany("Lines")
+                        .HasForeignKey("TicketReceivingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("TicketReceiving");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.TicketSending", b =>
+                {
+                    b.HasOne("MetalLink.Domain.Entities.Buyer", "Buyer")
+                        .WithMany()
+                        .HasForeignKey("BuyerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId");
+
+                    b.HasOne("MetalLink.Domain.Entities.Site", "Site")
+                        .WithMany()
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Buyer");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Site");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.TicketSendingLine", b =>
+                {
+                    b.HasOne("MetalLink.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.TicketSending", "TicketSending")
+                        .WithMany("Lines")
+                        .HasForeignKey("TicketSendingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("TicketSending");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.Buyer", b =>
+                {
+                    b.Navigation("Tickets");
                 });
 
             modelBuilder.Entity("MetalLink.Domain.Entities.Company", b =>
@@ -997,6 +2205,22 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("MetalLink.Domain.Entities.Ticket", b =>
                 {
                     b.Navigation("Lines");
+
+                    b.Navigation("StockMovements");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.TicketReceiving", b =>
+                {
+                    b.Navigation("Lines");
+
+                    b.Navigation("StockMovements");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.TicketSending", b =>
+                {
+                    b.Navigation("Lines");
+
+                    b.Navigation("StockMovements");
                 });
 #pragma warning restore 612, 618
         }

@@ -53,17 +53,17 @@ public sealed class TicketSendingService
     /// <summary>
     /// Search for sending tickets
     /// </summary>
-    public async Task<IReadOnlyList<TicketSendingDto>> SearchTicketsSendingAsync(
+    public async Task<IReadOnlyList<TicketSearchResultDto>> SearchTicketsSendingAsync(
         TicketSendingSearchRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        var result = await _apiClient.PostAsync<TicketSendingSearchRequestDto, TicketSendingDto[]>(
+        var result = await _apiClient.PostAsync<TicketSendingSearchRequestDto, TicketSearchResultDto[]>(
             "api/tickets-sending/search",
             request,
             cancellationToken
         );
 
-        return result ?? Array.Empty<TicketSendingDto>();
+        return result ?? Array.Empty<TicketSearchResultDto>();
     }
 
     /// <summary>

@@ -743,10 +743,10 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
                 Taxable = NewTaxable,
 
                 CompanyId = NewIsCompany && SelectedNewCompany != null
-                                    ? SelectedNewCompany.CompanyId
+                                    ? (int?)SelectedNewCompany.CompanyId
                                     : null,
                 SiteId = NewIsCompany && SelectedNewSite != null
-                                    ? SelectedNewSite.SiteId
+                                    ? (int?)SelectedNewSite.SiteId
                                     : null
             };
 
