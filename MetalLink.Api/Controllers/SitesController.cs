@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MetalLink.Infrastructure.Persistence;
+using MetalLink.Application.Services;
 using MetalLink.Domain.Entities;
 using MetalLink.Shared.Sites;
+using MetalLink.Api.Extensions;
 
 namespace MetalLink.Api.Controllers;
 
@@ -42,8 +44,8 @@ public sealed class SitesController : ControllerBase
                 SiteId = s.SiteId,
                 CompanyId = s.CompanyId,
                 SiteName = s.SiteName,
-                ProvinceId = s.ProvinceId ?? 0,
-                CountryId = s.CountryId ?? 0,
+                ProvinceId = s.ProvinceId,
+                CountryId = s.CountryId,
                 IsActive = s.IsActive,
 
                 SiteCode = s.SiteCode,
@@ -71,21 +73,25 @@ public sealed class SitesController : ControllerBase
         if (string.IsNullOrWhiteSpace(name))
             return BadRequest("SiteName is required.");
 
-        var companyExists = await _db.Companies.AnyAsync(c => c.CompanyId == dto.CompanyId, ct);
-        if (!companyExists)
+        var company = await _db.Companies.Include(c => c.Sites).FirstOrDefaultAsync(c => c.CompanyId == dto.CompanyId, ct);
+        if (company == null)
             return BadRequest($"Company {dto.CompanyId} not found.");
 
-        // if this site is being created as the first site for a company
-        if (string.IsNullOrWhiteSpace(dto.SiteCode))
-            dto.SiteCode = "SITE-1";
+        // Generate site code if not provided
+        var siteCode = dto.SiteCode;
+        if (string.IsNullOrWhiteSpace(siteCode))
+        {
+            siteCode = SiteCodeGeneratorService.GenerateNextSiteCode(company.Sites);
+        }
 
         var entity = new Site
         {
             CompanyId = dto.CompanyId,
             SiteName = name,
             IsActive = dto.IsActive,
+            CreatedByOperatorId = (int)User.GetOperatorId(),
 
-            SiteCode = dto.SiteCode,
+            SiteCode = siteCode,
             AddressLine1 = dto.AddressLine1,
             AddressLine2 = dto.AddressLine2,
             Suburb = dto.Suburb,
@@ -109,8 +115,8 @@ public sealed class SitesController : ControllerBase
             Suburb = entity.Suburb,
             City = entity.City,
             PostalCode = entity.PostalCode,
-            ProvinceId = entity.ProvinceId ?? 0,
-            CountryId = entity.CountryId ?? 0,
+            ProvinceId = entity.ProvinceId,
+            CountryId = entity.CountryId,
             IsActive = entity.IsActive
         };
 
@@ -131,8 +137,8 @@ public sealed class SitesController : ControllerBase
         site.Suburb = dto.Suburb;
         site.City = dto.City;
         site.PostalCode = dto.PostalCode;
-        site.ProvinceId = dto.ProvinceId;
-        site.CountryId = dto.CountryId;
+        site.ProvinceId = dto.ProvinceId ?? site.ProvinceId;
+        site.CountryId = dto.CountryId ?? site.CountryId;
         site.IsActive = dto.IsActive;
 
         await _db.SaveChangesAsync(ct);

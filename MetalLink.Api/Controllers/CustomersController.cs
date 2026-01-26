@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using MetalLink.Application.Customers.Queries;
 using MetalLink.Shared.Customers;
 using MetalLink.Application.Interfaces;
+using MetalLink.Api.Extensions;
 using System.Text;
 
 namespace MetalLink.Api.Controllers;
@@ -56,7 +57,8 @@ public sealed class CustomersController : ControllerBase
             PhoneNumber = dto.PhoneNumber,
             MobileNumber = dto.MobileNumber,
             Email = dto.Email,
-            IsTaxable = dto.Taxable
+            IsTaxable = dto.Taxable,
+            CreatedByOperatorId = (int)User.GetOperatorId()
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -211,7 +213,14 @@ public sealed class CustomersController : ControllerBase
             // Create or update ImagePath entity
             if (customer.ImagePath == null)
             {
-                customer.ImagePath = new MetalLink.Domain.Entities.ImagePath();
+                var now = DateTimeOffset.UtcNow;
+                customer.ImagePath = new MetalLink.Domain.Entities.ImagePath
+                {
+                    CreatedByOperatorId = 1, // System operator - always exists
+                    CreatedTime = now,
+                    UpdatedTime = now,
+                    IsActive = true
+                };
             }
 
             switch (imageType.ToLower())

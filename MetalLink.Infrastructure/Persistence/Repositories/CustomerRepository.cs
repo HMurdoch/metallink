@@ -32,6 +32,7 @@ public class CustomerRepository : ICustomerRepository
                 .ThenInclude(s => s!.Province!)
             .Include(c => c.Site!)
                 .ThenInclude(s => s!.Country!)
+            .Include(c => c.ImagePath!)
             .FirstOrDefaultAsync(c => c.CustomerId == customerId, cancellationToken);
     }
 
@@ -80,6 +81,7 @@ public class CustomerRepository : ICustomerRepository
                 .ThenInclude(s => s!.Province!)
             .Include(c => c.Site!)
                 .ThenInclude(s => s!.Country!)
+            .Include(c => c.ImagePath!)
             .Where(c => c.IsActive)
             .AsQueryable();
 
@@ -165,12 +167,8 @@ public class CustomerRepository : ICustomerRepository
                 c.Site.CountryId == countryId);
         }
 
-        // Taxable filter (customer)
-        if (request.Taxable.HasValue)
-        {
-            var taxable = request.Taxable.Value;
-            query = query.Where(c => c.IsTaxable == taxable);
-        }
+        // Taxable filter removed - return all records regardless of is_taxable status
+        // The Taxable property in request is now ignored for search purposes
 
         if (!string.IsNullOrWhiteSpace(request.AddressLine1))
         {

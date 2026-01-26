@@ -48,6 +48,9 @@ public class TicketReceivingLineDto
     public string ProductName { get; set; } = string.Empty;
     public decimal NetWeightKg { get; set; }
     public decimal UnitPricePerKg { get; set; }
+    public decimal LineTotal { get; set; }
+    public decimal VatAmount { get; set; }
+    public decimal TotalInclVat { get; set; }
     public string? Notes { get; set; }
     public bool IsActive { get; set; }
     public DateTimeOffset CreatedTime { get; set; }
@@ -85,12 +88,15 @@ public class CreateTicketReceivingLineDto
 public class TicketReceivingSearchRequestDto
 {
     public string? SearchTerm { get; set; }
+    public long? CompanyId { get; set; }
+    public long? SiteId { get; set; }
     public int? CustomerId { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? IdNumber { get; set; }
     public long? AccountNumber { get; set; }
     public int? ProductId { get; set; }
+    public string? TicketType { get; set; }
     public DateTimeOffset? StartDate { get; set; }
     public DateTimeOffset? EndDate { get; set; }
     public int PageNumber { get; set; } = 1;

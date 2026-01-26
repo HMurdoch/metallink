@@ -75,6 +75,7 @@ public sealed class CreateCustomerCommandHandler
             IsCompany = customer.IsCompany,
 
             IsTaxable = customer.IsTaxable,
+            Taxable   = customer.IsTaxable,
 
             IdNumber      = customer.IdNumber,
             AccountNumber = customer.AccountNumber,

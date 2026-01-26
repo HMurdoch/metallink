@@ -21,9 +21,15 @@ public class TicketReceivingRepository : ITicketReceivingRepository
     {
         return await _context.Set<TicketReceiving>()
             .Include(t => t.Customer)
+                .ThenInclude(c => c.Company)
+            .Include(t => t.Customer)
+                .ThenInclude(c => c.Site)
+            .Include(t => t.CreatedByOperator)
             .Include(t => t.TicketType)
             .Include(t => t.Lines)
                 .ThenInclude(l => l.Product)
+            .Include(t => t.Lines)
+                .ThenInclude(l => l.CreatedByOperator)
             .FirstOrDefaultAsync(t => t.TicketReceivingId == ticketReceivingId && t.IsActive);
     }
 
@@ -31,9 +37,12 @@ public class TicketReceivingRepository : ITicketReceivingRepository
     {
         return await _context.Set<TicketReceiving>()
             .Include(t => t.Customer)
+            .Include(t => t.CreatedByOperator)
             .Include(t => t.TicketType)
             .Include(t => t.Lines)
                 .ThenInclude(l => l.Product)
+            .Include(t => t.Lines)
+                .ThenInclude(l => l.CreatedByOperator)
             .FirstOrDefaultAsync(t => t.TicketNumber == ticketNumber && t.IsActive);
     }
 
@@ -47,6 +56,7 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         string? idNumber = null,
         long? accountNumber = null,
         long? productId = null,
+        string? ticketType = null,
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
         string? deliveryStatus = null,
@@ -55,31 +65,46 @@ public class TicketReceivingRepository : ITicketReceivingRepository
     {
         var query = _context.Set<TicketReceiving>()
             .Include(t => t.Customer)
+                .ThenInclude(c => c.Company)
+            .Include(t => t.Customer)
+                .ThenInclude(c => c.Site)
+            .Include(t => t.CreatedByOperator)
             .Include(t => t.TicketType)
+            .Include(t => t.Lines)
+                .ThenInclude(l => l.CreatedByOperator)
             .Where(t => t.IsActive);
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             query = query.Where(t => 
                 t.TicketNumber.Contains(searchTerm) ||
-                t.Customer.FullName.Contains(searchTerm) ||
+                (t.Customer != null && t.Customer.FullName.Contains(searchTerm)) ||
                 (t.VehicleRegistration != null && t.VehicleRegistration.Contains(searchTerm)));
         }
+
+        if (companyId.HasValue)
+            query = query.Where(t => t.Customer != null && t.Customer.CompanyId == companyId.Value);
+
+        if (siteId.HasValue)
+            query = query.Where(t => t.Customer != null && t.Customer.SiteId == siteId.Value);
 
         if (customerId.HasValue)
             query = query.Where(t => t.CustomerId == customerId.Value);
 
         if (!string.IsNullOrWhiteSpace(firstName))
-            query = query.Where(t => t.Customer.FirstName.Contains(firstName));
+            query = query.Where(t => t.Customer != null && t.Customer.FirstName != null && t.Customer.FirstName.Contains(firstName));
 
         if (!string.IsNullOrWhiteSpace(lastName))
-            query = query.Where(t => t.Customer.LastName.Contains(lastName));
+            query = query.Where(t => t.Customer != null && t.Customer.LastName != null && t.Customer.LastName.Contains(lastName));
 
         if (!string.IsNullOrWhiteSpace(idNumber))
-            query = query.Where(t => t.Customer.IdNumber != null && t.Customer.IdNumber.Contains(idNumber));
+            query = query.Where(t => t.Customer != null && t.Customer.IdNumber != null && t.Customer.IdNumber.Contains(idNumber));
 
         if (accountNumber.HasValue)
-            query = query.Where(t => t.Customer.AccountNumber == accountNumber.Value);
+            query = query.Where(t => t.Customer != null && t.Customer.AccountNumber == accountNumber.Value);
+
+        if (!string.IsNullOrWhiteSpace(ticketType))
+            query = query.Where(t => t.TicketType != null && t.TicketType.TicketTypeName.ToLower() == ticketType.ToLower());
 
         if (startDate.HasValue)
             query = query.Where(t => t.CreatedTime >= startDate.Value);
@@ -115,7 +140,7 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         {
             query = query.Where(t => 
                 t.TicketNumber.Contains(searchTerm) ||
-                t.Customer.FullName.Contains(searchTerm) ||
+                (t.Customer != null && t.Customer.FullName.Contains(searchTerm)) ||
                 (t.VehicleRegistration != null && t.VehicleRegistration.Contains(searchTerm)));
         }
 
@@ -123,16 +148,16 @@ public class TicketReceivingRepository : ITicketReceivingRepository
             query = query.Where(t => t.CustomerId == customerId.Value);
 
         if (!string.IsNullOrWhiteSpace(firstName))
-            query = query.Where(t => t.Customer.FirstName.Contains(firstName));
+            query = query.Where(t => t.Customer != null && t.Customer.FirstName != null && t.Customer.FirstName.Contains(firstName));
 
         if (!string.IsNullOrWhiteSpace(lastName))
-            query = query.Where(t => t.Customer.LastName.Contains(lastName));
+            query = query.Where(t => t.Customer != null && t.Customer.LastName != null && t.Customer.LastName.Contains(lastName));
 
         if (!string.IsNullOrWhiteSpace(idNumber))
-            query = query.Where(t => t.Customer.IdNumber != null && t.Customer.IdNumber.Contains(idNumber));
+            query = query.Where(t => t.Customer != null && t.Customer.IdNumber != null && t.Customer.IdNumber.Contains(idNumber));
 
         if (accountNumber.HasValue)
-            query = query.Where(t => t.Customer.AccountNumber == accountNumber.Value);
+            query = query.Where(t => t.Customer != null && t.Customer.AccountNumber == accountNumber.Value);
 
         if (startDate.HasValue)
             query = query.Where(t => t.CreatedTime >= startDate.Value);

@@ -55,6 +55,7 @@ public class TicketReceiving
     public DateTimeOffset CreatedTime { get; private set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedTime { get; private set; } = DateTimeOffset.UtcNow;
     public int CreatedByOperatorId { get; private set; }
+    public Operator CreatedByOperator { get; set; } = null!;
 
     private TicketReceiving() { }
 

@@ -11,6 +11,7 @@ public class TicketType
 
     // Navigation properties
     public ICollection<TicketReceiving> TicketsReceiving { get; set; } = new List<TicketReceiving>();
+    public ICollection<TicketSending> TicketsSending { get; set; } = new List<TicketSending>();
 
     private TicketType() { }
 

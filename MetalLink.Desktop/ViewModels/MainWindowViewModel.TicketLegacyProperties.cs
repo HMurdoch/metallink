@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using MetalLink.Shared.Tickets;
 
 namespace MetalLink.Desktop.ViewModels;
@@ -128,7 +129,34 @@ public partial class MainWindowViewModel
     public Properties.TicketTypeOption? SelectedTicketTypeOption
     {
         get => _selectedTicketTypeOption;
-        set { _selectedTicketTypeOption = value; OnPropertyChanged(); }
+        set
+        {
+            _selectedTicketTypeOption = value;
+            OnPropertyChanged();
+            // Update Weighbridge fields visibility based on ticket type
+            // Only show Weighbridge-specific fields when type is "weighbridge"
+            AreWeighbridgeFieldsVisible = value?.Key == "weighbridge";
+            
+            // Regenerate ticket number when type changes (only if not viewing an existing ticket)
+            if (!IsViewingTicketOnly && value != null)
+            {
+                // ticketTypeId: 1 = Weighbridge, 2 = Platform
+                int ticketTypeId = value.Key == "weighbridge" ? 1 : 2;
+                _ = OnTicketTypeChangedAsync(ticketTypeId);
+            }
+        }
+    }
+
+    private async Task OnTicketTypeChangedAsync(int ticketTypeId)
+    {
+        await GenerateTicketNumberAsync(ticketTypeId);
+    }
+
+    private bool _areWeighbridgeFieldsVisible = false;
+    public bool AreWeighbridgeFieldsVisible
+    {
+        get => _areWeighbridgeFieldsVisible;
+        set { _areWeighbridgeFieldsVisible = value; OnPropertyChanged(); }
     }
 
     // Button text property
@@ -138,6 +166,16 @@ public partial class MainWindowViewModel
         get => _createOrUpdateButtonText;
         set { _createOrUpdateButtonText = value; OnPropertyChanged(); }
     }
+
+    private bool _isViewingTicketOnly = false;
+    public bool IsViewingTicketOnly
+    {
+        get => _isViewingTicketOnly;
+        set { _isViewingTicketOnly = value; OnPropertyChanged(); }
+    }
+
+    public bool IsViewingPlatformTicket => IsViewingTicketOnly && SelectedTicketTypeOption?.Key == "platform";
+    public bool IsViewingWeighbridgeTicket => IsViewingTicketOnly && SelectedTicketTypeOption?.Key == "weighbridge";
 
     // Currency options
     private System.Collections.ObjectModel.ObservableCollection<string> _currencyOptions = new();

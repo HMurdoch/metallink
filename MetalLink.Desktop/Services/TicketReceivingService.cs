@@ -210,4 +210,17 @@ public sealed class TicketReceivingService
             return false;
         }
     }
+
+    public async Task<string> GetNextTicketNumberAsync(int ticketTypeId)
+    {
+        try
+        {
+            var result = await _apiClient.GetAsync<string>($"api/tickets-receiving/next-ticket-number/{ticketTypeId}");
+            return result ?? string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
 }

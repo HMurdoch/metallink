@@ -163,6 +163,12 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         _ticketReportService = app.TicketReportService;
         _signaturePadService = app.SignaturePadService;
 
+        // Initialize ticket type options for search view
+        InitializeTicketTypeOptions();
+
+        // Initialize create ticket form with default Platform type
+        _ = ClearTicketAsync();
+
         _ = LoadDashboardStatsAsync();
 
         // Demo – you can later wire these to API stats
@@ -298,7 +304,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         AddLineCommand = new AsyncCommand(AddReceivingLineAsync);
         RemoveLineCommand = new AsyncRelayCommand<ReceivingLineItem?>(RemoveReceivingLineAsync);
         SaveTicketCommand = new AsyncCommand(SaveTicketAsync);
-        ClearTicketCommand = new RelayCommand(ClearTicket);
+        ClearTicketCommand = new AsyncCommand(ClearTicketAsync);
         CaptureWeightCommand = new AsyncCommand(CaptureWeightAsync);
         CapturePlatePhotoCommand = new AsyncCommand(CapturePlatePhotoAsync);
         CaptureLoadPhotoCommand = new AsyncCommand(CaptureLoadPhotoAsync);
@@ -603,8 +609,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
                 Email = string.IsNullOrWhiteSpace(SearchEmailText) ? null : SearchEmailText,
 
                 ProvinceId = provinceId,
-                CountryId = countryId,
-                Taxable = SearchTaxable
+                CountryId = countryId
+                // Taxable filter removed - returns all records regardless of is_taxable status
             };
 
             var results = await _customerService.SearchCustomersAsync(request);

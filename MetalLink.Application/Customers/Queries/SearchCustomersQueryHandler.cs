@@ -35,6 +35,7 @@ public sealed class SearchCustomersQueryHandler
                 var site     = c.Site;
                 var province = site?.Province;
                 var country  = site?.Country;
+                var imagePath = c.ImagePath;
 
                 return new CustomerDto
                 {
@@ -49,7 +50,8 @@ public sealed class SearchCustomersQueryHandler
 
                     CompanyName = company?.CompanyName,
                     VatNumber   = company?.VatNumber,
-                    IsTaxable     = c.IsTaxable,
+                    IsTaxable   = c.IsTaxable,
+                    Taxable     = c.IsTaxable,
 
                     SiteName = site?.SiteName ?? string.Empty,
                     SiteCode = site?.SiteCode ?? string.Empty,
@@ -66,7 +68,12 @@ public sealed class SearchCustomersQueryHandler
                     CreatedTime = c.CreatedTime,
                     UpdatedTime = c.UpdatedTime,
 
-                    ImagePathId = c.ImagePathId
+                    ImagePathId = c.ImagePathId,
+                    IdCardImagePath = imagePath?.IdCardImagePath,
+                    DriverLicenseImagePath = imagePath?.DriverLicenseImagePath,
+                    PhotoImagePath = imagePath?.PhotoImagePath,
+                    SignatureImagePath = imagePath?.SignatureImagePath,
+                    FingerprintImagePath = imagePath?.FingerprintImagePath
                 };
             })
             .ToArray();

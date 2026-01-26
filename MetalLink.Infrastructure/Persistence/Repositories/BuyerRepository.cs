@@ -57,7 +57,7 @@ public class BuyerRepository : IBuyerRepository
             query = query.Where(b =>
                 (b.FirstName != null && b.FirstName.Contains(searchTerm)) ||
                 (b.LastName != null && b.LastName.Contains(searchTerm)) ||
-                (b.AccountNumber != null && b.AccountNumber.ToString().Contains(searchTerm)));
+                (b.AccountNumber.HasValue && b.AccountNumber.Value.ToString().Contains(searchTerm)));
         }
 
         return await query

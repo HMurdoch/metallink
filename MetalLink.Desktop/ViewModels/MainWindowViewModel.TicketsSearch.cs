@@ -5,7 +5,9 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using MetalLink.Desktop.Properties;
+using MetalLink.Shared.Companies;
 using MetalLink.Shared.Products;
+using MetalLink.Shared.Sites;
 using MetalLink.Shared.Tickets;
 
 namespace MetalLink.Desktop.ViewModels;
@@ -117,7 +119,7 @@ public partial class MainWindowViewModel
 
             return $"Ticket {SelectedTicket.TicketNumber} ({SelectedTicket.TicketType}) - " +
                    $"Customer {SelectedTicket.CustomerId}, Net {SelectedTicket.NetWeightKg:N2} kg, " +
-                   $"Total {SelectedTicket.TotalInclVat:N2}";
+                   $"Total {SelectedTicketLinesTotalInclVat:N2}";
         }
     }
 
@@ -138,8 +140,22 @@ public partial class MainWindowViewModel
 
     // Calculated totals for selected ticket lines
     public decimal SelectedTicketLinesTotalExVat => SelectedTicketLines.Sum(l => l.LineTotal);
-    public decimal SelectedTicketLinesTotalVat => SelectedTicketLines.Sum(l => l.VatAmount);
-    public decimal SelectedTicketLinesTotalInclVat => SelectedTicketLines.Sum(l => l.TotalInclVat);
+    public decimal SelectedTicketLinesTotalVat
+    {
+        get
+        {
+            decimal totalVat = 0m;
+            foreach (var line in SelectedTicketLines)
+            {
+                var lineTotal = line.WeightKg * line.UnitPricePerKg;
+                var lineExcl = lineTotal / 1.15m;
+                totalVat += lineTotal - lineExcl;
+            }
+            return totalVat;
+        }
+    }
+
+    public decimal SelectedTicketLinesTotalInclVat => SelectedTicketLines.Sum(l => l.WeightKg * l.UnitPricePerKg);
 
     private async Task LoadSelectedTicketDetailsAsync(long ticketId)
     {
@@ -212,9 +228,29 @@ public partial class MainWindowViewModel
         }
     }
 
+    // Company and Site filters for search
+    private CompanyLookupDto? _searchTicketSelectedCompany;
+    public CompanyLookupDto? SearchTicketSelectedCompany
+    {
+        get => _searchTicketSelectedCompany;
+        set { _searchTicketSelectedCompany = value; OnPropertyChanged(); }
+    }
+
+    public ObservableCollection<SiteLookupDto> SearchTicketSiteSuggestions { get; } = new();
+
+    private SiteLookupDto? _searchTicketSelectedSite;
+    public SiteLookupDto? SearchTicketSelectedSite
+    {
+        get => _searchTicketSelectedSite;
+        set { _searchTicketSelectedSite = value; OnPropertyChanged(); }
+    }
+
     private async Task SearchTicketsAsync()
     {
         if (IsBusy) return;
+
+        // Ensure ticket type options are initialized
+        InitializeTicketTypeOptions();
 
         IsBusy = true;
         StatusMessage = "Searching tickets...";
@@ -230,6 +266,8 @@ public partial class MainWindowViewModel
                 AccountNumber = ParseLongOrNull(SearchTicketAccountNumberText),
                 TicketNumber = string.IsNullOrWhiteSpace(SearchTicketNumberText) ? null : SearchTicketNumberText.Trim(),
                 TicketType = string.IsNullOrWhiteSpace(SearchTicketTypeKey) ? null : SearchTicketTypeKey.Trim(),
+                CompanyId = SelectedSearchCompany?.CompanyId,
+                SiteId = SelectedSearchSite?.SiteId,
                 CreatedFrom = ParseDateOrNull(SearchTicketCreatedFromText),
                 CreatedTo = ParseDateOrNull(SearchTicketCreatedToText)
             };
@@ -258,6 +296,9 @@ public partial class MainWindowViewModel
 
     private void ClearTicketSearch()
     {
+        // Ensure ticket type options are initialized
+        InitializeTicketTypeOptions();
+
         SearchTicketCustomerIdText = string.Empty;
         SearchTicketIdNumberText = string.Empty;
         SearchTicketFirstNameText = string.Empty;
@@ -268,9 +309,54 @@ public partial class MainWindowViewModel
         SearchTicketCreatedFromText = string.Empty;
         SearchTicketCreatedToText = string.Empty;
         SelectedSearchTicketTypeOption = null;
+        SelectedCompanyLetter = "ALL";
+        SelectedSearchCompany = null;
+        SelectedSearchSite = null;
 
         TicketSearchResults.Clear();
         SelectedTicket = null;
+
+        // Load companies for the search dropdown
+        _ = LoadSearchCompaniesAsync();
+    }
+
+    private async Task LoadSearchCompaniesAsync()
+    {
+        try
+        {
+            // Reset company selection
+            SelectedCompanyLetter = "ALL";
+            SelectedSearchCompany = null;
+            SelectedSearchSite = null;
+            
+            // Load companies from CompanyAndSite which populates CompanyLetterFilters and SearchCompanySuggestions
+            var companies = await _app.CompanyAndSiteService.LookupCompaniesAsync(string.Empty);
+            
+            // Populate company letter filters
+            CompanyLetterFilters.Clear();
+            CompanyLetterFilters.Add("ALL");
+            var letters = companies
+                .Where(c => !string.IsNullOrWhiteSpace(c.CompanyName))
+                .Select(c => c.CompanyName!.Substring(0, 1).ToUpper())
+                .Distinct()
+                .OrderBy(l => l)
+                .ToList();
+            foreach (var letter in letters)
+            {
+                CompanyLetterFilters.Add(letter);
+            }
+
+            // Populate initial company suggestions with ALL
+            SearchCompanySuggestions.Clear();
+            foreach (var company in companies)
+            {
+                SearchCompanySuggestions.Add(company);
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error loading companies: {ex.Message}";
+        }
     }
 
     private async Task DeleteTicketAsync(TicketSearchResultDto? ticket)
@@ -522,14 +608,64 @@ public partial class MainWindowViewModel
         EditingTicketLine = line;
         EditLineWeightText = line.WeightKg.ToString("0.00");
         EditLineProductSearchText = string.Empty;
-        // Set letter filter to the first letter of the product for quick filtering
-        EditLineSelectedProductLetter = line.ProductName?.Substring(0, 1).ToUpper() ?? "ALL";
         
-        // Load product based on the line's product and apply filter
+        // Load products filtered by first letter and select the current product
         _ = Task.Run(async () =>
         {
-            await ApplyEditLineProductFilterAsync();
-            await LoadEditLineProductAsync(line.ProductId);
+            // Set letter filter to the first letter of the product for quick filtering
+            var firstLetter = line.ProductName?.Substring(0, 1).ToUpper() ?? "ALL";
+            
+            // Load all products from API
+            var results = await _app.ProductsAndPricesService.LookupProductsAsync(string.Empty);
+            
+            // Populate product letter filters (for the letter dropdown)
+            ProductLetterFilters.Clear();
+            ProductLetterFilters.Add("ALL");
+            var letters = results
+                .Where(p => !string.IsNullOrWhiteSpace(p.ProductName))
+                .Select(p => p.ProductName!.Substring(0, 1).ToUpper())
+                .Distinct()
+                .OrderBy(l => l)
+                .ToList();
+            foreach (var letter in letters)
+            {
+                ProductLetterFilters.Add(letter);
+            }
+            
+            EditLineProductSuggestions.Clear();
+            
+            if (firstLetter == "ALL")
+            {
+                // Show all products
+                foreach (var p in results)
+                {
+                    EditLineProductSuggestions.Add(p);
+                }
+            }
+            else
+            {
+                // Filter by first letter
+                var filtered = results
+                    .Where(p => p.ProductName != null && 
+                           p.ProductName.StartsWith(firstLetter, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                foreach (var p in filtered)
+                {
+                    EditLineProductSuggestions.Add(p);
+                }
+            }
+            
+            // Now select the product that matches the line item
+            var product = EditLineProductSuggestions.FirstOrDefault(p => p.ProductId == line.ProductId);
+            if (product != null)
+            {
+                EditLineSelectedProduct = product;
+            }
+            
+            // Finally, set the letter filter (this will also trigger ApplyEditLineProductFilterAsync but product is already selected)
+            _editLineSelectedProductLetter = firstLetter;
+            OnPropertyChanged(nameof(EditLineSelectedProductLetter));
         });
         
         StatusMessage = $"Editing line item: {line.ProductName}";

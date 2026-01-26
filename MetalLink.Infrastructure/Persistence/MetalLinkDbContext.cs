@@ -7,6 +7,13 @@ public class MetalLinkDbContext : DbContext
 {
     public MetalLinkDbContext(DbContextOptions<MetalLinkDbContext> options) : base(options) { }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+        // Register the audit interceptor to auto-update UpdatedTime on all changes
+        optionsBuilder.AddInterceptors(new AuditInterceptor());
+    }
+
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<Site> Sites => Set<Site>();
     public DbSet<Province> Provinces => Set<Province>();
@@ -28,7 +35,6 @@ public class MetalLinkDbContext : DbContext
     public DbSet<TicketSending> SendingTickets => Set<TicketSending>();
     public DbSet<TicketSendingLine> SendingTicketLines => Set<TicketSendingLine>();
 
-    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -53,8 +59,6 @@ public class MetalLinkDbContext : DbContext
         ConfigureReceivingTicketLines(modelBuilder);
         ConfigureSendingTickets(modelBuilder);
         ConfigureSendingTicketLines(modelBuilder);
-
-        ConfigureStockMovements(modelBuilder);
     }
 
     private static void ConfigureCompanies(ModelBuilder modelBuilder)
@@ -303,7 +307,8 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
 
         e.HasOne(x => x.Customer).WithMany().HasForeignKey(x => x.CustomerId);
-        e.HasOne(x => x.TicketType).WithMany().HasForeignKey(x => x.TicketTypeId);
+        e.HasOne(x => x.TicketType).WithMany(x => x.TicketsReceiving).HasForeignKey(x => x.TicketTypeId);
+        e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
     }
 
     private static void ConfigureReceivingTicketLines(ModelBuilder modelBuilder)
@@ -324,6 +329,7 @@ public class MetalLinkDbContext : DbContext
 
         e.HasOne(x => x.TicketReceiving).WithMany(x => x.Lines).HasForeignKey(x => x.ReceivingTicketId);
         e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+        e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
     }
 
     private static void ConfigureSendingTickets(ModelBuilder modelBuilder)
@@ -352,8 +358,9 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
         e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
 
-        e.HasOne(x => x.Buyer).WithMany().HasForeignKey(x => x.BuyerId);
-        e.HasOne(x => x.TicketType).WithMany().HasForeignKey(x => x.TicketTypeId);
+        e.HasOne(x => x.Buyer).WithMany(x => x.TicketsSending).HasForeignKey(x => x.BuyerId);
+        e.HasOne(x => x.TicketType).WithMany(x => x.TicketsSending).HasForeignKey(x => x.TicketTypeId);
+        e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
     }
 
     private static void ConfigureSendingTicketLines(ModelBuilder modelBuilder)
@@ -374,32 +381,7 @@ public class MetalLinkDbContext : DbContext
 
         e.HasOne(x => x.TicketSending).WithMany(x => x.Lines).HasForeignKey(x => x.TicketSendingId);
         e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+        e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
     }
 
-    private static void ConfigureStockMovements(ModelBuilder modelBuilder)
-    {
-        var e = modelBuilder.Entity<StockMovement>();
-        e.ToTable("stock_movements", "metal_link");
-        e.HasKey(x => x.StockMovementId);
-        e.Property(x => x.StockMovementId).HasColumnName("stock_movement_id").ValueGeneratedOnAdd();
-        e.Property(x => x.SiteId).HasColumnName("site_id").IsRequired();
-        e.Property(x => x.ProductId).HasColumnName("product_id").IsRequired();
-        e.Property(x => x.TicketId).HasColumnName("ticket_id").IsRequired();
-        e.Property(x => x.TicketLineId).HasColumnName("ticket_line_id");
-        e.Property(x => x.MovementType).HasColumnName("movement_type").HasMaxLength(50).IsRequired();
-        e.Property(x => x.QuantityKg).HasColumnName("quantity_kg").IsRequired();
-        e.Property(x => x.UnitPricePerKg).HasColumnName("unit_price_per_kg").IsRequired();
-        e.Property(x => x.CurrencyCode).HasColumnName("currency_code").HasMaxLength(10).IsRequired();
-        e.Property(x => x.ReferenceNumber).HasColumnName("reference_number").HasMaxLength(100);
-        e.Property(x => x.CounterpartyName).HasColumnName("counterparty_name").HasMaxLength(255);
-        e.Property(x => x.CounterpartyType).HasColumnName("counterparty_type").HasMaxLength(50);
-        e.Property(x => x.Notes).HasColumnName("notes");
-        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
-        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
-        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
-        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
-
-        e.HasOne<Site>().WithMany().HasForeignKey(x => x.SiteId);
-        e.HasOne<Product>().WithMany().HasForeignKey(x => x.ProductId);
-    }
 }

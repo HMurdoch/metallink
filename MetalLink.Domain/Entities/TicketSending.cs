@@ -36,6 +36,7 @@ public class TicketSending
     public string? ForeignTicket { get; private set; }
 
     public int CreatedByOperatorId { get; private set; }
+    public Operator CreatedByOperator { get; set; } = null!;
 
     public bool IsActive { get; private set; } = true;
     public DateTimeOffset CreatedTime { get; private set; } = DateTimeOffset.UtcNow;

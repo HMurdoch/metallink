@@ -306,21 +306,11 @@
                 <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" Width="*" IsReadOnly="True" />
                 <DataGridTextColumn Header="Site" Binding="{Binding SiteName}" Width="160" IsReadOnly="True" />
                 <DataGridTextColumn Header="Net KG" Binding="{Binding NetWeightKg, StringFormat='{}{0:N2}'}" Width="100" IsReadOnly="True" />
-                <DataGridTextColumn Header="Price" Binding="{Binding Price, StringFormat='{}{0:N2}'}" Width="100" IsReadOnly="True" />
-                <DataGridTextColumn Header="Total excl VAT" Binding="{Binding TotalExclVat, StringFormat='{}{0:N2}'}" Width="120" IsReadOnly="True" />
-                <DataGridTextColumn Header="VAT" Binding="{Binding VatAmount, StringFormat='{}{0:N2}'}" Width="100" IsReadOnly="True" />
-                <DataGridTextColumn Header="Total incl VAT" Binding="{Binding TotalInclVat, StringFormat='{}{0:N2}'}" Width="130" IsReadOnly="True" />
                 <DataGridTextColumn Header="Created" Binding="{Binding CreatedTime, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" IsReadOnly="True" />
-                <DataGridTemplateColumn Header="" Width="140">
+                <DataGridTemplateColumn Header="" Width="100">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
                       <StackPanel Orientation="Horizontal" Spacing="4">
-                        <Button
-                            Classes="row-action"
-                            Content="Edit"
-                            Command="{Binding DataContext.EditTicketCommand,
-                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
-                            CommandParameter="{Binding}" />
                         <Button
                             Classes="row-action"
                             Content="Delete"
@@ -361,8 +351,6 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
               <!-- Row 0 -->
@@ -370,9 +358,11 @@
                 <TextBlock Text="Ticket Number" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
                 <TextBlock Text="{Binding SelectedSendingTicketDetails.TicketNumber}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
-              <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2">
+              <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Customer ID" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
                 <TextBlock Text="{Binding SelectedSendingTicketDetails.CustomerId, StringFormat='{}{0:D8}'}" Foreground="#f5f5f5" FontSize="11" />
+              </StackPanel>
+              <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2">
               </StackPanel>
 
               <!-- Row 1 -->
@@ -406,34 +396,6 @@
                            FontSize="13" />
               </StackPanel>
 
-              <!-- Row 3 -->
-              <StackPanel Grid.Row="3" Grid.Column="0" Spacing="2" Margin="0,8,0,0">
-                <TextBlock Text="Unit Price /kg" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.UnitPricePerKg, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
-              </StackPanel>
-              <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2" Margin="0,8,0,0">
-              </StackPanel>
-              <StackPanel Grid.Row="3" Grid.Column="2" Spacing="2" Margin="0,8,0,0">
-                <TextBlock Text="Currency" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.CurrencyCode}" Foreground="#f5f5f5" FontSize="11" />
-              </StackPanel>
-
-              <!-- Row 4 -->
-              <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2" Margin="0,8,0,0">
-                <TextBlock Text="Total (ex VAT)" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.TotalAmount, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
-              </StackPanel>
-              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2" Margin="0,8,0,0">
-                <TextBlock Text="VAT Amount" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.VatAmount, StringFormat='{}{0:N2}'}" Foreground="#f5f5f5" FontSize="11" />
-              </StackPanel>
-              <StackPanel Grid.Row="4" Grid.Column="2" Spacing="2" Margin="0,8,0,0">
-                <TextBlock Text="Total (incl VAT)" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.TotalInclVat, StringFormat='{}{0:N2}'}" 
-                           Foreground="#4a9eff" 
-                           FontWeight="Bold" 
-                           FontSize="13" />
-              </StackPanel>
             </Grid>
 
             <!-- Ticket Lines -->
@@ -455,16 +417,10 @@
                   <DataGridTextColumn Header="Line Total (ex VAT)" Binding="{Binding LineTotal, StringFormat='{}{0:N2}'}" Width="150" />
                   <DataGridTextColumn Header="VAT" Binding="{Binding VatAmount, StringFormat='{}{0:N2}'}" Width="100" />
                   <DataGridTextColumn Header="Total (incl VAT)" Binding="{Binding TotalInclVat, StringFormat='{}{0:N2}'}" Width="140" />
-                  <DataGridTemplateColumn Header="" Width="140">
+                  <DataGridTemplateColumn Header="" Width="100">
                     <DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <StackPanel Orientation="Horizontal" Spacing="4">
-                          <Button
-                              Classes="row-action"
-                              Content="Edit"
-                              Command="{Binding DataContext.EditTicketLineCommand,
-                                                RelativeSource={RelativeSource AncestorType=UserControl}}"
-                              CommandParameter="{Binding}" />
                           <Button
                               Classes="row-action"
                               Content="Delete"
@@ -622,8 +578,6 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
               <!-- Row 0: Customer ID / Ticket Number (auto-generated, read-only) -->
@@ -636,103 +590,67 @@
                 <TextBox Text="{Binding TicketNumber}" IsReadOnly="True" />
               </StackPanel>
 
-              <!-- Row 1: Product Search Text / Product Letter + Dropdown -->
-              <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2" IsEnabled="{Binding IsProductSelectionEnabled}">
-                <TextBlock Text="Product Search" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding TicketProductSearchText}" Watermark="Search products..." />
-              </StackPanel>
-              <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2" IsEnabled="{Binding IsProductSelectionEnabled}">
-                <TextBlock Text="Product" Foreground="#c0c4cf" />
-                <Grid>
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="80" />
-                    <ColumnDefinition Width="*" />
-                  </Grid.ColumnDefinitions>
-                  <ComboBox Grid.Column="0"
-                            ItemsSource="{Binding ProductLetterFilters}"
-                            SelectedItem="{Binding SelectedTicketProductLetter}"
-                            Margin="0,0,4,0" />
-                  <ComboBox Grid.Column="1"
-                            ItemsSource="{Binding TicketProductSuggestions}"
-                            SelectedItem="{Binding SelectedTicketProduct}">
-                    <ComboBox.ItemTemplate>
-                      <DataTemplate>
-                        <TextBlock Text="{Binding ProductName}" />
-                      </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                  </ComboBox>
-                </Grid>
+              <!-- Row 1: Ticket Type / [blank] -->
+              <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Ticket Type" Foreground="#c0c4cf" />
+                <ComboBox
+                    ItemsSource="{Binding TicketTypeOptions}"
+                    SelectedItem="{Binding SelectedTicketTypeOption}"
+                    HorizontalAlignment="Stretch">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding Display}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
               </StackPanel>
 
-              <!-- Row 3: First + Second Weight (same column) / Unit Price (auto, read-only) -->
-              <StackPanel Grid.Row="3" Grid.Column="0" Spacing="4" IsEnabled="{Binding AreWeightsEnabled}">
+              <!-- Row 2: First + Second Weight (same column) / [blank] -->
+              <StackPanel Grid.Row="2" Grid.Column="0" Spacing="4" IsEnabled="{Binding AreWeightsEnabled}">
                 <StackPanel Spacing="2">
                   <TextBlock Text="First Weight (kg)" Foreground="#c0c4cf" />
                   <StackPanel Orientation="Horizontal" Spacing="4">
-                    <TextBox Text="{Binding TicketFirstWeightText}" Width="150" />
+                    <TextBox Text="{Binding TicketFirstWeightText}" Width="150" IsReadOnly="True" />
                     <Button Content="Read Weight" Command="{Binding ReadWeighbridgeCommand}" />
                   </StackPanel>
                 </StackPanel>
                 <StackPanel Spacing="2">
                   <TextBlock Text="Second Weight (kg)" Foreground="#c0c4cf" />
                   <StackPanel Orientation="Horizontal" Spacing="4">
-                    <TextBox Text="{Binding TicketSecondWeightText}" Width="150" />
+                    <TextBox Text="{Binding TicketSecondWeightText}" Width="150" IsReadOnly="True" />
                     <Button Content="Read Weight" Command="{Binding ReadPlatformCommand}" />
                   </StackPanel>
                 </StackPanel>
               </StackPanel>
-              <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2">
-                <TextBlock Text="Unit Price /kg (auto)" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding TicketUnitPriceText}" IsReadOnly="True" />
-              </StackPanel>
 
-              <!-- Row 4: Currency Dropdown / Vehicle Registration -->
-              <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2">
-                <TextBlock Text="Currency" Foreground="#c0c4cf" />
-                <ComboBox
-                    ItemsSource="{Binding CurrencyOptions}"
-                    SelectedItem="{Binding SelectedCurrency}"
-                    HorizontalAlignment="Stretch">
-                  <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                      <TextBlock Text="{Binding}" />
-                    </DataTemplate>
-                  </ComboBox.ItemTemplate>
-                </ComboBox>
-              </StackPanel>
-              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2" IsEnabled="{Binding AreVehicleFieldsEnabled}">
+              <!-- Row 3: Vehicle Registration / Trailer Registration -->
+              <StackPanel Grid.Row="3" Grid.Column="0" Spacing="2" IsEnabled="{Binding AreVehicleFieldsEnabled}">
                 <TextBlock Text="Vehicle Registration" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding TicketVehicleRegistration}" />
               </StackPanel>
-
-              <!-- Row 5: Trailer Registration / Driver Name -->
-              <StackPanel Grid.Row="5" Grid.Column="0" Spacing="2" IsEnabled="{Binding AreVehicleFieldsEnabled}">
+              <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2" IsEnabled="{Binding AreVehicleFieldsEnabled}">
                 <TextBlock Text="Trailer Registration" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding TicketTrailerRegistration}" />
               </StackPanel>
-              <StackPanel Grid.Row="5" Grid.Column="1" Spacing="2" IsEnabled="{Binding AreVehicleFieldsEnabled}">
+
+              <!-- Row 4: Driver Name / OFM Ticket -->
+              <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2" IsEnabled="{Binding AreVehicleFieldsEnabled}">
                 <TextBlock Text="Driver Name" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding TicketDriverName}" />
               </StackPanel>
-
-              <!-- Row 6: OFM Ticket / Foreign Ticket -->
-              <StackPanel Grid.Row="6" Grid.Column="0" Spacing="2" IsEnabled="{Binding AreVehicleFieldsEnabled}">
+              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2" IsEnabled="{Binding AreVehicleFieldsEnabled}">
                 <TextBlock Text="OFM Weighbridge Ticket" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding TicketOfmWeighbridgeTicket}" />
               </StackPanel>
-              <StackPanel Grid.Row="6" Grid.Column="1" Spacing="2">
+
+              <!-- Row 5: Foreign Ticket / CK Number / Delivery Number -->
+              <StackPanel Grid.Row="5" Grid.Column="0" Spacing="2">
                 <TextBlock Text="Foreign Ticket" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding TicketForeignTicket}" />
               </StackPanel>
-              
-              <!-- Row 7: CK Number / Delivery Number -->
-              <StackPanel Grid.Row="7" Grid.Column="0" Spacing="2">
+              <StackPanel Grid.Row="5" Grid.Column="1" Spacing="2">
                 <TextBlock Text="CK Number" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding TicketCkNumber}" />
-              </StackPanel>
-              <StackPanel Grid.Row="7" Grid.Column="1" Spacing="2">
-                <TextBlock Text="Delivery Number" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding TicketDeliveryNumber}" />
               </StackPanel>
             </Grid>
 

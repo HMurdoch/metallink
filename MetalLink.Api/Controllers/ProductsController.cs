@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MetalLink.Infrastructure.Persistence;
 using MetalLink.Shared.Products;
 using MetalLink.Domain.Entities;
+using MetalLink.Api.Extensions;
 
 namespace MetalLink.Api.Controllers;
 
@@ -85,6 +86,7 @@ public class ProductsController : ControllerBase
             ProductName = dto.ProductName.Trim(),
             Grade = dto.Grade,
             IsActive = true,
+            CreatedByOperatorId = (int)User.GetOperatorId(),
             CreatedTime = DateTimeOffset.UtcNow,
             UpdatedTime = DateTimeOffset.UtcNow
         };

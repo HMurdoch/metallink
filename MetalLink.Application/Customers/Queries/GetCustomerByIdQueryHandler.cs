@@ -29,6 +29,7 @@ public sealed class GetCustomerByIdQueryHandler
 
         var company = customer.Company ?? new Company();
         var site    = customer.Site ?? new Site();
+        var imagePath = customer.ImagePath;
 
         var dto = new CustomerDto
         {
@@ -43,7 +44,8 @@ public sealed class GetCustomerByIdQueryHandler
             CompanyName   = company.CompanyName,
             VatNumber     = company.VatNumber,
 
-            IsTaxable       = customer.IsTaxable,
+            IsTaxable   = customer.IsTaxable,
+            Taxable     = customer.IsTaxable,
 
             SiteName      = site.SiteName,
             SiteCode      = site.SiteCode,
@@ -60,7 +62,12 @@ public sealed class GetCustomerByIdQueryHandler
             CreatedTime   = customer.CreatedTime,
             UpdatedTime   = customer.UpdatedTime,
 
-            ImagePathId = customer.ImagePathId
+            ImagePathId = customer.ImagePathId,
+            IdCardImagePath = imagePath?.IdCardImagePath,
+            DriverLicenseImagePath = imagePath?.DriverLicenseImagePath,
+            PhotoImagePath = imagePath?.PhotoImagePath,
+            SignatureImagePath = imagePath?.SignatureImagePath,
+            FingerprintImagePath = imagePath?.FingerprintImagePath
         };
 
         return dto;

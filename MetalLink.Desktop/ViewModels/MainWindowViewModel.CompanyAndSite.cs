@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
 using MetalLink.Shared.Companies;
 using MetalLink.Shared.Sites;
 using MetalLink.Shared.Customers;
@@ -57,6 +58,7 @@ public partial class MainWindowViewModel
             SelectedNewSite = null;
         }
     }
+
 
     private async Task LoadSitesForSelectedCompanyAsync()
     {
@@ -522,7 +524,15 @@ public partial class MainWindowViewModel
                                 ?? CompanyResults.FirstOrDefault();
             else
                 SelectedCompany = CompanyResults.FirstOrDefault();
-            _ = LoadSitesForSelectedCompanyResultsAsync(ct);
+            
+            await LoadSitesForSelectedCompanyResultsAsync(ct);
+            
+            // Auto-select the newly created initial site and enter edit mode
+            SelectedSearchSite = SiteResults.FirstOrDefault(s => s.SiteId == site.SiteId);
+            if (SelectedSearchSite != null)
+            {
+                OnEditSite(SelectedSearchSite);
+            }
         }
         catch (Exception ex)
         {
@@ -981,6 +991,14 @@ public partial class MainWindowViewModel
             NewSiteCreateCode = "";
 
             await LoadSitesForSelectedCompanyResultsAsync(ct);
+            
+            // Auto-select the newly created site and enter edit mode
+            SelectedSearchSite = SiteResults.FirstOrDefault(s => s.SiteId == created.SiteId);
+            if (SelectedSearchSite != null)
+            {
+                OnEditSite(SelectedSearchSite);
+            }
+            
             StatusMessage = $"[STATUS] Created site {created.SiteName}.";
         }
         catch (Exception ex)

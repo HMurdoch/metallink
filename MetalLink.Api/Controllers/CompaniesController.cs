@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MetalLink.Infrastructure.Persistence;
 using MetalLink.Domain.Entities;
 using MetalLink.Shared.Companies;
+using MetalLink.Api.Extensions;
 
 namespace MetalLink.Api.Controllers;
 
@@ -59,6 +60,7 @@ public sealed class CompaniesController : ControllerBase
             CompanyName = name,
             VatNumber = dto.VatNumber,
             IsActive = dto.IsActive,
+            CreatedByOperatorId = (int)User.GetOperatorId(),
             CreatedTime = DateTimeOffset.UtcNow,
             UpdatedTime = DateTimeOffset.UtcNow
         };

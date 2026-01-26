@@ -220,7 +220,7 @@
         <!-- SEARCH EXISTING CUSTOMER -->
         <Border Background="{StaticResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
-            <TextBlock Text="Search existing customer" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" />
+            <TextBlock Text="Search Existing Customer" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" />
 
             <!-- 2-column search grid -->
             <Grid Margin="0,8,0,0">
@@ -308,7 +308,8 @@
                 <ComboBox
                   ItemsSource="{Binding PriceCodeOptions}"
                   SelectedItem="{Binding SearchPriceCode, Mode=TwoWay}"
-                  HorizontalAlignment="Stretch">
+                  HorizontalAlignment="Left"
+                  Width="200">
                   <ComboBox.ItemTemplate>
                     <DataTemplate>
                       <TextBlock Text="{Binding Label}" />
@@ -333,13 +334,6 @@
                 <TextBox Text="{Binding SearchEmailText}" />
               </StackPanel>
 
-              <!-- Row 8: Taxable -->
-              <StackPanel Grid.Row="6" Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                <CheckBox
-                    Content="Taxable"
-                    IsChecked="{Binding SearchTaxable}" />
-              </StackPanel>
-
               <!-- Row 8: Search button -->
               <StackPanel Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
                 <Button
@@ -359,8 +353,9 @@
             </Grid>
 
             <!-- Results grid -->
+            <TextBlock Text="Customer Search Results" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" Margin="0,12,0,0" />
             <DataGrid
-                Margin="0,12,0,0"
+                Margin="0,8,0,0"
                 AutoGenerateColumns="False"
                 ItemsSource="{Binding CustomerSearchResults}"
                 SelectedItem="{Binding FoundCustomer, Mode=TwoWay}">
@@ -406,7 +401,8 @@
             </DataGrid>
 
             <!-- Selected customer detail table -->
-            <Border Margin="0,12,0,0" Padding="8" Background="{StaticResource Brush.MainBackground}" CornerRadius="4">
+            <TextBlock Text="Customer Details" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" Margin="0,12,0,0" />
+            <Border Margin="0,8,0,0" Padding="8" Background="{StaticResource Brush.MainBackground}" CornerRadius="4">
               <Grid>
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="Auto" />
@@ -632,7 +628,8 @@
                 <ComboBox
                   ItemsSource="{Binding PriceCodeOptions}"
                   SelectedItem="{Binding SelectedPriceCodeChar, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                  HorizontalAlignment="Stretch">
+                  HorizontalAlignment="Left"
+                  Width="200">
                   <ComboBox.ItemTemplate>
                     <DataTemplate>
                       <TextBlock Text="{Binding Label}" />

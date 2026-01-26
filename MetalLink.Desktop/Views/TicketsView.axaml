@@ -476,16 +476,10 @@
                   <DataGridTextColumn Header="Line Total (ex VAT)" Binding="{Binding LineTotal, StringFormat='{}{0:N2}'}" Width="150" />
                   <DataGridTextColumn Header="VAT" Binding="{Binding VatAmount, StringFormat='{}{0:N2}'}" Width="100" />
                   <DataGridTextColumn Header="Total (incl VAT)" Binding="{Binding TotalInclVat, StringFormat='{}{0:N2}'}" Width="140" />
-                  <DataGridTemplateColumn Header="" Width="140">
+                  <DataGridTemplateColumn Header="" Width="100">
                     <DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <StackPanel Orientation="Horizontal" Spacing="4">
-                          <Button
-                              Classes="row-action"
-                              Content="Edit"
-                              Command="{Binding DataContext.EditTicketLineCommand,
-                                                RelativeSource={RelativeSource AncestorType=UserControl}}"
-                              CommandParameter="{Binding}" />
                           <Button
                               Classes="row-action"
                               Content="Delete"

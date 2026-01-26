@@ -45,4 +45,7 @@ public sealed class TicketDto
 
     public DateTimeOffset CreatedTime { get; set; }
     public DateTimeOffset UpdatedTime { get; set; }
+
+    // Line items
+    public ICollection<TicketLineDto> Lines { get; set; } = new List<TicketLineDto>();
 }

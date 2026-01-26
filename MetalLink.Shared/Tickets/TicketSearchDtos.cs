@@ -39,10 +39,6 @@ public sealed class TicketSearchResultDto
     public string? AccountNumber { get; set; }
 
     public decimal NetWeightKg { get; set; }
-    public decimal Price { get; set; }
-    public decimal TotalExclVat { get; set; }
-    public decimal VatAmount { get; set; }
-    public decimal TotalInclVat { get; set; }
 
     public DateTimeOffset CreatedTime { get; set; }
 }

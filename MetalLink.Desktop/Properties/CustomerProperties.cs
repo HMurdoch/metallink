@@ -372,13 +372,6 @@ public partial class MainWindowViewModel
         set { _newTaxable = value; OnPropertyChanged(); }
     }
     
-    private bool _searchTaxable = true;
-    public bool SearchTaxable
-    {
-        get => _searchTaxable;
-        set { _searchTaxable = value; OnPropertyChanged(); }
-    }
-
     public sealed record PriceCodeOption(string Code, string Label);
 
     public ObservableCollection<PriceCodeOption> PriceCodeOptions { get; } =

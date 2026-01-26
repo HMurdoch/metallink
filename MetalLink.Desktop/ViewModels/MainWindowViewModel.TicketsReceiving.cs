@@ -20,10 +20,6 @@ public partial class MainWindowViewModel
         public long ProductId { get; init; }
         public string ProductName { get; init; } = string.Empty;
         public decimal WeightKg { get; init; }
-        public decimal UnitPricePerKg { get; init; }
-        public decimal LineTotal { get; init; }
-        public decimal VatAmount { get; init; }
-        public decimal TotalInclVat { get; init; }
     }
 
     private ObservableCollection<ReceivingLineItem> _receivingLines = new();
@@ -239,10 +235,6 @@ public partial class MainWindowViewModel
                         ProductId = dto.ProductId,
                         ProductName = dto.ProductName,
                         WeightKg = dto.WeightKg,
-                        UnitPricePerKg = dto.UnitPricePerKg,
-                        LineTotal = dto.LineTotal,
-                        VatAmount = dto.VatAmount,
-                        TotalInclVat = dto.TotalInclVat
                     });
                 }
             }
@@ -315,10 +307,6 @@ public partial class MainWindowViewModel
                     ProductId = dto.ProductId,
                     ProductName = dto.ProductName,
                     WeightKg = dto.WeightKg,
-                    UnitPricePerKg = dto.UnitPricePerKg,
-                    LineTotal = dto.LineTotal,
-                    VatAmount = dto.VatAmount,
-                    TotalInclVat = dto.TotalInclVat
                 });
             }
 
@@ -341,9 +329,14 @@ public partial class MainWindowViewModel
 
     private void RecalculateReceivingTotals()
     {
-        var totalExcl = ReceivingLines.Sum(l => l.LineTotal);
-        var totalVat = ReceivingLines.Sum(l => l.VatAmount);
-        var totalIncl = ReceivingLines.Sum(l => l.TotalInclVat);
+        var totalExcl = 0m;
+        var totalVat = 0m;
+        var totalIncl = 0m;
+
+        foreach (var line in ReceivingLines)
+        {
+            // Financial calculations are handled at the ticket level, not line item level
+        }
 
         ReceivingTotalExclVat = totalExcl;
         ReceivingTotalVat = totalVat;
@@ -417,7 +410,7 @@ public partial class MainWindowViewModel
         return Task.CompletedTask;
     }
 
-    private void ClearTicket()
+    private async Task ClearTicketAsync()
     {
         LastCreatedTicket = null;
         ReceivingLines.Clear();
@@ -428,15 +421,26 @@ public partial class MainWindowViewModel
         
         // Initialize type options and set defaults
         InitializeTicketTypeOptions();
-        SelectedTicketTypeOption = TicketTypeOptions.FirstOrDefault(t => t.Key == "weighbridge");
+        SelectedTicketTypeOption = TicketTypeOptions.FirstOrDefault(t => t.Key == "platform");
+        
+        // Generate ticket number for Platform (ticketTypeId = 2)
+        await GenerateTicketNumberAsync(2);
+        TicketCustomerIdText = string.Empty;
         
         // Initialize currency options and set default to ZAR
         InitializeCurrencyOptions();
         SelectedCurrency = "ZAR";
         
         CreateOrUpdateButtonText = "Create Ticket";
+        IsViewingTicketOnly = false;
         
         StatusMessage = "Ticket cleared.";
+    }
+
+    private async Task GenerateTicketNumberAsync(int ticketTypeId)
+    {
+        TicketNumber = await _ticketReceivingService.GetNextTicketNumberAsync(ticketTypeId);
+        OnPropertyChanged(nameof(TicketNumber));
     }
 
     private async Task CaptureWeightAsync()
@@ -497,7 +501,7 @@ public partial class MainWindowViewModel
     private string _searchReceivingTicketLastNameText = string.Empty;
     private string _searchReceivingTicketAccountNumberText = string.Empty;
     private string _searchReceivingTicketNumberText = string.Empty;
-    private string _searchReceivingTicketTypeKey = "Receiving";
+    private string _searchReceivingTicketTypeKey = "All";
     private string _searchReceivingTicketCreatedFromText = string.Empty;
     private string _searchReceivingTicketCreatedToText = string.Empty;
 
@@ -593,7 +597,7 @@ public partial class MainWindowViewModel
 
             return $"Ticket {SelectedReceivingTicket.TicketNumber} ({SelectedReceivingTicket.TicketType}) - " +
                    $"Customer {SelectedReceivingTicket.CustomerId}, Net {SelectedReceivingTicket.NetWeightKg:N2} kg, " +
-                   $"Total {SelectedReceivingTicket.TotalInclVat:N2}";
+                   $"Total {SelectedReceivingTicketLinesTotalInclVat:N2}";
         }
     }
 
@@ -610,9 +614,23 @@ public partial class MainWindowViewModel
 
     public ObservableCollection<TicketLineDto> SelectedReceivingTicketLines { get; } = new();
 
-    public decimal SelectedReceivingTicketLinesTotalExVat => SelectedReceivingTicketLines.Sum(l => l.LineTotal);
-    public decimal SelectedReceivingTicketLinesTotalVat => SelectedReceivingTicketLines.Sum(l => l.VatAmount);
-    public decimal SelectedReceivingTicketLinesTotalInclVat => SelectedReceivingTicketLines.Sum(l => l.TotalInclVat);
+    public decimal SelectedReceivingTicketLinesTotalExVat => 0m; // Financial calculations handled at ticket level only
+    public decimal SelectedReceivingTicketLinesTotalVat
+    {
+        get
+        {
+            decimal totalVat = 0m;
+            foreach (var line in SelectedReceivingTicketLines)
+            {
+                var lineTotal = line.WeightKg * line.UnitPricePerKg;
+                var lineExcl = lineTotal / 1.15m;
+                totalVat += lineTotal - lineExcl;
+            }
+            return totalVat;
+        }
+    }
+
+    public decimal SelectedReceivingTicketLinesTotalInclVat => SelectedReceivingTicketLines.Sum(l => l.WeightKg * l.UnitPricePerKg);
 
     private async Task LoadSelectedReceivingTicketDetailsAsync(long ticketId)
     {
@@ -624,6 +642,9 @@ public partial class MainWindowViewModel
             // Populate form fields from loaded ticket
             if (details != null)
             {
+                // Populate Customer ID
+                TicketCustomerIdText = details.CustomerId.ToString();
+
                 // Set ticket type
                 InitializeTicketTypeOptions();
                 var ticketTypeOption = TicketTypeOptions.FirstOrDefault(t => t.Key == details.TicketType);
@@ -632,17 +653,18 @@ public partial class MainWindowViewModel
                     SelectedTicketTypeOption = ticketTypeOption;
                 }
                 
-                // Set button text to Update
-                CreateOrUpdateButtonText = "Update Ticket";
-            }
+                // Keep button text as Create (viewing only, not editing)
+                CreateOrUpdateButtonText = "Create Ticket";
+                IsViewingTicketOnly = true;
 
-            var lines = await _ticketService.GetTicketLinesAsync(ticketId);
-            SelectedReceivingTicketLines.Clear();
-            if (lines != null)
-            {
-                foreach (var line in lines)
+                // Load lines from the ticket details (already included in DTO)
+                SelectedReceivingTicketLines.Clear();
+                if (details.Lines != null && details.Lines.Count > 0)
                 {
-                    SelectedReceivingTicketLines.Add(line);
+                    foreach (var line in details.Lines)
+                    {
+                        SelectedReceivingTicketLines.Add(line);
+                    }
                 }
             }
             
@@ -668,8 +690,16 @@ public partial class MainWindowViewModel
 
         try
         {
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] SearchTicketTypeKey={SearchTicketTypeKey}");
+            
+            var ticketType = string.IsNullOrWhiteSpace(SearchTicketTypeKey) || SearchTicketTypeKey == "All" ? null : SearchTicketTypeKey;
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] Final TicketType={ticketType}");
+            
             var request = new TicketReceivingSearchRequestDto
             {
+                CompanyId = SelectedSearchCompany?.CompanyId,
+                SiteId = SelectedSearchSite?.SiteId,
+                TicketType = ticketType,
                 CustomerId = ParseIntOrNull(SearchReceivingTicketCustomerIdText),
                 FirstName = string.IsNullOrWhiteSpace(SearchReceivingTicketFirstNameText) ? null : SearchReceivingTicketFirstNameText.Trim(),
                 LastName = string.IsNullOrWhiteSpace(SearchReceivingTicketLastNameText) ? null : SearchReceivingTicketLastNameText.Trim(),
@@ -681,6 +711,12 @@ public partial class MainWindowViewModel
             };
 
             var results = await _ticketReceivingService.SearchTicketsReceivingAsync(request);
+
+            System.Diagnostics.Debug.WriteLine($"[DEBUG] Search returned {results.Count} results");
+            foreach (var r in results)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DEBUG] Ticket: {r.TicketNumber}");
+            }
 
             ReceivingTicketSearchResults.Clear();
             foreach (var t in results)
@@ -710,9 +746,11 @@ public partial class MainWindowViewModel
         SearchReceivingTicketLastNameText = string.Empty;
         SearchReceivingTicketAccountNumberText = string.Empty;
         SearchReceivingTicketNumberText = string.Empty;
-        SearchReceivingTicketTypeKey = "Receiving";
+        SelectedSearchTicketTypeOption = null;
         SearchReceivingTicketCreatedFromText = string.Empty;
         SearchReceivingTicketCreatedToText = string.Empty;
+        SelectedSearchCompany = null;
+        SelectedSearchSite = null;
 
         ReceivingTicketSearchResults.Clear();
         SelectedReceivingTicket = null;

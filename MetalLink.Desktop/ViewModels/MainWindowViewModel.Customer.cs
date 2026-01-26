@@ -120,7 +120,6 @@ public partial class MainWindowViewModel
 
         // ✅ IMPORTANT: reset dropdowns
         SearchPriceCode = null;
-        SearchTaxable = true;
 
         // Optional: reset site/company dropdowns if used
         SelectedSearchCompany = null;

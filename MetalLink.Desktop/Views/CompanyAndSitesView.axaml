@@ -456,6 +456,7 @@
                 <TextBlock Text="Province" Foreground="#c0c4cf" />
                 <ComboBox
                   Width="200"
+                  HorizontalAlignment="Left"
                   ItemsSource="{Binding Provinces}"
                   SelectedItem="{Binding SelectedProvince, Mode=TwoWay}"
                   ItemTemplate="{StaticResource ProvinceLookupTemplate}" />
@@ -466,6 +467,7 @@
                 <TextBlock Text="Country" Foreground="#c0c4cf" />
                 <ComboBox
                   Width="200"
+                  HorizontalAlignment="Left"
                   ItemsSource="{Binding Countries}"
                   SelectedItem="{Binding SelectedCountry, Mode=TwoWay}"
                   ItemTemplate="{StaticResource CountryLookupTemplate}" />

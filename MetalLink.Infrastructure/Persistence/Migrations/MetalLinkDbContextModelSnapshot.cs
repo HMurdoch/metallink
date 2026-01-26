@@ -2072,6 +2072,12 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("MetalLink.Domain.Entities.Operator", "CreatedByOperator")
+                        .WithMany()
+                        .HasForeignKey("CreatedByOperatorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("MetalLink.Domain.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
@@ -2090,6 +2096,8 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
 
                     b.Navigation("Company");
 
+                    b.Navigation("CreatedByOperator");
+
                     b.Navigation("Customer");
 
                     b.Navigation("Product");
@@ -2099,6 +2107,12 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("MetalLink.Domain.Entities.TicketReceivingLine", b =>
                 {
+                    b.HasOne("MetalLink.Domain.Entities.Operator", "CreatedByOperator")
+                        .WithMany()
+                        .HasForeignKey("CreatedByOperatorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("MetalLink.Domain.Entities.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
@@ -2110,6 +2124,8 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TicketReceivingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CreatedByOperator");
 
                     b.Navigation("Product");
 
@@ -2130,6 +2146,12 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("MetalLink.Domain.Entities.Operator", "CreatedByOperator")
+                        .WithMany()
+                        .HasForeignKey("CreatedByOperatorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("MetalLink.Domain.Entities.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId");
@@ -2144,6 +2166,8 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
 
                     b.Navigation("Company");
 
+                    b.Navigation("CreatedByOperator");
+
                     b.Navigation("Product");
 
                     b.Navigation("Site");
@@ -2151,6 +2175,12 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("MetalLink.Domain.Entities.TicketSendingLine", b =>
                 {
+                    b.HasOne("MetalLink.Domain.Entities.Operator", "CreatedByOperator")
+                        .WithMany()
+                        .HasForeignKey("CreatedByOperatorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("MetalLink.Domain.Entities.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
@@ -2162,6 +2192,8 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TicketSendingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CreatedByOperator");
 
                     b.Navigation("Product");
 

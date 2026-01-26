@@ -4,7 +4,7 @@ namespace MetalLink.Shared.Sites;
 public sealed class SiteLookupDto
 {
     public int SiteId    { get; set; }
-    public int CompanyId { get; set; }
+    public int? CompanyId { get; set; }
 
     public string SiteName { get; set; } = string.Empty;
     public string SiteCode { get; set; } = string.Empty;
@@ -15,7 +15,7 @@ public sealed class SiteLookupDto
     public string? City         { get; set; }
     public string? PostalCode   { get; set; }
 
-    public int ProvinceId   { get; set; }
-    public int CountryId { get; set; }
+    public int? ProvinceId   { get; set; }
+    public int? CountryId { get; set; }
     public bool IsActive { get; set; } = true;
 }

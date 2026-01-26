@@ -3,66 +3,118 @@ using MetalLink.Application.Interfaces;
 namespace MetalLink.Application.Services;
 
 /// <summary>
-/// Service for generating ticket numbers based on ticket type
-/// Generates WB-00000001, WB-00000002 for weighbridge tickets
-/// Generates PL-00000001, PL-00000002 for platform tickets
+/// Service for generating ticket numbers based on ticket type and direction
+/// Receiving Weighbridge: RWB-00000001
+/// Receiving Platform: RPL-00000001
+/// Sending Weighbridge: SWB-00000001
+/// Sending Platform: SPL-00000001
 /// </summary>
 public class TicketNumberService
 {
     private readonly ITicketReceivingRepository _ticketReceivingRepo;
+    private readonly ITicketSendingRepository _ticketSendingRepo;
 
-    public TicketNumberService(ITicketReceivingRepository ticketReceivingRepo)
+    public TicketNumberService(ITicketReceivingRepository ticketReceivingRepo, ITicketSendingRepository ticketSendingRepo)
     {
         _ticketReceivingRepo = ticketReceivingRepo;
+        _ticketSendingRepo = ticketSendingRepo;
     }
 
     /// <summary>
-    /// Gets the next ticket number based on ticket type
+    /// Gets the next receiving ticket number based on ticket type
     /// </summary>
-    /// <param name="ticketTypeId">1 = Weighbridge (WB), 2 = Platform (PL)</param>
-    /// <returns>Next ticket number (e.g., WB-00000001)</returns>
-    public async Task<string> GetNextTicketNumberAsync(int ticketTypeId)
+    /// <param name="ticketTypeId">1 = Weighbridge (RWB), 2 = Platform (RPL)</param>
+    /// <returns>Next ticket number (e.g., RWB-00000001)</returns>
+    public async Task<string> GetNextReceivingTicketNumberAsync(int ticketTypeId)
     {
-        var prefix = GetPrefix(ticketTypeId);
-        var lastNumber = await GetLastTicketNumberAsync(ticketTypeId);
+        var prefix = GetReceivingPrefix(ticketTypeId);
+        var lastNumber = await GetLastReceivingTicketNumberAsync(ticketTypeId);
         var nextNumber = lastNumber + 1;
 
         return $"{prefix}-{nextNumber:D8}";
     }
 
     /// <summary>
-    /// Gets the prefix based on ticket type
+    /// Gets the next sending ticket number based on ticket type
     /// </summary>
-    private static string GetPrefix(int ticketTypeId)
+    /// <param name="ticketTypeId">1 = Weighbridge (SWB), 2 = Platform (SPL)</param>
+    /// <returns>Next ticket number (e.g., SWB-00000001)</returns>
+    public async Task<string> GetNextSendingTicketNumberAsync(int ticketTypeId)
+    {
+        var prefix = GetSendingPrefix(ticketTypeId);
+        var lastNumber = await GetLastSendingTicketNumberAsync(ticketTypeId);
+        var nextNumber = lastNumber + 1;
+
+        return $"{prefix}-{nextNumber:D8}";
+    }
+
+    /// <summary>
+    /// Gets the prefix for receiving tickets based on ticket type
+    /// </summary>
+    private static string GetReceivingPrefix(int ticketTypeId)
     {
         return ticketTypeId switch
         {
-            1 => "WB", // Weighbridge
-            2 => "PL", // Platform
+            1 => "RWB", // Receiving Weighbridge
+            2 => "RPL", // Receiving Platform
             _ => throw new ArgumentException($"Invalid ticket type id: {ticketTypeId}")
         };
     }
 
     /// <summary>
-    /// Gets the last sequential number for a given ticket type
+    /// Gets the prefix for sending tickets based on ticket type
     /// </summary>
-    private async Task<int> GetLastTicketNumberAsync(int ticketTypeId)
+    private static string GetSendingPrefix(int ticketTypeId)
     {
-        var prefix = GetPrefix(ticketTypeId);
-        
-        // This would need to be implemented in the repository
-        // For now, we'll provide a basic implementation
-        // You may want to use a database query or stored procedure for better performance
-        
+        return ticketTypeId switch
+        {
+            1 => "SWB", // Sending Weighbridge
+            2 => "SPL", // Sending Platform
+            _ => throw new ArgumentException($"Invalid ticket type id: {ticketTypeId}")
+        };
+    }
+
+    /// <summary>
+    /// Gets the last sequential number for a given receiving ticket type
+    /// </summary>
+    private async Task<int> GetLastReceivingTicketNumberAsync(int ticketTypeId)
+    {
+        var prefix = GetReceivingPrefix(ticketTypeId);
         var lastTicketNumber = await _ticketReceivingRepo.GetLastTicketNumberByPrefixAsync(prefix);
         
-        if (string.IsNullOrEmpty(lastTicketNumber))
+        return ExtractNumberFromTicketNumber(lastTicketNumber, prefix);
+    }
+
+    /// <summary>
+    /// Gets the last sequential number for a given sending ticket type
+    /// </summary>
+    private async Task<int> GetLastSendingTicketNumberAsync(int ticketTypeId)
+    {
+        var prefix = GetSendingPrefix(ticketTypeId);
+        var lastTicketNumber = await _ticketSendingRepo.GetLastTicketNumberByPrefixAsync(prefix);
+        
+        return ExtractNumberFromTicketNumber(lastTicketNumber, prefix);
+    }
+
+    /// <summary>
+    /// Extracts the numeric portion from a ticket number
+    /// </summary>
+    private static int ExtractNumberFromTicketNumber(string? ticketNumber, string prefix)
+    {
+        if (string.IsNullOrEmpty(ticketNumber))
             return 0;
 
-        // Extract the numeric part (e.g., "WB-00000005" -> 5)
-        var numericPart = lastTicketNumber.Substring(3); // Skip "WB-" or "PL-"
-        if (int.TryParse(numericPart, out var number))
-            return number;
+        try
+        {
+            // Remove prefix and dash (e.g., "RWB-00000005" -> "00000005")
+            var numericPart = ticketNumber.Substring(prefix.Length + 1);
+            if (int.TryParse(numericPart, out var number))
+                return number;
+        }
+        catch
+        {
+            return 0;
+        }
 
         return 0;
     }

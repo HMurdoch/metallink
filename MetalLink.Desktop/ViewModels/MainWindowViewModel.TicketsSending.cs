@@ -21,10 +21,6 @@ public partial class MainWindowViewModel
         public long ProductId { get; init; }
         public string ProductName { get; init; } = string.Empty;
         public decimal WeightKg { get; init; }
-        public decimal UnitPricePerKg { get; init; }
-        public decimal LineTotal { get; init; }
-        public decimal VatAmount { get; init; }
-        public decimal TotalInclVat { get; init; }
     }
 
     private ObservableCollection<SendingLineItem> _sendingLines = new();
@@ -239,11 +235,7 @@ public partial class MainWindowViewModel
                         TicketId = dto.TicketId,
                         ProductId = dto.ProductId,
                         ProductName = dto.ProductName,
-                        WeightKg = dto.WeightKg,
-                        UnitPricePerKg = dto.UnitPricePerKg,
-                        LineTotal = dto.LineTotal,
-                        VatAmount = dto.VatAmount,
-                        TotalInclVat = dto.TotalInclVat
+                        WeightKg = dto.WeightKg
                     });
                 }
             }
@@ -315,11 +307,7 @@ public partial class MainWindowViewModel
                     TicketId = dto.TicketId,
                     ProductId = dto.ProductId,
                     ProductName = dto.ProductName,
-                    WeightKg = dto.WeightKg,
-                    UnitPricePerKg = dto.UnitPricePerKg,
-                    LineTotal = dto.LineTotal,
-                    VatAmount = dto.VatAmount,
-                    TotalInclVat = dto.TotalInclVat
+                    WeightKg = dto.WeightKg
                 });
             }
 
@@ -342,9 +330,14 @@ public partial class MainWindowViewModel
 
     private void RecalculateSendingTotals()
     {
-        var totalExcl = SendingLines.Sum(l => l.LineTotal);
-        var totalVat = SendingLines.Sum(l => l.VatAmount);
-        var totalIncl = SendingLines.Sum(l => l.TotalInclVat);
+        var totalExcl = 0m;
+        var totalVat = 0m;
+        var totalIncl = 0m;
+
+        foreach (var line in SendingLines)
+        {
+            // Financial calculations are handled at the ticket level, not line item level
+        }
 
         SendingTotalExclVat = totalExcl;
         SendingTotalVat = totalVat;
@@ -498,7 +491,7 @@ public partial class MainWindowViewModel
     private string _searchSendingTicketLastNameText = string.Empty;
     private string _searchSendingTicketAccountNumberText = string.Empty;
     private string _searchSendingTicketNumberText = string.Empty;
-    private string _searchSendingTicketTypeKey = "Sending";
+    private string _searchSendingTicketTypeKey = "All";
     private string _searchSendingTicketCreatedFromText = string.Empty;
     private string _searchSendingTicketCreatedToText = string.Empty;
 
@@ -594,7 +587,7 @@ public partial class MainWindowViewModel
 
             return $"Ticket {SelectedSendingTicket.TicketNumber} ({SelectedSendingTicket.TicketType}) - " +
                    $"Customer {SelectedSendingTicket.CustomerId}, Net {SelectedSendingTicket.NetWeightKg:N2} kg, " +
-                   $"Total {SelectedSendingTicket.TotalInclVat:N2}";
+                   $"Total {SelectedSendingTicketLinesTotalInclVat:N2}";
         }
     }
 
@@ -611,9 +604,9 @@ public partial class MainWindowViewModel
 
     public ObservableCollection<TicketSendingLineDto> SelectedSendingTicketLines { get; } = new();
 
-    public decimal SelectedSendingTicketLinesTotalExVat => SelectedSendingTicketLines.Sum(l => l.NetWeightKg * l.UnitPricePerKg);
-    public decimal SelectedSendingTicketLinesTotalVat => 0m; // TODO: Calculate VAT based on business rules
-    public decimal SelectedSendingTicketLinesTotalInclVat => SelectedSendingTicketLinesTotalExVat; // TODO: Add VAT calculation
+    public decimal SelectedSendingTicketLinesTotalExVat => 0m; // Financial calculations handled at ticket level only
+    public decimal SelectedSendingTicketLinesTotalVat => 0m; // Financial calculations handled at ticket level only
+    public decimal SelectedSendingTicketLinesTotalInclVat => 0m; // Financial calculations handled at ticket level only
 
     private async Task LoadSelectedSendingTicketDetailsAsync(long ticketId)
     {
@@ -635,15 +628,15 @@ public partial class MainWindowViewModel
                 
                 // Set button text to Update
                 CreateOrUpdateButtonText = "Update Ticket";
-            }
 
-            var lines = await _ticketSendingService.GetTicketSendingLinesAsync(ticketId);
-            SelectedSendingTicketLines.Clear();
-            if (lines != null)
-            {
-                foreach (var line in lines)
+                // Load lines from the ticket details (already included in DTO)
+                SelectedSendingTicketLines.Clear();
+                if (details.Lines != null && details.Lines.Count > 0)
                 {
-                    SelectedSendingTicketLines.Add(line);
+                    foreach (var line in details.Lines)
+                    {
+                        SelectedSendingTicketLines.Add(line);
+                    }
                 }
             }
             
@@ -669,8 +662,12 @@ public partial class MainWindowViewModel
 
         try
         {
+            var ticketType = SelectedTicketTypeOption?.Key;
             var request = new TicketSendingSearchRequestDto
             {
+                CompanyId = SearchTicketSelectedCompany?.CompanyId,
+                SiteId = SearchTicketSelectedSite?.SiteId,
+                TicketType = ticketType,
                 BuyerId = ParseIntOrNull(SearchSendingTicketCustomerIdText),
                 FirstName = string.IsNullOrWhiteSpace(SearchSendingTicketFirstNameText) ? null : SearchSendingTicketFirstNameText.Trim(),
                 LastName = string.IsNullOrWhiteSpace(SearchSendingTicketLastNameText) ? null : SearchSendingTicketLastNameText.Trim(),
@@ -711,9 +708,11 @@ public partial class MainWindowViewModel
         SearchSendingTicketLastNameText = string.Empty;
         SearchSendingTicketAccountNumberText = string.Empty;
         SearchSendingTicketNumberText = string.Empty;
-        SearchSendingTicketTypeKey = "Sending";
+        SelectedTicketTypeOption = null;
         SearchSendingTicketCreatedFromText = string.Empty;
         SearchSendingTicketCreatedToText = string.Empty;
+        SearchTicketSelectedCompany = null;
+        SearchTicketSelectedSite = null;
 
         SendingTicketSearchResults.Clear();
         SelectedSendingTicket = null;

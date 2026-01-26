@@ -21,9 +21,15 @@ public class TicketSendingRepository : ITicketSendingRepository
     {
         return await _context.Set<TicketSending>()
             .Include(t => t.Buyer)
+                .ThenInclude(b => b.Company)
+            .Include(t => t.Buyer)
+                .ThenInclude(b => b.Site)
+            .Include(t => t.CreatedByOperator)
             .Include(t => t.TicketType)
             .Include(t => t.Lines)
                 .ThenInclude(l => l.Product)
+            .Include(t => t.Lines)
+                .ThenInclude(l => l.CreatedByOperator)
             .FirstOrDefaultAsync(t => t.TicketSendingId == ticketSendingId && t.IsActive);
     }
 
@@ -31,9 +37,12 @@ public class TicketSendingRepository : ITicketSendingRepository
     {
         return await _context.Set<TicketSending>()
             .Include(t => t.Buyer)
+            .Include(t => t.CreatedByOperator)
             .Include(t => t.TicketType)
             .Include(t => t.Lines)
                 .ThenInclude(l => l.Product)
+            .Include(t => t.Lines)
+                .ThenInclude(l => l.CreatedByOperator)
             .FirstOrDefaultAsync(t => t.TicketNumber == ticketNumber && t.IsActive);
     }
 
@@ -47,6 +56,7 @@ public class TicketSendingRepository : ITicketSendingRepository
         string? idNumber = null,
         long? accountNumber = null,
         long? productId = null,
+        string? ticketType = null,
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
         string? deliveryStatus = null,
@@ -55,8 +65,15 @@ public class TicketSendingRepository : ITicketSendingRepository
     {
         var query = _context.Set<TicketSending>()
             .Include(t => t.Buyer)
+                .ThenInclude(b => b.Company)
+            .Include(t => t.Buyer)
+                .ThenInclude(b => b.Site)
+            .Include(t => t.CreatedByOperator)
+            .Include(t => t.TicketType)
             .Include(t => t.Lines)
                 .ThenInclude(l => l.Product)
+            .Include(t => t.Lines)
+                .ThenInclude(l => l.CreatedByOperator)
             .Where(t => t.IsActive);
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -68,6 +85,12 @@ public class TicketSendingRepository : ITicketSendingRepository
                 (t.VehicleRegistration != null && t.VehicleRegistration.Contains(searchTerm)));
         }
 
+        if (companyId.HasValue)
+            query = query.Where(t => t.Buyer != null && t.Buyer.CompanyId == companyId.Value);
+
+        if (siteId.HasValue)
+            query = query.Where(t => t.Buyer != null && t.Buyer.SiteId == siteId.Value);
+
         if (buyerId.HasValue)
             query = query.Where(t => t.BuyerId == buyerId.Value);
 
@@ -75,16 +98,19 @@ public class TicketSendingRepository : ITicketSendingRepository
             query = query.Where(t => t.Buyer.FirstName != null && t.Buyer.FirstName.Contains(firstName));
 
         if (!string.IsNullOrWhiteSpace(lastName))
-            query = query.Where(t => t.Buyer.LastName != null && t.Buyer.LastName.Contains(lastName));
+            query = query.Where(t => t.Buyer != null && t.Buyer.LastName != null && t.Buyer.LastName.Contains(lastName));
 
         if (!string.IsNullOrWhiteSpace(idNumber))
-            query = query.Where(t => (t.Buyer.FirstName != null && t.Buyer.FirstName.Contains(idNumber)) || (t.Buyer.LastName != null && t.Buyer.LastName.Contains(idNumber)));
+            query = query.Where(t => t.Buyer != null && ((t.Buyer.FirstName != null && t.Buyer.FirstName.Contains(idNumber)) || (t.Buyer.LastName != null && t.Buyer.LastName.Contains(idNumber))));
 
         if (accountNumber.HasValue)
-            query = query.Where(t => t.Buyer.AccountNumber == accountNumber.Value);
+            query = query.Where(t => t.Buyer != null && t.Buyer.AccountNumber == accountNumber.Value);
 
         if (productId.HasValue)
             query = query.Where(t => t.Lines.Any(l => l.ProductId == productId.Value));
+
+        if (!string.IsNullOrWhiteSpace(ticketType))
+            query = query.Where(t => t.TicketType != null && t.TicketType.TicketTypeName.ToLower() == ticketType.ToLower());
 
         if (startDate.HasValue)
             query = query.Where(t => t.CreatedTime >= startDate.Value);
@@ -132,13 +158,13 @@ public class TicketSendingRepository : ITicketSendingRepository
             query = query.Where(t => t.Buyer.FirstName != null && t.Buyer.FirstName.Contains(firstName));
 
         if (!string.IsNullOrWhiteSpace(lastName))
-            query = query.Where(t => t.Buyer.LastName != null && t.Buyer.LastName.Contains(lastName));
+            query = query.Where(t => t.Buyer != null && t.Buyer.LastName != null && t.Buyer.LastName.Contains(lastName));
 
         if (!string.IsNullOrWhiteSpace(idNumber))
-            query = query.Where(t => (t.Buyer.FirstName != null && t.Buyer.FirstName.Contains(idNumber)) || (t.Buyer.LastName != null && t.Buyer.LastName.Contains(idNumber)));
+            query = query.Where(t => t.Buyer != null && ((t.Buyer.FirstName != null && t.Buyer.FirstName.Contains(idNumber)) || (t.Buyer.LastName != null && t.Buyer.LastName.Contains(idNumber))));
 
         if (accountNumber.HasValue)
-            query = query.Where(t => t.Buyer.AccountNumber == accountNumber.Value);
+            query = query.Where(t => t.Buyer != null && t.Buyer.AccountNumber == accountNumber.Value);
 
         if (productId.HasValue)
             query = query.Where(t => t.Lines.Any(l => l.ProductId == productId.Value));
@@ -186,5 +212,15 @@ public class TicketSendingRepository : ITicketSendingRepository
         }
 
         return $"{prefix}-{nextNumber:D6}";
+    }
+
+    public async Task<string?> GetLastTicketNumberByPrefixAsync(string prefix)
+    {
+        var lastTicket = await _context.Set<TicketSending>()
+            .Where(t => t.TicketNumber.StartsWith(prefix))
+            .OrderByDescending(t => t.TicketNumber)
+            .FirstOrDefaultAsync();
+
+        return lastTicket?.TicketNumber;
     }
 }

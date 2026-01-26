@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MetalLink.Infrastructure.Persistence;
 using MetalLink.Shared.Prices;
 using MetalLink.Domain.Entities;
+using MetalLink.Api.Extensions;
 
 namespace MetalLink.Api.Controllers;
 
@@ -81,6 +82,7 @@ public class PricesController : ControllerBase
             PriceB = dto.PriceB,
             PriceC = dto.PriceC,
             IsActive = true,
+            CreatedByOperatorId = (int)User.GetOperatorId(),
             CreatedTime = DateTimeOffset.UtcNow,
             UpdatedTime = DateTimeOffset.UtcNow
         };

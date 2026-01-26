@@ -20,6 +20,7 @@ public sealed class TicketReceivingProperties
 
     // Ticket Header
     public string TicketNumber { get; set; } = string.Empty;
+    public string TicketCustomerIdText { get; set; } = string.Empty;
     public string TicketType { get; set; } = "weighbridge"; // weighbridge or platform
     
     // Weights
