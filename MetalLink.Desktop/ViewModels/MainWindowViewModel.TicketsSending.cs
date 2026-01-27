@@ -618,16 +618,25 @@ public partial class MainWindowViewModel
             // Populate form fields from loaded ticket
             if (details != null)
             {
-                // Set ticket type
+                // Set ticket type and regenerate ticket number for that type
                 InitializeTicketTypeOptions();
                 var ticketTypeOption = TicketTypeOptions.FirstOrDefault(t => t.Key == details.TicketTypeName);
                 if (ticketTypeOption != null)
                 {
                     SelectedTicketTypeOption = ticketTypeOption;
+                    
+                    // Regenerate ticket number based on selected ticket's type
+                    string prefix = details.TicketTypeName?.ToLower() switch
+                    {
+                        "weighbridge" => "SWB",
+                        "platform" => "SPL",
+                        _ => "SPL"
+                    };
+                    await GenerateTicketNumberForSendingAsync(prefix);
                 }
                 
-                // Set button text to Update
-                CreateOrUpdateButtonText = "Update Ticket";
+                // Set button text to Create (viewing only, not editing)
+                CreateOrUpdateButtonText = "Create Ticket";
 
                 // Load lines from the ticket details (already included in DTO)
                 SelectedSendingTicketLines.Clear();
