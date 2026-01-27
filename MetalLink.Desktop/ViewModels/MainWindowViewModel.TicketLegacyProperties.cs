@@ -149,7 +149,31 @@ public partial class MainWindowViewModel
 
     private async Task OnTicketTypeChangedAsync(int ticketTypeId)
     {
-        await GenerateTicketNumberAsync(ticketTypeId);
+        // Generate ticket number based on ticket type
+        // For Receiving: 1=Weighbridge (RWB), 2=Platform (RPL)
+        // For Sending: 3=Weighbridge (SWB), 4=Platform (SPL)
+        string prefix = ticketTypeId switch
+        {
+            1 => "RWB",  // Receiving Weighbridge
+            2 => "RPL",  // Receiving Platform
+            3 => "SWB",  // Sending Weighbridge
+            4 => "SPL",  // Sending Platform
+            _ => "RPL"   // Default to Platform
+        };
+
+        // Try to call RegenerateTicketNumberAsync on the derived class implementations
+        // This will be implemented in TicketsReceiving and TicketsSending partial classes
+        try
+        {
+            var method = this.GetType().GetMethod("RegenerateTicketNumberAsync", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            if (method != null)
+            {
+                var task = method.Invoke(this, new object[] { prefix }) as Task;
+                if (task != null)
+                    await task;
+            }
+        }
+        catch { }
     }
 
     private bool _areWeighbridgeFieldsVisible = false;

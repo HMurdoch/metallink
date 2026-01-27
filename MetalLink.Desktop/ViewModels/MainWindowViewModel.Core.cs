@@ -166,9 +166,6 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         // Initialize ticket type options for search view
         InitializeTicketTypeOptions();
 
-        // Initialize create ticket form with default Platform type
-        _ = ClearTicketAsync();
-
         _ = LoadDashboardStatsAsync();
 
         // Demo – you can later wire these to API stats

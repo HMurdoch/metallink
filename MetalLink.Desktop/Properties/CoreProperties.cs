@@ -74,6 +74,16 @@ public partial class MainWindowViewModel
             // if target index < previous index we treat as "back"
             IsSlideFromLeft = (int)_currentSection < (int)_previousSection;
 
+            // Initialize ticket form when entering Receiving or Sending sections
+            if (_currentSection == EnumMainSection.TicketsReceiving)
+            {
+                _ = OnEnterTicketsReceivingAsync();
+            }
+            else if (_currentSection == EnumMainSection.TicketsSending)
+            {
+                _ = OnEnterTicketsSendingAsync();
+            }
+
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsDashboardSectionVisible));
             OnPropertyChanged(nameof(IsCustomerSectionVisible));
