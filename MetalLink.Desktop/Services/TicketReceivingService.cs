@@ -211,12 +211,67 @@ public sealed class TicketReceivingService
         }
     }
 
+    public async Task<string> GenerateTicketNumberAsync(string prefix)
+    {
+        try
+        {
+            Console.WriteLine($"[DEBUG SERVICE] GenerateTicketNumberAsync called with prefix={prefix}");
+            // Get last ticket number from API
+            var result = await _apiClient.GetAsync<System.Collections.Generic.Dictionary<string, object>>($"api/tickets-receiving/last-ticket-number/{prefix}");
+            Console.WriteLine($"[DEBUG SERVICE] API result={result}");
+            
+            if (result == null || !result.ContainsKey("ticketNumber"))
+            {
+                // No previous ticket, start with 00000001
+                var firstNumber = $"{prefix}-00000001";
+                Console.WriteLine($"[DEBUG SERVICE] No previous ticket, returning {firstNumber}");
+                return firstNumber;
+            }
+
+            var lastTicketNumber = result["ticketNumber"]?.ToString();
+            if (string.IsNullOrEmpty(lastTicketNumber))
+            {
+                var firstNumber = $"{prefix}-00000001";
+                Console.WriteLine($"[DEBUG SERVICE] Empty ticketNumber, returning {firstNumber}");
+                return firstNumber;
+            }
+
+            Console.WriteLine($"[DEBUG SERVICE] Last ticket number={lastTicketNumber}");
+            
+            // Extract numeric part: "RPL-00000003" -> "00000003"
+            var numericPart = lastTicketNumber.Substring(prefix.Length + 1);
+            Console.WriteLine($"[DEBUG SERVICE] Numeric part={numericPart}");
+            
+            // Convert to int and increment
+            if (int.TryParse(numericPart, out int lastNumber))
+            {
+                int nextNumber = lastNumber + 1;
+                // Format with prefix and pad to 8 digits
+                var generatedNumber = $"{prefix}-{nextNumber:D8}";
+                Console.WriteLine($"[DEBUG SERVICE] Generated number={generatedNumber}");
+                return generatedNumber;
+            }
+            
+            Console.WriteLine($"[DEBUG SERVICE] Failed to parse numeric part: {numericPart}");
+            return string.Empty;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[DEBUG SERVICE ERROR] {ex.Message} {ex.StackTrace}");
+            return string.Empty;
+        }
+    }
+
     public async Task<string> GetNextTicketNumberAsync(int ticketTypeId)
     {
         try
         {
-            var result = await _apiClient.GetAsync<string>($"api/tickets-receiving/next-ticket-number/{ticketTypeId}");
-            return result ?? string.Empty;
+            var result = await _apiClient.GetAsync<dynamic>($"api/tickets-receiving/next-ticket-number/{ticketTypeId}");
+            if (result != null && result.ticketNumber != null)
+            {
+                return result.ticketNumber.ToString();
+            }
+            return string.Empty;
         }
         catch
         {

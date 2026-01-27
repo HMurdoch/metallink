@@ -210,4 +210,59 @@ public sealed class TicketSendingService
             return false;
         }
     }
+
+    public async Task<string> GenerateTicketNumberAsync(string prefix)
+    {
+        try
+        {
+            // Get last ticket number from API
+            var result = await _apiClient.GetAsync<System.Collections.Generic.Dictionary<string, object>>($"api/tickets-sending/last-ticket-number/{prefix}");
+            
+            if (result == null || !result.ContainsKey("ticketNumber"))
+            {
+                // No previous ticket, start with 00000001
+                return $"{prefix}-00000001";
+            }
+
+            var lastTicketNumber = result["ticketNumber"]?.ToString();
+            if (string.IsNullOrEmpty(lastTicketNumber))
+            {
+                return $"{prefix}-00000001";
+            }
+            
+            // Extract numeric part: "SPL-00000003" -> "00000003"
+            var numericPart = lastTicketNumber.Substring(prefix.Length + 1);
+            
+            // Convert to int and increment
+            if (int.TryParse(numericPart, out int lastNumber))
+            {
+                int nextNumber = lastNumber + 1;
+                // Format with prefix and pad to 8 digits
+                return $"{prefix}-{nextNumber:D8}";
+            }
+            
+            return string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    public async Task<string> GetNextTicketNumberAsync(int ticketTypeId)
+    {
+        try
+        {
+            var result = await _apiClient.GetAsync<dynamic>($"api/tickets-sending/next-ticket-number/{ticketTypeId}");
+            if (result != null && result.ticketNumber != null)
+            {
+                return result.ticketNumber.ToString();
+            }
+            return string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
 }
