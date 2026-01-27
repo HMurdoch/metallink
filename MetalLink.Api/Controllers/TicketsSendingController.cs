@@ -76,6 +76,20 @@ public class TicketsSendingController : ControllerBase
         return Ok(results);
     }
 
+    [HttpGet("last-ticket-number/{prefix}")]
+    public async Task<IActionResult> GetLastTicketNumberByPrefix(string prefix)
+    {
+        var lastTicketNumber = await _ticketSendingRepo.GetLastTicketNumberByPrefixAsync(prefix);
+        return Ok(new { ticketNumber = lastTicketNumber });
+    }
+
+    [HttpGet("next-ticket-number/{ticketTypeId}")]
+    public async Task<IActionResult> GetNextTicketNumber(int ticketTypeId)
+    {
+        var nextNumber = await _ticketNumberService.GetNextSendingTicketNumberAsync(ticketTypeId);
+        return Ok(new { ticketNumber = nextNumber });
+    }
+
     [Authorize]
     [HttpPost]
     public async Task<ActionResult<TicketSendingDto>> CreateTicketSending([FromBody] CreateTicketSendingDto dto, CancellationToken ct = default)

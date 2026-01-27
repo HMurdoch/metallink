@@ -76,11 +76,18 @@ public class TicketsReceivingController : ControllerBase
         return Ok(results);
     }
 
+    [HttpGet("last-ticket-number/{prefix}")]
+    public async Task<IActionResult> GetLastTicketNumberByPrefix(string prefix)
+    {
+        var lastTicketNumber = await _ticketReceivingRepo.GetLastTicketNumberByPrefixAsync(prefix);
+        return Ok(new { ticketNumber = lastTicketNumber });
+    }
+
     [HttpGet("next-ticket-number/{ticketTypeId}")]
-    public async Task<ActionResult<string>> GetNextTicketNumber(int ticketTypeId)
+    public async Task<IActionResult> GetNextTicketNumber(int ticketTypeId)
     {
         var nextNumber = await _ticketNumberService.GetNextReceivingTicketNumberAsync(ticketTypeId);
-        return Ok(nextNumber);
+        return Ok(new { ticketNumber = nextNumber });
     }
 
     [Authorize]
