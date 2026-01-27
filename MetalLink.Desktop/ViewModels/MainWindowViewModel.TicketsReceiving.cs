@@ -658,12 +658,21 @@ public partial class MainWindowViewModel
                 // Populate Customer ID
                 TicketCustomerIdText = details.CustomerId.ToString();
 
-                // Set ticket type
+                // Set ticket type and regenerate ticket number for that type
                 InitializeTicketTypeOptions();
                 var ticketTypeOption = TicketTypeOptions.FirstOrDefault(t => t.Key == details.TicketType);
                 if (ticketTypeOption != null)
                 {
                     SelectedTicketTypeOption = ticketTypeOption;
+                    
+                    // Regenerate ticket number based on selected ticket's type
+                    string prefix = details.TicketType?.ToLower() switch
+                    {
+                        "weighbridge" => "RWB",
+                        "platform" => "RPL",
+                        _ => "RPL"
+                    };
+                    await GenerateTicketNumberForReceivingAsync(prefix);
                 }
                 
                 // Keep button text as Create (viewing only, not editing)
