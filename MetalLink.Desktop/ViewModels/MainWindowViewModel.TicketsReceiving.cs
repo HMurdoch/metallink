@@ -410,8 +410,15 @@ public partial class MainWindowViewModel
         return Task.CompletedTask;
     }
 
+    private async Task OnEnterTicketsReceivingAsync()
+    {
+        Console.WriteLine("[DEBUG] OnEnterTicketsReceivingAsync called");
+        await ClearTicketAsync();
+    }
+
     private async Task ClearTicketAsync()
     {
+        Console.WriteLine("[DEBUG] ClearTicketAsync called");
         LastCreatedTicket = null;
         ReceivingLines.Clear();
         ReceivingWeightText = string.Empty;
@@ -420,11 +427,15 @@ public partial class MainWindowViewModel
         RecalculateReceivingTotals();
         
         // Initialize type options and set defaults
+        Console.WriteLine("[DEBUG] Initializing ticket type options");
         InitializeTicketTypeOptions();
         SelectedTicketTypeOption = TicketTypeOptions.FirstOrDefault(t => t.Key == "platform");
+        Console.WriteLine($"[DEBUG] SelectedTicketTypeOption set to {SelectedTicketTypeOption?.Key}");
         
-        // Generate ticket number for Platform (ticketTypeId = 2)
-        await GenerateTicketNumberAsync(2);
+        // Generate ticket number for Platform (prefix = "RPL")
+        Console.WriteLine("[DEBUG] Calling GenerateTicketNumberForReceivingAsync with RPL");
+        await GenerateTicketNumberForReceivingAsync("RPL");
+        Console.WriteLine($"[DEBUG] After GenerateTicketNumberForReceivingAsync, TicketNumber={TicketNumber}");
         TicketCustomerIdText = string.Empty;
         
         // Initialize currency options and set default to ZAR
@@ -437,9 +448,11 @@ public partial class MainWindowViewModel
         StatusMessage = "Ticket cleared.";
     }
 
-    private async Task GenerateTicketNumberAsync(int ticketTypeId)
+    private async Task GenerateTicketNumberForReceivingAsync(string prefix)
     {
-        TicketNumber = await _ticketReceivingService.GetNextTicketNumberAsync(ticketTypeId);
+        Console.WriteLine($"[DEBUG] GenerateTicketNumberForReceivingAsync called with prefix={prefix}");
+        TicketNumber = await _ticketReceivingService.GenerateTicketNumberAsync(prefix);
+        Console.WriteLine($"[DEBUG] Generated TicketNumber={TicketNumber}");
         OnPropertyChanged(nameof(TicketNumber));
     }
 

@@ -700,6 +700,38 @@ public partial class MainWindowViewModel
         }
     }
 
+    private async Task OnEnterTicketsSendingAsync()
+    {
+        // Initialize with default Platform type
+        InitializeTicketTypeOptions();
+        SelectedTicketTypeOption = TicketTypeOptions.FirstOrDefault(t => t.Key == "platform");
+        
+        // Generate ticket number for Sending Platform (prefix = "SPL")
+        await GenerateTicketNumberForSendingAsync("SPL");
+    }
+
+    private async Task GenerateTicketNumberForSendingAsync(string prefix)
+    {
+        TicketNumber = await _ticketSendingService.GenerateTicketNumberAsync(prefix);
+        OnPropertyChanged(nameof(TicketNumber));
+    }
+
+    // Called when ticket type changes - delegates to appropriate service based on section
+    public async Task RegenerateTicketNumberAsync(string prefix)
+    {
+        if (CurrentSection == EnumMainSection.TicketsReceiving)
+        {
+            // For Receiving: use the ReceivingService
+            TicketNumber = await _ticketReceivingService.GenerateTicketNumberAsync(prefix);
+        }
+        else
+        {
+            // For Sending: use the SendingService directly
+            await GenerateTicketNumberForSendingAsync(prefix);
+        }
+        OnPropertyChanged(nameof(TicketNumber));
+    }
+
     private void ClearSendingTicketSearch()
     {
         SearchSendingTicketCustomerIdText = string.Empty;
