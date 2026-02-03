@@ -54,6 +54,7 @@ public class TicketReceivingLineDto
     public decimal LineTotal { get; set; }
     public decimal VatAmount { get; set; }
     public decimal TotalInclVat { get; set; }
+    public decimal Tare { get; set; }
     public string? Notes { get; set; }
     public bool IsActive { get; set; }
     public DateTimeOffset CreatedTime { get; set; }
