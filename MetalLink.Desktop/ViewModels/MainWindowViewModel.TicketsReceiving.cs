@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
@@ -19,7 +20,14 @@ public partial class MainWindowViewModel
         public long TicketId { get; init; }
         public long ProductId { get; init; }
         public string ProductName { get; init; } = string.Empty;
-        public decimal WeightKg { get; init; }
+        public decimal FirstWeightKg { get; init; }      // For weighbridge: first weight reading
+        public decimal SecondWeightKg { get; init; }     // For weighbridge: second weight reading  
+        public decimal WeightKg { get; init; }           // Net weight = FirstWeightKg - SecondWeightKg
+        public decimal UnitPricePerKg { get; init; }
+        public decimal LineTotal { get; init; }
+        public decimal VatAmount { get; init; }
+        public decimal TotalInclVat { get; init; }
+        public string Notes { get; init; } = string.Empty;
     }
 
     private ObservableCollection<ReceivingLineItem> _receivingLines = new();
@@ -39,6 +47,13 @@ public partial class MainWindowViewModel
         _receivingLines.Count > 0 || 
         !string.IsNullOrWhiteSpace(ReceivingWeightText) ||
         ReceivingSelectedProduct != null;
+    
+    private ObservableCollection<ReceivingLineItem> _receivingLinesWithTotals = new();
+    
+    /// <summary>
+    /// Collection with just the receiving line items (no totals row - shown separately below grid)
+    /// </summary>
+    public ObservableCollection<ReceivingLineItem> ReceivingLinesWithTotals => ReceivingLines;
 
     private ObservableCollection<ProductLookupDto> _receivingProductSuggestions = new();
     public ObservableCollection<ProductLookupDto> ReceivingProductSuggestions
@@ -114,6 +129,39 @@ public partial class MainWindowViewModel
         }
     }
 
+    private string _receivingLineNotes = string.Empty;
+    public string ReceivingLineNotes
+    {
+        get => _receivingLineNotes;
+        set
+        {
+            _receivingLineNotes = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private string _selectedLineNotesContent = string.Empty;
+    public string SelectedLineNotesContent
+    {
+        get => _selectedLineNotesContent;
+        set
+        {
+            _selectedLineNotesContent = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private bool _isNotesModalVisible = false;
+    public bool IsNotesModalVisible
+    {
+        get => _isNotesModalVisible;
+        set
+        {
+            _isNotesModalVisible = value;
+            OnPropertyChanged();
+        }
+    }
+
     private decimal _receivingTotalExclVat;
     public decimal ReceivingTotalExclVat
     {
@@ -143,6 +191,17 @@ public partial class MainWindowViewModel
         private set
         {
             _receivingTotalInclVat = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private decimal _receivingLinesTotalWeight;
+    public decimal ReceivingLinesTotalWeight
+    {
+        get => _receivingLinesTotalWeight;
+        private set
+        {
+            _receivingLinesTotalWeight = value;
             OnPropertyChanged();
         }
     }
@@ -212,8 +271,11 @@ public partial class MainWindowViewModel
 
     private async Task LoadReceivingLinesForTicketAsync(long ticketId)
     {
+        Console.WriteLine($"[DEBUG CREATE] LoadReceivingLinesForTicketAsync START: ticketId={ticketId}");
+        
         if (ticketId <= 0)
         {
+            Console.WriteLine($"[DEBUG CREATE] LoadReceivingLinesForTicketAsync: ticketId <= 0, clearing ReceivingLines");
             ReceivingLines.Clear();
             RecalculateReceivingTotals();
             return;
@@ -221,30 +283,49 @@ public partial class MainWindowViewModel
 
         try
         {
-            var lines = await _ticketService.GetTicketLinesAsync(ticketId);
+            Console.WriteLine($"[DEBUG CREATE] Calling _ticketReceivingService.GetTicketReceivingLinesAsync({ticketId})");
+            var lines = await _ticketReceivingService.GetTicketReceivingLinesAsync(ticketId);
+            Console.WriteLine($"[DEBUG CREATE] Got {lines?.Count ?? 0} lines from API");
 
             ReceivingLines.Clear();
-            if (lines != null)
+            Console.WriteLine($"[DEBUG CREATE] Cleared ReceivingLines");
+            
+            if (lines != null && lines.Count > 0)
             {
+                Console.WriteLine($"[DEBUG CREATE] Adding {lines.Count} lines to ReceivingLines");
                 foreach (var dto in lines)
                 {
+                    Console.WriteLine($"[DEBUG CREATE]   Adding line: ProductId={dto.ProductId}, ProductName={dto.ProductName}, NetWeightKg={dto.NetWeightKg}, Notes='{dto.Notes}'");
                     ReceivingLines.Add(new ReceivingLineItem
                     {
-                        TicketLineId = dto.TicketLineId,
-                        TicketId = dto.TicketId,
+                        TicketLineId = dto.ReceivingTicketLineId,
+                        TicketId = dto.ReceivingTicketId,
                         ProductId = dto.ProductId,
                         ProductName = dto.ProductName,
-                        WeightKg = dto.WeightKg,
+                        WeightKg = dto.NetWeightKg,
+                        UnitPricePerKg = dto.UnitPricePerKg,
+                        LineTotal = dto.LineTotal,
+                        VatAmount = dto.VatAmount,
+                        TotalInclVat = dto.TotalInclVat,
+                        Notes = dto.Notes ?? string.Empty,
                     });
                 }
             }
+            else
+            {
+                Console.WriteLine($"[DEBUG CREATE] No lines returned or null");
+            }
 
             RecalculateReceivingTotals();
+            Console.WriteLine($"[DEBUG CREATE] RecalculateReceivingTotals called. ReceivingLines.Count={ReceivingLines.Count}, ReceivingLinesTotalWeight={ReceivingLinesTotalWeight}");
 
             StatusMessage = $"Loaded {ReceivingLines.Count} line(s) for ticket {ticketId}.";
+            
+            Console.WriteLine($"[DEBUG CREATE] LoadReceivingLinesForTicketAsync END: ReceivingLines.Count={ReceivingLines.Count}, ReceivingLinesWithTotals.Count={ReceivingLinesWithTotals.Count}, CreatingTicketTotalWeight={CreatingTicketTotalWeight}");
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[DEBUG CREATE] ERROR in LoadReceivingLinesForTicketAsync: {ex.Message}");
             StatusMessage = $"Error loading ticket lines: {ex.Message}";
         }
     }
@@ -253,21 +334,83 @@ public partial class MainWindowViewModel
     {
         if (IsBusy) return;
 
+        // If ticket hasn't been created yet, create it now with the header data
         if (LastCreatedTicket == null || LastCreatedTicket.TicketId <= 0)
         {
-            StatusMessage = "Please create a ticket header before adding lines.";
-            return;
+            // Create the ticket first
+            IsBusy = true;
+            StatusMessage = "Creating ticket...";
+
+            try
+            {
+                // Determine ticket type
+                int ticketTypeId = SelectedTicketTypeOption?.Key == "weighbridge" ? 1 : 2;
+                
+                // For weighbridge tickets, get First Weight to initialize_weight_kg
+                decimal? initializeWeight = null;
+                if (SelectedTicketTypeOption?.Key == "weighbridge" && 
+                    decimal.TryParse(NormalizeDecimalText(TicketFirstWeightText), out var firstWeight))
+                {
+                    initializeWeight = firstWeight;
+                    Console.WriteLine($"[DEBUG] Setting initialize_weight_kg to {initializeWeight} for weighbridge ticket");
+                }
+
+                // Create a NEW receiving ticket with state 'H' (Header) in a single INSERT operation
+                // Do NOT create with default state and then UPDATE
+                // Weighbridge ticket type ID is 1, Platform is 2
+                bool isWeighbridgeTicket = ticketTypeId == 1;
+                var createTicketDto = new CreateTicketReceivingDto
+                {
+                    TicketTypeId = ticketTypeId,
+                    TicketNumber = TicketNumber,
+                    CustomerId = (int)ExtractCustomerIdFromText(TicketCustomerIdText),
+                    CreatedByOperatorId = 1,  // TODO: Get from authenticated user context
+                    TicketState = 'H',  // Create directly with state 'H' (Header only)
+                    InitializeWeightKg = initializeWeight,
+                    NetWeightKg = 0m,  // No weight yet, will be calculated from lines
+                    VehicleRegistration = isWeighbridgeTicket ? TicketVehicleRegistration : null,
+                    TrailerRegistration = isWeighbridgeTicket ? TicketTrailerRegistration : null,
+                    DriverName = isWeighbridgeTicket ? TicketDriverName : null,
+                    Notes = TicketNotes
+                };
+
+                // Call API to create the ticket with state 'H' in a single INSERT
+                var response = await _ticketReceivingService.CreateTicketAsync(createTicketDto);
+                
+                if (response == null || response.TicketReceivingId <= 0)
+                {
+                    StatusMessage = "Failed to create ticket.";
+                    IsBusy = false;
+                    return;
+                }
+
+                LastCreatedTicket = response != null ? MapReceivingToTicketDto(response) : null;
+                CurrentTicketState = 'H';
+                
+                // After ticket is created with state 'H', First Weight becomes readonly (loaded from initialize_weight_kg)
+                // Second Weight is now enabled for user input
+                Console.WriteLine($"[DEBUG] Ticket created with state='H': FW is now readonly, SW is enabled");
+                TicketSecondWeightText = "0"; // Reset Second Weight
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error creating ticket: {ex.Message}";
+                IsBusy = false;
+                return;
+            }
         }
 
         if (ReceivingSelectedProduct == null)
         {
             StatusMessage = "Please select a product for the line.";
+            IsBusy = false;
             return;
         }
 
         if (string.IsNullOrWhiteSpace(ReceivingWeightText))
         {
             StatusMessage = "Weight (kg) is required.";
+            IsBusy = false;
             return;
         }
 
@@ -278,7 +421,27 @@ public partial class MainWindowViewModel
                 out var weightKg) || weightKg <= 0)
         {
             StatusMessage = "Weight must be a valid number greater than zero.";
+            IsBusy = false;
             return;
+        }
+
+        // For weighbridge tickets, validate Second Weight <= First Weight
+        if (SelectedTicketTypeOption?.Key == "weighbridge")
+        {
+            if (!decimal.TryParse(NormalizeDecimalText(TicketSecondWeightText), out var secondWeight))
+            {
+                secondWeight = 0;
+            }
+
+            if (decimal.TryParse(NormalizeDecimalText(TicketFirstWeightText), out var firstWeight))
+            {
+                if (secondWeight > firstWeight)
+                {
+                    StatusMessage = $"Error: Second Weight ({secondWeight}) cannot be greater than First Weight ({firstWeight}).";
+                    IsBusy = false;
+                    return;
+                }
+            }
         }
 
         IsBusy = true;
@@ -286,36 +449,117 @@ public partial class MainWindowViewModel
 
         try
         {
-            var lines = new[] { ((long)ReceivingSelectedProduct.ProductId, weightKg) };
+            // Parse FW and SW from UI textboxes
+            decimal firstWeightKg = 0m;
+            decimal secondWeightKg = 0m;
+            
+            if (decimal.TryParse(NormalizeDecimalText(TicketFirstWeightText), out var fw))
+            {
+                firstWeightKg = fw;
+            }
+            if (decimal.TryParse(NormalizeDecimalText(TicketSecondWeightText), out var sw))
+            {
+                secondWeightKg = sw;
+            }
+            
+            Console.WriteLine($"[DEBUG ADD LINE] Creating line: ProductId={ReceivingSelectedProduct.ProductId}, FW={firstWeightKg}, SW={secondWeightKg}, NetWeight={weightKg}");
+            
+            // Create the line item DTO with FW and SW values
+            var lineDto = new CreateTicketReceivingLineDto
+            {
+                ProductId = (int)ReceivingSelectedProduct.ProductId,
+                FirstWeightKg = firstWeightKg,
+                SecondWeightKg = secondWeightKg,
+                NetWeightKg = weightKg,
+                UnitPricePerKg = 0m,  // Will be looked up by API based on customer's price code
+                Notes = string.IsNullOrWhiteSpace(ReceivingLineNotes) ? null : ReceivingLineNotes
+            };
 
-            var created = await _ticketService.AddTicketLinesAsync(
-                LastCreatedTicket.TicketId,
-                lines);
+            // Call the API to add the line and get back the updated ticket
+            var response = await _apiClient.PostAsync<CreateTicketReceivingLineDto, TicketReceivingDto>(
+                $"api/tickets-receiving/{LastCreatedTicket.TicketId}/lines",
+                lineDto
+            );
 
-            if (created == null || created.Count == 0)
+            if (response == null || response.Lines == null || response.Lines.Count == 0)
             {
                 StatusMessage = "Ticket line create failed - API returned no result.";
                 return;
             }
 
-            foreach (var dto in created)
+            // Clear and repopulate the receiving lines from the response
+            ReceivingLines.Clear();
+            foreach (var dto in response.Lines)
             {
+                Console.WriteLine($"[DEBUG LINE ADD RESPONSE] ProductId={dto.ProductId}, ProductName={dto.ProductName}, Notes='{dto.Notes}'");
                 ReceivingLines.Add(new ReceivingLineItem
                 {
-                    TicketLineId = dto.TicketLineId,
-                    TicketId = dto.TicketId,
+                    TicketLineId = dto.ReceivingTicketLineId,
+                    TicketId = dto.ReceivingTicketId,
                     ProductId = dto.ProductId,
                     ProductName = dto.ProductName,
-                    WeightKg = dto.WeightKg,
+                    FirstWeightKg = dto.FirstWeightKg ?? 0m,
+                    SecondWeightKg = dto.SecondWeightKg ?? 0m,
+                    WeightKg = dto.NetWeightKg,
+                    UnitPricePerKg = dto.UnitPricePerKg,
+                    LineTotal = dto.LineTotal,
+                    VatAmount = dto.VatAmount,
+                    TotalInclVat = dto.TotalInclVat,
+                    Notes = dto.Notes ?? string.Empty,
                 });
             }
 
             RecalculateReceivingTotals();
+            
+            // Calculate FW from last line's SW and verify Total Net Weight
+            CalculateReceivingWeights();
 
-            StatusMessage = $"Added {created.Count} line(s) to ticket {LastCreatedTicket.TicketNumber}.";
+            StatusMessage = $"Added {response.Lines.Count} line(s) to ticket {LastCreatedTicket.TicketNumber}.";
 
-            // Reset weight for next entry, keep product selection
+            // DO NOT reload ticket details here - it causes confusion with old ticket data
+            // The newly added lines are already displayed in the ReceivingLines collection above
+            
+            // Refresh the search results to show updated net weight
+            await RefreshCurrentTicketInSearchResultsAsync();
+            
+            // Set state to 'M' (Multi-weight/Multi-item) after first line is added
+            if (ReceivingLines.Count == 1)
+            {
+                // Update ticket state to 'M'
+                await _ticketReceivingService.UpdateTicketStateAsync(LastCreatedTicket.TicketId, 'M');
+                CurrentTicketState = 'M';
+                Console.WriteLine($"[DEBUG] Set ticket state to 'M' after first line added");
+            }
+            
+            // Notify that Finalize button may now be enabled
+            OnPropertyChanged(nameof(IsFinalizeTicketEnabled));
+
+            // Reset based on ticket type and state
+            if (SelectedTicketTypeOption?.Key == "platform")
+            {
+                // For Platform: Reset Platform Weight to 0
+                TicketPlatformWeightText = "0";
+            }
+            else if (SelectedTicketTypeOption?.Key == "weighbridge")
+            {
+                // For Weighbridge: 
+                // After line is added, FW value becomes the SW value (cycling weights)
+                // Then SW is reset to 0 for the next entry
+                // Note: FW is readonly but we update it from the last line's SW value in the DB
+                if (CurrentTicketState == 'M')
+                {
+                    // State 'M': Set First Weight to current Second Weight value (which was just saved to DB as second_weight_kg)
+                    TicketFirstWeightText = TicketSecondWeightText;
+                    Console.WriteLine($"[DEBUG] After line added: Set FW={TicketFirstWeightText} (from SW), reset SW to 0");
+                }
+                TicketSecondWeightText = "0";
+            }
+
+            // Reset weight, notes for next entry and clear product selection
             ReceivingWeightText = string.Empty;
+            ReceivingLineNotes = string.Empty;
+            ReceivingSelectedProduct = null;
+            ReceivingProductSearchText = string.Empty;
         }
         catch (Exception ex)
         {
@@ -329,18 +573,32 @@ public partial class MainWindowViewModel
 
     private void RecalculateReceivingTotals()
     {
+        Console.WriteLine($"[TASK 2] RecalculateReceivingTotals START: ReceivingLines.Count={ReceivingLines.Count}");
+        
+        var totalWeight = 0m;
         var totalExcl = 0m;
         var totalVat = 0m;
         var totalIncl = 0m;
 
         foreach (var line in ReceivingLines)
         {
-            // Financial calculations are handled at the ticket level, not line item level
+            totalWeight += line.WeightKg;
+            totalExcl += line.LineTotal;
+            totalVat += line.VatAmount;
+            totalIncl += line.TotalInclVat;
+            Console.WriteLine($"[TASK 2]   Line: ProductId={line.ProductId}, ProductName={line.ProductName}, WeightKg={line.WeightKg}, FW={line.FirstWeightKg}, SW={line.SecondWeightKg}");
         }
 
+        ReceivingLinesTotalWeight = totalWeight;
         ReceivingTotalExclVat = totalExcl;
         ReceivingTotalVat = totalVat;
         ReceivingTotalInclVat = totalIncl;
+        
+        // Notify UI that CreatingTicketTotalWeight has changed
+        OnPropertyChanged(nameof(CreatingTicketTotalWeight));
+        
+        Console.WriteLine($"[TASK 2] RecalculateReceivingTotals END: ReceivingLinesTotalWeight={ReceivingLinesTotalWeight}, CreatingTicketTotalWeight={CreatingTicketTotalWeight}");
+        Console.WriteLine($"[TASK 2] ReceivingLinesWithTotals.Count={ReceivingLinesWithTotals.Count}");
     }
 
     private async Task RemoveReceivingLineAsync(ReceivingLineItem? line)
@@ -353,25 +611,50 @@ public partial class MainWindowViewModel
         
         if (IsBusy) return;
 
+        // Show confirmation dialog
+        var confirmMessage = $"Are you sure you want to delete the line item for {line.ProductName}? (Weight: {line.WeightKg:N2} kg)";
+        var confirmed = await ConfirmAsync(confirmMessage);
+        if (!confirmed)
+        {
+            return;
+        }
+
         IsBusy = true;
-        StatusMessage = "Removing ticket line...";
+        StatusMessage = "Deleting ticket line...";
 
         try
         {
+            // Soft delete - sets is_active to false
             await _ticketService.DeleteTicketLineAsync(line.TicketId, line.TicketLineId);
 
-            ReceivingLines.Remove(line);
-            RecalculateReceivingTotals();
-
-            StatusMessage = $"✓ Removed line for product {line.ProductName}";
+            // Reload ticket details to refresh all grids and recalculate net weight
+            await LoadSelectedReceivingTicketDetailsAsync(line.TicketId);
+            
+            // If all line items are deleted, set ticket status back to 'H' (Header only)
+            if (SelectedReceivingTicketLines.Count == 0)
+            {
+                await _ticketReceivingService.UpdateTicketStateAsync(line.TicketId, 'H');
+                CurrentTicketState = 'H';
+                StatusMessage = $"✓ Deleted line for product {line.ProductName}. All lines removed. Ticket status reset to 'H'.";
+            }
+            else
+            {
+                StatusMessage = $"✓ Deleted line for product {line.ProductName}. Weight deducted from ticket.";
+            }
+            
+            // Refresh search results
+            await RefreshCurrentTicketInSearchResultsAsync();
+            
+            // Notify that Finalize button state may have changed
+            OnPropertyChanged(nameof(IsFinalizeTicketEnabled));
         }
         catch (HttpRequestException ex)
         {
-            StatusMessage = $"Network error removing ticket line: {ex.Message}";
+            StatusMessage = $"Network error deleting ticket line: {ex.Message}";
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Error removing ticket line: {ex.Message}";
+            StatusMessage = $"Error deleting ticket line: {ex.Message}";
         }
         finally
         {
@@ -410,6 +693,63 @@ public partial class MainWindowViewModel
         return Task.CompletedTask;
     }
 
+    private async Task FinalizeTicketAsync()
+    {
+        if (IsBusy) return;
+        
+        if (LastCreatedTicket == null || LastCreatedTicket.TicketId <= 0)
+        {
+            StatusMessage = "No ticket to finalize.";
+            return;
+        }
+        
+        if (CurrentTicketState != 'M')
+        {
+            StatusMessage = "Ticket can only be finalized if it has at least one line item.";
+            return;
+        }
+
+        // Build the confirmation message
+        string confirmMessage = $"Are you sure you want to Finalize this ticket for Customer: {SelectedReceivingTicket?.CustomerId} | {SelectedReceivingTicket?.FirstName} {SelectedReceivingTicket?.LastName}";
+        
+        if (!string.IsNullOrWhiteSpace(SelectedReceivingTicket?.CompanyName))
+        {
+            confirmMessage += $" | {SelectedReceivingTicket.CompanyName} | {SelectedReceivingTicket.SiteName}";
+        }
+
+        var ok = await ConfirmAsync(confirmMessage);
+        if (!ok) return;
+
+        IsBusy = true;
+        StatusMessage = "Finalizing ticket...";
+
+        try
+        {
+            // Update ticket state to 'C' (Complete)
+            var success = await _ticketReceivingService.UpdateTicketStateAsync(LastCreatedTicket.TicketId, 'C');
+            
+            if (!success)
+            {
+                StatusMessage = "Error updating ticket status to Complete. Please try again.";
+                IsBusy = false;
+                return;
+            }
+            
+            StatusMessage = $"✓ Ticket {LastCreatedTicket.TicketNumber} finalized successfully.";
+            
+            // Clear the Create section and reset for new ticket
+            await ClearTicketAsync();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error finalizing ticket: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     private async Task OnEnterTicketsReceivingAsync()
     {
         Console.WriteLine("[DEBUG] OnEnterTicketsReceivingAsync called");
@@ -424,6 +764,12 @@ public partial class MainWindowViewModel
         ReceivingWeightText = string.Empty;
         ReceivingSelectedProduct = null;
         ReceivingProductSearchText = string.Empty;
+        
+        // Reset all weights to 0
+        TicketFirstWeightText = "0";
+        TicketSecondWeightText = "0";
+        TicketPlatformWeightText = "0";
+        
         RecalculateReceivingTotals();
         
         // Initialize type options and set defaults
@@ -442,17 +788,52 @@ public partial class MainWindowViewModel
         InitializeCurrencyOptions();
         SelectedCurrency = "ZAR";
         
-        CreateOrUpdateButtonText = "Create Ticket";
+        // Reset ticket state to 'C' (Complete) to show Create Header button
+        CurrentTicketState = 'C';
+        CreateOrUpdateButtonText = "Create Header";
         IsViewingTicketOnly = false;
         
         StatusMessage = "Ticket cleared.";
     }
 
+    private long ExtractCustomerIdFromText(string customerIdText)
+    {
+        // Format: "Customer ID | First Name Last Name" or "Customer ID | First Name Last Name | Company | Site"
+        // Extract the first number before the pipe
+        if (string.IsNullOrWhiteSpace(customerIdText))
+            return 0;
+
+        var parts = customerIdText.Split('|');
+        if (parts.Length > 0 && long.TryParse(parts[0].Trim(), out var customerId))
+        {
+            return customerId;
+        }
+
+        return 0;
+    }
+
+    private TicketDto MapReceivingToTicketDto(TicketReceivingDto receivingDto)
+    {
+        return new TicketDto
+        {
+            TicketId = receivingDto.TicketReceivingId,
+            CustomerId = receivingDto.CustomerId,
+            TicketNumber = receivingDto.TicketNumber,
+            TicketType = receivingDto.TicketTypeName,
+            TicketTypeId = receivingDto.TicketTypeId,
+            NetWeightKg = receivingDto.NetWeightKg,
+            TicketState = receivingDto.TicketState,
+            InitializeWeightKg = receivingDto.InitializeWeightKg
+        };
+    }
+
     private async Task GenerateTicketNumberForReceivingAsync(string prefix)
     {
         Console.WriteLine($"[DEBUG] GenerateTicketNumberForReceivingAsync called with prefix={prefix}");
+        Console.WriteLine($"[DEBUG] Before generation - TicketNumber={TicketNumber}, IsViewingTicketOnly={IsViewingTicketOnly}");
         TicketNumber = await _ticketReceivingService.GenerateTicketNumberAsync(prefix);
         Console.WriteLine($"[DEBUG] Generated TicketNumber={TicketNumber}");
+        Console.WriteLine($"[DEBUG] After generation - TicketNumber={TicketNumber}");
         OnPropertyChanged(nameof(TicketNumber));
     }
 
@@ -496,6 +877,27 @@ public partial class MainWindowViewModel
         StatusMessage = "Plate photo capture not yet implemented.";
     }
 
+    private void ShowLineNotes(string? notes)
+    {
+        Console.WriteLine($"[DEBUG NOTES] ShowLineNotes called with notes='{notes}'");
+        if (string.IsNullOrWhiteSpace(notes))
+        {
+            Console.WriteLine($"[DEBUG NOTES] Notes are empty/null, showing message");
+            StatusMessage = "No notes available for this line item.";
+            return;
+        }
+
+        Console.WriteLine($"[DEBUG NOTES] Setting SelectedLineNotesContent='{notes}', opening modal");
+        SelectedLineNotesContent = notes;
+        IsNotesModalVisible = true;
+    }
+
+    private void CloseLineNotes()
+    {
+        IsNotesModalVisible = false;
+        SelectedLineNotesContent = string.Empty;
+    }
+
     private async Task CaptureLoadPhotoAsync()
     {
         if (IsBusy) return;
@@ -504,6 +906,17 @@ public partial class MainWindowViewModel
         // TODO: Implement load photo capture
         await Task.Delay(100);
         StatusMessage = "Load photo capture not yet implemented.";
+    }
+
+    /// <summary>
+    /// Generate a random weight between 50 and 2000 kg
+    /// Used for filling missing weight values in old data
+    /// </summary>
+    private decimal GenerateRandomWeight()
+    {
+        var random = new Random();
+        // Generate weight between 50 and 2000 kg
+        return (decimal)(random.NextDouble() * 1950 + 50);
     }
 
     // --- Receiving Ticket Search Properties ---
@@ -574,7 +987,66 @@ public partial class MainWindowViewModel
 
     // --- Receiving Search Results ---
 
+    private bool _searchReceivingNewCustomersCheckbox;
+    public bool SearchReceivingNewCustomersCheckbox
+    {
+        get => _searchReceivingNewCustomersCheckbox;
+        set 
+        { 
+            _searchReceivingNewCustomersCheckbox = value; 
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ShouldShowTicketDetails));
+        }
+    }
+
     public ObservableCollection<TicketSearchResultDto> ReceivingTicketSearchResults { get; } = new();
+    
+    public ObservableCollection<NewCustomerResultDto> ReceivingNewCustomerSearchResults { get; } = new();
+    
+    private NewCustomerResultDto? _selectedReceivingNewCustomer;
+    public NewCustomerResultDto? SelectedReceivingNewCustomer
+    {
+        get => _selectedReceivingNewCustomer;
+        set
+        {
+            _selectedReceivingNewCustomer = value;
+            OnPropertyChanged();
+            
+            // Auto-populate the Customer ID in Create Ticket section when a new customer is selected
+            if (value != null)
+            {
+                // Format: "Customer ID | First Name Last Name" or "Customer ID | First Name Last Name | Company | Site"
+                string fullCustomerInfo;
+                if (string.IsNullOrWhiteSpace(value.CompanyName))
+                {
+                    // No company, just show customer ID and name
+                    fullCustomerInfo = $"{value.CustomerId} | {value.FirstName} {value.LastName}";
+                }
+                else
+                {
+                    // Include company and site
+                    fullCustomerInfo = $"{value.CustomerId} | {value.FirstName} {value.LastName} | {value.CompanyName} | {value.SiteName}";
+                }
+                TicketCustomerIdText = fullCustomerInfo;
+                
+                // Reset all weighbridge fields for new customer
+                TicketVehicleRegistration = string.Empty;
+                TicketTrailerRegistration = string.Empty;
+                TicketDriverName = string.Empty;
+                TicketOfmWeighbridgeTicket = string.Empty;
+                TicketForeignTicket = string.Empty;
+                TicketCkNumber = string.Empty;
+                TicketNotes = string.Empty;
+                
+                // Set ticket type to Platform as default for new customers
+                InitializeTicketTypeOptions();
+                SelectedTicketTypeOption = TicketTypeOptions.FirstOrDefault(t => t.Key == "platform");
+                
+                StatusMessage = $"Customer {value.FirstName} {value.LastName} selected. You can now create a ticket.";
+            }
+        }
+    }
+
 
     private TicketSearchResultDto? _selectedReceivingTicket;
     public TicketSearchResultDto? SelectedReceivingTicket
@@ -586,8 +1058,10 @@ public partial class MainWindowViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedReceivingTicketSummary));
             OnPropertyChanged(nameof(HasSelectedReceivingTicket));
+            OnPropertyChanged(nameof(ShouldShowTicketDetails));
             
-            if (value != null)
+            // Only load ticket details if NOT searching for new customers
+            if (value != null && !SearchReceivingNewCustomersCheckbox)
             {
                 _ = LoadSelectedReceivingTicketDetailsAsync(value.TicketId);
             }
@@ -600,6 +1074,43 @@ public partial class MainWindowViewModel
     }
 
     public bool HasSelectedReceivingTicket => SelectedReceivingTicket != null;
+    
+    /// <summary>
+    /// Returns true if the currently selected ticket type is weighbridge
+    /// </summary>
+    public bool IsWeighbridgeTicket
+    {
+        get
+        {
+            var result = SelectedTicketTypeOption?.Key == "weighbridge";
+            return result;
+        }
+    }
+    
+    /// <summary>
+    /// Calculates total net weight from all receiving lines and sets FW from last line's SW
+    /// </summary>
+    private void CalculateReceivingWeights()
+    {
+        Console.WriteLine($"[CALC WEIGHTS] START: ReceivingLines.Count={ReceivingLines.Count}");
+        
+        decimal totalNetWeightKg = 0m;
+        decimal firstWeightFromLastLine = 0m;
+        
+        foreach (var line in ReceivingLines)
+        {
+            totalNetWeightKg += line.WeightKg;
+            firstWeightFromLastLine = line.SecondWeightKg;  // Will end up with last line's SW
+            Console.WriteLine($"[CALC WEIGHTS]   Line: ProductId={line.ProductId}, WeightKg={line.WeightKg}, SecondWeightKg={line.SecondWeightKg}");
+            Console.WriteLine($"[CALC WEIGHTS]     Running total: totalNetWeightKg={totalNetWeightKg}, firstWeightFromLastLine={firstWeightFromLastLine}");
+        }
+        
+        // Bind to UI
+        TicketFirstWeightText = firstWeightFromLastLine.ToString("0.00");
+        Console.WriteLine($"[CALC WEIGHTS] SET TicketFirstWeightText={TicketFirstWeightText}");
+        Console.WriteLine($"[CALC WEIGHTS] SET Total Net Weight will be displayed via ReceivingLinesTotalWeight={ReceivingLinesTotalWeight}");
+        Console.WriteLine($"[CALC WEIGHTS] END: IsWeighbridgeTicket={IsWeighbridgeTicket}");
+    }
 
     public string SelectedReceivingTicketSummary
     {
@@ -627,76 +1138,360 @@ public partial class MainWindowViewModel
 
     public ObservableCollection<TicketLineDto> SelectedReceivingTicketLines { get; } = new();
 
-    public decimal SelectedReceivingTicketLinesTotalExVat => 0m; // Financial calculations handled at ticket level only
-    public decimal SelectedReceivingTicketLinesTotalVat
-    {
+    public decimal SelectedReceivingTicketLinesTotalExVat => SelectedReceivingTicketLines.Sum(l => l.LineTotal);
+    public decimal SelectedReceivingTicketLinesTotalVat => SelectedReceivingTicketLines.Sum(l => l.VatAmount);
+
+    public decimal SelectedReceivingTicketLinesTotalInclVat => SelectedReceivingTicketLines.Sum(l => l.TotalInclVat);
+    
+    public decimal SelectedReceivingTicketLinesWeightTotal => SelectedReceivingTicketLines.Sum(l => l.WeightKg);
+    
+    /// <summary>
+    /// Collection with just the line items (no totals row - shown separately below grid)
+    /// </summary>
+    public ObservableCollection<TicketLineDto> SelectedReceivingTicketLinesWithTotals => SelectedReceivingTicketLines;
+    
+    /// <summary>
+    /// Calculated Net Weight as the SUM of all line item weights
+    /// For VIEWING existing tickets: Falls back to the ticket's net weight if no lines are loaded yet
+    /// </summary>
+    public decimal CalculatedNetWeightKg 
+    { 
         get
         {
-            decimal totalVat = 0m;
-            foreach (var line in SelectedReceivingTicketLines)
+            var sumFromLines = SelectedReceivingTicketLines.Sum(l => l.WeightKg);
+            // If lines are loaded, use their sum; otherwise use the ticket's net weight
+            if (sumFromLines > 0 || SelectedReceivingTicketLines.Count > 0)
             {
-                var lineTotal = line.WeightKg * line.UnitPricePerKg;
-                var lineExcl = lineTotal / 1.15m;
-                totalVat += lineTotal - lineExcl;
+                return sumFromLines;
             }
-            return totalVat;
+            // Fallback to ticket details value
+            return SelectedReceivingTicketDetails?.NetWeightKg ?? 0m;
         }
     }
 
-    public decimal SelectedReceivingTicketLinesTotalInclVat => SelectedReceivingTicketLines.Sum(l => l.WeightKg * l.UnitPricePerKg);
+    /// <summary>
+    /// Total weight from line items being created
+    /// For the CREATE section: Always shows the sum of ReceivingLines (0.00 for new tickets with no lines yet)
+    /// </summary>
+    public decimal CreatingTicketTotalWeight 
+    { 
+        get => ReceivingLinesTotalWeight;  // This is already the sum of ReceivingLines
+        set => ReceivingLinesTotalWeight = value;
+    }
 
     private async Task LoadSelectedReceivingTicketDetailsAsync(long ticketId)
     {
+        Console.WriteLine($"[DEBUG] LoadSelectedReceivingTicketDetailsAsync called with ticketId={ticketId}");
         try
         {
             var details = await _ticketService.GetTicketByIdAsync(ticketId);
+            Console.WriteLine($"[DEBUG] Got ticket details: {details?.TicketNumber}, Type: {details?.TicketType}");
             SelectedReceivingTicketDetails = details;
 
-            // Populate form fields from loaded ticket
+            // IMPORTANT: When loading a ticket from search for VIEWING, we set IsViewingTicketOnly = true
+            // This prevents the Create section from being populated with this ticket's data
+            // LastCreatedTicket should ONLY be set when creating a NEW ticket from scratch
+            IsViewingTicketOnly = true;
+            
+            // Clear the Create section - we're viewing an existing ticket, not creating a new one
+            ReceivingLines.Clear();
+            LastCreatedTicket = null;  // CRITICAL: Do NOT set LastCreatedTicket when viewing existing tickets!
+            // Note: Don't clear TicketCustomerIdText yet - we may populate it below if creating from a complete ticket
+            TicketNumber = string.Empty;
+            TicketFirstWeightText = "0";
+            TicketSecondWeightText = "0";
+            TicketPlatformWeightText = "0";
+
+            // Populate Details section (for viewing only)
             if (details != null)
             {
-                // Populate Customer ID
-                TicketCustomerIdText = details.CustomerId.ToString();
-
-                // Set ticket type and regenerate ticket number for that type
-                InitializeTicketTypeOptions();
-                var ticketTypeOption = TicketTypeOptions.FirstOrDefault(t => t.Key == details.TicketType);
-                if (ticketTypeOption != null)
+                // Determine ticket type from ticket number prefix
+                // RWB = Receiving Weighbridge, RPL = Receiving Platform
+                string ticketTypeKey = "platform"; // default
+                if (details.TicketNumber?.StartsWith("RWB") == true)
                 {
-                    SelectedTicketTypeOption = ticketTypeOption;
-                    
-                    // Regenerate ticket number based on selected ticket's type
-                    string prefix = details.TicketType?.ToLower() switch
-                    {
-                        "weighbridge" => "RWB",
-                        "platform" => "RPL",
-                        _ => "RPL"
-                    };
-                    await GenerateTicketNumberForReceivingAsync(prefix);
+                    ticketTypeKey = "weighbridge";
+                    Console.WriteLine($"[DEBUG] Detected weighbridge from ticket number: {details.TicketNumber}");
+                }
+                else if (details.TicketNumber?.StartsWith("RPL") == true)
+                {
+                    ticketTypeKey = "platform";
+                    Console.WriteLine($"[DEBUG] Detected platform from ticket number: {details.TicketNumber}");
                 }
                 
-                // Keep button text as Create (viewing only, not editing)
-                CreateOrUpdateButtonText = "Create Ticket";
-                IsViewingTicketOnly = true;
+                // Set ticket type for display
+                Console.WriteLine($"[DEBUG] Initializing ticket type options");
+                InitializeTicketTypeOptions();
+                Console.WriteLine($"[DEBUG] Available options: {string.Join(", ", TicketTypeOptions.Select(t => t.Key))}");
+                Console.WriteLine($"[DEBUG] Looking for type: {ticketTypeKey}");
+                var ticketTypeOption = TicketTypeOptions.FirstOrDefault(t => t.Key == ticketTypeKey);
+                Console.WriteLine($"[DEBUG] Found ticketTypeOption: {ticketTypeOption?.Key ?? "null"}");
+                
+                if (ticketTypeOption != null)
+                {
+                    Console.WriteLine($"[DEBUG] Setting SelectedTicketTypeOption to {ticketTypeOption.Key}");
+                    SelectedTicketTypeOption = ticketTypeOption;
+                }
+                else
+                {
+                    Console.WriteLine($"[DEBUG] ticketTypeOption was null! ticketTypeKey={ticketTypeKey}");
+                }
+
+                // Load ticket state 
+                if (details is TicketDto ticketDto)
+                {
+                    CurrentTicketState = ticketDto.TicketState;
+                    Console.WriteLine($"[DEBUG] Loaded ticket state: {ticketDto.TicketState}");
+                    
+                    // Load weighbridge-specific fields for display
+                    TicketVehicleRegistration = ticketDto.VehicleRegistration ?? string.Empty;
+                    TicketTrailerRegistration = ticketDto.TrailerRegistration ?? string.Empty;
+                    TicketDriverName = ticketDto.DriverName ?? string.Empty;
+                    TicketOfmWeighbridgeTicket = ticketDto.OfmWeighbridgeTicket ?? string.Empty;
+                    TicketForeignTicket = ticketDto.ForeignTicket ?? string.Empty;
+                    TicketCkNumber = ticketDto.CkNumber ?? string.Empty;
+                    TicketNotes = ticketDto.Notes ?? string.Empty;
+                    
+                    // For weighbridge tickets with state 'H', populate First Weight from initialize_weight_kg (for display only)
+                    if (ticketTypeKey == "weighbridge" && ticketDto.TicketState == 'H')
+                    {
+                        if (ticketDto.InitializeWeightKg.HasValue)
+                        {
+                            TicketFirstWeightText = ticketDto.InitializeWeightKg.Value.ToString("0.00");
+                            Console.WriteLine($"[DEBUG] Loaded weighbridge First Weight from initialize_weight_kg: {ticketDto.InitializeWeightKg}");
+                        }
+                        else
+                        {
+                            TicketFirstWeightText = "0";
+                        }
+                    }
+                    // For weighbridge tickets with state 'M', load First Weight from last line's second_weight_kg (for display only)
+                    else if (ticketTypeKey == "weighbridge" && ticketDto.TicketState == 'M' && details.Lines != null && details.Lines.Count > 0)
+                    {
+                        var lastLine = details.Lines.Last();
+                        // Try to get second_weight_kg from last line
+                        if (lastLine.SecondWeightKg.HasValue)
+                        {
+                            TicketFirstWeightText = lastLine.SecondWeightKg.Value.ToString("0.00");
+                            Console.WriteLine($"[DEBUG] Loaded weighbridge First Weight from last line SecondWeightKg: {lastLine.SecondWeightKg}");
+                        }
+                        else
+                        {
+                            TicketFirstWeightText = "0";
+                        }
+                        // Reset Second Weight to 0 after loading
+                        TicketSecondWeightText = "0";
+                    }
+                }
+                else
+                {
+                    // Default to 'C' if not a TicketDto
+                    CurrentTicketState = 'C';
+                }
+
+                // NOW load the Details section with the ticket's line items (for viewing)
+                if (details is TicketDto ticketDto2 && (ticketDto2.TicketState == 'H' || ticketDto2.TicketState == 'M'))
+                {
+                    // Incomplete ticket (H or M): User can continue editing - populate Create section
+                    IsViewingTicketOnly = false;  // Allow editing
+                    TicketNumber = details.TicketNumber ?? string.Empty;
+                    
+                    // Populate Customer ID in Create section so user can continue adding lines
+                    // Get customer full info from the SelectedReceivingTicket which was loaded from search
+                    if (SelectedReceivingTicket != null)
+                    {
+                        string fullCustomerInfo;
+                        if (string.IsNullOrWhiteSpace(SelectedReceivingTicket.CompanyName))
+                        {
+                            fullCustomerInfo = $"{SelectedReceivingTicket.CustomerId} | {SelectedReceivingTicket.FirstName} {SelectedReceivingTicket.LastName}";
+                        }
+                        else
+                        {
+                            fullCustomerInfo = $"{SelectedReceivingTicket.CustomerId} | {SelectedReceivingTicket.FirstName} {SelectedReceivingTicket.LastName} | {SelectedReceivingTicket.CompanyName} | {SelectedReceivingTicket.SiteName}";
+                        }
+                        TicketCustomerIdText = fullCustomerInfo;
+                        Console.WriteLine($"[DEBUG] Populated TicketCustomerIdText from SelectedReceivingTicket: {TicketCustomerIdText}");
+                    }
+                    
+                    // Set LastCreatedTicket so we can continue adding lines to this ticket
+                    LastCreatedTicket = ticketDto2;
+                    CurrentTicketState = ticketDto2.TicketState;
+                    
+                    Console.WriteLine($"[DEBUG] Incomplete ticket (state={ticketDto2.TicketState}): Set IsViewingTicketOnly=false, TicketNumber={TicketNumber}, TicketCustomerIdText={TicketCustomerIdText}");
+                    
+                    // After populating all the fields above, NOW populate ReceivingLines from SelectedReceivingTicketLines
+                    // This makes line items appear in the Create section grid
+                    // IMPORTANT: SelectedReceivingTicketLines are already loaded, just copy them to ReceivingLines
+                    if (SelectedReceivingTicketLines.Count > 0)
+                    {
+                        Console.WriteLine($"[DEBUG CREATE] Copying {SelectedReceivingTicketLines.Count} lines from SelectedReceivingTicketLines to ReceivingLines");
+                        ReceivingLines.Clear();
+                        foreach (var lineDto in SelectedReceivingTicketLines)
+                        {
+                            ReceivingLines.Add(new ReceivingLineItem
+                            {
+                                TicketLineId = lineDto.TicketLineId,
+                                TicketId = lineDto.TicketId,
+                                ProductId = lineDto.ProductId,
+                                ProductName = lineDto.ProductName,
+                                WeightKg = lineDto.WeightKg,
+                                UnitPricePerKg = lineDto.UnitPricePerKg,
+                                LineTotal = lineDto.LineTotal,
+                                VatAmount = lineDto.VatAmount,
+                                TotalInclVat = lineDto.TotalInclVat,
+                                Notes = lineDto.Notes ?? string.Empty,
+                            });
+                            CreatingTicketTotalWeight += lineDto.WeightKg;
+                        }
+                        RecalculateReceivingTotals();
+                        Console.WriteLine($"[DEBUG CREATE] AFTER copying: ReceivingLines.Count={ReceivingLines.Count}, CreatingTicketTotalWeight={CreatingTicketTotalWeight}");
+                        
+                        // Calculate FW and Total Net Weight
+                        CalculateReceivingWeights();
+                    }
+                    
+                }
+                else if (details is TicketDto ticketDto3 && ticketDto3.TicketState == 'C')
+                {
+                    // Complete ticket (C): creating a new one - populate customer info and generate new ticket number
+                    IsViewingTicketOnly = false;
+                    Console.WriteLine($"[DEBUG] Complete ticket (state=C): Set IsViewingTicketOnly=false, generating new ticket number");
+                    
+                    // Populate Customer ID from the selected ticket so user can create a new ticket from it
+                    if (SelectedReceivingTicket != null)
+                    {
+                        string fullCustomerInfo;
+                        if (string.IsNullOrWhiteSpace(SelectedReceivingTicket.CompanyName))
+                        {
+                            // No company, just show customer ID and name
+                            fullCustomerInfo = $"{SelectedReceivingTicket.CustomerId} | {SelectedReceivingTicket.FirstName} {SelectedReceivingTicket.LastName}";
+                        }
+                        else
+                        {
+                            // Include company and site
+                            fullCustomerInfo = $"{SelectedReceivingTicket.CustomerId} | {SelectedReceivingTicket.FirstName} {SelectedReceivingTicket.LastName} | {SelectedReceivingTicket.CompanyName} | {SelectedReceivingTicket.SiteName}";
+                        }
+                        TicketCustomerIdText = fullCustomerInfo;
+                        Console.WriteLine($"[DEBUG] Populated TicketCustomerIdText from completed ticket: {fullCustomerInfo}");
+                    }
+                    
+                    // Generate new ticket number based on detected ticket type
+                    string prefix = ticketTypeKey == "weighbridge" ? "RWB" : "RPL";
+                    await GenerateTicketNumberForReceivingAsync(prefix);
+                    Console.WriteLine($"[DEBUG] Generated new TicketNumber={TicketNumber}");
+                }
+                else
+                {
+                    // Fallback
+                    IsViewingTicketOnly = true;
+                    TicketNumber = details.TicketNumber ?? string.Empty;
+                }
 
                 // Load lines from the ticket details (already included in DTO)
                 SelectedReceivingTicketLines.Clear();
+                ReceivingLines.Clear();
                 if (details.Lines != null && details.Lines.Count > 0)
                 {
+                    Console.WriteLine($"[DEBUG DETAILS] Loading {details.Lines.Count} lines for Details section");
                     foreach (var line in details.Lines)
                     {
+                        Console.WriteLine($"[DEBUG DETAILS] Line: TicketLineId={line.TicketLineId}, ProductId={line.ProductId}, ProductName={line.ProductName}, WeightKg={line.WeightKg}, Notes='{line.Notes}', LineTotal={line.LineTotal}, VatAmount={line.VatAmount}, TotalInclVat={line.TotalInclVat}");
+                        // Add to SelectedReceivingTicketLines (Details section) for viewing
                         SelectedReceivingTicketLines.Add(line);
+                        
+                        // For INCOMPLETE tickets (H or M state), ALSO add to ReceivingLines (Create section) so user can edit
+                        if (details is TicketDto && (details.TicketState == 'H' || details.TicketState == 'M'))
+                        {
+                            Console.WriteLine($"[DEBUG DTO] TicketLineDto FROM API: ProductId={line.ProductId}, ProductName={line.ProductName}");
+                            Console.WriteLine($"[DEBUG DTO]   Weights from DTO: FirstWeightKg={line.FirstWeightKg}, SecondWeightKg={line.SecondWeightKg}, NetWeightKg={line.WeightKg}");
+                            
+                            var lineItem = new ReceivingLineItem
+                            {
+                                TicketLineId = line.TicketLineId,
+                                TicketId = line.TicketId,
+                                ProductId = line.ProductId,
+                                ProductName = line.ProductName,
+                                FirstWeightKg = line.FirstWeightKg ?? 0m,
+                                SecondWeightKg = line.SecondWeightKg ?? 0m,
+                                WeightKg = line.WeightKg,
+                                UnitPricePerKg = line.UnitPricePerKg,
+                                LineTotal = line.LineTotal,
+                                VatAmount = line.VatAmount,
+                                TotalInclVat = line.TotalInclVat,
+                                Notes = line.Notes ?? string.Empty,
+                            };
+                            
+                            Console.WriteLine($"[DEBUG CREATE] Adding line: ProductId={lineItem.ProductId}, WeightKg={lineItem.WeightKg}, FirstWeightKg={lineItem.FirstWeightKg}, SecondWeightKg={lineItem.SecondWeightKg}, Notes='{lineItem.Notes}'");
+                            ReceivingLines.Add(lineItem);
+                            
+                        }
                     }
                 }
+                
+                // Recalculate totals for the Create section
+                RecalculateReceivingTotals();
+                
+                // Notify that net weight has changed
+                OnPropertyChanged(nameof(CalculatedNetWeightKg));
+                
+                // Store the loaded ticket as the current working ticket
+                LastCreatedTicket = details;
             }
             
             OnPropertyChanged(nameof(SelectedReceivingTicketLinesTotalExVat));
             OnPropertyChanged(nameof(SelectedReceivingTicketLinesTotalVat));
             OnPropertyChanged(nameof(SelectedReceivingTicketLinesTotalInclVat));
+            
+            // Update the search results table with the new net weight
+            UpdateSearchResultsWithNewWeight(details);
+            
+            Console.WriteLine($"[DEBUG] LoadSelectedReceivingTicketDetailsAsync complete. TicketNumber={TicketNumber}, TicketCustomerIdText={TicketCustomerIdText}, IsViewingTicketOnly={IsViewingTicketOnly}");
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[DEBUG] Exception in LoadSelectedReceivingTicketDetailsAsync: {ex}");
             StatusMessage = $"Error loading ticket details: {ex.Message}";
+        }
+    }
+
+    private void UpdateSearchResultsWithNewWeight(TicketDto? details)
+    {
+        if (details == null || SelectedReceivingTicket == null)
+            return;
+
+        // Find the corresponding search result and update its net weight
+        var searchResult = ReceivingTicketSearchResults.FirstOrDefault(r => r.TicketId == details.TicketId);
+        if (searchResult != null)
+        {
+            // Update the NetWeightKg in the search result
+            searchResult.NetWeightKg = details.NetWeightKg;
+            Console.WriteLine($"[DEBUG] Updated search result for ticket {details.TicketNumber}: NetWeightKg = {details.NetWeightKg}");
+        }
+    }
+
+    private async Task RefreshCurrentTicketInSearchResultsAsync()
+    {
+        if (LastCreatedTicket == null || LastCreatedTicket.TicketId <= 0)
+            return;
+
+        try
+        {
+            // Reload the ticket from the server to get updated weight
+            var updatedTicket = await _ticketService.GetTicketByIdAsync(LastCreatedTicket.TicketId);
+            if (updatedTicket != null)
+            {
+                // Update the search result with the new weight
+                var searchResult = ReceivingTicketSearchResults.FirstOrDefault(r => r.TicketId == updatedTicket.TicketId);
+                if (searchResult != null)
+                {
+                    searchResult.NetWeightKg = updatedTicket.NetWeightKg;
+                    Console.WriteLine($"[DEBUG] Refreshed search result for {updatedTicket.TicketNumber}: NetWeightKg = {updatedTicket.NetWeightKg}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[DEBUG] Error refreshing search results: {ex.Message}");
         }
     }
 
@@ -705,54 +1500,86 @@ public partial class MainWindowViewModel
         if (IsBusy) return;
 
         IsBusy = true;
-        StatusMessage = "Searching receiving tickets...";
         
         // Initialize ticket type options for search dropdown
         InitializeTicketTypeOptions();
 
         try
         {
-            System.Diagnostics.Debug.WriteLine($"[DEBUG] SearchTicketTypeKey={SearchTicketTypeKey}");
-            
-            var ticketType = string.IsNullOrWhiteSpace(SearchTicketTypeKey) || SearchTicketTypeKey == "All" ? null : SearchTicketTypeKey;
-            System.Diagnostics.Debug.WriteLine($"[DEBUG] Final TicketType={ticketType}");
-            
-            var request = new TicketReceivingSearchRequestDto
+            if (SearchReceivingNewCustomersCheckbox)
             {
-                CompanyId = SelectedSearchCompany?.CompanyId,
-                SiteId = SelectedSearchSite?.SiteId,
-                TicketType = ticketType,
-                CustomerId = ParseIntOrNull(SearchReceivingTicketCustomerIdText),
-                FirstName = string.IsNullOrWhiteSpace(SearchReceivingTicketFirstNameText) ? null : SearchReceivingTicketFirstNameText.Trim(),
-                LastName = string.IsNullOrWhiteSpace(SearchReceivingTicketLastNameText) ? null : SearchReceivingTicketLastNameText.Trim(),
-                IdNumber = string.IsNullOrWhiteSpace(SearchReceivingTicketIdNumberText) ? null : SearchReceivingTicketIdNumberText.Trim(),
-                AccountNumber = ParseLongOrNull(SearchReceivingTicketAccountNumberText),
-                SearchTerm = string.IsNullOrWhiteSpace(SearchReceivingTicketNumberText) ? null : SearchReceivingTicketNumberText.Trim(),
-                StartDate = ParseDateOrNull(SearchReceivingTicketCreatedFromText),
-                EndDate = ParseDateOrNull(SearchReceivingTicketCreatedToText)
-            };
+                StatusMessage = "Searching for customers without tickets...";
+                
+                var request = new TicketSearchRequestDto
+                {
+                    CustomerId = ParseLongOrNull(SearchReceivingTicketCustomerIdText),
+                    IdNumber = string.IsNullOrWhiteSpace(SearchReceivingTicketIdNumberText) ? null : SearchReceivingTicketIdNumberText.Trim(),
+                    FirstName = string.IsNullOrWhiteSpace(SearchReceivingTicketFirstNameText) ? null : SearchReceivingTicketFirstNameText.Trim(),
+                    LastName = string.IsNullOrWhiteSpace(SearchReceivingTicketLastNameText) ? null : SearchReceivingTicketLastNameText.Trim(),
+                    AccountNumber = ParseLongOrNull(SearchReceivingTicketAccountNumberText),
+                    CompanyId = SelectedSearchCompany?.CompanyId,
+                    SiteId = SelectedSearchSite?.SiteId,
+                    SearchNewCustomersWithoutTickets = true
+                };
 
-            var results = await _ticketReceivingService.SearchTicketsReceivingAsync(request);
+                var results = await _ticketService.SearchNewCustomersAsync(request);
 
-            System.Diagnostics.Debug.WriteLine($"[DEBUG] Search returned {results.Count} results");
-            foreach (var r in results)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DEBUG] Ticket: {r.TicketNumber}");
+                ReceivingNewCustomerSearchResults.Clear();
+                foreach (var c in results)
+                {
+                    ReceivingNewCustomerSearchResults.Add(c);
+                }
+
+                SelectedReceivingNewCustomer = ReceivingNewCustomerSearchResults.FirstOrDefault();
+
+                StatusMessage = $"Loaded {ReceivingNewCustomerSearchResults.Count} customer(s) without tickets.";
             }
-
-            ReceivingTicketSearchResults.Clear();
-            foreach (var t in results)
+            else
             {
-                ReceivingTicketSearchResults.Add(t);
+                StatusMessage = "Searching receiving tickets...";
+                
+                System.Diagnostics.Debug.WriteLine($"[DEBUG] SearchTicketTypeKey={SearchTicketTypeKey}");
+                
+                var ticketType = string.IsNullOrWhiteSpace(SearchTicketTypeKey) || SearchTicketTypeKey == "All" ? null : SearchTicketTypeKey;
+                System.Diagnostics.Debug.WriteLine($"[DEBUG] Final TicketType={ticketType}");
+                
+                var request = new TicketReceivingSearchRequestDto
+                {
+                    CompanyId = SelectedSearchCompany?.CompanyId,
+                    SiteId = SelectedSearchSite?.SiteId,
+                    TicketType = ticketType,
+                    CustomerId = ParseIntOrNull(SearchReceivingTicketCustomerIdText),
+                    FirstName = string.IsNullOrWhiteSpace(SearchReceivingTicketFirstNameText) ? null : SearchReceivingTicketFirstNameText.Trim(),
+                    LastName = string.IsNullOrWhiteSpace(SearchReceivingTicketLastNameText) ? null : SearchReceivingTicketLastNameText.Trim(),
+                    IdNumber = string.IsNullOrWhiteSpace(SearchReceivingTicketIdNumberText) ? null : SearchReceivingTicketIdNumberText.Trim(),
+                    AccountNumber = ParseLongOrNull(SearchReceivingTicketAccountNumberText),
+                    SearchTerm = string.IsNullOrWhiteSpace(SearchReceivingTicketNumberText) ? null : SearchReceivingTicketNumberText.Trim(),
+                    StartDate = ParseDateOrNull(SearchReceivingTicketCreatedFromText),
+                    EndDate = ParseDateOrNull(SearchReceivingTicketCreatedToText)
+                };
+
+                var results = await _ticketReceivingService.SearchTicketsReceivingAsync(request);
+
+                System.Diagnostics.Debug.WriteLine($"[DEBUG] Search returned {results.Count} results");
+                foreach (var r in results)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[DEBUG] Ticket: {r.TicketNumber}");
+                }
+
+                ReceivingTicketSearchResults.Clear();
+                foreach (var t in results)
+                {
+                    ReceivingTicketSearchResults.Add(t);
+                }
+
+                SelectedReceivingTicket = ReceivingTicketSearchResults.FirstOrDefault();
+
+                StatusMessage = $"Loaded {ReceivingTicketSearchResults.Count} receiving ticket(s).";
             }
-
-            SelectedReceivingTicket = ReceivingTicketSearchResults.FirstOrDefault();
-
-            StatusMessage = $"Loaded {ReceivingTicketSearchResults.Count} receiving ticket(s).";
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Receiving ticket search failed: {ex.Message}";
+            StatusMessage = $"Search failed: {ex.Message}";
         }
         finally
         {
@@ -773,9 +1600,16 @@ public partial class MainWindowViewModel
         SearchReceivingTicketCreatedToText = string.Empty;
         SelectedSearchCompany = null;
         SelectedSearchSite = null;
+        SearchReceivingNewCustomersCheckbox = false;
 
         ReceivingTicketSearchResults.Clear();
+        ReceivingNewCustomerSearchResults.Clear();
         SelectedReceivingTicket = null;
+        SelectedReceivingNewCustomer = null;
+        SelectedReceivingTicketDetails = null;
+        SelectedReceivingTicketLines.Clear();
+        
+        StatusMessage = "Search cleared.";
     }
 
     private async Task DeleteReceivingTicketAsync(TicketSearchResultDto? ticket)
