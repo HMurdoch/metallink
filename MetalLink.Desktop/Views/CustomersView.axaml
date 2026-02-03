@@ -356,6 +356,8 @@
             <TextBlock Text="Customer Search Results" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" Margin="0,12,0,0" />
             <DataGrid
                 Margin="0,8,0,0"
+                Width="60%"
+                HorizontalAlignment="Left"
                 AutoGenerateColumns="False"
                 ItemsSource="{Binding CustomerSearchResults}"
                 SelectedItem="{Binding FoundCustomer, Mode=TwoWay}">
@@ -371,7 +373,7 @@
                 <DataGridTextColumn Header="Email" Binding="{Binding Email}" IsReadOnly="True" />
 
                 <!-- Action buttons -->
-                <DataGridTemplateColumn Header="">
+                <DataGridTemplateColumn Header="Actions" Width="90">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
                       <StackPanel Orientation="Horizontal" Spacing="4">
@@ -379,12 +381,6 @@
                             Classes="row-action"
                             Content="Log Ticket"
                             Command="{Binding DataContext.LogTicketCommand,
-                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
-                            CommandParameter="{Binding}" />
-                        <Button
-                            Classes="row-action"
-                            Content="Edit"
-                            Command="{Binding DataContext.EditCustomerCommand,
                                               RelativeSource={RelativeSource AncestorType=UserControl}}"
                             CommandParameter="{Binding}" />
                         <Button
