@@ -487,8 +487,10 @@
                 MaxHeight="250">
                 <DataGrid.Columns>
                   <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="*" />
-                  <DataGridTextColumn Header="Weight (kg)" Binding="{Binding WeightKg, StringFormat='{}{0:N2}'}"
+                  <DataGridTextColumn Header="Weight (kg)" Binding="{Binding DisplayWeightKg, StringFormat='{}{0:N2}'}"
                                       Width="140" />
+                  <DataGridTextColumn Header="Tare (kg)" Binding="{Binding Tare, StringFormat='{}{0:N2}'}"
+                                      Width="100" IsReadOnly="True" />
                   <DataGridTextColumn Header="Unit Price /kg"
                                       Binding="{Binding UnitPricePerKg, StringFormat='{}{0:N2}'}" Width="140" />
                   <DataGridTextColumn Header="Total (ex VAT)" Binding="{Binding LineTotal, StringFormat='{}{0:N2}'}"
@@ -928,7 +930,8 @@
                                BorderBrush="#4b5563"
                                BorderThickness="1"
                                Padding="4"
-                               FontSize="11" />
+                               FontSize="11"
+                               GotFocus="TareTextBox_GotFocus" />
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

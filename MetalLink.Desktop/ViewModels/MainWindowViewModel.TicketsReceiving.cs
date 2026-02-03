@@ -544,6 +544,7 @@ public partial class MainWindowViewModel
                     if (e.PropertyName == nameof(ReceivingLineItem.Tare))
                     {
                         RecalculateReceivingTotals();
+                        _ = SaveTareToApiAsync(LastCreatedTicket.TicketId, lineItem.TicketLineId, lineItem.Tare);
                     }
                 };
                 ReceivingLines.Add(lineItem);
@@ -1391,6 +1392,7 @@ public partial class MainWindowViewModel
                                 if (e.PropertyName == nameof(ReceivingLineItem.Tare))
                                 {
                                     RecalculateReceivingTotals();
+                                    _ = SaveTareToApiAsync(SelectedReceivingTicket?.TicketId ?? 0, lineItem.TicketLineId, lineItem.Tare);
                                 }
                             };
                             ReceivingLines.Add(lineItem);
@@ -1479,6 +1481,7 @@ public partial class MainWindowViewModel
                                 if (e.PropertyName == nameof(ReceivingLineItem.Tare))
                                 {
                                     RecalculateReceivingTotals();
+                                    _ = SaveTareToApiAsync(line.TicketId, lineItem.TicketLineId, lineItem.Tare);
                                 }
                             };
                             
@@ -1702,6 +1705,34 @@ public partial class MainWindowViewModel
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    private async Task SaveTareToApiAsync(long ticketId, long lineId, decimal tare)
+    {
+        try
+        {
+            var url = $"http://localhost:5066/api/tickets-receiving/{ticketId}/lines/{lineId}/tare";
+            var request = new { tare };
+            
+            using var client = new HttpClient();
+            var json = System.Text.Json.JsonSerializer.Serialize(request);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            
+            var response = await client.PutAsync(url, content);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"[DEBUG] Tare updated successfully for line {lineId}: {tare}");
+            }
+            else
+            {
+                Console.WriteLine($"[DEBUG] Failed to update Tare for line {lineId}: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[DEBUG] Error saving Tare to API: {ex.Message}");
         }
     }
 
