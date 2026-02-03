@@ -14,20 +14,49 @@ namespace MetalLink.Desktop.ViewModels;
 public partial class MainWindowViewModel
 {
     // Receiving line item model used for the grid
-    public sealed class ReceivingLineItem
+    public sealed class ReceivingLineItem : INotifyPropertyChanged
     {
+        private decimal _tare;
+
         public long TicketLineId { get; init; }
         public long TicketId { get; init; }
         public long ProductId { get; init; }
         public string ProductName { get; init; } = string.Empty;
-        public decimal FirstWeightKg { get; init; }      // For weighbridge: first weight reading
-        public decimal SecondWeightKg { get; init; }     // For weighbridge: second weight reading  
-        public decimal WeightKg { get; init; }           // Net weight = FirstWeightKg - SecondWeightKg
+        public decimal FirstWeightKg { get; init; }      // For weighbridge: first weight reading (stored value)
+        public decimal SecondWeightKg { get; init; }     // For weighbridge: second weight reading (stored value)
+        public decimal WeightKg { get; init; }           // Net weight = FirstWeightKg - SecondWeightKg (stored value)
         public decimal UnitPricePerKg { get; init; }
         public decimal LineTotal { get; init; }
         public decimal VatAmount { get; init; }
         public decimal TotalInclVat { get; init; }
+        
+        public decimal Tare
+        {
+            get => _tare;
+            set
+            {
+                if (_tare != value)
+                {
+                    _tare = value;
+                    OnPropertyChanged(nameof(Tare));
+                    OnPropertyChanged(nameof(DisplayFirstWeightKg));
+                    OnPropertyChanged(nameof(DisplayWeightKg));
+                }
+            }
+        }
+
+        // Display properties that account for Tare deduction
+        public decimal DisplayFirstWeightKg => FirstWeightKg - Tare;
+        public decimal DisplayWeightKg => WeightKg - Tare;
+
         public string Notes { get; init; } = string.Empty;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 
     private ObservableCollection<ReceivingLineItem> _receivingLines = new();
@@ -472,6 +501,7 @@ public partial class MainWindowViewModel
                 SecondWeightKg = secondWeightKg,
                 NetWeightKg = weightKg,
                 UnitPricePerKg = 0m,  // Will be looked up by API based on customer's price code
+                Tare = 0m,  // Default tare to 0, user can update it later
                 Notes = string.IsNullOrWhiteSpace(ReceivingLineNotes) ? null : ReceivingLineNotes
             };
 
@@ -492,7 +522,7 @@ public partial class MainWindowViewModel
             foreach (var dto in response.Lines)
             {
                 Console.WriteLine($"[DEBUG LINE ADD RESPONSE] ProductId={dto.ProductId}, ProductName={dto.ProductName}, Notes='{dto.Notes}'");
-                ReceivingLines.Add(new ReceivingLineItem
+                var lineItem = new ReceivingLineItem
                 {
                     TicketLineId = dto.ReceivingTicketLineId,
                     TicketId = dto.ReceivingTicketId,
@@ -506,7 +536,16 @@ public partial class MainWindowViewModel
                     VatAmount = dto.VatAmount,
                     TotalInclVat = dto.TotalInclVat,
                     Notes = dto.Notes ?? string.Empty,
-                });
+                };
+                lineItem.Tare = dto.Tare;
+                lineItem.PropertyChanged += (s, e) => 
+                {
+                    if (e.PropertyName == nameof(ReceivingLineItem.Tare))
+                    {
+                        RecalculateReceivingTotals();
+                    }
+                };
+                ReceivingLines.Add(lineItem);
             }
 
             RecalculateReceivingTotals();
@@ -576,17 +615,21 @@ public partial class MainWindowViewModel
         Console.WriteLine($"[TASK 2] RecalculateReceivingTotals START: ReceivingLines.Count={ReceivingLines.Count}");
         
         var totalWeight = 0m;
+        var totalTare = 0m;
         var totalExcl = 0m;
         var totalVat = 0m;
         var totalIncl = 0m;
 
         foreach (var line in ReceivingLines)
         {
-            totalWeight += line.WeightKg;
+            // Calculate net weight after tare deduction: (NetWeightKg - Tare)
+            var adjustedNetWeight = line.WeightKg - line.Tare;
+            totalWeight += adjustedNetWeight;
+            totalTare += line.Tare;
             totalExcl += line.LineTotal;
             totalVat += line.VatAmount;
             totalIncl += line.TotalInclVat;
-            Console.WriteLine($"[TASK 2]   Line: ProductId={line.ProductId}, ProductName={line.ProductName}, WeightKg={line.WeightKg}, FW={line.FirstWeightKg}, SW={line.SecondWeightKg}");
+            Console.WriteLine($"[TASK 2]   Line: ProductId={line.ProductId}, ProductName={line.ProductName}, WeightKg={line.WeightKg}, Tare={line.Tare}, AdjustedWeight={adjustedNetWeight}, FW={line.FirstWeightKg}, SW={line.SecondWeightKg}");
         }
 
         ReceivingLinesTotalWeight = totalWeight;
@@ -597,7 +640,7 @@ public partial class MainWindowViewModel
         // Notify UI that CreatingTicketTotalWeight has changed
         OnPropertyChanged(nameof(CreatingTicketTotalWeight));
         
-        Console.WriteLine($"[TASK 2] RecalculateReceivingTotals END: ReceivingLinesTotalWeight={ReceivingLinesTotalWeight}, CreatingTicketTotalWeight={CreatingTicketTotalWeight}");
+        Console.WriteLine($"[TASK 2] RecalculateReceivingTotals END: ReceivingLinesTotalWeight={ReceivingLinesTotalWeight} (after deducting totalTare={totalTare}), CreatingTicketTotalWeight={CreatingTicketTotalWeight}");
         Console.WriteLine($"[TASK 2] ReceivingLinesWithTotals.Count={ReceivingLinesWithTotals.Count}");
     }
 
@@ -1328,7 +1371,7 @@ public partial class MainWindowViewModel
                         ReceivingLines.Clear();
                         foreach (var lineDto in SelectedReceivingTicketLines)
                         {
-                            ReceivingLines.Add(new ReceivingLineItem
+                            var lineItem = new ReceivingLineItem
                             {
                                 TicketLineId = lineDto.TicketLineId,
                                 TicketId = lineDto.TicketId,
@@ -1340,7 +1383,16 @@ public partial class MainWindowViewModel
                                 VatAmount = lineDto.VatAmount,
                                 TotalInclVat = lineDto.TotalInclVat,
                                 Notes = lineDto.Notes ?? string.Empty,
-                            });
+                            };
+                            lineItem.Tare = lineDto.Tare;
+                            lineItem.PropertyChanged += (s, e) => 
+                            {
+                                if (e.PropertyName == nameof(ReceivingLineItem.Tare))
+                                {
+                                    RecalculateReceivingTotals();
+                                }
+                            };
+                            ReceivingLines.Add(lineItem);
                             CreatingTicketTotalWeight += lineDto.WeightKg;
                         }
                         RecalculateReceivingTotals();
@@ -1420,8 +1472,16 @@ public partial class MainWindowViewModel
                                 TotalInclVat = line.TotalInclVat,
                                 Notes = line.Notes ?? string.Empty,
                             };
+                            lineItem.Tare = line.Tare;
+                            lineItem.PropertyChanged += (s, e) => 
+                            {
+                                if (e.PropertyName == nameof(ReceivingLineItem.Tare))
+                                {
+                                    RecalculateReceivingTotals();
+                                }
+                            };
                             
-                            Console.WriteLine($"[DEBUG CREATE] Adding line: ProductId={lineItem.ProductId}, WeightKg={lineItem.WeightKg}, FirstWeightKg={lineItem.FirstWeightKg}, SecondWeightKg={lineItem.SecondWeightKg}, Notes='{lineItem.Notes}'");
+                            Console.WriteLine($"[DEBUG CREATE] Adding line: ProductId={lineItem.ProductId}, WeightKg={lineItem.WeightKg}, FirstWeightKg={lineItem.FirstWeightKg}, SecondWeightKg={lineItem.SecondWeightKg}, Tare={lineItem.Tare}, Notes='{lineItem.Notes}'");
                             ReceivingLines.Add(lineItem);
                             
                         }

@@ -186,6 +186,7 @@ public class TicketsController : ControllerBase
                         LineTotal = lineTotal,
                         VatAmount = vatAmount,
                         TotalInclVat = totalInclVat,
+                        Tare = l.Tare,
                         Notes = l.Notes
                     };
                 }).ToList() ?? new List<TicketLineDto>()

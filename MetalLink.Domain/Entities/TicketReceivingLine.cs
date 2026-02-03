@@ -15,8 +15,14 @@ public class TicketReceivingLine
     public int ProductId { get; private set; }
     public Product Product { get; set; } = null!;
 
+    // Weights captured at the time the line item is created
+    public decimal? FirstWeightKg { get; private set; }
+    public decimal? SecondWeightKg { get; private set; }
     public decimal NetWeightKg { get; private set; }
     public decimal UnitPricePerKg { get; private set; }
+
+    // Tare weight (material to be deducted from first weight, e.g., packaging)
+    public decimal Tare { get; private set; }
 
     public string? Notes { get; private set; }
 
@@ -34,19 +40,31 @@ public class TicketReceivingLine
         decimal netWeightKg,
         decimal unitPricePerKg,
         int createdByOperatorId,
-        string? notes = null)
+        string? notes = null,
+        decimal? firstWeightKg = null,
+        decimal? secondWeightKg = null,
+        decimal tare = 0m)
     {
         ReceivingTicketId = receivingTicketId;
         ProductId = productId;
+        FirstWeightKg = firstWeightKg;
+        SecondWeightKg = secondWeightKg;
         NetWeightKg = netWeightKg;
         UnitPricePerKg = unitPricePerKg;
         CreatedByOperatorId = createdByOperatorId;
         Notes = notes;
+        Tare = tare;
     }
 
     public void UpdateWeight(decimal netWeightKg)
     {
         NetWeightKg = netWeightKg;
+        UpdatedTime = DateTimeOffset.UtcNow;
+    }
+
+    public void UpdateTare(decimal tare)
+    {
+        Tare = tare;
         UpdatedTime = DateTimeOffset.UtcNow;
     }
 
