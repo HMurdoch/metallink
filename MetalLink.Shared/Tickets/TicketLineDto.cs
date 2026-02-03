@@ -26,4 +26,8 @@ public sealed class TicketLineDto
 
     public DateTimeOffset CreatedTime { get; set; }
     public DateTimeOffset UpdatedTime { get; set; }
+
+    // Display properties that account for Tare deduction
+    public decimal DisplayFirstWeightKg => (FirstWeightKg ?? 0m) - Tare;
+    public decimal DisplayWeightKg => WeightKg - Tare;
 }
