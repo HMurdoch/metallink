@@ -758,6 +758,13 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             PaginationViewModel.PageChanged -= OnPaginationPageChanged;
             PaginationViewModel.PageChanged += OnPaginationPageChanged;
             UpdatePagedResults();
+            
+            // Also populate paged results for initial display
+            PagedCustomerSearchResults.Clear();
+            foreach (var customer in CustomerSearchResults)
+            {
+                PagedCustomerSearchResults.Add(customer);
+            }
 
             if (CustomerSearchResults.Count == 0)
             {
