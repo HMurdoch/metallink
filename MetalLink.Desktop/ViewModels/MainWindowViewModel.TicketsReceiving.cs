@@ -192,6 +192,17 @@ public partial class MainWindowViewModel
         }
     }
 
+    // Platform Weight visibility - only visible if ticket type is "platform"
+    public bool ArePlatformFieldsVisible
+    {
+        get
+        {
+            var visible = SelectedTicketTypeOption?.Key?.ToLower() == "platform";
+            Console.WriteLine($"[DEBUG] ArePlatformFieldsVisible: {visible}, SelectedTicketTypeOption={SelectedTicketTypeOption?.Key}");
+            return visible;
+        }
+    }
+
     private decimal _receivingTotalExclVat;
     public decimal ReceivingTotalExclVat
     {
@@ -1591,7 +1602,16 @@ public partial class MainWindowViewModel
                 ReceivingNewCustomerSearchResults.Clear();
                 foreach (var c in results)
                 {
-                    ReceivingNewCustomerSearchResults.Add(c);
+                    ReceivingNewCustomerSearchResults.Add(new NewCustomerResultDto
+                    {
+                        CustomerId = c.CustomerId,
+                        FirstName = c.FirstName,
+                        LastName = c.LastName,
+                        CompanyName = c.CompanyName,
+                        SiteName = c.SiteName,
+                        AccountNumber = c.AccountNumber?.ToString(),
+                        CreatedTime = c.CreatedTime
+                    });
                 }
 
                 SelectedReceivingNewCustomer = ReceivingNewCustomerSearchResults.FirstOrDefault();

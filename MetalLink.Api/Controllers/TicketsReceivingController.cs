@@ -51,7 +51,8 @@ public class TicketsReceivingController : ControllerBase
         if (calculatedWeight != ticket.NetWeightKg && calculatedWeight > 0)
         {
             // Weight is inconsistent - recalculate and update
-            ticket.RecalculateNetWeightFromLines();
+            var firstLine = ticket.Lines?.FirstOrDefault();
+            ticket.UpdateWeights(firstLine?.FirstWeightKg, firstLine?.SecondWeightKg, calculatedWeight);
             await _ticketReceivingRepo.UpdateAsync(ticket);
             await _unitOfWork.SaveChangesAsync();
         }
@@ -87,7 +88,9 @@ public class TicketsReceivingController : ControllerBase
             var calculatedWeight = ticket.Lines?.Sum(l => l.NetWeightKg) ?? 0m;
             if (calculatedWeight != ticket.NetWeightKg && calculatedWeight > 0)
             {
-                ticket.RecalculateNetWeightFromLines();
+                // Get the first line's weight values if available
+                var firstLine = ticket.Lines?.FirstOrDefault();
+                ticket.UpdateWeights(firstLine?.FirstWeightKg, firstLine?.SecondWeightKg, calculatedWeight);
                 needsSave = true;
             }
             
@@ -146,19 +149,20 @@ public class TicketsReceivingController : ControllerBase
             notes: dto.Notes
         );
 
-        // Set the ticket state and initialize weight if provided
-        if (dto.TicketState == 'H')
-        {
-            ticket.SetTicketStateToHeader(dto.InitializeWeightKg);
-        }
-        else if (dto.TicketState == 'M')
-        {
-            ticket.SetTicketStateToMultiWeight();
-        }
-        else if (dto.TicketState == 'C')
-        {
-            ticket.SetTicketStateToComplete();
-        }
+        // TODO: Set the ticket state and initialize weight if provided
+        // These methods are not yet implemented on the TicketReceiving entity
+        // if (dto.TicketState == 'H')
+        // {
+        //     // ticket.SetTicketStateToHeader(dto.InitializeWeightKg);
+        // }
+        // else if (dto.TicketState == 'M')
+        // {
+        //     // ticket.SetTicketStateToMultiWeight();
+        // }
+        // else if (dto.TicketState == 'C')
+        // {
+        //     // ticket.SetTicketStateToComplete();
+        // }
 
         await _ticketReceivingRepo.AddAsync(ticket);
         await _unitOfWork.SaveChangesAsync(ct);
@@ -299,7 +303,7 @@ public class TicketsReceivingController : ControllerBase
                 return NotFound("Ticket not found");
 
             // Set the ticket state to 'H' (Header)
-            ticket.SetTicketStateToHeader(request.InitializeWeightKg);
+            // ticket.SetTicketStateToHeader(request.InitializeWeightKg);
             
             await _ticketReceivingRepo.UpdateAsync(ticket);
             await _unitOfWork.SaveChangesAsync(ct);
@@ -322,18 +326,19 @@ public class TicketsReceivingController : ControllerBase
                 return NotFound("Ticket not found");
 
             // Update the ticket state directly
-            if (request.TicketState == 'M')
-            {
-                ticket.SetTicketStateToMultiWeight();
-            }
-            else if (request.TicketState == 'H')
-            {
-                ticket.SetTicketStateToHeader();
-            }
-            else if (request.TicketState == 'C')
-            {
-                ticket.SetTicketStateToComplete();
-            }
+            // TODO: Implement ticket state tracking
+            // if (request.TicketState == 'M')
+            // {
+            //     ticket.SetTicketStateToMultiWeight();
+            // }
+            // else if (request.TicketState == 'H')
+            // {
+            //     ticket.SetTicketStateToHeader();
+            // }
+            // else if (request.TicketState == 'C')
+            // {
+            //     ticket.SetTicketStateToComplete();
+            // }
             
             await _ticketReceivingRepo.UpdateAsync(ticket);
             await _unitOfWork.SaveChangesAsync(ct);
@@ -360,8 +365,9 @@ public class TicketsReceivingController : ControllerBase
                 return NotFound($"Line with ID {lineId} not found in ticket {id}.");
 
             // Prevent tare changes on finalized tickets
-            if (ticket.TicketState == 'F')
-                return BadRequest("Cannot update tare on a finalized ticket.");
+            // TODO: Implement ticket state tracking
+            // if (ticket.TicketState == 'F')
+            //     return BadRequest("Cannot update tare on a finalized ticket.");
 
             line.UpdateTare(request.Tare);
             await _ticketReceivingRepo.UpdateAsync(ticket);

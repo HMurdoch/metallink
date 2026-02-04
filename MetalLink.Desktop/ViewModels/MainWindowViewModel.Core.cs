@@ -154,6 +154,62 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand UpdateCustomerCommand { get; }
     public ICommand SearchCustomersCommand { get; }
 
+    // Ticket state from selected ticket
+    private char _currentTicketState = 'C';
+    public char CurrentTicketState
+    {
+        get => _currentTicketState;
+        set
+        {
+            _currentTicketState = value;
+            Console.WriteLine($"[DEBUG] CurrentTicketState changed to: {value}");
+            Console.WriteLine($"[DEBUG] CreateHeaderButtonVisible: {CreateHeaderButtonVisible}");
+            Console.WriteLine($"[DEBUG] SaveResetButtonVisible: {SaveResetButtonVisible}");
+            Console.WriteLine($"[DEBUG] AddLineButtonEnabled: {AddLineButtonEnabled}");
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CreateHeaderButtonVisible));
+            OnPropertyChanged(nameof(SaveResetButtonVisible));
+            OnPropertyChanged(nameof(AddLineButtonEnabled));
+        }
+    }
+
+    // Button visibility/enabled based on ticket state
+    public bool CreateHeaderButtonVisible
+    {
+        get
+        {
+            var visible = CurrentTicketState == 'C';
+            Console.WriteLine($"[DEBUG] CreateHeaderButtonVisible getter called: state={CurrentTicketState}, visible={visible}");
+            return visible;
+        }
+    }
+
+    public bool SaveResetButtonVisible
+    {
+        get
+        {
+            var visible = CurrentTicketState == 'H' || CurrentTicketState == 'M';
+            Console.WriteLine($"[DEBUG] SaveResetButtonVisible getter called: state={CurrentTicketState}, visible={visible}");
+            return visible;
+        }
+    }
+
+    public bool AddLineButtonEnabled
+    {
+        get
+        {
+            var enabled = CurrentTicketState != 'C';
+            Console.WriteLine($"[DEBUG] AddLineButtonEnabled getter called: state={CurrentTicketState}, enabled={enabled}");
+            return enabled;
+        }
+    }
+
+    public string? TicketTrailerRegistration { get; set; }
+    public string? TicketDriverName { get; set; }
+    public string? TicketPlatformWeightText { get; set; }
+    public bool IsFinalizeTicketEnabled { get; set; } = true;
+    public bool ShouldShowTicketDetails { get; set; } = true;
+
     public MainWindowViewModel(App app)
     {
         _app = app;

@@ -133,6 +133,7 @@ public partial class MainWindowViewModel
         {
             _selectedTicketTypeOption = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(ArePlatformFieldsVisible)); // Update platform fields visibility
             // Update Weighbridge fields visibility based on ticket type
             // Only show Weighbridge-specific fields when type is "weighbridge"
             AreWeighbridgeFieldsVisible = value?.Key == "weighbridge";

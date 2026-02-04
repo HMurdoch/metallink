@@ -214,8 +214,6 @@ public class TicketsSendingController : ControllerBase
             TicketNumber = ticket.TicketNumber,
             TicketTypeId = ticket.TicketTypeId,
             TicketTypeName = ticket.TicketType?.TicketTypeName ?? "",
-            FirstWeightKg = ticket.FirstWeightKg,
-            SecondWeightKg = ticket.SecondWeightKg,
             NetWeightKg = ticket.NetWeightKg,
             InvoiceNumber = ticket.InvoiceNumber,
             VehicleRegistration = ticket.VehicleRegistration,

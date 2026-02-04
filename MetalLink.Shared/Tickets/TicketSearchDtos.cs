@@ -21,6 +21,8 @@ public sealed class TicketSearchRequestDto
 
     public DateTimeOffset? CreatedFrom { get; set; }
     public DateTimeOffset? CreatedTo { get; set; }
+
+    public bool SearchNewCustomersWithoutTickets { get; set; }
 }
 
 public sealed class TicketSearchResultDto
@@ -28,6 +30,7 @@ public sealed class TicketSearchResultDto
     public long TicketId { get; set; }
     public string TicketNumber { get; set; } = string.Empty;
     public string TicketType { get; set; } = string.Empty;
+    public int TicketTypeId { get; set; }
 
     public long CustomerId { get; set; }
     public string? FirstName { get; set; }
@@ -39,6 +42,12 @@ public sealed class TicketSearchResultDto
     public string? AccountNumber { get; set; }
 
     public decimal NetWeightKg { get; set; }
+    
+    /// <summary>
+    /// TODO: Ticket state tracking not yet implemented.
+    /// Currently this field is not used.
+    /// </summary>
+    public char? TicketStatus { get; set; }
 
     public DateTimeOffset CreatedTime { get; set; }
 }

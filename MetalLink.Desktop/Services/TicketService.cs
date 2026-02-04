@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MetalLink.Desktop.Auth;
+using MetalLink.Shared.Customers;
 using MetalLink.Shared.Tickets;
 
 namespace MetalLink.Desktop.Services;
@@ -170,5 +171,17 @@ public sealed class TicketService
         return _apiClient.DeleteAsync(
             $"api/tickets/{ticketId}",
             cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<CustomerDto>> SearchNewCustomersAsync(
+        TicketSearchRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _apiClient.PostAsync<TicketSearchRequestDto, CustomerDto[]>(
+            "api/customers/search",
+            request,
+            cancellationToken);
+
+        return result ?? Array.Empty<CustomerDto>();
     }
 }

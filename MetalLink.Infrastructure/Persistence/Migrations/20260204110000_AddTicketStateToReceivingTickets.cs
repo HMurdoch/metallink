@@ -5,26 +5,28 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MetalLink.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class AddTareToReceivingTicketLines : Migration
+    public partial class AddTicketStateToReceivingTickets : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<decimal>(
-                name: "tare",
-                table: "receiving_ticket_lines",
-                type: "numeric(18,2)",
+            migrationBuilder.AddColumn<string>(
+                name: "ticket_state",
+                schema: "metal_link",
+                table: "receiving_tickets",
+                type: "character varying(1)",
+                maxLength: 1,
                 nullable: false,
-                defaultValue: 0m,
-                comment: "Tare weight (material to be deducted from first weight)");
+                defaultValue: "C");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "tare",
-                table: "receiving_ticket_lines");
+                name: "ticket_state",
+                schema: "metal_link",
+                table: "receiving_tickets");
         }
     }
 }

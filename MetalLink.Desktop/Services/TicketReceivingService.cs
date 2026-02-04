@@ -267,15 +267,47 @@ public sealed class TicketReceivingService
         try
         {
             var result = await _apiClient.GetAsync<dynamic>($"api/tickets-receiving/next-ticket-number/{ticketTypeId}");
-            if (result != null && result.ticketNumber != null)
+            if (result != null)
             {
-                return result.ticketNumber.ToString();
+                var ticketNumber = result.ticketNumber;
+                if (ticketNumber != null)
+                {
+                    return ticketNumber.ToString() ?? string.Empty;
+                }
             }
             return string.Empty;
         }
         catch
         {
             return string.Empty;
+        }
+    }
+
+    public async Task<TicketReceivingDto?> CreateTicketAsync(
+        CreateTicketReceivingDto createDto,
+        CancellationToken cancellationToken = default)
+    {
+        return await CreateTicketReceivingAsync(createDto, cancellationToken);
+    }
+
+    public async Task<bool> UpdateTicketStateAsync(
+        long ticketReceivingId,
+        char newState,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var updateDto = new { ticketReceivingId, state = newState };
+            var result = await _apiClient.PutAsJsonAsync(
+                $"api/tickets-receiving/{ticketReceivingId}/state",
+                updateDto,
+                cancellationToken
+            );
+            return result.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
         }
     }
 }

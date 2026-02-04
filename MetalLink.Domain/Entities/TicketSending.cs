@@ -20,8 +20,6 @@ public class TicketSending
 
     public string TicketNumber { get; private set; } = string.Empty;
 
-    public decimal? FirstWeightKg { get; private set; }
-    public decimal? SecondWeightKg { get; private set; }
     public decimal NetWeightKg { get; private set; }
 
     public string? DriverName { get; private set; }
@@ -63,13 +61,18 @@ public class TicketSending
         TicketTypeId = ticketTypeId;
         TicketNumber = ticketNumber;
         NetWeightKg = netWeightKg;
-        FirstWeightKg = firstWeightKg;
-        SecondWeightKg = secondWeightKg;
         VehicleRegistration = vehicleRegistration;
         TrailerRegistration = trailerRegistration;
         DriverName = driverName;
         Notes = notes;
         CreatedByOperatorId = createdByOperatorId;
+    }
+
+    public void UpdateWeights(decimal? firstWeightKg, decimal? secondWeightKg, decimal netWeightKg)
+    {
+        // FirstWeightKg and SecondWeightKg are stored on individual TicketSendingLine items, not on the ticket itself
+        NetWeightKg = netWeightKg;
+        UpdatedTime = DateTimeOffset.UtcNow;
     }
 
     public void AddLine(TicketSendingLine line)

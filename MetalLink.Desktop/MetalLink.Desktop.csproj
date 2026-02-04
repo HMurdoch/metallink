@@ -34,8 +34,6 @@
     <AvaloniaXaml Include="Views\\**\\*.axaml" />
   </ItemGroup> -->
 
-  <!-- ✅ Only assets need to be explicit.
-       App.axaml and Views\\**\\*.axaml are picked up automatically by Avalonia. -->
   <ItemGroup>
     <AvaloniaResource Include="Assets\\**" />
   </ItemGroup>

@@ -10,7 +10,10 @@ public sealed class TicketDto
 
     public string TicketNumber { get; set; } = string.Empty;
     public string TicketType { get; set; } = string.Empty;
+    public int TicketTypeId { get; set; }
+    public char TicketState { get; set; } = 'C';
 
+    public decimal? InitializeWeightKg { get; set; }
     public decimal? FirstWeightKg { get; set; }
     public decimal? SecondWeightKg { get; set; }
     public decimal NetWeightKg { get; set; }

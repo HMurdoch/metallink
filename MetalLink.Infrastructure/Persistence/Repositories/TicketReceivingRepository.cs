@@ -78,7 +78,7 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         {
             query = query.Where(t => 
                 t.TicketNumber.Contains(searchTerm) ||
-                (t.Customer != null && t.Customer.FullName.Contains(searchTerm)) ||
+                (t.Customer != null && ((!string.IsNullOrEmpty(t.Customer.FirstName) && t.Customer.FirstName.Contains(searchTerm)) || (!string.IsNullOrEmpty(t.Customer.LastName) && t.Customer.LastName.Contains(searchTerm)))) ||
                 (t.VehicleRegistration != null && t.VehicleRegistration.Contains(searchTerm)));
         }
 
@@ -140,7 +140,7 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         {
             query = query.Where(t => 
                 t.TicketNumber.Contains(searchTerm) ||
-                (t.Customer != null && t.Customer.FullName.Contains(searchTerm)) ||
+                (t.Customer != null && ((!string.IsNullOrEmpty(t.Customer.FirstName) && t.Customer.FirstName.Contains(searchTerm)) || (!string.IsNullOrEmpty(t.Customer.LastName) && t.Customer.LastName.Contains(searchTerm)))) ||
                 (t.VehicleRegistration != null && t.VehicleRegistration.Contains(searchTerm)));
         }
 

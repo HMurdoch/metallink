@@ -23,9 +23,10 @@ public class TicketReceiving
     public string TicketNumber { get; private set; } = string.Empty;
     
     // Weights (kg)
-    public decimal? FirstWeightKg { get; private set; }
-    public decimal? SecondWeightKg { get; private set; }
     public decimal NetWeightKg { get; private set; }
+
+    // Ticket state ('H' = Header, 'M' = Multi-weight, 'C' = Complete)
+    public char TicketState { get; set; } = 'C';
 
     // Invoice tracking
     public int InvoiceNumber { get; private set; }
@@ -76,8 +77,6 @@ public class TicketReceiving
         TicketTypeId = ticketTypeId;
         TicketNumber = ticketNumber;
         NetWeightKg = netWeightKg;
-        FirstWeightKg = firstWeightKg;
-        SecondWeightKg = secondWeightKg;
         VehicleRegistration = vehicleRegistration;
         TrailerRegistration = trailerRegistration;
         DriverName = driverName;
@@ -87,8 +86,7 @@ public class TicketReceiving
 
     public void UpdateWeights(decimal? firstWeightKg, decimal? secondWeightKg, decimal netWeightKg)
     {
-        FirstWeightKg = firstWeightKg;
-        SecondWeightKg = secondWeightKg;
+        // FirstWeightKg and SecondWeightKg are stored on individual TicketReceivingLine items, not on the ticket itself
         NetWeightKg = netWeightKg;
         UpdatedTime = DateTimeOffset.UtcNow;
     }

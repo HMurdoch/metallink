@@ -254,9 +254,13 @@ public sealed class TicketSendingService
         try
         {
             var result = await _apiClient.GetAsync<dynamic>($"api/tickets-sending/next-ticket-number/{ticketTypeId}");
-            if (result != null && result.ticketNumber != null)
+            if (result != null)
             {
-                return result.ticketNumber.ToString();
+                var ticketNumber = result.ticketNumber;
+                if (ticketNumber != null)
+                {
+                    return ticketNumber.ToString() ?? string.Empty;
+                }
             }
             return string.Empty;
         }

@@ -294,6 +294,7 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.TicketTypeId).HasColumnName("ticket_type_id").IsRequired();
         e.Property(x => x.TicketNumber).HasColumnName("ticket_number").HasMaxLength(100).IsRequired();
         e.Property(x => x.NetWeightKg).HasColumnName("net_weight_kg").IsRequired();
+        e.Property(x => x.TicketState).HasColumnName("ticket_state").HasMaxLength(1).HasDefaultValue('C');
         e.Property(x => x.DriverName).HasColumnName("driver_name");
         e.Property(x => x.VehicleRegistration).HasColumnName("vehicle_registration");
         e.Property(x => x.TrailerRegistration).HasColumnName("trailer_registration");
@@ -302,8 +303,6 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.CkNumber).HasColumnName("ck_number");
         e.Property(x => x.DeliveryNumber).HasColumnName("delivery_number");
         e.Property(x => x.ForeignTicket).HasColumnName("foreign_ticket");
-        e.Property(x => x.TicketState).HasColumnName("ticket_state").HasMaxLength(1).HasDefaultValue('C');
-        e.Property(x => x.InitializeWeightKg).HasColumnName("initialize_weight_kg");
         e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
@@ -348,8 +347,6 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.InvoiceNumber).HasColumnName("invoice_number");
         e.Property(x => x.TicketTypeId).HasColumnName("ticket_type_id").IsRequired();
         e.Property(x => x.TicketNumber).HasColumnName("ticket_number").HasMaxLength(100).IsRequired();
-        e.Property(x => x.FirstWeightKg).HasColumnName("first_weight_kg");
-        e.Property(x => x.SecondWeightKg).HasColumnName("second_weight_kg");
         e.Property(x => x.NetWeightKg).HasColumnName("net_weight_kg").IsRequired();
         e.Property(x => x.DriverName).HasColumnName("driver_name");
         e.Property(x => x.VehicleRegistration).HasColumnName("vehicle_registration");
@@ -359,8 +356,6 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.CkNumber).HasColumnName("ck_number");
         e.Property(x => x.DeliveryNumber).HasColumnName("delivery_number");
         e.Property(x => x.ForeignTicket).HasColumnName("foreign_ticket");
-        e.Property(x => x.TicketState).HasColumnName("ticket_state").HasMaxLength(1).HasDefaultValue('C');
-        e.Property(x => x.InitializeWeight).HasColumnName("initialize_weight");
         e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");

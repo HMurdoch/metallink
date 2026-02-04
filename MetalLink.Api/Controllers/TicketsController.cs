@@ -120,7 +120,8 @@ public class TicketsController : ControllerBase
                 var calculatedWeight = receivingTicket.Lines?.Sum(l => l.NetWeightKg) ?? 0m;
                 if (calculatedWeight != receivingTicket.NetWeightKg && calculatedWeight > 0)
                 {
-                    receivingTicket.RecalculateNetWeightFromLines();
+                    var firstLine = receivingTicket.Lines?.FirstOrDefault();
+                    receivingTicket.UpdateWeights(firstLine?.FirstWeightKg, firstLine?.SecondWeightKg, calculatedWeight);
                     await _receivingRepo.UpdateAsync(receivingTicket);
                     await _unitOfWork.SaveChangesAsync();
                 }
@@ -157,8 +158,10 @@ public class TicketsController : ControllerBase
             UnitPricePerKg = 0m, // Receiving tickets don't have unit price
             Notes = ticket.Notes,
             CreatedTime = ticket.CreatedTime,
-            TicketState = ticket.TicketState,
-            InitializeWeightKg = ticket.InitializeWeightKg,
+            // TODO: TicketState - not yet implemented on entity
+            // TicketState = ticket.TicketState,
+            // TODO: InitializeWeightKg - not yet implemented on entity
+            // InitializeWeightKg = ticket.InitializeWeightKg,
             VehicleRegistration = ticket.VehicleRegistration,
             TrailerRegistration = ticket.TrailerRegistration,
             DriverName = ticket.DriverName,
@@ -210,7 +213,9 @@ public class TicketsController : ControllerBase
                 line.SoftDelete();
 
                 // Recalculate ticket net weight (sum of active lines only)
-                receivingTicket.RecalculateNetWeightFromLines();
+                var activeLineWeight = receivingTicket.Lines?.Where(l => l.IsActive).Sum(l => l.NetWeightKg) ?? 0m;
+                var firstActiveLine = receivingTicket.Lines?.FirstOrDefault(l => l.IsActive);
+                receivingTicket.UpdateWeights(firstActiveLine?.FirstWeightKg, firstActiveLine?.SecondWeightKg, activeLineWeight);
 
                 await _receivingRepo.UpdateAsync(receivingTicket);
                 await _unitOfWork.SaveChangesAsync();
@@ -230,7 +235,8 @@ public class TicketsController : ControllerBase
                 line.SoftDelete();
 
                 // Recalculate ticket net weight (sum of active lines only)
-                sendingTicket.RecalculateNetWeightFromLines();
+                var activeLineWeight = sendingTicket.Lines?.Where(l => l.IsActive).Sum(l => l.NetWeightKg) ?? 0m;
+                sendingTicket.UpdateWeights(null, null, activeLineWeight);
 
                 await _sendingRepo.UpdateAsync(sendingTicket);
                 await _unitOfWork.SaveChangesAsync();
