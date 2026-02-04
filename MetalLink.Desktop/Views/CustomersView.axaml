@@ -88,6 +88,17 @@
       <Setter Property="Background" Value="#303B82F6" />
     </Style>
 
+    <!-- Fade-in animation for animated data grid rows -->
+    <Style Selector="local|AnimatedDataGrid DataGridRow">
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions>
+            <DoubleTransition Property="Opacity" Duration="0:0:0.5" />
+          </Transitions>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
     <!-- Row action buttons in the results grid -->
     <Style Selector="Button.row-action">
       <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
@@ -355,7 +366,7 @@
               <!-- Left Column: Results -->
               <StackPanel Grid.Column="0" Spacing="8">
                 <TextBlock Text="Customer Search Results" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" />
-                <DataGrid
+                <local:AnimatedDataGrid
                     AutoGenerateColumns="False"
                     ItemsSource="{Binding PagedCustomerSearchResults}"
                     SelectedItem="{Binding FoundCustomer, Mode=TwoWay}">
@@ -398,7 +409,7 @@
                       </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                   </DataGrid.Columns>
-                </DataGrid>
+                </local:AnimatedDataGrid>
                 
                 <!-- Pagination Control -->
                 <local:PaginationControl DataContext="{Binding PaginationViewModel}" />
