@@ -53,10 +53,14 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand SearchCustomerCommand { get; }
     public ICommand CreateCustomerCommand { get; }
     public ICommand CreateTicketCommand { get; }
+    public ICommand FinalizeTicketCommand { get; }
     public ICommand AddReceivingLineCommand { get; }
     public ICommand RemoveReceivingLineCommand { get; }
     public ICommand ReadWeighbridgeCommand { get; }
+    public ICommand ReadWeighbridgeSecondCommand { get; }
     public ICommand ReadPlatformCommand { get; }
+    public ICommand ResetWeighbridgeWeightsCommand { get; }
+    public ICommand ResetPlatformWeightCommand { get; }
     public ICommand LoadCustomerDocumentsCommand { get; }
     public ICommand UploadCustomerDocumentCommand { get; }
 
@@ -98,6 +102,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand ClearReceivingTicketSearchCommand { get; }
     public ICommand DeleteReceivingTicketCommand { get; }
     public ICommand PrintReceivingTicketCommand { get; }
+    public ICommand ShowLineNotesCommand { get; }
+    public ICommand CloseLineNotesCommand { get; }
     
     // Sending ticket search commands
     public ICommand SearchSendingTicketsCommand { get; }
@@ -130,6 +136,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand ClearSearchCommand { get; }
     public ICommand PrintTicketCommand { get; }
     public ICommand ScrollToAddLinesCommand { get; }
+    public ICommand CreateTicketHeaderCommand { get; }
     public ICommand SaveEditedTicketLineCommand { get; }
     public ICommand CancelEditTicketLineCommand { get; }
 
@@ -201,10 +208,14 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         SearchCustomerCommand = new AsyncCommand(SearchCustomerAsync);
         CreateCustomerCommand = new AsyncCommand(CreateCustomerAsync);
         CreateTicketCommand = new AsyncCommand(CreateTicketAsync);
+        FinalizeTicketCommand = new AsyncCommand(FinalizeTicketAsync);
         AddReceivingLineCommand = new AsyncCommand(AddReceivingLineAsync);
         RemoveReceivingLineCommand = new AsyncRelayCommand<ReceivingLineItem?>(RemoveReceivingLineAsync);
         ReadWeighbridgeCommand = new AsyncCommand(ReadWeighbridgeAsync);
+        ReadWeighbridgeSecondCommand = new AsyncCommand(ReadWeighbridgeSecondAsync);
         ReadPlatformCommand = new AsyncCommand(ReadPlatformAsync);
+        ResetWeighbridgeWeightsCommand = new RelayCommand(ResetWeighbridgeWeights);
+        ResetPlatformWeightCommand = new RelayCommand(ResetPlatformWeight);
         LoadCustomerDocumentsCommand = new AsyncCommand(LoadCustomerDocumentsAsync);
         UploadCustomerDocumentCommand = new AsyncCommand(UploadCustomerDocumentAsync);
 
@@ -283,6 +294,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         ClearReceivingTicketSearchCommand = new RelayCommand(ClearReceivingTicketSearch);
         DeleteReceivingTicketCommand = new AsyncRelayCommand<TicketSearchResultDto?>(DeleteReceivingTicketAsync);
         PrintReceivingTicketCommand = new AsyncCommand(PrintReceivingTicketAsync);
+        ShowLineNotesCommand = new RelayCommand<string>(ShowLineNotes);
+        CloseLineNotesCommand = new RelayCommand(CloseLineNotes);
         
         // Sending ticket search commands
         SearchSendingTicketsCommand = new AsyncCommand(SearchSendingTicketsAsync);
@@ -310,6 +323,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         ClearSearchCommand = new RelayCommand(ClearTicketSearch);
         PrintTicketCommand = new AsyncCommand(PrintTicketAsync);
         ScrollToAddLinesCommand = new RelayCommand(ScrollToAddLines);
+        CreateTicketHeaderCommand = new AsyncCommand(CreateTicketHeaderAsync);
         SaveEditedTicketLineCommand = new AsyncCommand(SaveEditedTicketLineAsync);
         CancelEditTicketLineCommand = new RelayCommand(CancelEditTicketLine);
 
@@ -495,8 +509,128 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     private void ScrollToAddLines()
     {
         // TODO: Implement actual scrolling - requires view interaction
-        // For now, just provide user feedback
         StatusMessage = "Please scroll down to the 'Add Product Lines' section to add line items";
+    }
+
+    private async Task CreateTicketHeaderAsync()
+    {
+        // If ticket status is 'H', this button is "Save & Reset" - clear and reset
+        if (CurrentTicketState == 'H')
+        {
+            await SaveAndResetTicketAsync();
+            return;
+        }
+
+        // Otherwise, create a new ticket header
+        // Validate that customer ID is set
+        if (string.IsNullOrWhiteSpace(TicketCustomerIdText))
+        {
+            StatusMessage = "Please select a customer before creating the ticket header.";
+            return;
+        }
+
+        // For Weighbridge tickets, First Weight is required
+        if (SelectedTicketTypeOption?.Key == "weighbridge")
+        {
+            if (string.IsNullOrWhiteSpace(TicketFirstWeightText) || TicketFirstWeightText == "0")
+            {
+                StatusMessage = "For Weighbridge tickets, First Weight must be set before creating the header.";
+                return;
+            }
+        }
+
+        if (IsBusy) return;
+        IsBusy = true;
+        StatusMessage = "Creating ticket header...";
+
+        try
+        {
+            // Create a NEW ticket with state 'H' (Header only)
+            // This is an INSERT operation, not an UPDATE
+            int ticketTypeId = SelectedTicketTypeOption?.Key == "weighbridge" ? 1 : 2;
+            
+            // Generate ticket number
+            string prefix = ticketTypeId == 1 ? "RWB" : "RPL";
+            string ticketNumber = await _ticketReceivingService.GenerateTicketNumberAsync(prefix);
+            
+            // Parse initialize weight for weighbridge
+            decimal? initializeWeight = null;
+            if (SelectedTicketTypeOption?.Key == "weighbridge" && 
+                decimal.TryParse(NormalizeDecimalText(TicketFirstWeightText), out var firstWeight))
+            {
+                initializeWeight = firstWeight;
+            }
+
+            // Extract customer ID
+            long customerId = ExtractCustomerIdFromText(TicketCustomerIdText);
+            if (customerId <= 0)
+            {
+                StatusMessage = "Invalid customer ID.";
+                return;
+            }
+
+            // Create a NEW receiving ticket with state 'H' in a single INSERT
+            bool isWeighbridgeTicket = ticketTypeId == 1;
+            var createTicketDto = new CreateTicketReceivingDto
+            {
+                TicketTypeId = ticketTypeId,
+                TicketNumber = ticketNumber,
+                CustomerId = (int)customerId,
+                CreatedByOperatorId = 1,  // TODO: Get from authenticated user context
+                TicketState = 'H',  // Create directly with state 'H' (Header only)
+                InitializeWeightKg = initializeWeight,
+                NetWeightKg = 0m,  // No weight yet, will be calculated from lines
+                VehicleRegistration = isWeighbridgeTicket ? TicketVehicleRegistration : null,
+                TrailerRegistration = isWeighbridgeTicket ? TicketTrailerRegistration : null,
+                DriverName = isWeighbridgeTicket ? TicketDriverName : null,
+                Notes = TicketNotes,
+                InvoiceNumber = 0  // Will be set later if needed
+            };
+
+            // Call API to create the ticket with state 'H' in a single INSERT
+            var response = await _ticketReceivingService.CreateTicketAsync(createTicketDto);
+            
+            if (response == null || response.TicketReceivingId <= 0)
+            {
+                StatusMessage = "Failed to create ticket header.";
+                return;
+            }
+
+            // Store the created ticket
+            LastCreatedTicket = new TicketDto
+            {
+                TicketId = response.TicketReceivingId,
+                CustomerId = response.CustomerId,
+                TicketNumber = response.TicketNumber,
+                TicketType = response.TicketTypeName,
+                TicketTypeId = response.TicketTypeId,
+                NetWeightKg = response.NetWeightKg,
+                TicketState = response.TicketState,
+                InitializeWeightKg = response.InitializeWeightKg
+            };
+
+            CurrentTicketState = 'H';
+            StatusMessage = "Ticket header created successfully! You can now add line items.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error creating ticket header: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task SaveAndResetTicketAsync()
+    {
+        // Clear Details and Create sections but keep Search and Results
+        await ClearTicketAsync();
+        
+        // Reset button state to 'C' so next ticket creation shows "Create Header"
+        CurrentTicketState = 'C';
+        
+        StatusMessage = "✓ Ticket cleared. Ready for new ticket.";
     }
 
     private async Task<bool> ConfirmAsync(string message)
@@ -619,6 +753,12 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
                     CustomerSearchResults.Add(c);
             }
 
+            // Update pagination with total records
+            PaginationViewModel.SetTotalRecords(CustomerSearchResults.Count);
+            PaginationViewModel.PageChanged -= OnPaginationPageChanged;
+            PaginationViewModel.PageChanged += OnPaginationPageChanged;
+            UpdatePagedResults();
+
             if (CustomerSearchResults.Count == 0)
             {
                 StatusMessage = "No customers found.";
@@ -627,7 +767,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             else
             {
                 StatusMessage = $"Found {CustomerSearchResults.Count} customer(s).";
-                FoundCustomer = CustomerSearchResults[0];
+                FoundCustomer = PagedCustomerSearchResults.Count > 0 ? PagedCustomerSearchResults[0] : CustomerSearchResults[0];
             }
         }
         catch (HttpRequestException ex)
@@ -820,7 +960,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     {
         if (IsBusy) return;
         IsBusy = true;
-        StatusMessage = "Reading weighbridge...";
+        StatusMessage = "Reading weighbridge first weight...";
 
         try
         {
@@ -831,15 +971,57 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(TicketFirstWeightText))
+            TicketFirstWeightText = reading.WeightKg.ToString("0.0");
+            StatusMessage = $"Weighbridge first weight: {reading.WeightKg:0.0} kg.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error reading weighbridge: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ReadWeighbridgeSecondAsync()
+    {
+        if (IsBusy) return;
+        IsBusy = true;
+        StatusMessage = "Reading weighbridge second weight...";
+
+        try
+        {
+            var reading = await _scaleService.ReadOnceAsync(ScaleDeviceType.Weighbridge);
+            if (reading == null)
             {
-                TicketFirstWeightText = reading.WeightKg.ToString("0.0");
-                StatusMessage = $"Weighbridge first weight: {reading.WeightKg:0.0} kg.";
+                StatusMessage = "No reading from weighbridge.";
+                return;
+            }
+
+            // Parse first weight to calculate net weight
+            if (decimal.TryParse(NormalizeDecimalText(TicketFirstWeightText), out var firstWeight))
+            {
+                // VALIDATION: Second weight must be LESS than First Weight
+                // (Scrap/load has been offloaded, so the vehicle must be lighter)
+                if (reading.WeightKg >= firstWeight)
+                {
+                    StatusMessage = $"Error: Second Weight ({reading.WeightKg:0.0} kg) must be LESS than First Weight ({firstWeight:0.0} kg). No scrap was offloaded!";
+                    return;
+                }
+
+                // Second weight is the vehicle weight after offloading
+                TicketSecondWeightText = reading.WeightKg.ToString("0.0");
+                
+                // Calculate net weight: First Weight (gross) - Second Weight (tare) = Net Weight
+                var netWeight = firstWeight - reading.WeightKg;
+                ReceivingWeightText = netWeight.ToString("0.00");
+                
+                StatusMessage = $"Weighbridge second weight: {reading.WeightKg:0.0} kg. Net weight: {netWeight:0.00} kg.";
             }
             else
             {
-                TicketSecondWeightText = reading.WeightKg.ToString("0.0");
-                StatusMessage = $"Weighbridge second weight: {reading.WeightKg:0.0} kg.";
+                StatusMessage = "Please read First Weight before reading Second Weight.";
             }
         }
         catch (Exception ex)
@@ -867,8 +1049,15 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
                 return;
             }
 
-            TicketFirstWeightText = reading.WeightKg.ToString("0.0");
-            StatusMessage = $"Platform weight: {reading.WeightKg:0.0} kg.";
+            // For platform, generate random weight between 10 and 250
+            var random = new Random();
+            var randomWeight = random.Next(10, 251);
+            TicketPlatformWeightText = randomWeight.ToString("0.0");
+            
+            // Populate the receiving weight textbox with the platform weight
+            ReceivingWeightText = randomWeight.ToString("0.00");
+            
+            StatusMessage = $"Platform weight: {randomWeight:0.0} kg.";
         }
         catch (Exception ex)
         {
@@ -878,6 +1067,21 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         {
             IsBusy = false;
         }
+    }
+
+    private void ResetWeighbridgeWeights()
+    {
+        TicketFirstWeightText = "0";
+        TicketSecondWeightText = "0";
+        ReceivingWeightText = string.Empty;
+        StatusMessage = "Weighbridge weights reset to 0.";
+    }
+
+    private void ResetPlatformWeight()
+    {
+        TicketPlatformWeightText = "0";
+        ReceivingWeightText = string.Empty;
+        StatusMessage = "Platform weight reset to 0.";
     }
 
     // --- Documents ---
@@ -1312,5 +1516,42 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         public int companiesCount { get; set; }
         public int sitesCount { get; set; }
         public int productsCount { get; set; }
+    }
+
+    // --- Pagination ---
+    public PaginationViewModel PaginationViewModel { get; } = new();
+
+    private ObservableCollection<CustomerDto> _pagedCustomerSearchResults = new();
+    public ObservableCollection<CustomerDto> PagedCustomerSearchResults
+    {
+        get => _pagedCustomerSearchResults;
+        private set
+        {
+            if (_pagedCustomerSearchResults == value) return;
+            _pagedCustomerSearchResults = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private void InitializePagination()
+    {
+        PaginationViewModel.PageChanged += OnPaginationPageChanged;
+    }
+
+    private void UpdatePagedResults()
+    {
+        PagedCustomerSearchResults.Clear();
+        var skip = PaginationViewModel.GetSkip();
+        var take = PaginationViewModel.GetTake();
+        var paged = CustomerSearchResults.Skip(skip).Take(take).ToList();
+        foreach (var item in paged)
+        {
+            PagedCustomerSearchResults.Add(item);
+        }
+    }
+
+    private void OnPaginationPageChanged(object? sender, EventArgs e)
+    {
+        UpdatePagedResults();
     }
 }
