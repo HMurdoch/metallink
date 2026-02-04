@@ -45,6 +45,29 @@ public partial class MainWindowViewModel
         NewEmail = customer.Email ?? string.Empty;
 
         // -----------------------
+        // Company and Site
+        // -----------------------
+        NewIsCompany = customer.IsCompany;
+        SelectedNewCompanyLetter = "ALL";
+        ApplyNewCompanyLetterFilter(); // Populate NewCompanySuggestions with all companies
+        
+        // Set selected company and site based on customer data
+        if (customer.CompanyId.HasValue && NewCompanySuggestions != null)
+        {
+            SelectedNewCompany = NewCompanySuggestions.FirstOrDefault(c => c.CompanyId == customer.CompanyId.Value);
+            
+            if (customer.SiteId.HasValue && NewSiteSuggestions != null)
+            {
+                SelectedNewSite = NewSiteSuggestions.FirstOrDefault(s => s.SiteId == customer.SiteId.Value);
+            }
+        }
+
+        // -----------------------
+        // Load customer images
+        // -----------------------
+        _ = LoadCustomerImagesAsync(customer.CustomerId);
+
+        // -----------------------
         // Company / site mode
         // -----------------------
         NewIsCompany = customer.IsCompany
@@ -138,7 +161,8 @@ public partial class MainWindowViewModel
         if (IsBusy)
             return;
 
-        var ok = await ConfirmAsync($"Are you sure you want to delete - {customer.FirstName} {customer.LastName} ?");
+        var message = $"Are you sure you want to delete customer:\n\n{customer.CustomerId} | {customer.FirstName} {customer.LastName} | {customer.Email}";
+        var ok = await ConfirmAsync(message);
         if (!ok)
             return;
 
@@ -150,11 +174,15 @@ public partial class MainWindowViewModel
             await _customerService.SoftDeleteCustomerAsync(customer.CustomerId);
 
             CustomerSearchResults.Remove(customer);
+            PagedCustomerSearchResults.Remove(customer);
 
             if (FoundCustomer?.CustomerId == customer.CustomerId)
             {
                 FoundCustomer = null;
             }
+
+            // Update pagination total records
+            PaginationViewModel.SetTotalRecords(CustomerSearchResults.Count);
 
             // If we were editing this customer, reset the form
             if (EditingCustomerId == customer.CustomerId)
@@ -206,7 +234,8 @@ public partial class MainWindowViewModel
         NewPostalCode = string.Empty;
 
         NewIsCompany = false;
-        SelectedCompanyLetter = "ALL";
+        SelectedNewCompanyLetter = "ALL";
+        ApplyNewCompanyLetterFilter(); // Populate NewCompanySuggestions
         SelectedNewCompany = null;
         NewSiteSuggestions.Clear();
         SelectedNewSite = null;
@@ -289,11 +318,10 @@ public partial class MainWindowViewModel
             Taxable = NewTaxable,
             IsCompany = NewIsCompany,
 
-            // We KNOW these are non-null if NewIsCompany is true
-            // because of the validation above.
+            // Keep company and site as-is, only update IsCompany flag
             CompanyId = SelectedNewCompany != null
                 ? (int?)SelectedNewCompany.CompanyId
-                : null, // will be null for non-company customers
+                : null,
 
             SiteId = SelectedNewSite != null
                 ? (int?)SelectedNewSite.SiteId
@@ -589,6 +617,13 @@ public partial class MainWindowViewModel
         }
     }
 
+    private async Task LoadCustomerImagesAsync(long customerId)
+    {
+        // Fetch the customer DTO and load their images
+        var customer = await _customerService.GetCustomerByIdAsync(customerId);
+        await LoadSelectedCustomerImagesAsync(customer);
+    }
+
     private async Task LoadSelectedCustomerImagesAsync(CustomerDto? customer)
     {
         Console.WriteLine($"[DEBUG] LoadSelectedCustomerImagesAsync called for customer {customer?.CustomerId}");
@@ -618,7 +653,9 @@ public partial class MainWindowViewModel
                 Console.WriteLine($"[DEBUG] ID card image data: {imageData?.Length ?? 0} bytes");
                 if (imageData != null)
                 {
-                    SelectedIdCardImage = LoadBitmapFromBytes(imageData);
+                    var bitmap = LoadBitmapFromBytes(imageData);
+                    SelectedIdCardImage = bitmap;
+                    IdCardImage = bitmap; // Also populate Create section
                     Console.WriteLine($"[DEBUG] ID card bitmap loaded: {SelectedIdCardImage != null}");
                 }
             }
@@ -631,7 +668,9 @@ public partial class MainWindowViewModel
                 Console.WriteLine($"[DEBUG] Driver license image data: {imageData?.Length ?? 0} bytes");
                 if (imageData != null)
                 {
-                    SelectedDriverLicenseImage = LoadBitmapFromBytes(imageData);
+                    var bitmap = LoadBitmapFromBytes(imageData);
+                    SelectedDriverLicenseImage = bitmap;
+                    DriverLicenseImage = bitmap; // Also populate Create section
                     Console.WriteLine($"[DEBUG] Driver license bitmap loaded: {SelectedDriverLicenseImage != null}");
                 }
             }
@@ -644,7 +683,9 @@ public partial class MainWindowViewModel
                 Console.WriteLine($"[DEBUG] Photo image data: {imageData?.Length ?? 0} bytes");
                 if (imageData != null)
                 {
-                    SelectedPhotoImage = LoadBitmapFromBytes(imageData);
+                    var bitmap = LoadBitmapFromBytes(imageData);
+                    SelectedPhotoImage = bitmap;
+                    PhotoImage = bitmap; // Also populate Create section
                     Console.WriteLine($"[DEBUG] Photo bitmap loaded: {SelectedPhotoImage != null}");
                 }
             }
@@ -657,7 +698,9 @@ public partial class MainWindowViewModel
                 Console.WriteLine($"[DEBUG] Signature image data: {imageData?.Length ?? 0} bytes");
                 if (imageData != null)
                 {
-                    SelectedSignatureImage = LoadBitmapFromBytes(imageData);
+                    var bitmap = LoadBitmapFromBytes(imageData);
+                    SelectedSignatureImage = bitmap;
+                    SignatureImage = bitmap; // Also populate Create section
                     Console.WriteLine($"[DEBUG] Signature bitmap loaded: {SelectedSignatureImage != null}");
                 }
             }
@@ -670,7 +713,9 @@ public partial class MainWindowViewModel
                 Console.WriteLine($"[DEBUG] Fingerprint image data: {imageData?.Length ?? 0} bytes");
                 if (imageData != null)
                 {
-                    SelectedFingerprintImage = LoadBitmapFromBytes(imageData);
+                    var bitmap = LoadBitmapFromBytes(imageData);
+                    SelectedFingerprintImage = bitmap;
+                    FingerprintImage = bitmap; // Also populate Create section
                     Console.WriteLine($"[DEBUG] Fingerprint bitmap loaded: {SelectedFingerprintImage != null}");
                 }
             }
