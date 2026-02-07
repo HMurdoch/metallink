@@ -316,25 +316,38 @@ public class TicketsReceivingController : ControllerBase
         }
     }
 
-    [HttpPut("{id}/ticket-state")]
+    [HttpPut("{id}/state")]
     public async Task<ActionResult> UpdateTicketStateAsync(long id, [FromBody] UpdateTicketStateRequest request, CancellationToken ct = default)
     {
         try
         {
+            Console.WriteLine($"[DEBUG API] UpdateTicketStateAsync called: id={id}, newState={request.TicketState}");
+            
             var ticket = await _ticketReceivingRepo.GetByIdAsync(id);
             if (ticket == null)
+            {
+                Console.WriteLine($"[DEBUG API] Ticket not found with id={id}");
                 return NotFound("Ticket not found");
+            }
 
+            Console.WriteLine($"[DEBUG API] Found ticket with id={id}, current state={ticket.TicketState}");
+            
             // Update the ticket state
             ticket.TicketState = request.TicketState;
+            Console.WriteLine($"[DEBUG API] Updated ticket state to '{request.TicketState}'");
             
             await _ticketReceivingRepo.UpdateAsync(ticket);
+            Console.WriteLine($"[DEBUG API] Ticket updated in repository");
+            
             await _unitOfWork.SaveChangesAsync(ct);
+            Console.WriteLine($"[DEBUG API] Changes saved successfully");
 
             return Ok(new { message = $"Ticket state updated to '{request.TicketState}'" });
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[DEBUG API] Exception occurred: {ex.Message}");
+            Console.WriteLine($"[DEBUG API] Stack trace: {ex.StackTrace}");
             return StatusCode(500, new { error = ex.Message });
         }
     }

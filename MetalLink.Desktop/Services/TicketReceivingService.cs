@@ -298,15 +298,31 @@ public sealed class TicketReceivingService
         try
         {
             var updateDto = new { TicketState = newState };
+            Console.WriteLine($"[DEBUG UpdateTicketState] Sending request: ticketId={ticketReceivingId}, newState={newState}");
             var result = await _apiClient.PutAsJsonAsync(
                 $"api/tickets-receiving/{ticketReceivingId}/state",
                 updateDto,
                 cancellationToken
             );
+            
+            Console.WriteLine($"[DEBUG UpdateTicketState] Response status: {result.StatusCode}");
+            
+            if (!result.IsSuccessStatusCode)
+            {
+                var errorContent = await result.Content.ReadAsStringAsync(cancellationToken);
+                Console.WriteLine($"[DEBUG UpdateTicketState] Error response: {errorContent}");
+            }
+            else
+            {
+                Console.WriteLine($"[DEBUG UpdateTicketState] Success!");
+            }
+            
             return result.IsSuccessStatusCode;
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[DEBUG UpdateTicketState] Exception: {ex.Message}");
+            Console.WriteLine($"[DEBUG UpdateTicketState] Stack trace: {ex.StackTrace}");
             return false;
         }
     }
