@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using MetalLink.Shared.Tickets;
 
@@ -22,7 +23,12 @@ public partial class MainWindowViewModel
     public string TicketNumber
     {
         get => _ticketNumber;
-        set { _ticketNumber = value; OnPropertyChanged(); }
+        set 
+        { 
+            Console.WriteLine($"[DEBUG] TicketNumber setter: OLD='{_ticketNumber}' -> NEW='{value}'");
+            _ticketNumber = value; 
+            OnPropertyChanged(); 
+        }
     }
 
     private string _ticketType = "weighbridge";
@@ -197,6 +203,14 @@ public partial class MainWindowViewModel
     {
         get => _isViewingTicketOnly;
         set { _isViewingTicketOnly = value; OnPropertyChanged(); }
+    }
+    
+    // Flag to prevent ticket number generation when loading an existing ticket
+    private bool _isLoadingExistingTicket = false;
+    public bool IsLoadingExistingTicket
+    {
+        get => _isLoadingExistingTicket;
+        set { _isLoadingExistingTicket = value; }
     }
 
     public bool IsViewingPlatformTicket => IsViewingTicketOnly && SelectedTicketTypeOption?.Key == "platform";

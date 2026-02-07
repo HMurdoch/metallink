@@ -24,6 +24,7 @@ public class TicketReceiving
     
     // Weights (kg)
     public decimal NetWeightKg { get; private set; }
+    public decimal? InitializeWeightKg { get; set; } // First Weight value when ticket is created in 'H' state
 
     // Ticket state ('H' = Header, 'M' = Multi-weight, 'C' = Complete)
     public char TicketState { get; set; } = 'C';
@@ -37,10 +38,10 @@ public class TicketReceiving
     public string? DriverName { get; private set; }
 
     // Reference numbers
-    public string? OfmWeighbridgeTicket { get; private set; }
-    public string? ForeignTicket { get; private set; }
-    public string? CkNumber { get; private set; }
-    public string? DeliveryNumber { get; private set; }
+    public string? OfmWeighbridgeTicket { get; set; }
+    public string? ForeignTicket { get; set; }
+    public string? CkNumber { get; set; }
+    public string? DeliveryNumber { get; set; }
 
     // Additional information
     public string? Notes { get; private set; }

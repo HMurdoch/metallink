@@ -166,10 +166,18 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             Console.WriteLine($"[DEBUG] CreateHeaderButtonVisible: {CreateHeaderButtonVisible}");
             Console.WriteLine($"[DEBUG] SaveResetButtonVisible: {SaveResetButtonVisible}");
             Console.WriteLine($"[DEBUG] AddLineButtonEnabled: {AddLineButtonEnabled}");
+            Console.WriteLine($"[DEBUG] IsFinalizeTicketEnabled: {IsFinalizeTicketEnabled}");
+            Console.WriteLine($"[DEBUG] FirstWeightReadResetEnabled: {FirstWeightReadResetEnabled}");
+            Console.WriteLine($"[DEBUG] SecondWeightReadResetEnabled: {SecondWeightReadResetEnabled}");
             OnPropertyChanged();
             OnPropertyChanged(nameof(CreateHeaderButtonVisible));
             OnPropertyChanged(nameof(SaveResetButtonVisible));
             OnPropertyChanged(nameof(AddLineButtonEnabled));
+            OnPropertyChanged(nameof(IsFinalizeTicketEnabled));
+            OnPropertyChanged(nameof(FirstWeightReadResetEnabled));
+            OnPropertyChanged(nameof(SecondWeightReadResetEnabled));
+            OnPropertyChanged(nameof(AreFirstWeightButtonsEnabled));
+            OnPropertyChanged(nameof(AreSecondWeightButtonsEnabled));
         }
     }
 
@@ -179,7 +187,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         get
         {
             var visible = CurrentTicketState == 'C';
-            Console.WriteLine($"[DEBUG] CreateHeaderButtonVisible getter called: state={CurrentTicketState}, visible={visible}");
+            Console.WriteLine($"[DEBUG GETTER] CreateHeaderButtonVisible: CurrentTicketState='{CurrentTicketState}', ('{CurrentTicketState}' == 'C') = {visible}");
             return visible;
         }
     }
@@ -189,7 +197,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         get
         {
             var visible = CurrentTicketState == 'H' || CurrentTicketState == 'M';
-            Console.WriteLine($"[DEBUG] SaveResetButtonVisible getter called: state={CurrentTicketState}, visible={visible}");
+            Console.WriteLine($"[DEBUG GETTER] SaveResetButtonVisible: CurrentTicketState='{CurrentTicketState}', ('{CurrentTicketState}' == 'H' || '{CurrentTicketState}' == 'M') = {visible}");
             return visible;
         }
     }
@@ -204,11 +212,109 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         }
     }
 
-    public string? TicketTrailerRegistration { get; set; }
-    public string? TicketDriverName { get; set; }
-    public string? TicketPlatformWeightText { get; set; }
-    public bool IsFinalizeTicketEnabled { get; set; } = true;
-    public bool ShouldShowTicketDetails { get; set; } = true;
+    // First Weight button enabled - only when ticket state is 'C' (not yet created)
+    public bool FirstWeightReadResetEnabled
+    {
+        get
+        {
+            var enabled = CurrentTicketState == 'C';
+            Console.WriteLine($"[DEBUG] FirstWeightReadResetEnabled getter called: state={CurrentTicketState}, enabled={enabled}");
+            return enabled;
+        }
+    }
+
+    // Second Weight button enabled - only when ticket state is 'H' or 'M' (ticket created)
+    public bool SecondWeightReadResetEnabled
+    {
+        get
+        {
+            var enabled = CurrentTicketState == 'H' || CurrentTicketState == 'M';
+            Console.WriteLine($"[DEBUG] SecondWeightReadResetEnabled getter called: state={CurrentTicketState}, enabled={enabled}");
+            return enabled;
+        }
+    }
+
+    // Aliases for XAML bindings - First Weight buttons enabled when state is 'C'
+    public bool AreFirstWeightButtonsEnabled => FirstWeightReadResetEnabled;
+
+    // Aliases for XAML bindings - Second Weight buttons enabled when state is 'H' or 'M'
+    public bool AreSecondWeightButtonsEnabled => SecondWeightReadResetEnabled;
+
+    public bool IsFinalizeTicketEnabled
+    {
+        get
+        {
+            var enabled = CurrentTicketState == 'H' || CurrentTicketState == 'M';
+            Console.WriteLine($"[DEBUG] IsFinalizeTicketEnabled getter called: state={CurrentTicketState}, enabled={enabled}");
+            return enabled;
+        }
+    }
+
+    private string? _ticketTrailerRegistration;
+    public string? TicketTrailerRegistration
+    {
+        get => _ticketTrailerRegistration;
+        set
+        {
+            if (_ticketTrailerRegistration != value)
+            {
+                _ticketTrailerRegistration = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private string? _ticketDriverName;
+    public string? TicketDriverName
+    {
+        get => _ticketDriverName;
+        set
+        {
+            if (_ticketDriverName != value)
+            {
+                _ticketDriverName = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private string? _ticketDeliveryNumber;
+    public string? TicketDeliveryNumber
+    {
+        get => _ticketDeliveryNumber;
+        set
+        {
+            if (_ticketDeliveryNumber != value)
+            {
+                _ticketDeliveryNumber = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private string? _ticketPlatformWeightText;
+    public string? TicketPlatformWeightText
+    {
+        get => _ticketPlatformWeightText;
+        set
+        {
+            if (_ticketPlatformWeightText != value)
+            {
+                _ticketPlatformWeightText = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+    // Show ticket details only if NOT searching for new customers AND a ticket is selected
+    public bool ShouldShowTicketDetails
+    {
+        get
+        {
+            var show = !SearchReceivingNewCustomersCheckbox && HasSelectedReceivingTicket;
+            Console.WriteLine($"[DEBUG] ShouldShowTicketDetails: SearchReceivingNewCustomersCheckbox={SearchReceivingNewCustomersCheckbox}, HasSelectedReceivingTicket={HasSelectedReceivingTicket}, show={show}");
+            return show;
+        }
+    }
 
     public MainWindowViewModel(App app)
     {
@@ -611,10 +717,21 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             
             // Parse initialize weight for weighbridge
             decimal? initializeWeight = null;
-            if (SelectedTicketTypeOption?.Key == "weighbridge" && 
-                decimal.TryParse(NormalizeDecimalText(TicketFirstWeightText), out var firstWeight))
+            if (SelectedTicketTypeOption?.Key == "weighbridge")
             {
-                initializeWeight = firstWeight;
+                if (decimal.TryParse(NormalizeDecimalText(TicketFirstWeightText), out var firstWeight))
+                {
+                    initializeWeight = firstWeight;
+                    Console.WriteLine($"[DEBUG] CreateTicketHeaderAsync: Weighbridge ticket, initializeWeight={initializeWeight}, TicketFirstWeightText={TicketFirstWeightText}");
+                }
+                else
+                {
+                    Console.WriteLine($"[DEBUG] CreateTicketHeaderAsync: Failed to parse TicketFirstWeightText='{TicketFirstWeightText}'");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"[DEBUG] CreateTicketHeaderAsync: Platform ticket, initializeWeight=null");
             }
 
             // Extract customer ID
@@ -639,9 +756,15 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
                 VehicleRegistration = isWeighbridgeTicket ? TicketVehicleRegistration : null,
                 TrailerRegistration = isWeighbridgeTicket ? TicketTrailerRegistration : null,
                 DriverName = isWeighbridgeTicket ? TicketDriverName : null,
+                OfmWeighbridgeTicket = isWeighbridgeTicket ? TicketOfmWeighbridgeTicket : null,
+                CkNumber = isWeighbridgeTicket ? TicketCkNumber : null,
+                DeliveryNumber = isWeighbridgeTicket ? TicketDeliveryNumber : null,
+                ForeignTicket = isWeighbridgeTicket ? TicketForeignTicket : null,
                 Notes = TicketNotes,
                 InvoiceNumber = 0  // Will be set later if needed
             };
+            
+            Console.WriteLine($"[DEBUG] CreateTicketHeaderAsync: About to call API with TicketState='{createTicketDto.TicketState}', InitializeWeightKg={createTicketDto.InitializeWeightKg}");
 
             // Call API to create the ticket with state 'H' in a single INSERT
             var response = await _ticketReceivingService.CreateTicketAsync(createTicketDto);
@@ -666,6 +789,15 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             };
 
             CurrentTicketState = 'H';
+            
+            // Untick "New Customer?" checkbox
+            SearchReceivingNewCustomersCheckbox = false;
+            Console.WriteLine($"[DEBUG] CreateTicketHeaderAsync: Unticked SearchReceivingNewCustomersCheckbox");
+            
+            // Load the newly created ticket details
+            await LoadSelectedReceivingTicketDetailsAsync(response.TicketReceivingId);
+            Console.WriteLine($"[DEBUG] CreateTicketHeaderAsync: Loaded ticket details for new ticket {response.TicketReceivingId}");
+            
             StatusMessage = "Ticket header created successfully! You can now add line items.";
         }
         catch (Exception ex)
@@ -680,13 +812,64 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
     private async Task SaveAndResetTicketAsync()
     {
-        // Clear Details and Create sections but keep Search and Results
-        await ClearTicketAsync();
+        if (IsBusy) return;
+        IsBusy = true;
         
-        // Reset button state to 'C' so next ticket creation shows "Create Header"
-        CurrentTicketState = 'C';
-        
-        StatusMessage = "✓ Ticket cleared. Ready for new ticket.";
+        try
+        {
+            // If we have a ticket to save, update it in the database
+            if (LastCreatedTicket?.TicketId > 0)
+            {
+                StatusMessage = "Saving ticket changes...";
+                
+                // Build the update DTO from current form fields
+                var updateDto = new CreateTicketReceivingDto
+                {
+                    CustomerId = (int)LastCreatedTicket.CustomerId,
+                    TicketTypeId = (int)LastCreatedTicket.TicketTypeId,
+                    TicketNumber = TicketNumber ?? string.Empty,
+                    TicketState = LastCreatedTicket.TicketState,
+                    InitializeWeightKg = LastCreatedTicket.InitializeWeightKg,
+                    VehicleRegistration = TicketVehicleRegistration,
+                    TrailerRegistration = TicketTrailerRegistration,
+                    DriverName = TicketDriverName,
+                    OfmWeighbridgeTicket = TicketOfmWeighbridgeTicket,
+                    ForeignTicket = TicketForeignTicket,
+                    CkNumber = TicketCkNumber,
+                    DeliveryNumber = TicketDeliveryNumber,
+                    Notes = TicketNotes,
+                    NetWeightKg = LastCreatedTicket.NetWeightKg
+                };
+                
+                // Update the ticket in the database
+                var result = await _ticketReceivingService.UpdateTicketReceivingAsync(LastCreatedTicket.TicketId, updateDto);
+                
+                if (result != null)
+                {
+                    StatusMessage = "✓ Ticket saved successfully.";
+                }
+                else
+                {
+                    StatusMessage = "Warning: Could not save ticket to database, but clearing form anyway.";
+                }
+            }
+            
+            // Clear Details and Create sections but keep Search and Results
+            await ClearTicketAsync();
+            
+            // Reset button state to 'C' so next ticket creation shows "Create Header"
+            CurrentTicketState = 'C';
+            
+            StatusMessage = "✓ Ticket cleared. Ready for new ticket.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error saving ticket: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     private async Task<bool> ConfirmAsync(string message)

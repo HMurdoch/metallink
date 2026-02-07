@@ -78,6 +78,10 @@ public class CreateTicketReceivingDto
     public string? VehicleRegistration { get; set; }
     public string? TrailerRegistration { get; set; }
     public string? DriverName { get; set; }
+    public string? OfmWeighbridgeTicket { get; set; }
+    public string? CkNumber { get; set; }
+    public string? DeliveryNumber { get; set; }
+    public string? ForeignTicket { get; set; }
     
     public string? Notes { get; set; }
     public int CreatedByOperatorId { get; set; }

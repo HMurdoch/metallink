@@ -449,21 +449,29 @@
                            FontSize="11" />
               </StackPanel>
 
-              <!-- WEIGHBRIDGE TICKET (TicketTypeId=1) - Row 3: Foreign Ticket / CK Number -->
+              <!-- WEIGHBRIDGE TICKET (TicketTypeId=1) - Row 3: Delivery Number / Foreign Ticket -->
               <StackPanel Grid.Row="3" Grid.Column="0" Spacing="2" Margin="0,8,0,0"
+                          IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
+                <TextBlock Text="Delivery Number" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.DeliveryNumber}" Foreground="#f5f5f5"
+                           FontSize="11" />
+              </StackPanel>
+              <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2" Margin="0,8,0,0"
                           IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
                 <TextBlock Text="Foreign Ticket" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
                 <TextBlock Text="{Binding SelectedReceivingTicketDetails.ForeignTicket}" Foreground="#f5f5f5"
                            FontSize="11" />
               </StackPanel>
-              <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2" Margin="0,8,0,0"
+
+              <!-- WEIGHBRIDGE TICKET (TicketTypeId=1) - Row 4: CK Number -->
+              <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2" Margin="0,8,0,0"
                           IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
                 <TextBlock Text="CK Number" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
                 <TextBlock Text="{Binding SelectedReceivingTicketDetails.CkNumber}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
 
               <!-- WEIGHBRIDGE TICKET (TicketTypeId=1) - Row 4: Net Weight (in Blue) -->
-              <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2" Margin="0,8,0,0"
+              <StackPanel Grid.Row="5" Grid.Column="0" Spacing="2" Margin="0,8,0,0"
                           IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
                 <TextBlock Text="Net Weight (kg)" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
                 <TextBlock Text="{Binding CalculatedNetWeightKg, StringFormat='{}{0:N2}'}"
@@ -732,12 +740,18 @@
                 <TextBox Text="{Binding TicketOfmWeighbridgeTicket}" />
               </StackPanel>
 
-              <!-- Row 4: Foreign Ticket / CK Number / Delivery Number -->
+              <!-- Row 4: Delivery Number / Foreign Ticket -->
               <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2" IsVisible="{Binding AreWeighbridgeFieldsVisible}">
+                <TextBlock Text="Delivery Number" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding TicketDeliveryNumber}" />
+              </StackPanel>
+              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2" IsVisible="{Binding AreWeighbridgeFieldsVisible}">
                 <TextBlock Text="Foreign Ticket" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding TicketForeignTicket}" />
               </StackPanel>
-              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2" IsVisible="{Binding AreWeighbridgeFieldsVisible}">
+
+              <!-- Row 5: CK Number -->
+              <StackPanel Grid.Row="5" Grid.Column="0" Spacing="2" IsVisible="{Binding AreWeighbridgeFieldsVisible}">
                 <TextBlock Text="CK Number" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding TicketCkNumber}" />
               </StackPanel>

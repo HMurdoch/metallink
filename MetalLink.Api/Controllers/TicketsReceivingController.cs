@@ -148,21 +148,19 @@ public class TicketsReceivingController : ControllerBase
             driverName: WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId) ? dto.DriverName : null,
             notes: dto.Notes
         );
+        
+        // Set additional fields that should be saved
+        ticket.OfmWeighbridgeTicket = dto.OfmWeighbridgeTicket;
+        ticket.CkNumber = dto.CkNumber;
+        ticket.DeliveryNumber = dto.DeliveryNumber;
+        ticket.ForeignTicket = dto.ForeignTicket;
 
-        // TODO: Set the ticket state and initialize weight if provided
-        // These methods are not yet implemented on the TicketReceiving entity
-        // if (dto.TicketState == 'H')
-        // {
-        //     // ticket.SetTicketStateToHeader(dto.InitializeWeightKg);
-        // }
-        // else if (dto.TicketState == 'M')
-        // {
-        //     // ticket.SetTicketStateToMultiWeight();
-        // }
-        // else if (dto.TicketState == 'C')
-        // {
-        //     // ticket.SetTicketStateToComplete();
-        // }
+        // Set ticket state and initialize weight from DTO
+        ticket.TicketState = dto.TicketState;
+        ticket.InitializeWeightKg = dto.InitializeWeightKg;
+        
+        Console.WriteLine($"[API DEBUG] CreateTicketReceiving: Set ticket.TicketState='{ticket.TicketState}', ticket.InitializeWeightKg={ticket.InitializeWeightKg}");
+        Console.WriteLine($"[API DEBUG] CreateTicketReceiving: Before save - TicketNumber={ticket.TicketNumber}, CustomerId={ticket.CustomerId}, TicketTypeId={ticket.TicketTypeId}");
 
         await _ticketReceivingRepo.AddAsync(ticket);
         await _unitOfWork.SaveChangesAsync(ct);
@@ -275,8 +273,10 @@ public class TicketsReceivingController : ControllerBase
             CustomerName = ticket.Customer?.FullName ?? "",
             TicketNumber = ticket.TicketNumber,
             TicketTypeId = ticket.TicketTypeId,
+            TicketState = ticket.TicketState,
             NetWeightKg = ticket.NetWeightKg,
             InvoiceNumber = ticket.InvoiceNumber,
+            InitializeWeightKg = ticket.InitializeWeightKg,
             VehicleRegistration = ticket.VehicleRegistration,
             TrailerRegistration = ticket.TrailerRegistration,
             DriverName = ticket.DriverName,
@@ -325,20 +325,8 @@ public class TicketsReceivingController : ControllerBase
             if (ticket == null)
                 return NotFound("Ticket not found");
 
-            // Update the ticket state directly
-            // TODO: Implement ticket state tracking
-            // if (request.TicketState == 'M')
-            // {
-            //     ticket.SetTicketStateToMultiWeight();
-            // }
-            // else if (request.TicketState == 'H')
-            // {
-            //     ticket.SetTicketStateToHeader();
-            // }
-            // else if (request.TicketState == 'C')
-            // {
-            //     ticket.SetTicketStateToComplete();
-            // }
+            // Update the ticket state
+            ticket.TicketState = request.TicketState;
             
             await _ticketReceivingRepo.UpdateAsync(ticket);
             await _unitOfWork.SaveChangesAsync(ct);

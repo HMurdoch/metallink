@@ -294,6 +294,7 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.TicketTypeId).HasColumnName("ticket_type_id").IsRequired();
         e.Property(x => x.TicketNumber).HasColumnName("ticket_number").HasMaxLength(100).IsRequired();
         e.Property(x => x.NetWeightKg).HasColumnName("net_weight_kg").IsRequired();
+        e.Property(x => x.InitializeWeightKg).HasColumnName("initialize_weight_kg");
         e.Property(x => x.TicketState).HasColumnName("ticket_state").HasMaxLength(1).HasDefaultValue('C');
         e.Property(x => x.DriverName).HasColumnName("driver_name");
         e.Property(x => x.VehicleRegistration).HasColumnName("vehicle_registration");

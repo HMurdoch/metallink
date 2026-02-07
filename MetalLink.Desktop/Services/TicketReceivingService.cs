@@ -297,7 +297,7 @@ public sealed class TicketReceivingService
     {
         try
         {
-            var updateDto = new { ticketReceivingId, state = newState };
+            var updateDto = new { TicketState = newState };
             var result = await _apiClient.PutAsJsonAsync(
                 $"api/tickets-receiving/{ticketReceivingId}/state",
                 updateDto,
