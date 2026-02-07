@@ -967,10 +967,10 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             var request = new CustomerSearchRequestDto
             {
                 CustomerId = customerId,
-                SiteId = siteId,
+                SiteId = siteId ?? (SelectedSearchSite?.SiteId),
                 FirstName = string.IsNullOrWhiteSpace(SearchFirstNameText) ? null : SearchFirstNameText.Trim(),
                 LastName = string.IsNullOrWhiteSpace(SearchLastNameText) ? null : SearchLastNameText.Trim(),
-                CompanyName = string.IsNullOrWhiteSpace(SearchCompanyNameText) ? null : SearchCompanyNameText.Trim(),
+                CompanyName = SelectedSearchCompany?.CompanyName ?? (string.IsNullOrWhiteSpace(SearchCompanyNameText) ? null : SearchCompanyNameText.Trim()),
                 IdNumber = string.IsNullOrWhiteSpace(SearchIdNumberText) ? null : SearchIdNumberText.Trim(),
                 AccountNumber = ParseAccountNumberOrNull(SearchAccountNumberText),
                 PriceCode = string.IsNullOrEmpty(SearchPriceCode?.Code) ? null : SearchPriceCode.Code.Trim(),
