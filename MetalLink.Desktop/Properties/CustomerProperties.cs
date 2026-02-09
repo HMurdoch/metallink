@@ -23,6 +23,7 @@ public partial class MainWindowViewModel
     private string _searchPhoneNumberText = string.Empty;
     private string _searchMobileNumberText = string.Empty;
     private string _searchEmailText = string.Empty;
+    private string _searchAccountNumberText = string.Empty;
 
     private ObservableCollection<CustomerDto> _customerSearchResults = new();
 
@@ -136,6 +137,12 @@ public partial class MainWindowViewModel
         set { _searchEmailText = value; OnPropertyChanged(); }
     }
 
+    public string SearchAccountNumberText
+    {
+        get => _searchAccountNumberText;
+        set { _searchAccountNumberText = value; OnPropertyChanged(); }
+    }
+
     public ObservableCollection<CustomerDto> CustomerSearchResults
     {
         get => _customerSearchResults;
@@ -181,9 +188,57 @@ public partial class MainWindowViewModel
 
             // Load site address summary (from CAS/Site) for customer details panel
             _ = LoadSelectedCustomerSiteAddressAsync(_foundCustomer);
-            
+
             // Load customer images if available
             _ = LoadSelectedCustomerImagesAsync(_foundCustomer);
+
+            // Populate Create/Edit form when selecting from results (no code-behind)
+            if (_foundCustomer != null)
+            {
+                IsEditMode = true;
+                EditingCustomerId = _foundCustomer.CustomerId;
+
+                NewFirstName = _foundCustomer.FirstName ?? string.Empty;
+                NewLastName = _foundCustomer.LastName ?? string.Empty;
+                NewIdNumber = _foundCustomer.IdNumber;
+                NewEmail = _foundCustomer.Email ?? string.Empty;
+                NewPhoneNumber = _foundCustomer.PhoneNumber ?? string.Empty;
+                NewMobileNumber = _foundCustomer.MobileNumber ?? string.Empty;
+                NewTaxable = _foundCustomer.Taxable;
+                NewAccountNumber = _foundCustomer.AccountNumber;
+
+                // Company/site only when IsCompany
+                NewIsCompany = _foundCustomer.IsCompany;
+
+                if (_foundCustomer.CompanyId.HasValue)
+                {
+                    var company = _allCompanies.FirstOrDefault(c => c.CompanyId == _foundCustomer.CompanyId.Value);
+                    if (company != null && !string.IsNullOrWhiteSpace(company.CompanyName))
+                    {
+                        var letter = char.ToUpperInvariant(company.CompanyName[0]).ToString();
+                        SelectedNewCompanyLetter = CompanyLetterFilters.Contains(letter) ? letter : "ALL";
+                    }
+
+                    // Set pending site selection BEFORE selecting company (company selection clears sites and loads async)
+                    _pendingSelectSiteId = _foundCustomer.SiteId;
+
+                    SelectedNewCompany = NewCompanySuggestions.FirstOrDefault(c => c.CompanyId == _foundCustomer.CompanyId.Value);
+                }
+
+                if (!string.IsNullOrWhiteSpace(_foundCustomer.PriceCode))
+                    SelectedPriceCodeChar = PriceCodeOptions.FirstOrDefault(p => p.Code == _foundCustomer.PriceCode);
+
+                OnPropertyChanged(nameof(CanCreateCustomer));
+                OnPropertyChanged(nameof(CanUpdateCustomer));
+                (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            }
+            else
+            {
+                IsEditMode = false;
+                EditingCustomerId = null;
+                OnPropertyChanged(nameof(CanUpdateCustomer));
+                (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            }
         }
     }
 
@@ -222,11 +277,14 @@ public partial class MainWindowViewModel
             _newFirstName = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsNewCustomerFullNameInvalid));
+            OnPropertyChanged(nameof(IsNewBuyerFullNameInvalid));
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
             OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanCreateBuyer));
 
             (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -239,11 +297,14 @@ public partial class MainWindowViewModel
             _newLastName = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsNewCustomerFullNameInvalid));
+            OnPropertyChanged(nameof(IsNewBuyerFullNameInvalid));
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
             OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanCreateBuyer));
 
             (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -293,6 +354,9 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
             OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanCreateBuyer));
+
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -307,6 +371,9 @@ public partial class MainWindowViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(NewAccountNumberDisplay));
             OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanCreateBuyer));
+
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -336,6 +403,8 @@ public partial class MainWindowViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
+
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -349,6 +418,8 @@ public partial class MainWindowViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
+
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -362,6 +433,8 @@ public partial class MainWindowViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
+
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -369,7 +442,14 @@ public partial class MainWindowViewModel
     public bool NewTaxable
     {
         get => _newTaxable;
-        set { _newTaxable = value; OnPropertyChanged(); }
+        set
+        {
+            _newTaxable = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanCreateBuyer));
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+        }
     }
     
     public sealed record PriceCodeOption(string Code, string Label);

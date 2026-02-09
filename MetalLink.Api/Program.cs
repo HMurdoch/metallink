@@ -117,6 +117,11 @@ using (var scope = app.Services.CreateScope())
 
     // Apply pending migrations
     await dbContext.Database.MigrateAsync();
+
+    // Ensure Postgres identity/serial sequences are aligned with existing data.
+    // Without this, inserts can fail after a DB restore/import with:
+    // 23505 duplicate key value violates unique constraint "..._pkey".
+    await PostgresSequenceSynchronizer.SyncAllIdentitySequencesAsync(dbContext);
 }
 
 // Swagger

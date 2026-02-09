@@ -1,8 +1,9 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MetalLink.Application.Customers.Queries;
-using MetalLink.Shared.Customers;
+using MetalLink.Application.Buyers.Commands;
+using MetalLink.Application.Buyers.Queries;
+using MetalLink.Shared.Buyers;
 using MetalLink.Application.Interfaces;
 using MetalLink.Api.Extensions;
 using System.Text;
@@ -10,41 +11,41 @@ using System.Text;
 namespace MetalLink.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/buyers")]
 [Authorize]
-public sealed class CustomersController : ControllerBase
+public sealed class BuyersController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly ICustomerRepository _customerRepository;
+    private readonly IBuyerRepository _buyerRepository;
     private readonly IFileStorage _fileStorage;
 
-    public CustomersController(IMediator mediator, ICustomerRepository customerRepository, IFileStorage fileStorage)
+    public BuyersController(IMediator mediator, IBuyerRepository buyerRepository, IFileStorage fileStorage)
     {
         _mediator = mediator;
-        _customerRepository = customerRepository;
+        _buyerRepository = buyerRepository;
         _fileStorage = fileStorage;
     }
 
     // -----------------------------
-    // CREATE CUSTOMER
+    // CREATE BUYER
     // -----------------------------
     [HttpPost]
-    [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BuyerDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
-        [FromBody] CustomerDto dto,
+        [FromBody] BuyerDto dto,
         CancellationToken cancellationToken)
     {
         // If client didn't send account number, generate it
         if (!dto.AccountNumber.HasValue || dto.AccountNumber.Value <= 0)
         {
-            dto.AccountNumber = await _customerRepository.GetNextAccountNumberAsync(cancellationToken);
+            dto.AccountNumber = await _buyerRepository.GetNextAccountNumberAsync(cancellationToken);
         }
 
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var command = new CreateCustomerCommand
+        var command = new CreateBuyerCommand
         {
             CompanyId = dto.CompanyId,
             SiteId = dto.SiteId,
@@ -69,10 +70,10 @@ public sealed class CustomersController : ControllerBase
     // SEARCH (POST body)
     // -----------------------------
     [HttpPost("search")]
-    public async Task<ActionResult<CustomerDto[]>> Search(
-        [FromBody] CustomerSearchRequestDto requestDto)
+    public async Task<ActionResult<BuyerDto[]>> Search(
+        [FromBody] BuyerSearchRequestDto requestDto)
     {
-        var result = await _mediator.Send(new SearchCustomersQuery(requestDto));
+        var result = await _mediator.Send(new SearchBuyersQuery(requestDto));
         return Ok(result);
     }
 
@@ -80,28 +81,28 @@ public sealed class CustomersController : ControllerBase
     // SEARCH (GET query string)
     // -----------------------------
     [HttpGet("search")]
-    [ProducesResponseType(typeof(CustomerDto[]), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BuyerDto[]), StatusCodes.Status200OK)]
     public async Task<IActionResult> Search(
-        [FromQuery] CustomerSearchRequestDto request,
+        [FromQuery] BuyerSearchRequestDto request,
         CancellationToken cancellationToken)
     {
-        var query = new SearchCustomersQuery(request);
-        var customers = await _mediator.Send(query, cancellationToken);
-        return Ok(customers);
+        var query = new SearchBuyersQuery(request);
+        var buyers = await _mediator.Send(query, cancellationToken);
+        return Ok(buyers);
     }
 
     // -----------------------------
     // GET BY ID
     // -----------------------------
-    [HttpGet("{customerId:int}")]
-    [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status200OK)]
+    [HttpGet("{buyerId:int}")]
+    [ProducesResponseType(typeof(BuyerDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(
-        int customerId,
+        int buyerId,
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new GetCustomerByIdQuery(customerId),
+            new GetBuyerByIdQuery(buyerId),
             cancellationToken);
 
         if (result is null)
@@ -111,73 +112,76 @@ public sealed class CustomersController : ControllerBase
     }
 
     // -----------------------------
-    // UPDATE CUSTOMER
-    // PUT api/customers
+    // UPDATE BUYER
+    // PUT api/buyers
     // -----------------------------
     [HttpPut]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(
-        [FromBody] CustomerDto dto,
+        [FromBody] BuyerDto dto,
         CancellationToken cancellationToken)
     {
-        if (dto.CustomerId <= 0)
-            return BadRequest("CustomerId is required.");
+        if (dto.BuyerId <= 0)
+            return BadRequest("BuyerId is required.");
 
-        var customer = await _customerRepository.GetByIdAsync(dto.CustomerId, cancellationToken);
-        if (customer == null)
+        var buyer = await _buyerRepository.GetByIdAsync(dto.BuyerId, cancellationToken);
+        if (buyer == null)
             return NotFound();
 
-        // ---- Update Customer fields
+        // ---- Update Buyer fields
         if (dto.CompanyId.HasValue)
-            customer.CompanyId = dto.CompanyId.Value;
+            buyer.CompanyId = dto.CompanyId.Value;
 
         if (dto.SiteId.HasValue)
-            customer.SiteId = dto.SiteId.Value;
+            buyer.SiteId = dto.SiteId.Value;
 
-        customer.FirstName = dto.FirstName;
-        customer.LastName = dto.LastName;
-        customer.IsCompany = dto.IsCompany;
-        customer.IdNumber = dto.IdNumber;
-        customer.AccountNumber = dto.AccountNumber;
-        customer.PriceCode = dto.PriceCode;
-        customer.PhoneNumber = dto.PhoneNumber;
-        customer.MobileNumber = dto.MobileNumber;
-        customer.Email = dto.Email;
-        customer.IsTaxable = dto.Taxable;
+        buyer.FirstName = dto.FirstName;
+        buyer.LastName = dto.LastName;
+        // Domain Buyer does not have IsCompany (that flag is only on the DTO)
+        // If you need this behavior, we should add it to the domain model + migration.
+        // For now we ignore it.
+        // buyer.IsCompany = dto.IsCompany;
+        buyer.IdNumber = dto.IdNumber;
+        buyer.AccountNumber = dto.AccountNumber;
+        buyer.PriceCode = dto.PriceCode;
+        buyer.PhoneNumber = dto.PhoneNumber;
+        buyer.MobileNumber = dto.MobileNumber;
+        buyer.Email = dto.Email;
+        buyer.IsTaxable = dto.Taxable;
 
-        customer.UpdatedTime = DateTimeOffset.UtcNow;
+        buyer.UpdatedTime = DateTimeOffset.UtcNow;
 
-        // Address, province and country belong to Site; update them via Site endpoints, not customer update.
-        await _customerRepository.UpdateAsync(customer, cancellationToken);
+        // Address, province and country belong to Site; update them via Site endpoints, not buyer update.
+        await _buyerRepository.UpdateAsync(buyer, cancellationToken);
         return NoContent();
     }
 
-    [HttpDelete("{customerId:int}")]
-    public async Task<IActionResult> SoftDelete(int customerId, CancellationToken cancellationToken)
+    [HttpDelete("{buyerId:int}")]
+    public async Task<IActionResult> SoftDelete(int buyerId, CancellationToken cancellationToken)
     {
-        await _customerRepository.SoftDeleteAsync(customerId, cancellationToken);
+        await _buyerRepository.SoftDeleteAsync(buyerId, cancellationToken);
         return NoContent();
     }
 
     [HttpGet("next-account-number")]
     public async Task<ActionResult<long>> GetNextAccountNumber(CancellationToken ct)
     {
-        var next = await _customerRepository.GetNextAccountNumberAsync(ct);
+        var next = await _buyerRepository.GetNextAccountNumberAsync(ct);
         return Ok(next);
     }
 
     // -----------------------------
     // UPLOAD CUSTOMER IMAGE
     // -----------------------------
-    [HttpPost("{customerId:int}/images/{imageType}")]
+    [HttpPost("{buyerId:int}/images/{imageType}")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UploadImage(
-        int customerId,
+        int buyerId,
         string imageType,
-        [FromBody] CustomerUploadImageRequest request,
+        [FromBody] UploadImageRequest request,
         CancellationToken cancellationToken)
     {
         if (request.ImageData == null || request.ImageData.Length == 0)
@@ -197,7 +201,7 @@ public sealed class CustomersController : ControllerBase
             _ => "jpg"
         };
         
-        var key = $"customers/{customerId}/{imageType}_{DateTimeOffset.UtcNow:yyyyMMdd_HHmmss}.{extension}";
+        var key = $"buyers/{buyerId}/{imageType}_{DateTimeOffset.UtcNow:yyyyMMdd_HHmmss}.{extension}";
 
         // Upload to storage
         await _fileStorage.UploadAsync(
@@ -206,15 +210,15 @@ public sealed class CustomersController : ControllerBase
             key,
             cancellationToken);
 
-        // Update the customer record with the image path
-        var customer = await _customerRepository.GetByIdAsync(customerId, cancellationToken);
-        if (customer != null)
+        // Update the buyer record with the image path
+        var buyer = await _buyerRepository.GetByIdAsync(buyerId, cancellationToken);
+        if (buyer != null)
         {
             // Create or update ImagePath entity
-            if (customer.ImagePath == null)
+            if (buyer.ImagePath == null)
             {
                 var now = DateTimeOffset.UtcNow;
-                customer.ImagePath = new MetalLink.Domain.Entities.ImagePath
+                buyer.ImagePath = new MetalLink.Domain.Entities.ImagePath
                 {
                     CreatedByOperatorId = 1, // System operator - always exists
                     CreatedTime = now,
@@ -226,24 +230,24 @@ public sealed class CustomersController : ControllerBase
             switch (imageType.ToLower())
             {
                 case "idcard":
-                    customer.ImagePath.IdCardImagePath = key;
+                    buyer.ImagePath.IdCardImagePath = key;
                     break;
                 case "driverlicense":
-                    customer.ImagePath.DriverLicenseImagePath = key;
+                    buyer.ImagePath.DriverLicenseImagePath = key;
                     break;
                 case "photo":
-                    customer.ImagePath.PhotoImagePath = key;
+                    buyer.ImagePath.PhotoImagePath = key;
                     break;
                 case "signature":
-                    customer.ImagePath.SignatureImagePath = key;
+                    buyer.ImagePath.SignatureImagePath = key;
                     break;
                 case "fingerprint":
-                    customer.ImagePath.FingerprintImagePath = key;
+                    buyer.ImagePath.FingerprintImagePath = key;
                     break;
             }
             
-            customer.UpdatedTime = DateTimeOffset.UtcNow;
-            await _customerRepository.UpdateAsync(customer, cancellationToken);
+            buyer.UpdatedTime = DateTimeOffset.UtcNow;
+            await _buyerRepository.UpdateAsync(buyer, cancellationToken);
         }
 
         // Return the storage key/path
@@ -253,37 +257,37 @@ public sealed class CustomersController : ControllerBase
     // -----------------------------
     // DOWNLOAD CUSTOMER IMAGE
     // -----------------------------
-    [HttpGet("{customerId:int}/images/{imageType}")]
+    [HttpGet("{buyerId:int}/images/{imageType}")]
     [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DownloadImage(
-        int customerId,
+        int buyerId,
         string imageType,
         CancellationToken cancellationToken)
     {
-        Console.WriteLine($"[API] DownloadImage called: customerId={customerId}, imageType={imageType}");
+        Console.WriteLine($"[API] DownloadImage called: buyerId={buyerId}, imageType={imageType}");
         
-        var customer = await _customerRepository.GetByIdAsync(customerId, cancellationToken);
-        if (customer == null)
+        var buyer = await _buyerRepository.GetByIdAsync(buyerId, cancellationToken);
+        if (buyer == null)
         {
-            Console.WriteLine($"[API] Customer {customerId} not found");
-            return NotFound("Customer not found");
+            Console.WriteLine($"[API] Buyer {buyerId} not found");
+            return NotFound("Buyer not found");
         }
 
         // Get the image path based on type from ImagePath entity
-        if (customer.ImagePath == null)
+        if (buyer.ImagePath == null)
         {
-            Console.WriteLine($"[API] ImagePath not found for customer {customerId}");
+            Console.WriteLine($"[API] ImagePath not found for buyer {buyerId}");
             return NotFound("Image not found");
         }
 
         string? imagePath = imageType.ToLower() switch
         {
-            "idcard" => customer.ImagePath.IdCardImagePath,
-            "driverlicense" => customer.ImagePath.DriverLicenseImagePath,
-            "photo" => customer.ImagePath.PhotoImagePath,
-            "signature" => customer.ImagePath.SignatureImagePath,
-            "fingerprint" => customer.ImagePath.FingerprintImagePath,
+            "idcard" => buyer.ImagePath.IdCardImagePath,
+            "driverlicense" => buyer.ImagePath.DriverLicenseImagePath,
+            "photo" => buyer.ImagePath.PhotoImagePath,
+            "signature" => buyer.ImagePath.SignatureImagePath,
+            "fingerprint" => buyer.ImagePath.FingerprintImagePath,
             _ => null
         };
 
@@ -318,7 +322,7 @@ public sealed class CustomersController : ControllerBase
     }
 }
 
-public sealed class CustomerUploadImageRequest
+public sealed class UploadImageRequest
 {
     public byte[] ImageData { get; set; } = Array.Empty<byte>();
     public string? ContentType { get; set; }

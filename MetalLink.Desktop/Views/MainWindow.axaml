@@ -190,6 +190,9 @@
           <Button Content="Customers"
                   Command="{Binding ShowCustomersCommand}"
                   Classes="NavButton SubNavButton"/>
+          <Button Content="Buyers"
+                  Command="{Binding ShowBuyersCommand}"
+                  Classes="NavButton SubNavButton"/>
           <Button Content="Companies &amp; Sites"
                   Command="{Binding ShowCompanyAndSitesCommand}"
                   Classes="NavButton SubNavButton"/>

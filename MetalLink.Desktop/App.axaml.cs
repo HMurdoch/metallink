@@ -15,6 +15,7 @@ public partial class App : Application
     public ApiClient ApiClient { get; private set; } = null!;
     public AuthService AuthService { get; private set; } = null!;
     public CustomerService CustomerService { get; private set; } = null!;
+    public BuyerService BuyerService { get; private set; } = null!;
     public CompanyAndSiteService CompanyAndSiteService { get; private set; } = null!;
     public ProductsAndPricesService ProductsAndPricesService { get; private set; } = null!;
     public TicketService TicketService { get; private set; } = null!;
@@ -42,6 +43,7 @@ public partial class App : Application
         ApiClient = new ApiClient(AuthState);
         AuthService = new AuthService(AuthState);
         CustomerService = new CustomerService(ApiClient, AuthState);
+        BuyerService = new BuyerService(ApiClient, AuthState);
         CompanyAndSiteService = new CompanyAndSiteService(ApiClient, AuthState);
         ProductsAndPricesService = new ProductsAndPricesService(ApiClient, AuthState);
         TicketService = new TicketService(ApiClient, AuthState);

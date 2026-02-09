@@ -16,6 +16,7 @@ public class SectionToViewConverter : IValueConverter
         {
             EnumMainSection.Dashboard => new DashboardView(),
             EnumMainSection.Customers => new CustomersView(),
+            EnumMainSection.Buyers => new BuyersView(),
             EnumMainSection.CompanyAndSites => new CompanyAndSiteView(),
             EnumMainSection.ProductsAndPrices => new ProductsAndPricesView(),
             EnumMainSection.TicketsReceiving => new TicketsReceivingView(),

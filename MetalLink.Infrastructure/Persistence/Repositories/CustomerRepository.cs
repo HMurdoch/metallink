@@ -52,9 +52,10 @@ public class CustomerRepository : ICustomerRepository
 
     public async Task<long> GetNextAccountNumberAsync(CancellationToken ct)
     {
-        // EF Core scalar SqlQueryRaw<long>() expects the column name to be "Value"
-        const string sql = "SELECT nextval('metal_link.customer_account_number_seq') AS \"Value\"";
-        return await _db.Database.SqlQueryRaw<long>(sql).SingleAsync(ct);
+        // Account numbers must be globally unique across BOTH customers and buyers.
+        // Use the shared generator function (creates it if missing) rather than a customer-specific sequence.
+        var generator = new AccountNumberGenerator(_db);
+        return await generator.GetNextAsync(ct);
     }
 
     public async Task AddAsync(
@@ -62,7 +63,31 @@ public class CustomerRepository : ICustomerRepository
         CancellationToken cancellationToken = default)
     {
         await _db.Customers.AddAsync(customer, cancellationToken);
-        await _db.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (IsDuplicatePrimaryKey(ex))
+        {
+            // If the DB was restored/imported without syncing sequences, Postgres may try to
+            // reuse an existing primary key value (23505 ..._pkey). Re-sync sequences and retry once.
+            await PostgresSequenceSynchronizer.SyncAllIdentitySequencesAsync(_db, cancellationToken);
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    private static bool IsDuplicatePrimaryKey(DbUpdateException ex)
+    {
+        // Npgsql.PostgresException:
+        // - SqlState = 23505 (unique_violation)
+        // - ConstraintName = "<table>_pkey" for PK clashes
+        if (ex.InnerException is not Npgsql.PostgresException pg)
+            return false;
+
+        return pg.SqlState == "23505" &&
+               pg.ConstraintName != null &&
+               pg.ConstraintName.EndsWith("_pkey", StringComparison.OrdinalIgnoreCase);
     }
 
     // -------------------------------------------------

@@ -5,5 +5,8 @@ public enum CameraDeviceType
     WeighbridgeFront,
     WeighbridgeTop,
     PlatformFront,
-    PlatformTop
+    PlatformTop,
+
+    // Customer capture
+    CustomerPhoto
 }

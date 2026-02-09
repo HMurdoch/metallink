@@ -20,6 +20,7 @@ using MetalLink.Desktop.Auth;
 using MetalLink.Desktop.Hardware;
 using MetalLink.Desktop.Services;
 using MetalLink.Shared.Customers;
+using MetalLink.Shared.Buyers;
 using MetalLink.Shared.Tickets;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.Generic;
@@ -36,6 +37,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     private readonly AuthState _authState;
     private readonly ApiClient _apiClient;
     private readonly CustomerService _customerService;
+    private readonly BuyerService _buyerService;
     private readonly TicketService _ticketService;
     private readonly TicketReceivingService _ticketReceivingService;
     private readonly TicketSendingService _ticketSendingService;
@@ -52,6 +54,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand LogoutCommand { get; }
     public ICommand SearchCustomerCommand { get; }
     public ICommand CreateCustomerCommand { get; }
+    public ICommand CreateBuyerCommand { get; }
     public ICommand CreateTicketCommand { get; }
     public ICommand FinalizeTicketCommand { get; }
     public ICommand AddReceivingLineCommand { get; }
@@ -67,6 +70,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     // Section navigation
     public ICommand ShowDashboardCommand { get; }
     public ICommand ShowCustomersCommand { get; }
+    public ICommand ShowBuyersCommand { get; }
     public ICommand ShowCompanyAndSitesCommand { get; }
     public ICommand ShowProductsAndPricesCommand { get; }
     public ICommand ShowTicketsCommand { get; }
@@ -115,6 +119,11 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand EditTicketLineCommand { get; }
     public ICommand DeleteTicketLineCommand { get; }
 
+    // Buyers
+    public ICommand EditBuyerCommand { get; }
+    public ICommand DeleteBuyerCommand { get; }
+    public ICommand LogBuyerTicketCommand { get; }
+
     // Optional tab navigation commands
     public ICommand GoDashboardCommand { get; }
     public ICommand GoCustomerCommand { get; }
@@ -150,9 +159,16 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand DeleteCustomerCommand { get; }
     public ICommand LogTicketCommand { get; }
     public ICommand ClearNewCustomerCommand { get; }
+    public ICommand ClearNewBuyerCommand { get; }
     public ICommand ClearCustomerSearchCommand { get; }
+    public ICommand ClearBuyerSearchCommand { get; }
     public ICommand UpdateCustomerCommand { get; }
+    public ICommand UpdateBuyerCommand { get; }
     public ICommand SearchCustomersCommand { get; }
+    public ICommand SearchBuyersCommand { get; }
+
+    // BuyersView.axaml binds to this name
+    public ICommand SearchBuyerCommand { get; }
 
     // Ticket state from selected ticket
     private char _currentTicketState = 'C';
@@ -322,6 +338,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         _authState = app.AuthState;
         _apiClient = app.ApiClient;
         _customerService = app.CustomerService;
+        _buyerService = app.BuyerService;
         _ticketService = app.TicketService;
         _ticketReceivingService = app.TicketReceivingService;
         _ticketSendingService = app.TicketSendingService;
@@ -369,6 +386,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         LogoutCommand = new AsyncCommand(LogoutAsync);
         SearchCustomerCommand = new AsyncCommand(SearchCustomerAsync);
         CreateCustomerCommand = new AsyncCommand(CreateCustomerAsync);
+        CreateBuyerCommand = new AsyncCommand(CreateBuyerAsync);
         CreateTicketCommand = new AsyncCommand(CreateTicketAsync);
         FinalizeTicketCommand = new AsyncCommand(FinalizeTicketAsync);
         AddReceivingLineCommand = new AsyncCommand(AddReceivingLineAsync);
@@ -394,11 +412,21 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         ShowCustomersCommand = ReactiveUI.ReactiveCommand.CreateFromTask(async () =>
         {
             CurrentSection = EnumMainSection.Customers;
-            
+
             // Trigger company data loading for dropdowns
             _ = CompanyLetterFilters; // Lazy load trigger
-            
-            await ClearNewCustomerFormAsync(); // this fetches NewAccountNumber
+
+            await ClearNewCustomerFormAsync();
+        });
+        
+        ShowBuyersCommand = ReactiveUI.ReactiveCommand.CreateFromTask(async () =>
+        {
+            CurrentSection = EnumMainSection.Buyers;
+
+            // Trigger company data loading for dropdowns
+            _ = CompanyLetterFilters; // Lazy load trigger
+
+            await ClearNewBuyerFormAsync();
         });
         ShowTicketsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.TicketsReceiving);
         ShowTicketsReceivingCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.TicketsReceiving);
@@ -411,17 +439,25 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         ShowSettingsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Settings);
 
         EditCustomerCommand = new RelayCommand<CustomerDto>(OnEditCustomer);
+        EditBuyerCommand = new RelayCommand<BuyerDto>(OnEditBuyer);
         DeleteCustomerCommand = new AsyncRelayCommand<CustomerDto>(execute: OnDeleteCustomerAsync);
         LogTicketCommand = new RelayCommand<CustomerDto>(OnLogTicket);
+
+        DeleteBuyerCommand = new AsyncRelayCommand<BuyerDto>(execute: OnDeleteBuyerAsync);
+        LogBuyerTicketCommand = new RelayCommand<BuyerDto>(OnLogBuyerTicket);
         ClearNewCustomerCommand = new AsyncRelayCommand(ClearNewCustomerFormAsync);
+        ClearNewBuyerCommand = new AsyncRelayCommand(ClearNewBuyerFormAsync);
         ClearCustomerSearchCommand = new RelayCommand(ClearCustomerSearch);
+        ClearBuyerSearchCommand = new RelayCommand(ClearBuyerSearch);
 
         Console.WriteLine($"Next account number = {NewAccountNumber}");
         OnPropertyChanged(nameof(NewAccountNumberDisplay));
 
         UpdateCustomerCommand = new AsyncRelayCommand(OnUpdateCustomerAsync, () => CanUpdateCustomer);
+        UpdateBuyerCommand = new AsyncRelayCommand(OnUpdateBuyerAsync, () => CanUpdateBuyer);
         SearchCustomersCommand = new AsyncRelayCommand(SearchCustomerAsync);
-
+        SearchBuyersCommand = new AsyncRelayCommand(SearchBuyerAsync);
+        SearchBuyerCommand = SearchBuyersCommand;
         // Camera commands
         CaptureWbFrontBeforeCommand = new AsyncCommand(() =>
             CaptureAndUploadAsync(CameraDeviceType.WeighbridgeFront, "wb_front_before"));
@@ -1046,9 +1082,6 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             if (string.IsNullOrWhiteSpace(NewIdNumber))
                 errors.Add("ID Number is required.");
 
-            if (NewAccountNumber == null)
-                errors.Add("Account Number is required.");
-
             if (string.IsNullOrWhiteSpace(NewEmail))
                 errors.Add("Email is required.");
 
@@ -1119,8 +1152,13 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             }
 
             // ----- build DTO for the API (no AccountNumber) -----
+            // Allocate account number at time of create (not on Clear)
+            if (NewAccountNumber == null)
+                NewAccountNumber = await _customerService.GetNextAccountNumberAsync();
+
             var dto = new CustomerDto
             {
+                AccountNumber = NewAccountNumber,
                 FirstName = NewFirstName!,
                 LastName = NewLastName!,
                 IdNumber = NewIdNumber!,
@@ -1191,14 +1229,27 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public bool CanCreateCustomer =>
         !string.IsNullOrWhiteSpace(NewFirstName)
         && !string.IsNullOrWhiteSpace(NewLastName)
-        && (!NewIsCompany || (SelectedNewCompany != null && SelectedNewSite != null))
-        && NewAccountNumber.HasValue;
+        && (!NewIsCompany || (SelectedNewCompany != null && SelectedNewSite != null));
 
     public bool CanUpdateCustomer =>
         IsEditMode
         && EditingCustomerId.HasValue
         && !string.IsNullOrWhiteSpace(NewFirstName)
         && !string.IsNullOrWhiteSpace(NewLastName);
+
+    public bool CanCreateBuyer =>
+        !string.IsNullOrWhiteSpace(NewFirstName)
+        && !string.IsNullOrWhiteSpace(NewLastName)
+        && SelectedNewCompany != null
+        && SelectedNewSite != null;
+
+    public bool CanUpdateBuyer =>
+        IsEditMode
+        && EditingBuyerId.HasValue
+        && !string.IsNullOrWhiteSpace(NewFirstName)
+        && !string.IsNullOrWhiteSpace(NewLastName)
+        && SelectedNewCompany != null
+        && SelectedNewSite != null;
 
     // --- Scale reading ---
 
@@ -1524,17 +1575,33 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
         try
         {
-            // Check if we're in the Customer creation/edit section
-            if (CurrentSection == EnumMainSection.Customers)
+            // In Customers/Buyers create/edit section, just capture into the form and upload immediately
+            if (CurrentSection == EnumMainSection.Customers || CurrentSection == EnumMainSection.Buyers)
             {
                 StatusMessage = "Capturing signature...";
-                
-                var capture = await _signaturePadService.CaptureAsync("CustomerSignature");
-                
+
+                var capture = await _signaturePadService.CaptureAsync("signature");
+
                 if (capture != null && capture.ImageData != null)
                 {
                     SignatureImage = LoadBitmapFromBytes(capture.ImageData);
-                    StatusMessage = "✓ Signature captured successfully";
+
+                    if (CurrentSection == EnumMainSection.Buyers)
+                    {
+                        if (FoundBuyer == null)
+                        {
+                            StatusMessage = "Select a buyer before capturing signature.";
+                            return;
+                        }
+
+                        await _buyerService.UploadBuyerImageAsync(FoundBuyer.BuyerId, "signature", capture.ImageData, "image/png");
+                        SelectedSignatureImage = SignatureImage;
+                        StatusMessage = "✓ Buyer signature captured and uploaded";
+                    }
+                    else
+                    {
+                        StatusMessage = "✓ Signature captured successfully";
+                    }
                 }
                 else
                 {
@@ -1728,6 +1795,53 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         }
     }
 
+    private async Task UploadBuyerImagesAsync(long buyerId)
+    {
+        // Buyers upload some images immediately (idcard/license/signature), but photo/fingerprint
+        // may still only be captured locally, so we support uploading any present images here.
+        try
+        {
+            if (IdCardImage != null)
+            {
+                var data = BitmapToBytes(IdCardImage);
+                if (data != null)
+                    await _buyerService.UploadBuyerImageAsync(buyerId, "idcard", data, "image/png");
+            }
+
+            if (DriverLicenseImage != null)
+            {
+                var data = BitmapToBytes(DriverLicenseImage);
+                if (data != null)
+                    await _buyerService.UploadBuyerImageAsync(buyerId, "driverlicense", data, "image/png");
+            }
+
+            if (PhotoImage != null)
+            {
+                var data = BitmapToBytes(PhotoImage);
+                if (data != null)
+                    await _buyerService.UploadBuyerImageAsync(buyerId, "photo", data, "image/png");
+            }
+
+            if (SignatureImage != null)
+            {
+                var data = BitmapToBytes(SignatureImage);
+                if (data != null)
+                    await _buyerService.UploadBuyerImageAsync(buyerId, "signature", data, "image/png");
+            }
+
+            if (FingerprintImage != null)
+            {
+                var data = BitmapToBytes(FingerprintImage);
+                if (data != null)
+                    await _buyerService.UploadBuyerImageAsync(buyerId, "fingerprint", data, "image/png");
+            }
+        }
+        catch
+        {
+            // optional
+        }
+    }
+
     private byte[]? BitmapToBytes(Avalonia.Media.Imaging.Bitmap bitmap)
     {
         try
@@ -1768,6 +1882,18 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public PaginationViewModel PaginationViewModel { get; } = new();
 
     private ObservableCollection<CustomerDto> _pagedCustomerSearchResults = new();
+
+    private ObservableCollection<BuyerDto> _pagedBuyerSearchResults = new();
+    public ObservableCollection<BuyerDto> PagedBuyerSearchResults
+    {
+        get => _pagedBuyerSearchResults;
+        private set
+        {
+            if (_pagedBuyerSearchResults == value) return;
+            _pagedBuyerSearchResults = value;
+            OnPropertyChanged();
+        }
+    }
     public ObservableCollection<CustomerDto> PagedCustomerSearchResults
     {
         get => _pagedCustomerSearchResults;
@@ -1786,18 +1912,643 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
     private void UpdatePagedResults()
     {
-        PagedCustomerSearchResults.Clear();
         var skip = PaginationViewModel.GetSkip();
         var take = PaginationViewModel.GetTake();
-        var paged = CustomerSearchResults.Skip(skip).Take(take).ToList();
-        foreach (var item in paged)
+
+        if (CurrentSection == EnumMainSection.Buyers)
         {
-            PagedCustomerSearchResults.Add(item);
+            PagedBuyerSearchResults.Clear();
+            var paged = BuyerSearchResults.Skip(skip).Take(take).ToList();
+            foreach (var item in paged)
+                PagedBuyerSearchResults.Add(item);
+        }
+        else
+        {
+            PagedCustomerSearchResults.Clear();
+            var paged = CustomerSearchResults.Skip(skip).Take(take).ToList();
+            foreach (var item in paged)
+                PagedCustomerSearchResults.Add(item);
         }
     }
 
     private void OnPaginationPageChanged(object? sender, EventArgs e)
     {
         UpdatePagedResults();
+    }
+
+    private async Task SearchBuyerAsync()
+    {
+        if (IsBusy) return;
+        IsBusy = true;
+        StatusMessage = "Searching buyers...";
+
+        try
+        {
+            long? buyerId = null;
+            if (long.TryParse(SearchCustomerIdText, out var bid))
+                buyerId = bid;
+
+            long? siteId = null;
+            if (long.TryParse(SearchSiteIdText, out var sid))
+                siteId = sid;
+
+            long? provinceId = null;
+            if (SearchProvince != null &&
+                !string.Equals(SearchProvince.ProvinceName, "ALL", StringComparison.OrdinalIgnoreCase))
+            {
+                provinceId = SearchProvince.ProvinceId;
+            }
+
+            long? countryId = null;
+            if (SearchCountry != null &&
+                !string.Equals(SearchCountry.CountryName, "ALL", StringComparison.OrdinalIgnoreCase))
+            {
+                countryId = SearchCountry.CountryId;
+            }
+
+            var request = new BuyerSearchRequestDto
+            {
+                BuyerId = buyerId,
+                SiteId = siteId ?? (SelectedSearchSite?.SiteId),
+                FirstName = string.IsNullOrWhiteSpace(SearchFirstNameText) ? null : SearchFirstNameText.Trim(),
+                LastName = string.IsNullOrWhiteSpace(SearchLastNameText) ? null : SearchLastNameText.Trim(),
+                CompanyName = SelectedSearchCompany?.CompanyName ?? (string.IsNullOrWhiteSpace(SearchCompanyNameText) ? null : SearchCompanyNameText.Trim()),
+                IdNumber = string.IsNullOrWhiteSpace(SearchIdNumberText) ? null : SearchIdNumberText.Trim(),
+                AccountNumber = ParseAccountNumberOrNull(SearchAccountNumberText),
+                PriceCode = string.IsNullOrEmpty(SearchPriceCode?.Code) ? null : SearchPriceCode.Code.Trim(),
+                PhoneNumber = string.IsNullOrWhiteSpace(SearchPhoneNumberText) ? null : SearchPhoneNumberText,
+                MobileNumber = string.IsNullOrWhiteSpace(SearchMobileNumberText) ? null : SearchMobileNumberText,
+                Email = string.IsNullOrWhiteSpace(SearchEmailText) ? null : SearchEmailText,
+                ProvinceId = provinceId,
+                CountryId = countryId
+            };
+
+            var results = await _buyerService.SearchBuyersAsync(request);
+
+            BuyerSearchResults.Clear();
+            if (results != null)
+            {
+                foreach (var b in results)
+                    BuyerSearchResults.Add(b);
+            }
+
+            PaginationViewModel.SetTotalRecords(BuyerSearchResults.Count);
+            PaginationViewModel.PageChanged -= OnPaginationPageChanged;
+            PaginationViewModel.PageChanged += OnPaginationPageChanged;
+            UpdatePagedResults();
+
+            if (BuyerSearchResults.Count == 0)
+            {
+                StatusMessage = "No buyers found.";
+                FoundBuyer = null;
+            }
+            else
+            {
+                StatusMessage = $"Found {BuyerSearchResults.Count} buyer(s).";
+                FoundBuyer = PagedBuyerSearchResults.Count > 0 ? PagedBuyerSearchResults[0] : BuyerSearchResults[0];
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            StatusMessage = $"Error calling API: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task CreateBuyerAsync()
+    {
+        if (IsBusy) return;
+        IsBusy = true;
+        StatusMessage = "Creating buyer...";
+
+        try
+        {
+            if (SelectedNewCompany == null || SelectedNewSite == null)
+            {
+                StatusMessage = "Company and Site are required for buyers.";
+                return;
+            }
+
+            // Guard: ensure site belongs to company
+            if (SelectedNewSite.CompanyId != SelectedNewCompany.CompanyId)
+            {
+                StatusMessage = "Selected Site does not belong to the selected Company.";
+                return;
+            }
+
+            // Allocate account number at time of create (not on Clear)
+            if (NewAccountNumber == null)
+                NewAccountNumber = await _buyerService.GetNextAccountNumberAsync();
+
+            var dto = new BuyerDto
+            {
+                BuyerId = 0,
+                FirstName = NewFirstName,
+                LastName = NewLastName,
+                IdNumber = NewIdNumber,
+                AccountNumber = NewAccountNumber,
+                IsCompany = true, // buyers are always company-based
+                CompanyId = (int)SelectedNewCompany.CompanyId,
+                SiteId = (int)SelectedNewSite.SiteId,
+                IsTaxable = NewTaxable,
+                Taxable = NewTaxable,
+                PriceCode = string.IsNullOrEmpty(SelectedPriceCodeChar?.Code) ? null : SelectedPriceCodeChar.Code.Trim(),
+                PhoneNumber = string.IsNullOrWhiteSpace(NewPhoneNumber) ? null : NewPhoneNumber,
+                MobileNumber = string.IsNullOrWhiteSpace(NewMobileNumber) ? null : NewMobileNumber,
+                Email = string.IsNullOrWhiteSpace(NewEmail) ? null : NewEmail
+            };
+
+            var created = await _buyerService.CreateBuyerAsync(dto);
+            if (created == null)
+            {
+                StatusMessage = "Buyer create failed.";
+                return;
+            }
+
+            StatusMessage = $"Buyer {created.FirstName} {created.LastName} created (Account {created.AccountNumberDisplay}).";
+
+            // Refresh list and reset form
+            await SearchBuyerAsync();
+            await ClearNewBuyerFormAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            StatusMessage = $"Error calling API: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void OnEditBuyer(BuyerDto? buyer)
+    {
+        if (buyer == null) return;
+        FoundBuyer = buyer;
+    }
+
+    private static long? ParseAccountNumberOrNull(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return null;
+
+        text = text.Trim();
+        return long.TryParse(text, out var value) ? value : null;
+    }
+
+    private bool _isEditMode;
+    private long? _editingCustomerId;
+    private int? _editingBuyerId;
+
+    public bool IsEditMode
+    {
+        get => _isEditMode;
+        set
+        {
+            if (_isEditMode == value) return;
+            _isEditMode = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsCreateMode));
+            (UpdateCustomerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+        }
+    }
+
+    // Used by BuyersView/Create button visibility
+    public bool IsCreateMode => !IsEditMode;
+
+    public long? EditingCustomerId
+    {
+        get => _editingCustomerId;
+        set
+        {
+            if (_editingCustomerId == value) return;
+            _editingCustomerId = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CanUpdateCustomer));
+            (UpdateCustomerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+        }
+    }
+
+    public int? EditingBuyerId
+    {
+        get => _editingBuyerId;
+        set
+        {
+            if (_editingBuyerId == value) return;
+            _editingBuyerId = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CanUpdateBuyer));
+            (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+        }
+    }
+
+    private void OnEditCustomer(CustomerDto? customer)
+    {
+        if (customer == null) return;
+        FoundCustomer = customer;
+        IsEditMode = true;
+        EditingCustomerId = customer.CustomerId;
+        (UpdateCustomerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+    }
+
+    private async Task OnDeleteCustomerAsync(CustomerDto? customer)
+    {
+        if (customer == null) return;
+        await _customerService.SoftDeleteCustomerAsync(customer.CustomerId);
+        await SearchCustomerAsync();
+    }
+
+    private void OnLogTicket(CustomerDto? customer)
+    {
+        if (customer == null) return;
+        // Placeholder: existing ticket logic lives in other partials.
+        StatusMessage = $"Selected customer {customer.CustomerId} for ticketing.";
+    }
+
+    private async Task OnUpdateCustomerAsync()
+    {
+        if (IsBusy) return;
+        if (!EditingCustomerId.HasValue)
+            return;
+
+        IsBusy = true;
+        StatusMessage = "Updating customer...";
+
+        try
+        {
+            // Build DTO from form fields (Create/Edit panel)
+            var dto = new CustomerDto
+            {
+                CustomerId = (int)EditingCustomerId.Value,
+                FirstName = NewFirstName,
+                LastName = NewLastName,
+                IdNumber = NewIdNumber,
+                Email = NewEmail,
+                PhoneNumber = NewPhoneNumber,
+                MobileNumber = NewMobileNumber,
+                PriceCode = string.IsNullOrEmpty(SelectedPriceCodeChar?.Code) ? null : SelectedPriceCodeChar.Code.Trim(),
+                Taxable = NewTaxable,
+                AccountNumber = NewAccountNumber,
+                IsCompany = NewIsCompany,
+                CompanyId = NewIsCompany && SelectedNewCompany != null ? (int?)SelectedNewCompany.CompanyId : null,
+                SiteId = NewIsCompany && SelectedNewSite != null ? (int?)SelectedNewSite.SiteId : null
+            };
+
+            // Upload captured images (if any) before refreshing
+            await UploadCustomerImagesAsync(dto.CustomerId);
+
+            await _customerService.UpdateCustomerAsync(dto);
+
+            // Refresh just this customer and keep selection
+            var refreshed = await _customerService.GetCustomerByIdAsync(dto.CustomerId);
+            if (refreshed == null)
+            {
+                StatusMessage = "Customer updated, but refresh failed.";
+                return;
+            }
+
+            var existing = CustomerSearchResults.FirstOrDefault(c => c.CustomerId == refreshed.CustomerId);
+            if (existing != null)
+            {
+                var index = CustomerSearchResults.IndexOf(existing);
+                if (index >= 0)
+                    CustomerSearchResults[index] = refreshed;
+            }
+
+            // Keep paged results in sync
+            var existingPaged = PagedCustomerSearchResults.FirstOrDefault(c => c.CustomerId == refreshed.CustomerId);
+            if (existingPaged != null)
+            {
+                var index = PagedCustomerSearchResults.IndexOf(existingPaged);
+                if (index >= 0)
+                    PagedCustomerSearchResults[index] = refreshed;
+            }
+
+            // Keep selection and refresh form + images
+            FoundCustomer = refreshed;
+            await LoadSelectedCustomerImagesAsync(refreshed);
+
+            StatusMessage = "Customer updated.";
+        }
+        catch (HttpRequestException ex)
+        {
+            StatusMessage = $"Error calling API: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error updating customer: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task OnUpdateBuyerAsync()
+    {
+        if (IsBusy) return;
+        if (!EditingBuyerId.HasValue)
+        {
+            StatusMessage = "Select a buyer to update.";
+            return;
+        }
+
+        if (SelectedNewCompany == null || SelectedNewSite == null)
+        {
+            StatusMessage = "Company and Site are required.";
+            return;
+        }
+
+        IsBusy = true;
+        StatusMessage = "Updating buyer...";
+
+        try
+        {
+            var dto = new BuyerDto
+            {
+                BuyerId = EditingBuyerId.Value,
+                FirstName = NewFirstName,
+                LastName = NewLastName,
+                IdNumber = NewIdNumber,
+                AccountNumber = NewAccountNumber,
+                IsCompany = true,
+                CompanyId = (int)SelectedNewCompany.CompanyId,
+                SiteId = (int)SelectedNewSite.SiteId,
+                IsTaxable = NewTaxable,
+                Taxable = NewTaxable,
+                PriceCode = string.IsNullOrEmpty(SelectedPriceCodeChar?.Code) ? null : SelectedPriceCodeChar.Code.Trim(),
+                PhoneNumber = string.IsNullOrWhiteSpace(NewPhoneNumber) ? null : NewPhoneNumber,
+                MobileNumber = string.IsNullOrWhiteSpace(NewMobileNumber) ? null : NewMobileNumber,
+                Email = string.IsNullOrWhiteSpace(NewEmail) ? null : NewEmail
+            };
+
+            // Upload captured images (if any) before refreshing
+            await UploadBuyerImagesAsync(dto.BuyerId);
+
+            await _buyerService.UpdateBuyerAsync(dto);
+
+            // Refresh just this buyer and keep selection
+            var refreshed = await _buyerService.GetBuyerByIdAsync(dto.BuyerId);
+            if (refreshed == null)
+            {
+                StatusMessage = "Buyer updated, but refresh failed.";
+                return;
+            }
+
+            var existing = BuyerSearchResults.FirstOrDefault(b => b.BuyerId == refreshed.BuyerId);
+            if (existing != null)
+            {
+                var index = BuyerSearchResults.IndexOf(existing);
+                if (index >= 0)
+                    BuyerSearchResults[index] = refreshed;
+            }
+
+            var existingPaged = PagedBuyerSearchResults.FirstOrDefault(b => b.BuyerId == refreshed.BuyerId);
+            if (existingPaged != null)
+            {
+                var index = PagedBuyerSearchResults.IndexOf(existingPaged);
+                if (index >= 0)
+                    PagedBuyerSearchResults[index] = refreshed;
+            }
+
+            FoundBuyer = refreshed;
+            await LoadSelectedBuyerImagesAsync(refreshed);
+
+            StatusMessage = "Buyer updated.";
+        }
+        catch (HttpRequestException ex)
+        {
+            StatusMessage = $"Error calling API: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error updating buyer: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task OnDeleteBuyerAsync(BuyerDto? buyer)
+    {
+        if (buyer == null) return;
+        await _buyerService.SoftDeleteBuyerAsync(buyer.BuyerId);
+        await SearchBuyerAsync();
+    }
+
+    private void OnLogBuyerTicket(BuyerDto? buyer)
+    {
+        if (buyer == null) return;
+        StatusMessage = $"Selected buyer {buyer.BuyerId} for ticketing.";
+    }
+
+    private void ClearCustomerSearch()
+    {
+        SearchCustomerIdText = string.Empty;
+        SearchSiteIdText = string.Empty;
+        SearchFirstNameText = string.Empty;
+        SearchLastNameText = string.Empty;
+        SearchCompanyNameText = string.Empty;
+        SearchIdNumberText = string.Empty;
+        SearchPhoneNumberText = string.Empty;
+        SearchMobileNumberText = string.Empty;
+        SearchEmailText = string.Empty;
+        SearchAccountNumberText = string.Empty;
+        CustomerSearchResults.Clear();
+        PagedCustomerSearchResults.Clear();
+        FoundCustomer = null;
+        PaginationViewModel.SetTotalRecords(0);
+    }
+
+    private void ClearBuyerSearch()
+    {
+        BuyerSearchResults.Clear();
+        FoundBuyer = null;
+    }
+
+    private async Task ClearNewCustomerFormAsync()
+    {
+        // Reset edit mode
+        FoundCustomer = null;
+        EditingCustomerId = null;
+        IsEditMode = false;
+
+        // Clear form fields
+        NewFirstName = string.Empty;
+        NewLastName = string.Empty;
+        NewIdNumber = string.Empty;
+        NewEmail = string.Empty;
+        NewPhoneNumber = string.Empty;
+        NewMobileNumber = string.Empty;
+        NewPriceCode = string.Empty;
+        NewIsCompany = false;
+        NewCompanyName = null;
+        NewTaxable = true;
+
+        // Reset company/site + derived address
+        SelectedNewCompanyLetter = "ALL";
+        SelectedNewCompany = null;
+        SelectedNewSite = null;
+        NewSiteSuggestions.Clear();
+
+        // Reset images
+        IdCardImage = null;
+        DriverLicenseImage = null;
+        PhotoImage = null;
+        SignatureImage = null;
+        FingerprintImage = null;
+
+        SelectedIdCardImage = null;
+        SelectedDriverLicenseImage = null;
+        SelectedPhotoImage = null;
+        SelectedSignatureImage = null;
+        SelectedFingerprintImage = null;
+
+        NewCountry = Countries.FirstOrDefault();
+        NewProvince = Provinces.FirstOrDefault();
+
+        // Fetch a preview of the next globally-unique account number.
+        // This uses the shared generator (max(customers,buyers)+1) and does not consume a sequence.
+        NewAccountNumber = await _customerService.GetNextAccountNumberAsync();
+        OnPropertyChanged(nameof(NewAccountNumberDisplay));
+
+        OnPropertyChanged(nameof(CanCreateCustomer));
+        (UpdateCustomerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+    }
+
+    private async Task ClearNewBuyerFormAsync()
+    {
+        // Reset edit mode
+        FoundBuyer = null;
+        EditingBuyerId = null;
+        IsEditMode = false;
+
+        // Clear form fields
+        NewFirstName = string.Empty;
+        NewLastName = string.Empty;
+        NewIdNumber = string.Empty;
+        NewEmail = string.Empty;
+        NewPhoneNumber = string.Empty;
+        NewMobileNumber = string.Empty;
+        SelectedPriceCodeChar = PriceCodeOptions.FirstOrDefault();
+        NewTaxable = false;
+
+        // Reset company/site
+        SelectedNewCompanyLetter = "ALL";
+        SelectedNewCompany = null;
+        SelectedNewSite = null;
+        NewSiteSuggestions.Clear();
+
+        // Reset images
+        IdCardImage = null;
+        DriverLicenseImage = null;
+        PhotoImage = null;
+        SignatureImage = null;
+        FingerprintImage = null;
+
+        SelectedIdCardImage = null;
+        SelectedDriverLicenseImage = null;
+        SelectedPhotoImage = null;
+        SelectedSignatureImage = null;
+        SelectedFingerprintImage = null;
+
+        // Fetch a preview of the next globally-unique account number.
+        // This uses the shared generator (max(customers,buyers)+1) and does not consume a sequence.
+        NewAccountNumber = await _buyerService.GetNextAccountNumberAsync();
+
+        OnPropertyChanged(nameof(NewAccountNumberDisplay));
+        OnPropertyChanged(nameof(IsNewBuyerFullNameInvalid));
+        OnPropertyChanged(nameof(CanCreateBuyer));
+        (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+    }
+
+    private static Avalonia.Media.Imaging.Bitmap? LoadBitmapFromBytes(byte[]? bytes)
+    {
+        if (bytes == null || bytes.Length == 0) return null;
+        try
+        {
+            using var ms = new MemoryStream(bytes);
+            return new Avalonia.Media.Imaging.Bitmap(ms);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async Task CaptureIdCardAsync()
+    {
+        var result = await _app.DocumentScanner.ScanDocumentAsync(DocumentType.IdCard);
+        if (!result.IsSuccess || result.ImageData == null) return;
+
+        IdCardImage = LoadBitmapFromBytes(result.ImageData);
+
+        // Upload depending on context
+        if (CurrentSection == EnumMainSection.Buyers)
+        {
+            if (FoundBuyer == null)
+            {
+                StatusMessage = "Select a buyer before scanning ID.";
+                return;
+            }
+
+            await _buyerService.UploadBuyerImageAsync(FoundBuyer.BuyerId, "idcard", result.ImageData, "image/png");
+            SelectedIdCardImage = IdCardImage;
+            StatusMessage = "Buyer ID card uploaded.";
+        }
+        else
+        {
+            if (FoundCustomer == null)
+                return;
+
+            // For customers, upload when saving/creating; keep preview here.
+            StatusMessage = "Customer ID card captured.";
+        }
+    }
+
+    private async Task CaptureDriverLicenseAsync()
+    {
+        var result = await _app.DocumentScanner.ScanDocumentAsync(DocumentType.DriverLicense);
+        if (!result.IsSuccess || result.ImageData == null) return;
+
+        DriverLicenseImage = LoadBitmapFromBytes(result.ImageData);
+
+        if (CurrentSection == EnumMainSection.Buyers)
+        {
+            if (FoundBuyer == null)
+            {
+                StatusMessage = "Select a buyer before scanning license.";
+                return;
+            }
+
+            await _buyerService.UploadBuyerImageAsync(FoundBuyer.BuyerId, "driverlicense", result.ImageData, "image/png");
+            SelectedDriverLicenseImage = DriverLicenseImage;
+            StatusMessage = "Buyer driver license uploaded.";
+        }
+        else
+        {
+            if (FoundCustomer == null)
+                return;
+
+            StatusMessage = "Customer driver license captured.";
+        }
+    }
+
+    private async Task CapturePhotoAsync()
+    {
+        var capture = await _cameraService.CaptureAsync(CameraDeviceType.CustomerPhoto, "photo");
+        PhotoImage = LoadBitmapFromBytes(capture.ImageData);
+    }
+
+    private async Task CaptureFingerprintAsync()
+    {
+        var result = await _app.FingerprintScanner.CaptureAsync();
+        if (result.IsSuccess && result.ImageData != null)
+            FingerprintImage = LoadBitmapFromBytes(result.ImageData);
     }
 }

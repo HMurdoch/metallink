@@ -486,6 +486,20 @@ public partial class MainWindowViewModel
 
     private string? _selectedCompanyLetter = "ALL";
 
+    private string? _selectedNewCompanyLetter = "ALL";
+
+    public string? SelectedNewCompanyLetter
+    {
+        get => _selectedNewCompanyLetter;
+        set
+        {
+            if (_selectedNewCompanyLetter == value) return;
+            _selectedNewCompanyLetter = value;
+            OnPropertyChanged();
+            ApplyNewCompanyLetterFilter();
+        }
+    }
+
     public string? SelectedCompanyLetter
     {
         get => _selectedCompanyLetter;
@@ -613,6 +627,12 @@ public partial class MainWindowViewModel
             _selectedNewCompany = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanUpdateCustomer));
+            OnPropertyChanged(nameof(CanCreateBuyer));
+            OnPropertyChanged(nameof(CanUpdateBuyer));
+
+            (UpdateCustomerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
 
             if (value != null)
             {
@@ -621,6 +641,8 @@ public partial class MainWindowViewModel
 
                 SelectedNewSite = null;
                 NewSiteSuggestions.Clear();
+                OnPropertyChanged(nameof(CanCreateBuyer));
+                (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
 
                 // Load sites for the selected company
                 _ = LoadNewSitesForSelectedCompanyAsync();
@@ -630,6 +652,14 @@ public partial class MainWindowViewModel
                 NewCompanyName = null;
                 NewSiteSuggestions.Clear();
                 SelectedNewSite = null;
+
+                OnPropertyChanged(nameof(CanCreateCustomer));
+                OnPropertyChanged(nameof(CanUpdateCustomer));
+                OnPropertyChanged(nameof(CanCreateBuyer));
+                OnPropertyChanged(nameof(CanUpdateBuyer));
+
+                (UpdateCustomerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+                (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
             }
         }
     }
@@ -658,9 +688,31 @@ public partial class MainWindowViewModel
             _selectedNewSite = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanUpdateCustomer));
+            OnPropertyChanged(nameof(CanCreateBuyer));
+            OnPropertyChanged(nameof(CanUpdateBuyer));
+            (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
 
             UpdateNewLocationFromSelectedSite();
         }
+    }
+
+    private void UpdateNewLocationFromSelectedSite()
+    {
+        if (SelectedNewSite == null)
+            return;
+
+        NewAddressLine1 = SelectedNewSite.AddressLine1 ?? string.Empty;
+        NewAddressLine2 = SelectedNewSite.AddressLine2 ?? string.Empty;
+        NewSuburb = SelectedNewSite.Suburb ?? string.Empty;
+        NewCity = SelectedNewSite.City ?? string.Empty;
+        NewPostalCode = SelectedNewSite.PostalCode ?? string.Empty;
+
+        if (SelectedNewSite.ProvinceId.HasValue)
+            NewProvince = Provinces.FirstOrDefault(p => p.ProvinceId == SelectedNewSite.ProvinceId.Value);
+
+        if (SelectedNewSite.CountryId.HasValue)
+            NewCountry = Countries.FirstOrDefault(c => c.CountryId == SelectedNewSite.CountryId.Value);
     }
 
     // --------------------
