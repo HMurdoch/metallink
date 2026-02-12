@@ -169,9 +169,36 @@ public class TicketsReceivingController : ControllerBase
         return CreatedAtAction(nameof(GetTicketReceiving), new { id = result!.TicketReceivingId }, MapToDto(result));
     }
 
+    [HttpPut("{id}")]
+    public async Task<ActionResult<TicketReceivingDto>> UpdateTicketReceiving(int id, [FromBody] CreateTicketReceivingDto dto, CancellationToken ct = default)
+    {
+        var ticket = await _ticketReceivingRepo.GetByIdAsync(id);
+        if (ticket == null)
+            return NotFound($"Ticket with ID {id} not found.");
+
+        // Update basic fields
+        // Ticket number is server-controlled; keep existing.
+        ticket.UpdateHeader(dto.VehicleRegistration, dto.TrailerRegistration, dto.DriverName, dto.Notes);
+        ticket.OfmWeighbridgeTicket = dto.OfmWeighbridgeTicket;
+        ticket.CkNumber = dto.CkNumber;
+        ticket.DeliveryNumber = dto.DeliveryNumber;
+        ticket.ForeignTicket = dto.ForeignTicket;
+
+        // State + weights
+        ticket.TicketState = dto.TicketState;
+        ticket.InitializeWeightKg = dto.InitializeWeightKg;
+        ticket.UpdateWeights(null, null, dto.NetWeightKg);
+
+        await _ticketReceivingRepo.UpdateAsync(ticket);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        var result = await _ticketReceivingRepo.GetByIdAsync(id);
+        return Ok(MapToDto(result!));
+    }
+
     [HttpPost("{id}/lines")]
     public async Task<ActionResult<TicketReceivingDto>> AddLineItem(int id, [FromBody] CreateTicketReceivingLineDto dto, CancellationToken ct = default)
-    {
+    { 
         var ticket = await _ticketReceivingRepo.GetByIdAsync(id);
         if (ticket == null)
             return NotFound($"Ticket with ID {id} not found.");

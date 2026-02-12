@@ -12,8 +12,13 @@ public class TicketSendingLine
     public int ProductId { get; private set; }
     public Product Product { get; set; } = null!;
 
+    public decimal? FirstWeightKg { get; private set; }
+    public decimal? SecondWeightKg { get; private set; }
+
     public decimal NetWeightKg { get; private set; }
     public decimal UnitPricePerKg { get; private set; }
+
+    public decimal Tare { get; private set; } = 0m;
 
     public string? Notes { get; private set; }
 
@@ -32,14 +37,26 @@ public class TicketSendingLine
         decimal netWeightKg,
         decimal unitPricePerKg,
         int createdByOperatorId,
-        string? notes = null)
+        decimal tare = 0m,
+        string? notes = null,
+        decimal? firstWeightKg = null,
+        decimal? secondWeightKg = null)
     {
         TicketSendingId = ticketSendingId;
         ProductId = productId;
+        FirstWeightKg = firstWeightKg;
+        SecondWeightKg = secondWeightKg;
         NetWeightKg = netWeightKg;
         UnitPricePerKg = unitPricePerKg;
+        Tare = tare;
         CreatedByOperatorId = createdByOperatorId;
         Notes = notes;
+    }
+
+    public void UpdateTare(decimal tare)
+    {
+        Tare = tare;
+        UpdatedTime = DateTimeOffset.UtcNow;
     }
 
     public void SoftDelete()

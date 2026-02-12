@@ -1205,36 +1205,7 @@ public partial class MainWindowViewModel
     /// Collection with just the line items (no totals row - shown separately below grid)
     /// </summary>
     public ObservableCollection<TicketLineDto> SelectedReceivingTicketLinesWithTotals => SelectedReceivingTicketLines;
-    
-    /// <summary>
-    /// Calculated Net Weight as the SUM of all line item weights
-    /// For VIEWING existing tickets: Falls back to the ticket's net weight if no lines are loaded yet
-    /// </summary>
-    public decimal CalculatedNetWeightKg 
-    { 
-        get
-        {
-            // If lines are loaded, calculate: SUM(WeightKg) - SUM(Tare)
-            if (SelectedReceivingTicketLines.Count > 0)
-            {
-                var sumNetWeight = SelectedReceivingTicketLines.Sum(l => l.WeightKg);
-                var sumTare = SelectedReceivingTicketLines.Sum(l => l.Tare);
-                return sumNetWeight - sumTare;
-            }
-            // Fallback to ticket details value
-            return SelectedReceivingTicketDetails?.NetWeightKg ?? 0m;
-        }
-    }
 
-    /// <summary>
-    /// Total weight from line items being created
-    /// For the CREATE section: Always shows the sum of ReceivingLines (0.00 for new tickets with no lines yet)
-    /// </summary>
-    public decimal CreatingTicketTotalWeight 
-    { 
-        get => ReceivingLinesTotalWeight;  // This is already the sum of ReceivingLines
-        set => ReceivingLinesTotalWeight = value;
-    }
 
     private async Task LoadSelectedReceivingTicketDetailsAsync(long ticketId)
     {
@@ -1447,12 +1418,20 @@ public partial class MainWindowViewModel
                 ReceivingLines.Add(lineItem);
             }
 
-            // If lines are loaded, set First Weight to the last line's Second Weight
-            if (lines.Count > 0)
+            // If lines are loaded and the ticket is in Multi-line state,
+            // set First Weight to the last line's Second Weight (matches required behaviour).
+            if (ticketState == 'M' && lines.Count > 0)
             {
-                var lastLine = lines.Last();
-                TicketFirstWeightText = (lastLine.SecondWeightKg ?? 0m).ToString("0.00");
-                Console.WriteLine($"[DEBUG] Ticket has {lines.Count} lines. Set FirstWeightText from last line's SecondWeightKg: {TicketFirstWeightText}");
+                var lastActiveLine = lines
+                    .Where(l => l.IsActive)
+                    .OrderBy(l => l.CreatedTime)
+                    .LastOrDefault();
+
+                if (lastActiveLine != null)
+                {
+                    TicketFirstWeightText = (lastActiveLine.SecondWeightKg ?? 0m).ToString("0.00");
+                    Console.WriteLine($"[DEBUG] Ticket has {lines.Count} lines. (State M) Set FirstWeightText from last ACTIVE line's SecondWeightKg: {TicketFirstWeightText}");
+                }
             }
         }
 

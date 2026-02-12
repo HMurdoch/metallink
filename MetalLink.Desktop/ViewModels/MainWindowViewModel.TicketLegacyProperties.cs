@@ -190,6 +190,7 @@ public partial class MainWindowViewModel
         set { _areWeighbridgeFieldsVisible = value; OnPropertyChanged(); }
     }
 
+
     // Button text property
     private string _createOrUpdateButtonText = "Create Ticket";
     public string CreateOrUpdateButtonText

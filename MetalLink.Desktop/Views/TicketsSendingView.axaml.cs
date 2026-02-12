@@ -38,4 +38,13 @@ public partial class TicketsSendingView : UserControl
             });
         }
     }
+
+    private void TareTextBox_GotFocus(object? sender, Avalonia.Input.GotFocusEventArgs e)
+    {
+        if (sender is TextBox textBox)
+        {
+            // Select all text when the TextBox gets focus
+            textBox.SelectAll();
+        }
+    }
 }

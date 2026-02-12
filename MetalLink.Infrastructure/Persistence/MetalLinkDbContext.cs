@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MetalLink.Domain.Entities;
+using System.Linq.Expressions;
 
 namespace MetalLink.Infrastructure.Persistence;
 
@@ -62,6 +63,10 @@ public class MetalLinkDbContext : DbContext
         ConfigureReceivingTicketLines(modelBuilder);
         ConfigureSendingTickets(modelBuilder);
         ConfigureSendingTicketLines(modelBuilder);
+
+        // Global soft-delete filter: automatically apply WHERE is_active = true
+        // for all entities that have an IsActive boolean property.
+        ApplyIsActiveGlobalQueryFilter(modelBuilder);
     }
 
     private static void ConfigureCompanies(ModelBuilder modelBuilder)
@@ -349,6 +354,8 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.TicketTypeId).HasColumnName("ticket_type_id").IsRequired();
         e.Property(x => x.TicketNumber).HasColumnName("ticket_number").HasMaxLength(100).IsRequired();
         e.Property(x => x.NetWeightKg).HasColumnName("net_weight_kg").IsRequired();
+        e.Property(x => x.InitializeWeightKg).HasColumnName("initialize_weight_kg");
+        e.Property(x => x.TicketState).HasColumnName("ticket_state").HasMaxLength(1).HasDefaultValue('H');
         e.Property(x => x.DriverName).HasColumnName("driver_name");
         e.Property(x => x.VehicleRegistration).HasColumnName("vehicle_registration");
         e.Property(x => x.TrailerRegistration).HasColumnName("trailer_registration");
@@ -367,6 +374,27 @@ public class MetalLinkDbContext : DbContext
         e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
     }
 
+    private static void ApplyIsActiveGlobalQueryFilter(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            // Only apply to CLR types with an IsActive property
+            var clrType = entityType.ClrType;
+            var isActiveProp = clrType.GetProperty("IsActive");
+            if (isActiveProp == null || isActiveProp.PropertyType != typeof(bool))
+                continue;
+
+            // Build expression: (e) => EF.Property<bool>(e, "IsActive") == true
+            var parameter = Expression.Parameter(clrType, "e");
+            var propertyMethod = typeof(EF).GetMethod(nameof(EF.Property))!.MakeGenericMethod(typeof(bool));
+            var isActiveProperty = Expression.Call(propertyMethod, parameter, Expression.Constant("IsActive"));
+            var body = Expression.Equal(isActiveProperty, Expression.Constant(true));
+            var lambda = Expression.Lambda(body, parameter);
+
+            modelBuilder.Entity(clrType).HasQueryFilter(lambda);
+        }
+    }
+
     private static void ConfigureSendingTicketLines(ModelBuilder modelBuilder)
     {
         var e = modelBuilder.Entity<TicketSendingLine>();
@@ -375,8 +403,11 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.TicketSendingLineId).HasColumnName("sending_ticket_line_id").ValueGeneratedOnAdd();
         e.Property(x => x.TicketSendingId).HasColumnName("sending_ticket_id").IsRequired();
         e.Property(x => x.ProductId).HasColumnName("product_id").IsRequired();
+        e.Property(x => x.FirstWeightKg).HasColumnName("first_weight_kg");
+        e.Property(x => x.SecondWeightKg).HasColumnName("second_weight_kg");
         e.Property(x => x.NetWeightKg).HasColumnName("net_weight_kg").IsRequired();
         e.Property(x => x.UnitPricePerKg).HasColumnName("unit_price_per_kg").IsRequired();
+        e.Property(x => x.Tare).HasColumnName("tare").HasDefaultValue(0m);
         e.Property(x => x.Notes).HasColumnName("notes");
         e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);

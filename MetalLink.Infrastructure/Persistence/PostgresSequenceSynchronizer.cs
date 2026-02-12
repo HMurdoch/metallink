@@ -93,15 +93,21 @@ public static class PostgresSequenceSynchronizer
                 continue;
 
             // setval(seq, max(id), true) => nextval returns max(id)+1
-            // If the table is empty max(id) is NULL => COALESCE to 0, so nextval returns 1.
+            // When the table is empty, MAX(id) is NULL. We must NOT set the sequence to 0 because
+            // many sequences have a minimum value of 1 (and Postgres will throw).
+            // Instead, set it to 1 with is_called=false so that nextval returns 1.
             //
             // We cannot parameterize identifiers here, so we quote schema/table/column names.
             var setValSql = $"""
-                SELECT setval(
-                    '{EscapeSqlLiteral(sc.SequenceName)}'::regclass,
-                    COALESCE((SELECT MAX("{sc.ColumnName}") FROM "{sc.SchemaName}"."{sc.TableName}"), 0),
-                    true
-                );
+                SELECT CASE
+                    WHEN (SELECT MAX("{sc.ColumnName}") FROM "{sc.SchemaName}"."{sc.TableName}") IS NULL
+                        THEN setval('{EscapeSqlLiteral(sc.SequenceName)}'::regclass, 1, false)
+                    ELSE setval(
+                        '{EscapeSqlLiteral(sc.SequenceName)}'::regclass,
+                        (SELECT MAX("{sc.ColumnName}") FROM "{sc.SchemaName}"."{sc.TableName}"),
+                        true
+                    )
+                END;
                 """;
 
             await dbContext.Database.ExecuteSqlRawAsync(setValSql, cancellationToken);

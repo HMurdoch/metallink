@@ -31,6 +31,13 @@ namespace MetalLink.Desktop.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
 {
+    private Task AddLineRoutedAsync() => CurrentSection == EnumMainSection.TicketsSending ? AddSendingLineAsync() : AddReceivingLineAsync();
+
+    private Task CreateTicketHeaderRoutedAsync() => CurrentSection == EnumMainSection.TicketsSending ? CreateSendingTicketHeaderAsync() : CreateTicketHeaderAsync();
+
+    private Task FinalizeTicketRoutedAsync() => CurrentSection == EnumMainSection.TicketsSending ? FinalizeSendingTicketAsync() : FinalizeTicketAsync();
+
+    private Task ClearTicketRoutedAsync() => CurrentSection == EnumMainSection.TicketsSending ? ClearSendingTicketAsync() : ClearTicketAsync();
     // --- Services / dependencies ---
 
     private readonly App _app;
@@ -321,14 +328,69 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             }
         }
     }
-    // Show ticket details only if NOT searching for new customers AND a ticket is selected
+    // Show ticket details only if NOT searching for "new" entities AND a ticket is selected
+    // This is shared by both Receiving and Sending views so the UI can bind identically.
     public bool ShouldShowTicketDetails
     {
         get
         {
-            var show = !SearchReceivingNewCustomersCheckbox && HasSelectedReceivingTicket;
-            Console.WriteLine($"[DEBUG] ShouldShowTicketDetails: SearchReceivingNewCustomersCheckbox={SearchReceivingNewCustomersCheckbox}, HasSelectedReceivingTicket={HasSelectedReceivingTicket}, show={show}");
+            var show = CurrentSection switch
+            {
+                EnumMainSection.TicketsReceiving => !SearchReceivingNewCustomersCheckbox && HasSelectedReceivingTicket,
+                EnumMainSection.TicketsSending => !SearchSendingNewBuyersCheckbox && HasSelectedSendingTicket,
+                _ => false
+            };
+
+            Console.WriteLine(
+                $"[DEBUG] ShouldShowTicketDetails: Section={CurrentSection}, " +
+                $"SearchReceivingNewCustomersCheckbox={SearchReceivingNewCustomersCheckbox}, HasSelectedReceivingTicket={HasSelectedReceivingTicket}, " +
+                $"SearchSendingNewBuyersCheckbox={SearchSendingNewBuyersCheckbox}, HasSelectedSendingTicket={HasSelectedSendingTicket}, " +
+                $"show={show}");
+
             return show;
+        }
+    }
+
+    /// <summary>
+    /// Calculated Net Weight as SUM(WeightKg) - SUM(Tare) from the currently selected ticket's line items.
+    /// Shared by Receiving + Sending so both UIs can bind identically.
+    /// Falls back to the selected ticket's NetWeightKg if no lines are loaded.
+    /// </summary>
+    public decimal CalculatedNetWeightKg
+    {
+        get
+        {
+            return CurrentSection switch
+            {
+                EnumMainSection.TicketsReceiving =>
+                    SelectedReceivingTicketLines.Count > 0
+                        ? SelectedReceivingTicketLines.Sum(l => l.WeightKg) - SelectedReceivingTicketLines.Sum(l => l.Tare)
+                        : (SelectedReceivingTicketDetails?.NetWeightKg ?? 0m),
+
+                EnumMainSection.TicketsSending =>
+                    SelectedSendingTicketLines.Count > 0
+                        ? SelectedSendingTicketLines.Sum(l => l.WeightKg) - SelectedSendingTicketLines.Sum(l => l.Tare)
+                        : (SelectedSendingTicketDetails?.NetWeightKg ?? 0m),
+
+                _ => 0m
+            };
+        }
+    }
+
+    /// <summary>
+    /// Total weight from line items being created in the Create/Edit section.
+    /// Shared by Receiving + Sending so both UIs can bind identically.
+    /// </summary>
+    public decimal CreatingTicketTotalWeight
+    {
+        get
+        {
+            return CurrentSection switch
+            {
+                EnumMainSection.TicketsReceiving => ReceivingLinesTotalWeight,
+                EnumMainSection.TicketsSending => SendingLinesTotalWeight,
+                _ => 0m
+            };
         }
     }
 
@@ -388,7 +450,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         CreateCustomerCommand = new AsyncCommand(CreateCustomerAsync);
         CreateBuyerCommand = new AsyncCommand(CreateBuyerAsync);
         CreateTicketCommand = new AsyncCommand(CreateTicketAsync);
-        FinalizeTicketCommand = new AsyncCommand(FinalizeTicketAsync);
+        FinalizeTicketCommand = new AsyncCommand(FinalizeTicketRoutedAsync);
         AddReceivingLineCommand = new AsyncCommand(AddReceivingLineAsync);
         RemoveReceivingLineCommand = new AsyncRelayCommand<ReceivingLineItem?>(RemoveReceivingLineAsync);
         ReadWeighbridgeCommand = new AsyncCommand(ReadWeighbridgeAsync);
@@ -508,11 +570,11 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         // Signature
         CaptureSignatureCommand = new AsyncCommand(CaptureSignatureAsync);
 
-        // Ticket receiving commands
-        AddLineCommand = new AsyncCommand(AddReceivingLineAsync);
+        // Ticket create/edit commands (route based on current section)
+        AddLineCommand = new AsyncCommand(AddLineRoutedAsync);
         RemoveLineCommand = new AsyncRelayCommand<ReceivingLineItem?>(RemoveReceivingLineAsync);
         SaveTicketCommand = new AsyncCommand(SaveTicketAsync);
-        ClearTicketCommand = new AsyncCommand(ClearTicketAsync);
+        ClearTicketCommand = new AsyncCommand(ClearTicketRoutedAsync);
         CaptureWeightCommand = new AsyncCommand(CaptureWeightAsync);
         CapturePlatePhotoCommand = new AsyncCommand(CapturePlatePhotoAsync);
         CaptureLoadPhotoCommand = new AsyncCommand(CaptureLoadPhotoAsync);
@@ -521,7 +583,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         ClearSearchCommand = new RelayCommand(ClearTicketSearch);
         PrintTicketCommand = new AsyncCommand(PrintTicketAsync);
         ScrollToAddLinesCommand = new RelayCommand(ScrollToAddLines);
-        CreateTicketHeaderCommand = new AsyncCommand(CreateTicketHeaderAsync);
+        CreateTicketHeaderCommand = new AsyncCommand(CreateTicketHeaderRoutedAsync);
         SaveEditedTicketLineCommand = new AsyncCommand(SaveEditedTicketLineAsync);
         CancelEditTicketLineCommand = new RelayCommand(CancelEditTicketLine);
 
@@ -755,14 +817,15 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             decimal? initializeWeight = null;
             if (SelectedTicketTypeOption?.Key == "weighbridge")
             {
-                if (decimal.TryParse(NormalizeDecimalText(TicketFirstWeightText), out var firstWeight))
+                var normalizedFw = NormalizeDecimalText(TicketFirstWeightText);
+                if (decimal.TryParse(normalizedFw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var firstWeight))
                 {
                     initializeWeight = firstWeight;
                     Console.WriteLine($"[DEBUG] CreateTicketHeaderAsync: Weighbridge ticket, initializeWeight={initializeWeight}, TicketFirstWeightText={TicketFirstWeightText}");
                 }
                 else
                 {
-                    Console.WriteLine($"[DEBUG] CreateTicketHeaderAsync: Failed to parse TicketFirstWeightText='{TicketFirstWeightText}'");
+                    Console.WriteLine($"[DEBUG] CreateTicketHeaderAsync: Failed to parse TicketFirstWeightText='{TicketFirstWeightText}' (normalized='{normalizedFw}')");
                 }
             }
             else
@@ -865,7 +928,9 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
                     TicketTypeId = (int)LastCreatedTicket.TicketTypeId,
                     TicketNumber = TicketNumber ?? string.Empty,
                     TicketState = LastCreatedTicket.TicketState,
-                    InitializeWeightKg = LastCreatedTicket.InitializeWeightKg,
+                    InitializeWeightKg = SelectedTicketTypeOption?.Key == "weighbridge" && decimal.TryParse(NormalizeDecimalText(TicketFirstWeightText ?? ""), out var initW)
+                        ? initW
+                        : LastCreatedTicket.InitializeWeightKg,
                     VehicleRegistration = TicketVehicleRegistration,
                     TrailerRegistration = TicketTrailerRegistration,
                     DriverName = TicketDriverName,
@@ -1297,24 +1362,63 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             }
 
             // Parse first weight to calculate net weight
-            if (decimal.TryParse(NormalizeDecimalText(TicketFirstWeightText), out var firstWeight))
+            if (decimal.TryParse(NormalizeDecimalText(TicketFirstWeightText),
+                    System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out var firstWeight))
             {
-                // VALIDATION: Second weight must be LESS than First Weight
-                // (Scrap/load has been offloaded, so the vehicle must be lighter)
-                if (reading.WeightKg >= firstWeight)
+                // When using MockScaleService, make second weight deterministic relative to first weight
+                // (matches requested behaviour)
+                var isMock = _scaleService is MetalLink.Desktop.Hardware.MockScaleService;
+                if (isMock)
                 {
-                    StatusMessage = $"Error: Second Weight ({reading.WeightKg:0.0} kg) must be LESS than First Weight ({firstWeight:0.0} kg). No scrap was offloaded!";
-                    return;
+                    var rnd = new Random();
+                    var delta = rnd.Next(500, 4001); // inclusive-ish upper bound
+
+                    var mockSecond = CurrentSection == EnumMainSection.TicketsSending
+                        ? firstWeight + delta
+                        : firstWeight - delta;
+
+                    reading = new ScaleReading(ScaleDeviceType.Weighbridge, decimal.Round(mockSecond, 1));
                 }
 
-                // Second weight is the vehicle weight after offloading
-                TicketSecondWeightText = reading.WeightKg.ToString("0.0");
-                
-                // Calculate net weight: First Weight (gross) - Second Weight (tare) = Net Weight
-                var netWeight = firstWeight - reading.WeightKg;
-                ReceivingWeightText = netWeight.ToString("0.00");
-                
-                StatusMessage = $"Weighbridge second weight: {reading.WeightKg:0.0} kg. Net weight: {netWeight:0.00} kg.";
+                // Receiving vs Sending behaviour differs
+                if (CurrentSection == EnumMainSection.TicketsSending)
+                {
+                    // VALIDATION (Sending): Second weight must be GREATER than First Weight
+                    if (reading.WeightKg <= firstWeight)
+                    {
+                        StatusMessage = $"Error: Second Weight ({reading.WeightKg:0.0} kg) must be GREATER than First Weight ({firstWeight:0.0} kg). No load was added!";
+                        return;
+                    }
+
+                    TicketSecondWeightText = reading.WeightKg.ToString("0.0");
+
+                    // Sending net weight: Second (gross) - First (tare) = Net
+                    var netWeight = reading.WeightKg - firstWeight;
+
+                    // Populate Add Product Line weight field so Add Line works immediately
+                    SendingWeightText = netWeight.ToString("0.00");
+
+                    StatusMessage = $"Weighbridge second weight: {reading.WeightKg:0.0} kg. Net weight: {netWeight:0.00} kg.";
+                }
+                else
+                {
+                    // VALIDATION (Receiving): Second weight must be LESS than First Weight
+                    if (reading.WeightKg >= firstWeight)
+                    {
+                        StatusMessage = $"Error: Second Weight ({reading.WeightKg:0.0} kg) must be LESS than First Weight ({firstWeight:0.0} kg). No scrap was offloaded!";
+                        return;
+                    }
+
+                    TicketSecondWeightText = reading.WeightKg.ToString("0.0");
+
+                    // Receiving net weight: First (gross) - Second (tare) = Net
+                    var netWeight = firstWeight - reading.WeightKg;
+                    ReceivingWeightText = netWeight.ToString("0.00");
+
+                    StatusMessage = $"Weighbridge second weight: {reading.WeightKg:0.0} kg. Net weight: {netWeight:0.00} kg.";
+                }
             }
             else
             {

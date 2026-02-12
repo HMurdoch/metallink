@@ -223,4 +223,24 @@ public class TicketSendingRepository : ITicketSendingRepository
 
         return lastTicket?.TicketNumber;
     }
+
+    public async Task<HashSet<long>> GetBuyerIdsWithActiveTicketsAsync(long? companyId = null, long? siteId = null, CancellationToken ct = default)
+    {
+        var query = _context.Set<TicketSending>()
+            .Where(t => t.IsActive)
+            .AsQueryable();
+
+        if (companyId.HasValue)
+            query = query.Where(t => t.Buyer != null && t.Buyer.CompanyId == companyId.Value);
+
+        if (siteId.HasValue)
+            query = query.Where(t => t.Buyer != null && t.Buyer.SiteId == siteId.Value);
+
+        var ids = await query
+            .Select(t => (long)t.BuyerId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        return ids.ToHashSet();
+    }
 }

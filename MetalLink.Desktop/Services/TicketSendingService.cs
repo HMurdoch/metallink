@@ -40,6 +40,16 @@ public sealed class TicketSendingService
     /// <summary>
     /// Get a sending ticket by ID
     /// </summary>
+    public async Task<NewBuyerResultDto[]?> SearchNewBuyersWithoutTicketsAsync(
+        TicketSearchRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        return await _apiClient.PostAsync<TicketSearchRequestDto, NewBuyerResultDto[]>(
+            "api/tickets-sending/search-new-buyers",
+            request,
+            cancellationToken);
+    }
+
     public async Task<TicketSendingDto?> GetTicketSendingByIdAsync(
         long ticketSendingId,
         CancellationToken cancellationToken = default)
@@ -88,6 +98,28 @@ public sealed class TicketSendingService
         return null;
     }
 
+    public async Task<bool> UpdateTicketStateAsync(
+        long ticketSendingId,
+        char newState,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var updateDto = new { TicketState = newState };
+            var result = await _apiClient.PutAsJsonAsync(
+                $"api/tickets-sending/{ticketSendingId}/state",
+                updateDto,
+                cancellationToken
+            );
+
+            return result.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     /// <summary>
     /// Delete a sending ticket
     /// </summary>
@@ -102,24 +134,18 @@ public sealed class TicketSendingService
     }
 
     /// <summary>
-    /// Add lines to a platform sending ticket
+    /// Add a line to a sending ticket
     /// </summary>
-    public async Task<IReadOnlyList<TicketSendingLineDto>?> AddTicketSendingLinesAsync(
+    public async Task<TicketSendingDto?> AddTicketSendingLineAsync(
         long ticketSendingId,
-        IEnumerable<(long ProductId, decimal WeightKg, decimal UnitPricePerKg)> lines,
+        CreateTicketSendingLineDto line,
         CancellationToken cancellationToken = default)
     {
-        var payload = lines
-            .Select(l => new { productId = l.ProductId, weightKg = l.WeightKg, unitPricePerKg = l.UnitPricePerKg })
-            .ToArray();
-
-        var result = await _apiClient.PostAsync<object, TicketSendingLineDto[]>(
+        return await _apiClient.PostAsync<CreateTicketSendingLineDto, TicketSendingDto>(
             $"api/tickets-sending/{ticketSendingId}/lines",
-            payload,
+            line,
             cancellationToken
         );
-
-        return result ?? Array.Empty<TicketSendingLineDto>();
     }
 
     /// <summary>
@@ -135,6 +161,30 @@ public sealed class TicketSendingService
         );
 
         return result ?? Array.Empty<TicketSendingLineDto>();
+    }
+
+    public async Task<bool> UpdateLineTareAsync(
+        long ticketSendingId,
+        long ticketSendingLineId,
+        decimal tare,
+        CancellationToken cancellationToken = default)
+    {
+        var body = new { tare };
+
+        try
+        {
+            var response = await _apiClient.PutAsJsonAsync(
+                $"api/tickets-sending/{ticketSendingId}/lines/{ticketSendingLineId}/tare",
+                body,
+                cancellationToken
+            );
+
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>

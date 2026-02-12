@@ -635,7 +635,7 @@
                           HorizontalAlignment="Right"
                           Spacing="8"
                           Margin="0,8,0,0"
-                          IsVisible="{Binding SelectedTicketLines.Count}">
+                          IsVisible="{Binding SelectedReceivingTicketLines.Count}">
                 <StackPanel Orientation="Horizontal" Spacing="16">
                   <StackPanel Spacing="2">
                     <TextBlock Text="Total ex VAT"

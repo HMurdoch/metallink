@@ -5,7 +5,11 @@ namespace MetalLink.Shared.Tickets;
 
 public sealed class TicketSearchRequestDto
 {
+    // Receiving
     public long? CustomerId { get; set; }
+
+    // Sending
+    public long? BuyerId { get; set; }
     public string? IdNumber { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
@@ -23,6 +27,8 @@ public sealed class TicketSearchRequestDto
     public DateTimeOffset? CreatedTo { get; set; }
 
     public bool SearchNewCustomersWithoutTickets { get; set; }
+
+    public bool SearchNewBuyersWithoutTickets { get; set; }
 }
 
 public sealed class TicketSearchResultDto

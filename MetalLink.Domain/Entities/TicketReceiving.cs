@@ -92,6 +92,19 @@ public class TicketReceiving
         UpdatedTime = DateTimeOffset.UtcNow;
     }
 
+    public void UpdateHeader(
+        string? vehicleRegistration,
+        string? trailerRegistration,
+        string? driverName,
+        string? notes)
+    {
+        VehicleRegistration = vehicleRegistration;
+        TrailerRegistration = trailerRegistration;
+        DriverName = driverName;
+        Notes = notes;
+        UpdatedTime = DateTimeOffset.UtcNow;
+    }
+
     public void AddLine(TicketReceivingLine line)
     {
         Lines.Add(line);
