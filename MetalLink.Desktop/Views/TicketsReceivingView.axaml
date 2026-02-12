@@ -585,7 +585,7 @@
                                Watermark="Search products..." />
                     </StackPanel>
 
-                    <!-- Product Letter + Dropdown -->
+                    <!-- Product Letter + Products Dropdown -->
                     <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
                       <TextBlock Text="Product" Foreground="#c0c4cf" />
                       <Grid>
