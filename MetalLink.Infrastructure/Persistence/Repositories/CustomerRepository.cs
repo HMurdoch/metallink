@@ -23,15 +23,16 @@ public class CustomerRepository : ICustomerRepository
     // -------------------------------------------------
 
     public async Task<Customer?> GetByIdAsync(
-        long customerId,
+        int customerId,
         CancellationToken cancellationToken = default)
     {
         return await _db.Customers
-            .Include(c => c.Company)
-            .Include(c => c.Site)
-                .ThenInclude(s => s.Province)
-            .Include(c => c.Site)
-                .ThenInclude(s => s.Country)
+            .Include(c => c.Company!)
+            .Include(c => c.Site!)
+                .ThenInclude(s => s!.Province!)
+            .Include(c => c.Site!)
+                .ThenInclude(s => s!.Country!)
+            .Include(c => c.ImagePath!)
             .FirstOrDefaultAsync(c => c.CustomerId == customerId, cancellationToken);
     }
 
@@ -40,9 +41,9 @@ public class CustomerRepository : ICustomerRepository
         CancellationToken cancellationToken = default)
     {
         return await _db.Customers
-            .Include(c => c.Company)
-            .Include(c => c.Site)
-                .ThenInclude(s => s.Province)
+            .Include(c => c.Company!)
+            .Include(c => c.Site!)
+                .ThenInclude(s => s!.Province!)
             .FirstOrDefaultAsync(
                 c => c.AccountNumber == accountNumber,
                 cancellationToken);
@@ -51,9 +52,10 @@ public class CustomerRepository : ICustomerRepository
 
     public async Task<long> GetNextAccountNumberAsync(CancellationToken ct)
     {
-        // EF Core scalar SqlQueryRaw<long>() expects the column name to be "Value"
-        const string sql = "SELECT nextval('metal_link.customer_account_number_seq') AS \"Value\"";
-        return await _db.Database.SqlQueryRaw<long>(sql).SingleAsync(ct);
+        // Account numbers must be globally unique across BOTH customers and buyers.
+        // Use the shared generator function (creates it if missing) rather than a customer-specific sequence.
+        var generator = new AccountNumberGenerator(_db);
+        return await generator.GetNextAsync(ct);
     }
 
     public async Task AddAsync(
@@ -61,7 +63,31 @@ public class CustomerRepository : ICustomerRepository
         CancellationToken cancellationToken = default)
     {
         await _db.Customers.AddAsync(customer, cancellationToken);
-        await _db.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (IsDuplicatePrimaryKey(ex))
+        {
+            // If the DB was restored/imported without syncing sequences, Postgres may try to
+            // reuse an existing primary key value (23505 ..._pkey). Re-sync sequences and retry once.
+            await PostgresSequenceSynchronizer.SyncAllIdentitySequencesAsync(_db, cancellationToken);
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    private static bool IsDuplicatePrimaryKey(DbUpdateException ex)
+    {
+        // Npgsql.PostgresException:
+        // - SqlState = 23505 (unique_violation)
+        // - ConstraintName = "<table>_pkey" for PK clashes
+        if (ex.InnerException is not Npgsql.PostgresException pg)
+            return false;
+
+        return pg.SqlState == "23505" &&
+               pg.ConstraintName != null &&
+               pg.ConstraintName.EndsWith("_pkey", StringComparison.OrdinalIgnoreCase);
     }
 
     // -------------------------------------------------
@@ -75,11 +101,12 @@ public class CustomerRepository : ICustomerRepository
         const int MaxResults = 500;
 
         var query = _db.Customers
-            .Include(c => c.Company)
-            .Include(c => c.Site)
-                .ThenInclude(s => s.Province)
-            .Include(c => c.Site)
-                .ThenInclude(s => s.Country)
+            .Include(c => c.Company!)
+            .Include(c => c.Site!)
+                .ThenInclude(s => s!.Province!)
+            .Include(c => c.Site!)
+                .ThenInclude(s => s!.Country!)
+            .Include(c => c.ImagePath!)
             .Where(c => c.IsActive)
             .AsQueryable();
 
@@ -165,12 +192,8 @@ public class CustomerRepository : ICustomerRepository
                 c.Site.CountryId == countryId);
         }
 
-        // Taxable filter (customer)
-        if (request.Taxable.HasValue)
-        {
-            var taxable = request.Taxable.Value;
-            query = query.Where(c => c.Taxable == taxable);
-        }
+        // Taxable filter removed - return all records regardless of is_taxable status
+        // The Taxable property in request is now ignored for search purposes
 
         if (!string.IsNullOrWhiteSpace(request.AddressLine1))
         {
@@ -254,8 +277,8 @@ public class CustomerRepository : ICustomerRepository
     // -------------------------------------------------
 
     public async Task<IReadOnlyList<Customer>> SearchAsync(
-        long? customerId,
-        long? siteId,
+        int? customerId,
+        int? siteId,
         string? firstName,
         string? lastName,
         string? companyName,
@@ -305,7 +328,7 @@ public class CustomerRepository : ICustomerRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task SoftDeleteAsync(long customerId, CancellationToken cancellationToken = default)
+    public async Task SoftDeleteAsync(int customerId, CancellationToken cancellationToken = default)
     {
         var customer = await _db.Customers
             .FirstOrDefaultAsync(c => c.CustomerId == customerId, cancellationToken);
@@ -314,6 +337,7 @@ public class CustomerRepository : ICustomerRepository
             return;
 
         customer.IsActive = false;
+        customer.UpdatedTime = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync(cancellationToken);
     }
 }

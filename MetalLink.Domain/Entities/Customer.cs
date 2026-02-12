@@ -6,46 +6,46 @@ namespace MetalLink.Domain.Entities;
 
 public class Customer
 {
-    public long CustomerId { get; set; }
+    public int CustomerId { get; set; }
 
-    // Company
-    public long CompanyId { get; set; }
-    public Company Company { get; set; } = null!;
-
-    // Site
-    public long SiteId { get; set; }           // DB is NOT NULL, but we keep this optional in code for now
-    public Site? Site { get; set; }
-
-    // Names
     public string? FirstName { get; set; }
-    public string? LastName  { get; set; }
+    public string? LastName { get; set; }
 
-    // Convenience – not mapped to a column
-    public string FullName =>
-        string.Join(" ", new[] { FirstName, LastName }
-            .Where(s => !string.IsNullOrWhiteSpace(s)));
+    public string FullName => string.Join(" ", new[] { FirstName, LastName }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+    public string? IdNumber { get; set; }
+
+    /// <summary>
+    /// Globally unique across customers and buyers.
+    /// Stored as numeric; UI/API can format as D8.
+    /// </summary>
+    public long? AccountNumber { get; set; }
 
     public bool IsCompany { get; set; }
 
-    // Identifiers / pricing
-    public string? IdNumber      { get; set; }
-    public long? AccountNumber { get; set; }
-    public string? PriceCode     { get; set; }
+    public int? CompanyId { get; set; }
+    public Company? Company { get; set; }
 
-    // Contact
-    public string? PhoneNumber   { get; set; }
-    public string? MobileNumber  { get; set; }
-    public string? Email         { get; set; }
+    public int? SiteId { get; set; }
+    public Site? Site { get; set; }
 
-    // NEW: moved from Company → Customer (matches DB)
-    public bool Taxable { get; set; } = true;
+    public bool IsTaxable { get; set; }
 
-    // Audit
-    public bool     IsActive    { get; set; } = true;
-    public DateTime? CreatedTime { get; set; }
-    public DateTime? UpdatedTime { get; set; }
+    public string? PriceCode { get; set; }
 
-    // Navigations
-    public ICollection<CustomerDocument> Documents { get; set; } = new List<CustomerDocument>();
-    public ICollection<Ticket> Tickets            { get; set; } = new List<Ticket>();
+    public string? PhoneNumber { get; set; }
+    public string? MobileNumber { get; set; }
+    public string? Email { get; set; }
+
+    public int? ImagePathId { get; set; }
+    public ImagePath? ImagePath { get; set; }
+
+    public int CreatedByOperatorId { get; set; }
+
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset CreatedTime { get; set; }
+    public DateTimeOffset UpdatedTime { get; set; }
+
+    // Navigation (legacy - kept to avoid breaking compilation where referenced)
+    public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
 }

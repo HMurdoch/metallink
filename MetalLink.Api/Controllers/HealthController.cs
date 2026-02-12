@@ -18,19 +18,23 @@ public class HealthController : ControllerBase
     [HttpGet("db")]
     public async Task<IActionResult> CheckDatabase()
     {
-        // Attempt a trivial query against Customers
+        // Attempt a trivial query against entities
         var customers = await _dbContext.Customers.CountAsync();
-        var tickets = await _dbContext.Tickets.CountAsync();
+        var ticketsReceiving = await _dbContext.Set<MetalLink.Domain.Entities.TicketReceiving>().CountAsync();
+        var ticketsSending = await _dbContext.Set<MetalLink.Domain.Entities.TicketSending>().CountAsync();
         var companies = await _dbContext.Companies.CountAsync();
         var sites = await _dbContext.Sites.CountAsync();
+        var products = await _dbContext.Products.CountAsync();
 
         return Ok(new
         {
             status = "ok",
             customersCount = customers,
-            ticketsCount = tickets,
+            ticketsReceivingCount = ticketsReceiving,
+            ticketsSendingCount = ticketsSending,
             companiesCount = companies,
-            sitesCount = sites
+            sitesCount = sites,
+            productsCount = products
         });
     }
 }

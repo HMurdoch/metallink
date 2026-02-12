@@ -29,6 +29,7 @@ public partial class MainWindowViewModel
     private int _animatedTotalTicketsInDb;
     private int _animatedTotalCompaniesInDb;
     private int _animatedTotalSitesInDb;
+    private int _animatedTotalProductsInDb;
 
     // Charts
     public ISeries[] TicketsByTypeSeries { get; set; } = System.Array.Empty<ISeries>();
@@ -73,14 +74,32 @@ public partial class MainWindowViewModel
             // if target index < previous index we treat as "back"
             IsSlideFromLeft = (int)_currentSection < (int)_previousSection;
 
+            // Initialize ticket form when entering Receiving or Sending sections
+            if (_currentSection == EnumMainSection.TicketsReceiving)
+            {
+                _ = OnEnterTicketsReceivingAsync();
+            }
+            else if (_currentSection == EnumMainSection.TicketsSending)
+            {
+                _ = OnEnterTicketsSendingAsync();
+            }
+
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsDashboardSectionVisible));
             OnPropertyChanged(nameof(IsCustomerSectionVisible));
-            OnPropertyChanged(nameof(IsTicketSectionVisible));
+            OnPropertyChanged(nameof(IsTicketsReceivingSectionVisible));
+            OnPropertyChanged(nameof(IsTicketsSendingSectionVisible));
             OnPropertyChanged(nameof(IsDocumentSectionVisible));
             OnPropertyChanged(nameof(IsCameraSectionVisible));
+            OnPropertyChanged(nameof(TicketsPageHeading));
         }
     }
+
+    // Computed property for Tickets page heading
+    public string TicketsPageHeading =>
+        CurrentSection == EnumMainSection.TicketsSending
+            ? "Ticket Sending"
+            : "Ticket Receiving";
 
     public bool IsSlideFromLeft
     {
@@ -96,7 +115,8 @@ public partial class MainWindowViewModel
     // Section visibility
     public bool IsDashboardSectionVisible => CurrentSection == EnumMainSection.Dashboard;
     public bool IsCustomerSectionVisible  => CurrentSection == EnumMainSection.Customers;
-    public bool IsTicketSectionVisible    => CurrentSection == EnumMainSection.Tickets;
+    public bool IsTicketsReceivingSectionVisible => CurrentSection == EnumMainSection.TicketsReceiving;
+    public bool IsTicketsSendingSectionVisible => CurrentSection == EnumMainSection.TicketsSending;
     public bool IsDocumentSectionVisible  => CurrentSection == EnumMainSection.Documents;
     public bool IsCameraSectionVisible    => CurrentSection == EnumMainSection.Camera;
 
@@ -144,5 +164,11 @@ public partial class MainWindowViewModel
         set { _animatedTotalSitesInDb = value; OnPropertyChanged(); }
     }
 
-    public bool HasUnsavedChanges => HasUnsavedNewCustomer || HasUnsavedTicket;
+    public int AnimatedTotalProductsInDb
+    {
+        get => _animatedTotalProductsInDb;
+        set { _animatedTotalProductsInDb = value; OnPropertyChanged(); }
+    }
+
+    public bool HasUnsavedChanges => HasUnsavedNewCustomer || HasUnsavedTicketReceiving || HasUnsavedTicketSending;
 }

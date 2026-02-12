@@ -8,16 +8,23 @@ public sealed class CreateCustomerCommandValidator
 {
     public CreateCustomerCommandValidator()
     {
+        RuleFor(x => x.CompanyId)
+            .NotNull()
+            .GreaterThan(0)
+            .When(x => x.IsCompany);
+
         RuleFor(x => x.SiteId)
-            .GreaterThan(0);
+            .NotNull()
+            .GreaterThan(0)
+            .When(x => x.IsCompany);
 
         RuleFor(x => x.FirstName)
             .NotEmpty()
             .MaximumLength(100);
 
         RuleFor(x => x.LastName)
-            .MaximumLength(100)
-            .When(x => x.IsCompany);
+            .NotEmpty()
+            .MaximumLength(100);
 
         RuleFor(x => x.IdNumber)
             .MaximumLength(50);

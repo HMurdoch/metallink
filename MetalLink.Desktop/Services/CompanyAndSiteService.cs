@@ -109,14 +109,10 @@ public sealed class CompanyAndSiteService
     }
 
     /// <summary>
-    /// UI says "Delete" — soft delete (IsActive=false) using PUT.
+    /// Soft delete site using DELETE endpoint (validates at least 1 site per company).
     /// </summary>
     public async Task DeleteSiteAsync(long siteId, CancellationToken ct = default)
     {
-        var site = await GetSiteAsync(siteId, ct)
-                  ?? throw new InvalidOperationException($"Site {siteId} not found.");
-
-        site.IsActive = false;
-        await UpdateSiteAsync(siteId, site, ct);
+        await _apiClient.DeleteAsync($"api/sites/{siteId}", ct);
     }
 }

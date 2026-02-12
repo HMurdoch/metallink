@@ -6,10 +6,262 @@
   <!-- Global styles -->
   <Application.Styles>
     <!-- Fluent base theme -->
-    <!-- <FluentTheme /> -->
     <FluentTheme />
     <!-- DataGrid theme (important for DataGrid to look right) -->
     <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+
+    <!-- Primary button styles -->
+    <Style Selector="Button.primary">
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Background" Value="{DynamicResource Brush.AccentGradient}" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="12,6" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+      <Setter Property="RenderTransform">
+        <Setter.Value>
+          <ScaleTransform ScaleX="1" ScaleY="1" />
+        </Setter.Value>
+      </Setter>
+
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions>
+            <BrushTransition Property="Background" Duration="0:0:0.15" />
+          </Transitions>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="Button.primary:pointerover">
+      <Setter Property="RenderTransform">
+        <Setter.Value>
+          <ScaleTransform ScaleX="1.03" ScaleY="1.03" />
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="Button.primary:pressed">
+      <Setter Property="Background">
+        <Setter.Value>
+          <SolidColorBrush Color="{DynamicResource Color.PrimaryBlueDark}" />
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="Button.primary:disabled">
+      <Setter Property="Background" Value="#555A64" />
+      <Setter Property="Foreground" Value="#B0B4BD" />
+    </Style>
+
+    <!-- Modern Animations & Transitions -->
+    
+    <!-- Smooth button hover effect for all buttons -->
+    <Style Selector="Button">
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions>
+            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut"/>
+            <DoubleTransition Property="Opacity" Duration="0:0:0.2"/>
+          </Transitions>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    
+    <Style Selector="Button:pointerover">
+      <Setter Property="RenderTransform" Value="scale(1.02)"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    
+    <Style Selector="Button:pressed">
+      <Setter Property="RenderTransform" Value="scale(0.98)"/>
+    </Style>
+
+    <!-- Border fade-in animation -->
+    <Style Selector="Border.fade-in">
+      <Style.Animations>
+        <Animation Duration="0:0:0.4" FillMode="Forward">
+          <KeyFrame Cue="0%">
+            <Setter Property="Opacity" Value="0"/>
+          </KeyFrame>
+          <KeyFrame Cue="100%">
+            <Setter Property="Opacity" Value="1"/>
+          </KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+
+    <!-- Slide in from left animation -->
+    <Style Selector="StackPanel.slide-in-left">
+      <Style.Animations>
+        <Animation Duration="0:0:0.3" FillMode="Forward" Easing="CubicEaseOut">
+          <KeyFrame Cue="0%">
+            <Setter Property="TranslateTransform.X" Value="-50"/>
+            <Setter Property="Opacity" Value="0"/>
+          </KeyFrame>
+          <KeyFrame Cue="100%">
+            <Setter Property="TranslateTransform.X" Value="0"/>
+            <Setter Property="Opacity" Value="1"/>
+          </KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+
+    <!-- Slide in from right animation -->
+    <Style Selector="StackPanel.slide-in-right">
+      <Style.Animations>
+        <Animation Duration="0:0:0.3" FillMode="Forward" Easing="CubicEaseOut">
+          <KeyFrame Cue="0%">
+            <Setter Property="TranslateTransform.X" Value="50"/>
+            <Setter Property="Opacity" Value="0"/>
+          </KeyFrame>
+          <KeyFrame Cue="100%">
+            <Setter Property="TranslateTransform.X" Value="0"/>
+            <Setter Property="Opacity" Value="1"/>
+          </KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+
+    <!-- Pulse animation for important elements -->
+    <Style Selector="Border.pulse">
+      <Style.Animations>
+        <Animation Duration="0:0:2" IterationCount="INFINITE">
+          <KeyFrame Cue="0%">
+            <Setter Property="Opacity" Value="0.7"/>
+          </KeyFrame>
+          <KeyFrame Cue="50%">
+            <Setter Property="Opacity" Value="1.0"/>
+          </KeyFrame>
+          <KeyFrame Cue="100%">
+            <Setter Property="Opacity" Value="0.7"/>
+          </KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+
+    <!-- Smooth transitions for text inputs -->
+    <Style Selector="TextBox">
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions>
+            <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+            <ThicknessTransition Property="BorderThickness" Duration="0:0:0.2"/>
+          </Transitions>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="TextBox:focus">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.AccentGradient}"/>
+      <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+
+    <!-- Smooth transitions for combo boxes -->
+    <Style Selector="ComboBox">
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions>
+            <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+          </Transitions>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="ComboBox:focus">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.AccentGradient}"/>
+    </Style>
+
+    <!-- DataGrid row hover effect -->
+    <Style Selector="DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
+      <Setter Property="Fill" Value="#2a2f3a"/>
+      <Setter Property="Opacity" Value="0.8"/>
+    </Style>
+
+    <!-- Image zoom on hover -->
+    <Style Selector="Image.zoomable">
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions>
+            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.3" Easing="CubicEaseOut"/>
+          </Transitions>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="Image.zoomable:pointerover">
+      <Setter Property="RenderTransform" Value="scale(1.05)"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <!-- Smooth panel transitions -->
+    <Style Selector="Border">
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions>
+            <BrushTransition Property="Background" Duration="0:0:0.2"/>
+            <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+          </Transitions>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- Success feedback animation -->
+    <Style Selector="Border.success-flash">
+      <Style.Animations>
+        <Animation Duration="0:0:0.6" FillMode="Forward">
+          <KeyFrame Cue="0%">
+            <Setter Property="BorderBrush" Value="#10b981"/>
+            <Setter Property="BorderThickness" Value="2"/>
+          </KeyFrame>
+          <KeyFrame Cue="100%">
+            <Setter Property="BorderBrush" Value="#4b5563"/>
+            <Setter Property="BorderThickness" Value="1"/>
+          </KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+
   </Application.Styles>
+
+  <!-- Brand colors / brushes and shared styles -->
+  <Application.Resources>
+    <!-- Brand colors (tune to match MetalLink logo exactly) -->
+    <Color x:Key="Color.PrimaryBlue">#1E88E5</Color>
+    <Color x:Key="Color.LightBlue">#8EC5FC</Color>
+    <Color x:Key="Color.PrimaryBlueDark">#0D47A1</Color>
+
+    <!-- Dark theme neutrals -->
+    <Color x:Key="Color.BackgroundDark">#1F2229</Color>
+    <Color x:Key="Color.NavBackground">#20232A</Color>
+    <Color x:Key="Color.StatusBackground">#181A20</Color>
+    <Color x:Key="Color.PanelDark">#252932</Color>
+    <Color x:Key="Color.TextPrimary">#F5F5F5</Color>
+    <Color x:Key="Color.TextMuted">#C0C4CF</Color>
+    <Color x:Key="Color.BorderSubtle">#3A404A</Color>
+
+    <!-- Brushes -->
+    <LinearGradientBrush x:Key="Brush.AppBackground"
+                         StartPoint="0,0" EndPoint="0,1">
+      <GradientStop Color="{StaticResource Color.PrimaryBlueDark}" Offset="0" />
+      <GradientStop Color="{StaticResource Color.BackgroundDark}" Offset="0.25" />
+      <GradientStop Color="{StaticResource Color.BackgroundDark}" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="Brush.AccentGradient"
+                         StartPoint="0,0" EndPoint="1,0">
+      <GradientStop Color="{StaticResource Color.PrimaryBlue}" Offset="0" />
+      <GradientStop Color="{StaticResource Color.LightBlue}" Offset="1" />
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="Brush.NavBackground" Color="{StaticResource Color.NavBackground}" />
+    <SolidColorBrush x:Key="Brush.MainBackground" Color="{StaticResource Color.BackgroundDark}" />
+    <SolidColorBrush x:Key="Brush.PanelBackground" Color="{StaticResource Color.PanelDark}" />
+    <SolidColorBrush x:Key="Brush.StatusBackground" Color="{StaticResource Color.StatusBackground}" />
+    <SolidColorBrush x:Key="Brush.BorderSubtle" Color="{StaticResource Color.BorderSubtle}" />
+    <SolidColorBrush x:Key="Brush.TextPrimary" Color="{StaticResource Color.TextPrimary}" />
+    <SolidColorBrush x:Key="Brush.TextMuted" Color="{StaticResource Color.TextMuted}" />
+  </Application.Resources>
 
 </Application>

@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MetalLink.Application;
 using MetalLink.Infrastructure;
@@ -7,13 +8,14 @@ using MetalLink.Infrastructure.Persistence;
 using MetalLink.Application.Interfaces;
 using Microsoft.OpenApi.Models;
 using QuestPDF.Infrastructure;
-using System.Collections.Generic;
-using MediatR;
 using MetalLink.Api.Versioning;
 
 QuestPDF.Settings.License = LicenseType.Community;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args
+});
 
 // Controllers + Swagger
 builder.Services.AddControllers();
@@ -112,9 +114,14 @@ app.Use(async (context, next) =>
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<MetalLinkDbContext>();
-    var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
 
-    await DbSeeder.SeedAsync(dbContext, passwordHasher);
+    // Apply pending migrations
+    await dbContext.Database.MigrateAsync();
+
+    // Ensure Postgres identity/serial sequences are aligned with existing data.
+    // Without this, inserts can fail after a DB restore/import with:
+    // 23505 duplicate key value violates unique constraint "..._pkey".
+    await PostgresSequenceSynchronizer.SyncAllIdentitySequencesAsync(dbContext);
 }
 
 // Swagger

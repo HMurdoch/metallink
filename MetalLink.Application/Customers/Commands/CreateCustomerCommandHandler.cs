@@ -12,10 +12,14 @@ public sealed class CreateCustomerCommandHandler
     : IRequestHandler<CreateCustomerCommand, CustomerDto?>
 {
     private readonly ICustomerRepository _customerRepository;
+    private readonly IAccountNumberGenerator _accountNumberGenerator;
 
-    public CreateCustomerCommandHandler(ICustomerRepository customerRepository)
+    public CreateCustomerCommandHandler(
+        ICustomerRepository customerRepository,
+        IAccountNumberGenerator accountNumberGenerator)
     {
         _customerRepository = customerRepository;
+        _accountNumberGenerator = accountNumberGenerator;
     }
 
     public async Task<CustomerDto?> Handle(
@@ -29,7 +33,9 @@ public sealed class CreateCustomerCommandHandler
             throw new ArgumentException("First or last name is required.");
         }
 
-        var now = DateTime.UtcNow;
+        var now = DateTimeOffset.UtcNow;
+
+        var accountNumber = request.AccountNumber ?? await _accountNumberGenerator.GetNextAsync(cancellationToken);
 
         var customer = new Customer
         {
@@ -39,15 +45,17 @@ public sealed class CreateCustomerCommandHandler
             LastName      = request.LastName,
             IsCompany     = request.IsCompany,
             IdNumber      = request.IdNumber,
-            AccountNumber = request.AccountNumber,
+            AccountNumber = accountNumber,
             PriceCode     = request.PriceCode,
             PhoneNumber   = request.PhoneNumber,
             MobileNumber  = request.MobileNumber,
             Email         = request.Email,
-            Taxable       = request.Taxable,
+            IsTaxable       = request.IsTaxable,
             IsActive      = true,
             CreatedTime   = now,
-            UpdatedTime   = now
+            UpdatedTime   = now,
+            ImagePathId = request.ImagePathId,
+            CreatedByOperatorId = request.CreatedByOperatorId
         };
 
         await _customerRepository.AddAsync(customer, cancellationToken);
@@ -66,7 +74,8 @@ public sealed class CreateCustomerCommandHandler
             LastName  = customer.LastName,
             IsCompany = customer.IsCompany,
 
-            Taxable = customer.Taxable,
+            IsTaxable = customer.IsTaxable,
+            Taxable   = customer.IsTaxable,
 
             IdNumber      = customer.IdNumber,
             AccountNumber = customer.AccountNumber,
@@ -77,7 +86,8 @@ public sealed class CreateCustomerCommandHandler
 
             IsActive    = customer.IsActive,
             CreatedTime = customer.CreatedTime,
-            UpdatedTime = customer.UpdatedTime
+            UpdatedTime = customer.UpdatedTime,
+            ImagePathId = customer.ImagePathId
 
             // CompanyName, SiteName, address, Province, Country, etc.
             // are intentionally left null here – they will be filled by

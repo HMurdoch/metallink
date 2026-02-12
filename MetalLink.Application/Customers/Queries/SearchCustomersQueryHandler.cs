@@ -35,18 +35,13 @@ public sealed class SearchCustomersQueryHandler
                 var site     = c.Site;
                 var province = site?.Province;
                 var country  = site?.Country;
-
-                var addressLine1 = site?.AddressLine1;
-                var addressLine2 = site?.AddressLine2;
-                var suburb       = site?.Suburb;
-                var city         = site?.City;
-                var postalCode   = site?.PostalCode;
+                var imagePath = c.ImagePath;
 
                 return new CustomerDto
                 {
                     CustomerId = c.CustomerId,
                     CompanyId  = c.CompanyId,
-                    SiteId = c.SiteId,
+                    SiteId     = c.SiteId,
 
                     FullName  = c.FullName,
                     FirstName = c.FirstName,
@@ -55,22 +50,11 @@ public sealed class SearchCustomersQueryHandler
 
                     CompanyName = company?.CompanyName,
                     VatNumber   = company?.VatNumber,
-                    Taxable     = c.Taxable,
+                    IsTaxable   = c.IsTaxable,
+                    Taxable     = c.IsTaxable,
 
-                    SiteName = site?.SiteName,
-                    SiteCode = site?.SiteCode,
-
-                    AddressLine1 = addressLine1,
-                    AddressLine2 = addressLine2,
-                    Suburb       = suburb,
-                    City         = city,
-                    PostalCode   = postalCode,
-
-                    ProvinceId   = province?.ProvinceId,
-                    ProvinceName = province?.ProvinceName,
-
-                    CountryId    = country?.CountryId,
-                    CountryName  = country?.Name,
+                    SiteName = site?.SiteName ?? string.Empty,
+                    SiteCode = site?.SiteCode ?? string.Empty,
 
                     IdNumber      = c.IdNumber,
                     AccountNumber = c.AccountNumber,
@@ -82,7 +66,14 @@ public sealed class SearchCustomersQueryHandler
 
                     IsActive    = c.IsActive,
                     CreatedTime = c.CreatedTime,
-                    UpdatedTime = c.UpdatedTime
+                    UpdatedTime = c.UpdatedTime,
+
+                    ImagePathId = c.ImagePathId,
+                    IdCardImagePath = imagePath?.IdCardImagePath,
+                    DriverLicenseImagePath = imagePath?.DriverLicenseImagePath,
+                    PhotoImagePath = imagePath?.PhotoImagePath,
+                    SignatureImagePath = imagePath?.SignatureImagePath,
+                    FingerprintImagePath = imagePath?.FingerprintImagePath
                 };
             })
             .ToArray();

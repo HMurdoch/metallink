@@ -2,23 +2,17 @@ using System;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.Input;
 using MetalLink.Shared.Companies;
-using MetalLink.Shared.Customers;
 using MetalLink.Shared.Locations;
 using MetalLink.Shared.Sites;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Threading;
-using MetalLink.Shared.Companies;
 
 namespace MetalLink.Desktop.ViewModels;
 
 public partial class MainWindowViewModel
 {
-    // =====================================================
-    // COMPANY & SITE - STATE (bind these in your View)
-    // =====================================================
-
     // Company search inputs
     private string? _companySearchLetter = "ALL";
 
@@ -46,6 +40,31 @@ public partial class MainWindowViewModel
 
     // Company results
     public ObservableCollection<CompanyLookupDto> CompanyResults { get; } = new();
+
+    // Company cache used for letter filtering and dropdowns
+    private readonly ObservableCollection<CompanyLookupDto> _allCompanies = new();
+
+    // Dashboard stats for companies/sites/products
+    private int _totalCompaniesInDb;
+    public int TotalCompaniesInDb
+    {
+        get => _totalCompaniesInDb;
+        set { _totalCompaniesInDb = value; OnPropertyChanged(); }
+    }
+
+    private int _totalSitesInDb;
+    public int TotalSitesInDb
+    {
+        get => _totalSitesInDb;
+        set { _totalSitesInDb = value; OnPropertyChanged(); }
+    }
+
+    private int _totalProductsInDb;
+    public int TotalProductsInDb
+    {
+        get => _totalProductsInDb;
+        set { _totalProductsInDb = value; OnPropertyChanged(); }
+    }
 
     private CompanyLookupDto? _selectedCompany;
 
@@ -325,6 +344,72 @@ public partial class MainWindowViewModel
         }
     }
 
+    // New customer address fields (CAS-owned, used by Customers screen)
+    private string _newAddressLine1 = string.Empty;
+    public string NewAddressLine1
+    {
+        get => _newAddressLine1;
+        set
+        {
+            _newAddressLine1 = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+        }
+    }
+
+    private string _newAddressLine2 = string.Empty;
+    public string NewAddressLine2
+    {
+        get => _newAddressLine2;
+        set
+        {
+            _newAddressLine2 = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+        }
+    }
+
+    private string _newSuburb = string.Empty;
+    public string NewSuburb
+    {
+        get => _newSuburb;
+        set
+        {
+            _newSuburb = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+        }
+    }
+
+    private string _newCity = string.Empty;
+    public string NewCity
+    {
+        get => _newCity;
+        set
+        {
+            _newCity = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+        }
+    }
+
+    private string _newPostalCode = string.Empty;
+    public string NewPostalCode
+    {
+        get => _newPostalCode;
+        set
+        {
+            _newPostalCode = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+        }
+    }
+
     private string _newSiteCreateName = string.Empty;
 
     public string NewSiteCreateName
@@ -381,6 +466,7 @@ public partial class MainWindowViewModel
         }
     }
 
+    private bool _companyLettersLoaded;
     private bool _companyLettersLoading;
     private readonly ObservableCollection<string> _companyLetterFilters = new();
 
@@ -399,6 +485,20 @@ public partial class MainWindowViewModel
     }
 
     private string? _selectedCompanyLetter = "ALL";
+
+    private string? _selectedNewCompanyLetter = "ALL";
+
+    public string? SelectedNewCompanyLetter
+    {
+        get => _selectedNewCompanyLetter;
+        set
+        {
+            if (_selectedNewCompanyLetter == value) return;
+            _selectedNewCompanyLetter = value;
+            OnPropertyChanged();
+            ApplyNewCompanyLetterFilter();
+        }
+    }
 
     public string? SelectedCompanyLetter
     {
@@ -452,5 +552,395 @@ public partial class MainWindowViewModel
             if (value != null)
                 _ = LoadSitesForSelectedCompanyAsync();
         }
+    }
+
+    private bool _isSearchSiteEnabled;
+
+    public bool IsSearchSiteEnabled
+    {
+        get => _isSearchSiteEnabled;
+        set
+        {
+            if (_isSearchSiteEnabled == value) return;
+            _isSearchSiteEnabled = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private ObservableCollection<SiteLookupDto> _searchSiteSuggestions = new();
+
+    public ObservableCollection<SiteLookupDto> SearchSiteSuggestions
+    {
+        get => _searchSiteSuggestions;
+        set
+        {
+            _searchSiteSuggestions = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private SiteLookupDto? _selectedSearchSite;
+
+    public SiteLookupDto? SelectedSearchSite
+    {
+        get => _selectedSearchSite;
+        set
+        {
+            if (_selectedSearchSite == value) return;
+
+            _selectedSearchSite = value;
+            OnPropertyChanged();
+
+            if (value != null)
+            {
+                SearchSiteIdText = value.SiteId.ToString();
+            }
+            else
+            {
+                SearchSiteIdText = string.Empty;
+            }
+        }
+    }
+
+    // New customer: company + site selections
+    private ObservableCollection<CompanyLookupDto> _newCompanySuggestions = new();
+
+    public ObservableCollection<CompanyLookupDto> NewCompanySuggestions
+    {
+        get => _newCompanySuggestions;
+        set
+        {
+            _newCompanySuggestions = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private CompanyLookupDto? _selectedNewCompany;
+
+    public CompanyLookupDto? SelectedNewCompany
+    {
+        get => _selectedNewCompany;
+        set
+        {
+            if (_selectedNewCompany == value) return;
+
+            _selectedNewCompany = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanUpdateCustomer));
+            OnPropertyChanged(nameof(CanCreateBuyer));
+            OnPropertyChanged(nameof(CanUpdateBuyer));
+
+            (UpdateCustomerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+
+            if (value != null)
+            {
+                // This string is what CreateCustomerAsync uses.
+                NewCompanyName = value.CompanyName;
+
+                SelectedNewSite = null;
+                NewSiteSuggestions.Clear();
+                OnPropertyChanged(nameof(CanCreateBuyer));
+                (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+
+                // Load sites for the selected company
+                _ = LoadNewSitesForSelectedCompanyAsync();
+            }
+            else
+            {
+                NewCompanyName = null;
+                NewSiteSuggestions.Clear();
+                SelectedNewSite = null;
+
+                OnPropertyChanged(nameof(CanCreateCustomer));
+                OnPropertyChanged(nameof(CanUpdateCustomer));
+                OnPropertyChanged(nameof(CanCreateBuyer));
+                OnPropertyChanged(nameof(CanUpdateBuyer));
+
+                (UpdateCustomerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+                (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    private ObservableCollection<SiteLookupDto> _newSiteSuggestions = new();
+
+    public ObservableCollection<SiteLookupDto> NewSiteSuggestions
+    {
+        get => _newSiteSuggestions;
+        set
+        {
+            _newSiteSuggestions = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private SiteLookupDto? _selectedNewSite;
+
+    public SiteLookupDto? SelectedNewSite
+    {
+        get => _selectedNewSite;
+        set
+        {
+            if (_selectedNewSite == value) return;
+
+            _selectedNewSite = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanUpdateCustomer));
+            OnPropertyChanged(nameof(CanCreateBuyer));
+            OnPropertyChanged(nameof(CanUpdateBuyer));
+            (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+
+            UpdateNewLocationFromSelectedSite();
+        }
+    }
+
+    private void UpdateNewLocationFromSelectedSite()
+    {
+        if (SelectedNewSite == null)
+            return;
+
+        NewAddressLine1 = SelectedNewSite.AddressLine1 ?? string.Empty;
+        NewAddressLine2 = SelectedNewSite.AddressLine2 ?? string.Empty;
+        NewSuburb = SelectedNewSite.Suburb ?? string.Empty;
+        NewCity = SelectedNewSite.City ?? string.Empty;
+        NewPostalCode = SelectedNewSite.PostalCode ?? string.Empty;
+
+        if (SelectedNewSite.ProvinceId.HasValue)
+            NewProvince = Provinces.FirstOrDefault(p => p.ProvinceId == SelectedNewSite.ProvinceId.Value);
+
+        if (SelectedNewSite.CountryId.HasValue)
+            NewCountry = Countries.FirstOrDefault(c => c.CountryId == SelectedNewSite.CountryId.Value);
+    }
+
+    // --------------------
+    // Provinces (dropdown)
+    // --------------------
+
+    private ObservableCollection<ProvinceDto> _provinces = new();
+
+    public ObservableCollection<ProvinceDto> Provinces
+    {
+        get => _provinces;
+        set
+        {
+            _provinces = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private ProvinceDto? _selectedProvince;
+
+    public ProvinceDto? SelectedProvince
+    {
+        get => _selectedProvince;
+        set
+        {
+            _selectedProvince = value;
+            OnPropertyChanged();
+
+            // If later you capture a "NewSiteProvinceId", set it here
+            // NewSiteProvinceId = value?.ProvinceId;
+        }
+    }
+
+
+    private ProvinceDto? _newProvince;
+
+    public ProvinceDto? NewProvince
+    {
+        get => _newProvince;
+        set
+        {
+            _newProvince = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private ProvinceDto? _searchProvince;
+
+    public ProvinceDto? SearchProvince
+    {
+        get => _searchProvince;
+        set
+        {
+            _searchProvince = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // 🔹 NEW: search-only provinces (includes "ALL")
+    private ObservableCollection<ProvinceDto> _searchProvinces = new();
+
+    public ObservableCollection<ProvinceDto> SearchProvinces
+    {
+        get => _searchProvinces;
+        set
+        {
+            _searchProvinces = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // Countries (dropdown) – for now just South Africa, but shaped for future API
+    private ObservableCollection<CountryDto> _countries = new();
+
+    public ObservableCollection<CountryDto> Countries
+    {
+        get => _countries;
+        set
+        {
+            _countries = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private CountryDto? _selectedCountry;
+
+    public CountryDto? SelectedCountry
+    {
+        get => _selectedCountry;
+        set
+        {
+            _selectedCountry = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private CountryDto? _newCountry;
+
+    public CountryDto? NewCountry
+    {
+        get => _newCountry;
+        set
+        {
+            _newCountry = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private CountryDto? _searchCountry;
+
+    public CountryDto? SearchCountry
+    {
+        get => _searchCountry;
+        set
+        {
+            _searchCountry = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // 🔹 NEW: search-only countries (includes "ALL")
+    private ObservableCollection<CountryDto> _searchCountries = new();
+
+    public ObservableCollection<CountryDto> SearchCountries
+    {
+        get => _searchCountries;
+        set
+        {
+            _searchCountries = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // Read-only site address summary for selected customer (from Site)
+    private string _customerSiteAddressSummary = string.Empty;
+    public string CustomerSiteAddressSummary
+    {
+        get => _customerSiteAddressSummary;
+        private set
+        {
+            if (_customerSiteAddressSummary == value) return;
+            _customerSiteAddressSummary = value ?? string.Empty;
+            OnPropertyChanged();
+        }
+    }
+
+    public void InitializeCountries()
+    {
+        // Avoid re-initialising if already done
+        if (Countries.Count > 0 && SearchCountries.Count > 0)
+            return;
+
+        Countries.Clear();
+        SearchCountries.Clear();
+
+        // Real country row
+        var southAfrica = new CountryDto
+        {
+            CountryId = 1,
+            CountryName = "South Africa",
+            CountryCode = "ZA"
+        };
+
+        Countries.Add(southAfrica);
+
+        // 🔹 Search list: add real country, then insert "ALL" at the top
+        SearchCountries.Add(southAfrica);
+
+        var allCountry = new CountryDto
+        {
+            CountryId = 0,
+            CountryName = "ALL",
+            CountryCode = "ALL"
+        };
+
+        // ALL at index 0
+        SearchCountries.Insert(0, allCountry);
+
+        // 🔹 Defaults
+        // Create/Edit → South Africa
+        _selectedCountry = southAfrica;
+        NewCountry = southAfrica;
+        OnPropertyChanged(nameof(SelectedCountry));
+        OnPropertyChanged(nameof(NewCountry));
+
+        // Search → ALL (meaning "no country filter")
+        SearchCountry = allCountry;
+        OnPropertyChanged(nameof(SearchCountry));
+    }
+
+    public async Task LoadProvincesAsync()
+    {
+        var items = await _provinceService.GetAllAsync();
+
+        Provinces.Clear();
+        SearchProvinces.Clear();
+
+        if (items != null)
+        {
+            foreach (var p in items)
+            {
+                Provinces.Add(p);
+                SearchProvinces.Add(p);
+            }
+        }
+
+        // 🔹 Add "ALL" to the top of the SEARCH list only
+        var allProvince = new ProvinceDto
+        {
+            ProvinceId = 0,
+            ProvinceName = "ALL",
+            ProvinceCode = "ALL"
+        };
+
+        SearchProvinces.Insert(0, allProvince);
+
+        // 🔹 Default create/edit → Gauteng
+        var gauteng = Provinces.FirstOrDefault(p => p.ProvinceName == "Gauteng");
+        if (gauteng is not null)
+        {
+            _selectedProvince = gauteng;
+            NewProvince = gauteng;
+            OnPropertyChanged(nameof(SelectedProvince));
+            OnPropertyChanged(nameof(NewProvince));
+        }
+
+        // 🔹 Default search → ALL (meaning "no province filter")
+        SearchProvince = allProvince;
+        OnPropertyChanged(nameof(SearchProvince));
     }
 }

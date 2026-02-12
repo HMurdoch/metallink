@@ -1,0 +1,547 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using MetalLink.Application.Interfaces;
+using MetalLink.Application.Services;
+using MetalLink.Api.Extensions;
+using MetalLink.Domain.Entities;
+using MetalLink.Shared.Tickets;
+
+namespace MetalLink.Api.Controllers;
+
+[ApiController]
+[Route("api/tickets-sending")]
+public class TicketsSendingController : ControllerBase
+{
+    private readonly ITicketSendingRepository _ticketSendingRepo;
+    private readonly IBuyerRepository _buyerRepo;
+    private readonly IProductRepository _productRepo;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly TicketNumberService _ticketNumberService;
+    private readonly WeightCalculationService _weightCalculationService;
+    private readonly PriceLookupService _priceLookupService;
+
+    public TicketsSendingController(
+        ITicketSendingRepository ticketSendingRepo,
+        IBuyerRepository buyerRepo,
+        IProductRepository productRepo,
+        IUnitOfWork unitOfWork,
+        TicketNumberService ticketNumberService,
+        WeightCalculationService weightCalculationService,
+        PriceLookupService priceLookupService)
+    {
+        _ticketSendingRepo = ticketSendingRepo;
+        _buyerRepo = buyerRepo;
+        _productRepo = productRepo;
+        _unitOfWork = unitOfWork;
+        _ticketNumberService = ticketNumberService;
+        _weightCalculationService = weightCalculationService;
+        _priceLookupService = priceLookupService;
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<TicketSendingDto>> GetTicketSending(int id)
+    {
+        var ticket = await _ticketSendingRepo.GetByIdAsync(id);
+        if (ticket == null)
+            return NotFound($"Ticket with ID {id} not found.");
+
+        return Ok(MapToDto(ticket));
+    }
+
+    [HttpPost("search")]
+    public async Task<ActionResult<List<TicketSearchResultDto>>> SearchTicketsSending([FromBody] TicketSendingSearchRequestDto request)
+
+    {
+        var tickets = await _ticketSendingRepo.SearchAsync(
+            searchTerm: request.SearchTerm,
+            companyId: request.CompanyId,
+            siteId: request.SiteId,
+            buyerId: request.BuyerId,
+            firstName: request.FirstName,
+            lastName: request.LastName,
+            idNumber: request.IdNumber,
+            accountNumber: request.AccountNumber,
+            ticketType: request.TicketType,
+            startDate: request.StartDate,
+            endDate: request.EndDate,
+            pageNumber: request.PageNumber,
+            pageSize: request.PageSize
+        );
+
+        var results = new List<TicketSearchResultDto>();
+        foreach (var ticket in tickets)
+        {
+            results.Add(await MapToSearchResultDtoAsync(ticket));
+        }
+        
+        return Ok(results);
+    }
+
+    /// <summary>
+    /// Search for buyers that do NOT have any sending tickets created yet.
+    /// Mirrors the legacy api/tickets/search-new-customers endpoint but is sending-specific.
+    /// </summary>
+    [HttpPost("search-new-buyers")]
+    public async Task<ActionResult<NewBuyerResultDto[]>> SearchNewBuyersWithoutTickets(
+        [FromBody] TicketSearchRequestDto request,
+        CancellationToken ct = default)
+    {
+        // Build buyer search criteria
+        var criteria = new MetalLink.Shared.Buyers.BuyerSearchRequestDto
+        {
+            BuyerId = request.BuyerId,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            IdNumber = request.IdNumber,
+            AccountNumber = request.AccountNumber,
+            SiteId = request.SiteId
+        };
+
+        var allBuyers = await _buyerRepo.SearchAsync(criteria, ct);
+
+        // Buyers that already have at least one active sending ticket
+        var buyerIdsWithTickets = await _ticketSendingRepo.GetBuyerIdsWithActiveTicketsAsync(
+            companyId: request.CompanyId,
+            siteId: request.SiteId,
+            ct: ct);
+
+        var buyersWithoutTickets = allBuyers
+            .Where(b => !buyerIdsWithTickets.Contains(b.BuyerId))
+            .ToArray();
+
+        var results = buyersWithoutTickets
+            .Select(b => new NewBuyerResultDto
+            {
+                BuyerId = b.BuyerId,
+                FirstName = b.FirstName,
+                LastName = b.LastName,
+                CompanyName = b.Company?.CompanyName,
+                SiteName = b.Site?.SiteName,
+                AccountNumber = b.AccountNumber?.ToString(),
+                CreatedTime = b.CreatedTime
+            })
+            .ToArray();
+
+        return Ok(results);
+    }
+
+    [HttpGet("last-ticket-number/{prefix}")]
+    public async Task<IActionResult> GetLastTicketNumberByPrefix(string prefix)
+    {
+        var lastTicketNumber = await _ticketSendingRepo.GetLastTicketNumberByPrefixAsync(prefix);
+        return Ok(new { ticketNumber = lastTicketNumber });
+    }
+
+    [HttpGet("next-ticket-number/{ticketTypeId}")]
+    public async Task<IActionResult> GetNextTicketNumber(int ticketTypeId)
+    {
+        var nextNumber = await _ticketNumberService.GetNextSendingTicketNumberAsync(ticketTypeId);
+        return Ok(new { ticketNumber = nextNumber });
+    }
+
+    [Authorize]
+    [HttpPost]
+    public async Task<ActionResult<TicketSendingDto>> CreateTicketSending([FromBody] CreateTicketSendingDto dto, CancellationToken ct = default)
+    {
+        Console.WriteLine($"[API DEBUG] CreateTicketSending: TicketTypeId={dto.TicketTypeId}, TicketState='{dto.TicketState}', InitializeWeightKg={dto.InitializeWeightKg}, FirstWeightKg={dto.FirstWeightKg}, SecondWeightKg={dto.SecondWeightKg}, NetWeightKg={dto.NetWeightKg}");
+        var buyer = await _buyerRepo.GetByIdAsync(dto.BuyerId);
+        if (buyer == null)
+            return BadRequest($"Buyer with ID {dto.BuyerId} not found.");
+
+        // Validate ticket type and weights.
+        // IMPORTANT: for header-only creation (TicketState == 'H'), Weighbridge tickets only require FirstWeightKg.
+        // SecondWeightKg is captured later when adding lines / completing.
+        var isWeighbridge = WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId);
+
+        // Header-only weighbridge tickets: allow creating with ONLY initialize_weight_kg.
+        // If the client explicitly requests TicketState == 'H', do NOT require second weight.
+        var isHeaderWeighbridge = isWeighbridge && (dto.TicketState == 'H' || dto.TicketState == default(char));
+
+        if (isHeaderWeighbridge)
+        {
+            if (!dto.InitializeWeightKg.HasValue)
+                return BadRequest("Weighbridge tickets require initialize_weight_kg when creating a header.");
+        }
+        else
+        {
+            var weightValidation = WeightCalculationService.ValidateTicketWeights(
+                ticketTypeId: dto.TicketTypeId,
+                firstWeightKg: dto.FirstWeightKg,
+                secondWeightKg: dto.SecondWeightKg,
+                isReceiving: false
+            );
+
+            if (!weightValidation.IsValid)
+                return BadRequest(weightValidation.ErrorMessage);
+        }
+
+        // Generate ticket number
+        var ticketNumber = await _ticketNumberService.GetNextSendingTicketNumberAsync(dto.TicketTypeId);
+
+        // Calculate net weight for weighbridge tickets
+        // For header-only creation, NetWeightKg stays 0 (net weight is calculated per line as weights are captured)
+        decimal netWeightKg = dto.NetWeightKg;
+        if (WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId) && dto.TicketState != 'H' && dto.FirstWeightKg.HasValue && dto.SecondWeightKg.HasValue)
+        {
+            netWeightKg = WeightCalculationService.CalculateNetWeightFromScale(
+                dto.FirstWeightKg.Value,
+                dto.SecondWeightKg.Value,
+                isReceiving: false
+            );
+        }
+
+        // Get operator ID from authenticated user
+        var operatorId = (int)User.GetOperatorId();
+
+        var ticket = new TicketSending(
+            buyerId: dto.BuyerId,
+            ticketTypeId: dto.TicketTypeId,
+            ticketNumber: ticketNumber,
+            netWeightKg: netWeightKg,
+            createdByOperatorId: operatorId,
+            // For header create: dto.InitializeWeightKg should carry the initial weighbridge reading
+            firstWeightKg: WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId) ? dto.InitializeWeightKg : null,
+            secondWeightKg: null,
+            vehicleRegistration: WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId) ? dto.VehicleRegistration : null,
+            trailerRegistration: WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId) ? dto.TrailerRegistration : null,
+            driverName: WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId) ? dto.DriverName : null,
+            notes: dto.Notes
+        );
+
+        // Persist extra weighbridge header fields
+        if (WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId))
+        {
+            ticket.SetWeighbridgeReferences(dto.OfmWeighbridgeTicket, dto.CkNumber, dto.DeliveryNumber, dto.ForeignTicket);
+        }
+
+
+        await _ticketSendingRepo.AddAsync(ticket);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        var result = await _ticketSendingRepo.GetByIdAsync(ticket.TicketSendingId);
+        return CreatedAtAction(nameof(GetTicketSending), new { id = result!.TicketSendingId }, MapToDto(result));
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult<TicketSendingDto>> UpdateTicketSending(int id, [FromBody] CreateTicketSendingDto dto, CancellationToken ct = default)
+    {
+        var ticket = await _ticketSendingRepo.GetByIdAsync(id);
+        if (ticket == null)
+            return NotFound($"Ticket with ID {id} not found.");
+
+        // Update editable header fields
+        // (TicketNumber is not updated - server controls numbering.)
+        // Do not allow changing BuyerId for an existing ticket.
+        if (ticket.BuyerId != dto.BuyerId)
+            return BadRequest("BuyerId cannot be changed once a ticket is created.");
+
+        ticket.UpdateHeader(dto.VehicleRegistration, dto.TrailerRegistration, dto.DriverName, dto.Notes);
+
+        if (WeightCalculationService.IsWeighbridgeTicket(ticket.TicketTypeId))
+        {
+            ticket.SetWeighbridgeReferences(dto.OfmWeighbridgeTicket, dto.CkNumber, dto.DeliveryNumber, dto.ForeignTicket);
+        }
+
+        // Allow updating InitializeWeightKg while in Header state (Save & Reset)
+        if (ticket.TicketState == 'H')
+        {
+            ticket.UpdateWeights(dto.InitializeWeightKg, null, dto.NetWeightKg);
+        }
+        else
+        {
+            ticket.UpdateWeights(dto.FirstWeightKg, dto.SecondWeightKg, dto.NetWeightKg);
+        }
+
+        await _ticketSendingRepo.UpdateAsync(ticket);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        var result = await _ticketSendingRepo.GetByIdAsync(id);
+        return Ok(MapToDto(result!));
+    }
+
+    [HttpGet("{id}/lines")]
+    public async Task<ActionResult<List<TicketSendingLineDto>>> GetTicketSendingLines(int id, CancellationToken ct = default)
+    {
+        var ticket = await _ticketSendingRepo.GetByIdAsync(id);
+        if (ticket == null)
+            return NotFound($"Ticket with ID {id} not found.");
+
+        var lines = ticket.Lines?
+            .Where(l => l.IsActive)
+            .Select(l =>
+            {
+                var lineTotal = l.NetWeightKg * l.UnitPricePerKg;
+                var vatAmount = lineTotal * 0.15m;
+                var totalInclVat = lineTotal + vatAmount;
+
+                return new TicketSendingLineDto
+                {
+                    TicketSendingLineId = l.TicketSendingLineId,
+                    TicketSendingId = l.TicketSendingId,
+                    ProductId = l.ProductId,
+                    ProductCode = l.Product?.ProductCode ?? "",
+                    ProductName = l.Product?.ProductName ?? "",
+                    FirstWeightKg = l.FirstWeightKg,
+                    SecondWeightKg = l.SecondWeightKg,
+                    NetWeightKg = l.NetWeightKg,
+                    UnitPricePerKg = l.UnitPricePerKg,
+                    LineTotal = lineTotal,
+                    VatAmount = vatAmount,
+                    TotalInclVat = totalInclVat,
+                    Tare = l.Tare,
+                    Notes = l.Notes,
+                    IsActive = l.IsActive,
+                    CreatedTime = l.CreatedTime
+                };
+            })
+            .ToList() ?? new List<TicketSendingLineDto>();
+
+        return Ok(lines);
+    }
+
+    [HttpDelete("{id}/lines/{lineId}")]
+    public async Task<ActionResult> DeleteTicketSendingLine(int id, int lineId, CancellationToken ct = default)
+    {
+        var ticket = await _ticketSendingRepo.GetByIdAsync(id);
+        if (ticket == null)
+            return NotFound("Ticket not found");
+
+        var line = ticket.Lines?.FirstOrDefault(l => l.TicketSendingLineId == lineId);
+        if (line == null)
+            return NotFound("Line item not found");
+
+        line.SoftDelete();
+        await _ticketSendingRepo.UpdateAsync(ticket);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return Ok(new { message = "Line deleted (soft)." });
+    }
+
+    [HttpPost("{id}/lines")]
+    public async Task<ActionResult<TicketSendingDto>> AddLineItem(int id, [FromBody] CreateTicketSendingLineDto dto, CancellationToken ct = default)
+    {
+        var ticket = await _ticketSendingRepo.GetByIdAsync(id);
+        if (ticket == null)
+            return NotFound($"Ticket with ID {id} not found.");
+
+        var product = await _productRepo.GetByIdAsync(dto.ProductId);
+        if (product == null)
+            return BadRequest($"Product with ID {dto.ProductId} not found.");
+
+        // Get unit price from buyer's price code if not provided
+        var unitPrice = dto.UnitPricePerKg;
+        if (unitPrice == 0 && ticket.Buyer?.PriceCode != null)
+        {
+            unitPrice = await _priceLookupService.GetUnitPriceAsync(dto.ProductId, ticket.Buyer.PriceCode, ct);
+            if (unitPrice == 0)
+                return BadRequest($"Price not found for product {dto.ProductId} with price code {ticket.Buyer.PriceCode}");
+        }
+
+        // Get operator ID from authenticated user
+        var operatorId = (int)User.GetOperatorId();
+
+        if (WeightCalculationService.IsWeighbridgeTicket(ticket.TicketTypeId))
+        {
+            if (!dto.SecondWeightKg.HasValue)
+                return BadRequest("Weighbridge sending line requires second_weight_kg.");
+
+            var fw = ticket.InitializeWeightKg ?? 0m;
+            var sw = dto.SecondWeightKg.Value;
+
+            var net = WeightCalculationService.CalculateNetWeightFromScale(fw, sw, isReceiving: false);
+
+            var line = new TicketSendingLine(
+                ticketSendingId: id,
+                productId: dto.ProductId,
+                netWeightKg: net,
+                unitPricePerKg: unitPrice,
+                createdByOperatorId: operatorId,
+                tare: dto.Tare,
+                notes: dto.Notes,
+                firstWeightKg: fw,
+                secondWeightKg: sw
+            );
+
+            ticket.AddLine(line);
+
+            // After adding a line, the next "first" weight becomes the previous "second" weight
+            ticket.AdvanceInitializeWeight(sw);
+        }
+        else
+        {
+            var line = new TicketSendingLine(
+                ticketSendingId: id,
+                productId: dto.ProductId,
+                netWeightKg: dto.NetWeightKg,
+                unitPricePerKg: unitPrice,
+                createdByOperatorId: operatorId,
+                tare: dto.Tare,
+                notes: dto.Notes
+            );
+
+            ticket.AddLine(line);
+        }
+        await _ticketSendingRepo.UpdateAsync(ticket);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        var result = await _ticketSendingRepo.GetByIdAsync(id);
+        return Ok(MapToDto(result!));
+    }
+
+    [HttpPut("{id}/lines/{lineId}/tare")]
+    public async Task<ActionResult> UpdateLineTare(int id, int lineId, [FromBody] UpdateLineTareRequest request, CancellationToken ct = default)
+    {
+        try
+        {
+            var ticket = await _ticketSendingRepo.GetByIdAsync(id);
+            if (ticket == null)
+                return NotFound("Ticket not found");
+
+            var line = ticket.Lines?.FirstOrDefault(l => l.TicketSendingLineId == lineId);
+            if (line == null)
+                return NotFound("Line item not found");
+
+            line.UpdateTare(request.Tare);
+
+            await _ticketSendingRepo.UpdateAsync(ticket);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return Ok(new { message = $"Line tare updated to {request.Tare}" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
+    public class UpdateLineTareRequest
+    {
+        public decimal Tare { get; set; }
+    }
+
+    [HttpGet("{id}/count")]
+    public async Task<ActionResult<long>> GetSearchCount([FromQuery] TicketSendingSearchRequestDto request)
+    {
+        var count = await _ticketSendingRepo.GetCountAsync(
+            searchTerm: request.SearchTerm,
+            buyerId: request.BuyerId,
+            firstName: request.FirstName,
+            lastName: request.LastName,
+            idNumber: request.IdNumber,
+            accountNumber: request.AccountNumber,
+            startDate: request.StartDate,
+            endDate: request.EndDate
+        );
+
+        return Ok(count);
+    }
+
+    [HttpPut("{id}/state")]
+    public async Task<ActionResult> UpdateTicketStateAsync(long id, [FromBody] UpdateTicketStateRequest request, CancellationToken ct = default)
+    {
+        try
+        {
+            var ticket = await _ticketSendingRepo.GetByIdAsync(id);
+            if (ticket == null)
+                return NotFound("Ticket not found");
+
+            // Only allow completing tickets via this endpoint (match Receiving's finalize flow)
+            if (request.TicketState != 'C')
+                return BadRequest("Only transition to 'C' (Complete) is supported.");
+
+            ticket.MarkComplete(DateTimeOffset.UtcNow);
+            await _ticketSendingRepo.UpdateAsync(ticket);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return Ok(new { message = $"Ticket state updated to '{request.TicketState}'" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
+    public class UpdateTicketStateRequest
+    {
+        public char TicketState { get; set; }
+    }
+
+    private TicketSendingDto MapToDto(TicketSending ticket)
+    {
+        return new TicketSendingDto
+        {
+            TicketSendingId = ticket.TicketSendingId,
+            BuyerId = ticket.BuyerId,
+            BuyerName = $"{ticket.Buyer?.FirstName} {ticket.Buyer?.LastName}".Trim(),
+            TicketNumber = ticket.TicketNumber,
+            TicketTypeId = ticket.TicketTypeId,
+            TicketTypeName = ticket.TicketType?.TicketTypeName ?? "",
+            TicketState = ticket.TicketState,
+            InitializeWeightKg = ticket.InitializeWeightKg,
+            NetWeightKg = ticket.NetWeightKg,
+            OfmWeighbridgeTicket = ticket.OfmWeighbridgeTicket,
+            ForeignTicket = ticket.ForeignTicket,
+            CkNumber = ticket.CkNumber,
+            DeliveryNumber = ticket.DeliveryNumber,
+            InvoiceNumber = ticket.InvoiceNumber,
+            VehicleRegistration = ticket.VehicleRegistration,
+            TrailerRegistration = ticket.TrailerRegistration,
+            DriverName = ticket.DriverName,
+            Notes = ticket.Notes,
+            IsActive = ticket.IsActive,
+            CreatedTime = ticket.CreatedTime,
+            UpdatedTime = ticket.UpdatedTime,
+            CreatedByOperatorId = ticket.CreatedByOperatorId,
+            Lines = ticket.Lines?.Where(l => l.IsActive).Select(l => 
+            {
+                var lineTotal = l.NetWeightKg * l.UnitPricePerKg;
+                var vatAmount = lineTotal * 0.15m;
+                var totalInclVat = lineTotal + vatAmount;
+                
+                return new TicketSendingLineDto
+                {
+                    TicketSendingLineId = l.TicketSendingLineId,
+                    TicketSendingId = l.TicketSendingId,
+                    ProductId = l.ProductId,
+                    ProductCode = l.Product?.ProductCode ?? "",
+                    ProductName = l.Product?.ProductName ?? "",
+                    FirstWeightKg = l.FirstWeightKg,
+                    SecondWeightKg = l.SecondWeightKg,
+                    NetWeightKg = l.NetWeightKg,
+                    UnitPricePerKg = l.UnitPricePerKg,
+                    LineTotal = lineTotal,
+                    VatAmount = vatAmount,
+                    TotalInclVat = totalInclVat,
+                    Tare = l.Tare,
+                    Notes = l.Notes,
+                    IsActive = l.IsActive,
+                    CreatedTime = l.CreatedTime
+                };
+            }).ToList() ?? new List<TicketSendingLineDto>()
+        };
+    }
+
+    private Task<TicketSearchResultDto> MapToSearchResultDtoAsync(TicketSending ticket)
+    {
+        var accountNumber = ticket.Buyer?.AccountNumber?.ToString("D8");
+        
+        var result = new TicketSearchResultDto
+        {
+            TicketId = ticket.TicketSendingId,
+            TicketNumber = ticket.TicketNumber,
+            TicketType = ticket.TicketType?.TicketTypeName ?? "Unknown",
+            TicketTypeId = ticket.TicketTypeId,
+            CustomerId = ticket.BuyerId,
+            FirstName = ticket.Buyer?.FirstName,
+            LastName = ticket.Buyer?.LastName,
+            CompanyName = ticket.Buyer?.Company?.CompanyName,
+            SiteName = ticket.Buyer?.Site?.SiteName,
+            AccountNumber = accountNumber,
+            NetWeightKg = ticket.NetWeightKg,
+            TicketStatus = ticket.TicketState,
+            CreatedTime = ticket.CreatedTime
+        };
+
+        return Task.FromResult(result);
+    }
+}

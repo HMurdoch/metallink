@@ -1,8 +1,7 @@
 // MetalLink.Desktop/ViewModels/Properties/CustomerProperties.cs
-using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using MetalLink.Shared.Customers;
-using MetalLink.Shared.Locations;
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -16,7 +15,6 @@ public partial class MainWindowViewModel
     private string _searchLastNameText = string.Empty;
     private string _searchCompanyNameText = string.Empty;
     private string _searchIdNumberText = string.Empty;
-    private string _searchPriceCodeText = string.Empty;
     private string _searchAddressLine1Text = string.Empty;
     private string _searchAddressLine2Text = string.Empty;
     private string _searchSuburbText = string.Empty;
@@ -25,6 +23,7 @@ public partial class MainWindowViewModel
     private string _searchPhoneNumberText = string.Empty;
     private string _searchMobileNumberText = string.Empty;
     private string _searchEmailText = string.Empty;
+    private string _searchAccountNumberText = string.Empty;
 
     private ObservableCollection<CustomerDto> _customerSearchResults = new();
 
@@ -90,12 +89,6 @@ public partial class MainWindowViewModel
         set { _searchIdNumberText = value; OnPropertyChanged(); }
     }
 
-    public string SearchPriceCodeText
-    {
-        get => _searchPriceCodeText;
-        set { _searchPriceCodeText = value; OnPropertyChanged(); }
-    }
-
     public string SearchAddressLine1Text
     {
         get => _searchAddressLine1Text;
@@ -144,6 +137,12 @@ public partial class MainWindowViewModel
         set { _searchEmailText = value; OnPropertyChanged(); }
     }
 
+    public string SearchAccountNumberText
+    {
+        get => _searchAccountNumberText;
+        set { _searchAccountNumberText = value; OnPropertyChanged(); }
+    }
+
     public ObservableCollection<CustomerDto> CustomerSearchResults
     {
         get => _customerSearchResults;
@@ -162,20 +161,6 @@ public partial class MainWindowViewModel
     {
         get => _totalTicketsInDb;
         set { _totalTicketsInDb = value; OnPropertyChanged(); }
-    }
-
-    private int _totalCompaniesInDb;
-    public int TotalCompaniesInDb
-    {
-        get => _totalCompaniesInDb;
-        set { _totalCompaniesInDb = value; OnPropertyChanged(); }
-    }
-
-    private int _totalSitesInDb;
-    public int TotalSitesInDb
-    {
-        get => _totalSitesInDb;
-        set { _totalSitesInDb = value; OnPropertyChanged(); }
     }
     // --- Loaded / selected customer driving the details panel ---
 
@@ -196,17 +181,64 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(SelectedIdNumber));
             OnPropertyChanged(nameof(SelectedAccountNumber));
             OnPropertyChanged(nameof(SelectedPriceCode));
-            OnPropertyChanged(nameof(SelectedAddressLine1));
-            OnPropertyChanged(nameof(SelectedAddressLine2));
-            OnPropertyChanged(nameof(SelectedSuburb));
-            OnPropertyChanged(nameof(SelectedCity));
-            OnPropertyChanged(nameof(SelectedPostalCode));
             OnPropertyChanged(nameof(SelectedPhoneNumber));
             OnPropertyChanged(nameof(SelectedMobileNumber));
             OnPropertyChanged(nameof(SelectedEmail));
-            OnPropertyChanged(nameof(SelectedProvinceName));
-            OnPropertyChanged(nameof(SelectedCountryName));
             OnPropertyChanged(nameof(SelectedTaxable));
+
+            // Load site address summary (from CAS/Site) for customer details panel
+            _ = LoadSelectedCustomerSiteAddressAsync(_foundCustomer);
+
+            // Load customer images if available
+            _ = LoadSelectedCustomerImagesAsync(_foundCustomer);
+
+            // Populate Create/Edit form when selecting from results (no code-behind)
+            if (_foundCustomer != null)
+            {
+                IsEditMode = true;
+                EditingCustomerId = _foundCustomer.CustomerId;
+
+                NewFirstName = _foundCustomer.FirstName ?? string.Empty;
+                NewLastName = _foundCustomer.LastName ?? string.Empty;
+                NewIdNumber = _foundCustomer.IdNumber;
+                NewEmail = _foundCustomer.Email ?? string.Empty;
+                NewPhoneNumber = _foundCustomer.PhoneNumber ?? string.Empty;
+                NewMobileNumber = _foundCustomer.MobileNumber ?? string.Empty;
+                NewTaxable = _foundCustomer.Taxable;
+                NewAccountNumber = _foundCustomer.AccountNumber;
+
+                // Company/site only when IsCompany
+                NewIsCompany = _foundCustomer.IsCompany;
+
+                if (_foundCustomer.CompanyId.HasValue)
+                {
+                    var company = _allCompanies.FirstOrDefault(c => c.CompanyId == _foundCustomer.CompanyId.Value);
+                    if (company != null && !string.IsNullOrWhiteSpace(company.CompanyName))
+                    {
+                        var letter = char.ToUpperInvariant(company.CompanyName[0]).ToString();
+                        SelectedNewCompanyLetter = CompanyLetterFilters.Contains(letter) ? letter : "ALL";
+                    }
+
+                    // Set pending site selection BEFORE selecting company (company selection clears sites and loads async)
+                    _pendingSelectSiteId = _foundCustomer.SiteId;
+
+                    SelectedNewCompany = NewCompanySuggestions.FirstOrDefault(c => c.CompanyId == _foundCustomer.CompanyId.Value);
+                }
+
+                if (!string.IsNullOrWhiteSpace(_foundCustomer.PriceCode))
+                    SelectedPriceCodeChar = PriceCodeOptions.FirstOrDefault(p => p.Code == _foundCustomer.PriceCode);
+
+                OnPropertyChanged(nameof(CanCreateCustomer));
+                OnPropertyChanged(nameof(CanUpdateCustomer));
+                (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            }
+            else
+            {
+                IsEditMode = false;
+                EditingCustomerId = null;
+                OnPropertyChanged(nameof(CanUpdateCustomer));
+                (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            }
         }
     }
 
@@ -227,17 +259,10 @@ public partial class MainWindowViewModel
     public string SelectedIdNumber       => FoundCustomer?.IdNumber ?? string.Empty;
     public long? SelectedAccountNumber  => FoundCustomer?.AccountNumber;
     public string SelectedPriceCode      => FoundCustomer?.PriceCode ?? string.Empty;
-    public string SelectedAddressLine1   => FoundCustomer?.AddressLine1 ?? string.Empty;
-    public string SelectedAddressLine2   => FoundCustomer?.AddressLine2 ?? string.Empty;
-    public string SelectedSuburb         => FoundCustomer?.Suburb ?? string.Empty;
-    public string SelectedCity           => FoundCustomer?.City ?? string.Empty;
-    public string SelectedPostalCode     => FoundCustomer?.PostalCode ?? string.Empty;
     public string SelectedPhoneNumber    => FoundCustomer?.PhoneNumber ?? string.Empty;
     public string SelectedMobileNumber   => FoundCustomer?.MobileNumber ?? string.Empty;
     public string SelectedEmail          => FoundCustomer?.Email ?? string.Empty;
-    public string SelectedProvinceName => FoundCustomer?.ProvinceName ?? string.Empty;
-    public string SelectedCountryName  => FoundCustomer?.CountryName  ?? string.Empty;
-    public bool   SelectedTaxable      => FoundCustomer?.Taxable ?? false;
+    public bool   SelectedTaxable        => FoundCustomer?.Taxable ?? false;
 
 
     // --- New customer form properties ---
@@ -252,11 +277,14 @@ public partial class MainWindowViewModel
             _newFirstName = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsNewCustomerFullNameInvalid));
+            OnPropertyChanged(nameof(IsNewBuyerFullNameInvalid));
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
             OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanCreateBuyer));
 
             (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -269,11 +297,14 @@ public partial class MainWindowViewModel
             _newLastName = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsNewCustomerFullNameInvalid));
+            OnPropertyChanged(nameof(IsNewBuyerFullNameInvalid));
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
             OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanCreateBuyer));
 
             (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -323,6 +354,9 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
             OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanCreateBuyer));
+
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -337,13 +371,14 @@ public partial class MainWindowViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(NewAccountNumberDisplay));
             OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanCreateBuyer));
+
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
     public string NewAccountNumberDisplay =>
         NewAccountNumber.HasValue ? NewAccountNumber.Value.ToString("D8") : string.Empty;
-
-    public bool IsAccountNumberReadOnly => true;
 
     private string? _newPriceCode;
     public string? NewPriceCode
@@ -352,71 +387,6 @@ public partial class MainWindowViewModel
         set
         {
             _newPriceCode = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
-            OnPropertyChanged(nameof(HasUnsavedChanges));
-        }
-    }
-
-    private string _newAddressLine1 = string.Empty;
-    public string NewAddressLine1
-    {
-        get => _newAddressLine1;
-        set
-        {
-            _newAddressLine1 = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
-            OnPropertyChanged(nameof(HasUnsavedChanges));
-        }
-    }
-
-    private string _newAddressLine2 = string.Empty;
-    public string NewAddressLine2
-    {
-        get => _newAddressLine2;
-        set
-        {
-            _newAddressLine2 = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
-            OnPropertyChanged(nameof(HasUnsavedChanges));
-        }
-    }
-
-    private string _newSuburb = string.Empty;
-    public string NewSuburb
-    {
-        get => _newSuburb;
-        set
-        {
-            _newSuburb = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
-            OnPropertyChanged(nameof(HasUnsavedChanges));
-        }
-    }
-
-    private string _newCity = string.Empty;
-    public string NewCity
-    {
-        get => _newCity;
-        set
-        {
-            _newCity = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(HasUnsavedNewCustomer));
-            OnPropertyChanged(nameof(HasUnsavedChanges));
-        }
-    }
-
-    private string _newPostalCode = string.Empty;
-    public string NewPostalCode
-    {
-        get => _newPostalCode;
-        set
-        {
-            _newPostalCode = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
@@ -433,6 +403,8 @@ public partial class MainWindowViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
+
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -446,6 +418,8 @@ public partial class MainWindowViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
+
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -459,6 +433,8 @@ public partial class MainWindowViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasUnsavedNewCustomer));
             OnPropertyChanged(nameof(HasUnsavedChanges));
+
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
 
@@ -466,13 +442,178 @@ public partial class MainWindowViewModel
     public bool NewTaxable
     {
         get => _newTaxable;
-        set { _newTaxable = value; OnPropertyChanged(); }
+        set
+        {
+            _newTaxable = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CanCreateCustomer));
+            OnPropertyChanged(nameof(CanCreateBuyer));
+            (UpdateBuyerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+        }
     }
     
-    private bool _searchTaxable = true;
-    public bool SearchTaxable
+    public sealed record PriceCodeOption(string Code, string Label);
+
+    public ObservableCollection<PriceCodeOption> PriceCodeOptions { get; } =
+    [
+        new("A", "Price A"),
+        new("B", "Price B"),
+        new("C", "Price C"),
+    ];
+
+    private void SyncPriceCodeDropdownFromNewPriceCode()
     {
-        get => _searchTaxable;
-        set { _searchTaxable = value; OnPropertyChanged(); }
+        var code = (NewPriceCode ?? "").Trim();
+        SelectedPriceCodeChar = PriceCodeOptions.FirstOrDefault(x => x.Code == code);
+    }
+
+    private PriceCodeOption? _selectedPriceCodeChar;
+
+    public PriceCodeOption? SelectedPriceCodeChar
+    {
+        get => _selectedPriceCodeChar;
+        set
+        {
+            if (_selectedPriceCodeChar == value) return;
+            _selectedPriceCodeChar = value;
+            OnPropertyChanged();
+
+            NewPriceCode = _selectedPriceCodeChar?.Code;
+
+            // if you have CanCreate/CanUpdate checks depending on it, notify here too
+            (CreateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            (UpdateCustomerCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+        }
+    }
+
+    // For search panel
+    private PriceCodeOption? _searchPriceCode;
+
+    public PriceCodeOption? SearchPriceCode
+    {
+        get => _searchPriceCode;
+        set
+        {
+            if (_searchPriceCode == value) return;
+            _searchPriceCode = value;
+            OnPropertyChanged();
+
+            // IMPORTANT: search depends on this
+            (SearchCustomersCommand as CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)
+                ?.NotifyCanExecuteChanged();
+        }
+    }
+
+    // --- Customer Image Properties ---
+    
+    private Avalonia.Media.Imaging.Bitmap? _idCardImage;
+    public Avalonia.Media.Imaging.Bitmap? IdCardImage
+    {
+        get => _idCardImage;
+        set
+        {
+            _idCardImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _driverLicenseImage;
+    public Avalonia.Media.Imaging.Bitmap? DriverLicenseImage
+    {
+        get => _driverLicenseImage;
+        set
+        {
+            _driverLicenseImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _photoImage;
+    public Avalonia.Media.Imaging.Bitmap? PhotoImage
+    {
+        get => _photoImage;
+        set
+        {
+            _photoImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _signatureImage;
+    public Avalonia.Media.Imaging.Bitmap? SignatureImage
+    {
+        get => _signatureImage;
+        set
+        {
+            _signatureImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _fingerprintImage;
+    public Avalonia.Media.Imaging.Bitmap? FingerprintImage
+    {
+        get => _fingerprintImage;
+        set
+        {
+            _fingerprintImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // Selected customer image display properties
+    private Avalonia.Media.Imaging.Bitmap? _selectedIdCardImage;
+    public Avalonia.Media.Imaging.Bitmap? SelectedIdCardImage
+    {
+        get => _selectedIdCardImage;
+        set
+        {
+            _selectedIdCardImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _selectedDriverLicenseImage;
+    public Avalonia.Media.Imaging.Bitmap? SelectedDriverLicenseImage
+    {
+        get => _selectedDriverLicenseImage;
+        set
+        {
+            _selectedDriverLicenseImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _selectedPhotoImage;
+    public Avalonia.Media.Imaging.Bitmap? SelectedPhotoImage
+    {
+        get => _selectedPhotoImage;
+        set
+        {
+            _selectedPhotoImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _selectedSignatureImage;
+    public Avalonia.Media.Imaging.Bitmap? SelectedSignatureImage
+    {
+        get => _selectedSignatureImage;
+        set
+        {
+            _selectedSignatureImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? _selectedFingerprintImage;
+    public Avalonia.Media.Imaging.Bitmap? SelectedFingerprintImage
+    {
+        get => _selectedFingerprintImage;
+        set
+        {
+            _selectedFingerprintImage = value;
+            OnPropertyChanged();
+        }
     }
 }

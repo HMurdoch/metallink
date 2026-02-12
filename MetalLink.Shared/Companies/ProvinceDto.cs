@@ -6,7 +6,7 @@ public sealed class ProvinceDto
     
     // Status
     public bool   IsActive    { get; set; }
-    public DateTime? CreatedTime { get; set; }
-    public DateTime? UpdatedTime { get; set; }
+    public DateTimeOffset CreatedTime { get; set; }
+    public DateTimeOffset UpdatedTime { get; set; }
 
 }

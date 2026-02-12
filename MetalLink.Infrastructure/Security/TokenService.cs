@@ -27,11 +27,10 @@ public sealed class TokenService : ITokenService
     {
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, op.OperatorId.ToString()),
-            new("username", op.Username),
-            new("display_name", op.DisplayName),
-            new(ClaimTypes.Role, op.Role),
-            new("site_id", op.SiteId.ToString())
+            new Claim(JwtRegisteredClaimNames.Sub, op.OperatorId.ToString()),
+            new Claim("username", op.Username),
+            new Claim("display_name", op.DisplayName),
+            new Claim(ClaimTypes.Role, op.Role)
         };
 
         var signingKey = new SymmetricSecurityKey(_keyBytes);

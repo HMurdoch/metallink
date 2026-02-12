@@ -3,8 +3,8 @@ using MetalLink.Shared.Customers;
 
 public sealed record CreateCustomerCommand : IRequest<CustomerDto?>
 {
-    public long CompanyId { get; init; }
-    public long SiteId   { get; init; }
+    public int? CompanyId { get; init; }
+    public int? SiteId   { get; init; }
 
     public string? FirstName { get; init; }
     public string? LastName  { get; init; }
@@ -18,6 +18,9 @@ public sealed record CreateCustomerCommand : IRequest<CustomerDto?>
     public string? MobileNumber  { get; init; }
     public string? Email         { get; init; }
 
-    // NEW – customer-level taxable flag
-    public bool Taxable { get; init; } = true;
+    public bool IsTaxable { get; init; } = true;
+
+    public int? ImagePathId { get; init; }
+
+    public int CreatedByOperatorId { get; init; } = 1;
 }

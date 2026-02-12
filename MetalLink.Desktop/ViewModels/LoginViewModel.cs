@@ -87,13 +87,35 @@ public class LoginViewModel : INotifyPropertyChanged
 
                 var vm = (MainWindowViewModel)mainWindow.DataContext;
 
-                // fire-and-forget safely (don’t block startup)
+                // fire-and-forget safely (don't block startup)
                 _ = vm.InitializeLookupsAsync();
 
                 var loginWindow = desktop.MainWindow; // should be the LoginWindow
 
+                // Set MainWindow initial size to 1920x950
+                mainWindow.Width = 1920;
+                mainWindow.Height = 950;
+                
+                // Position on the same monitor as LoginWindow
+                if (loginWindow != null && loginWindow.Screens.Primary != null)
+                {
+                    var loginScreen = loginWindow.Screens.ScreenFromWindow(loginWindow) ?? loginWindow.Screens.Primary;
+                    var bounds = loginScreen.WorkingArea;
+                    
+                    // Center the window on the monitor
+                    var centerX = bounds.X + (bounds.Width - 1920) / 2;
+                    var centerY = bounds.Y + (bounds.Height - 950) / 2;
+                    mainWindow.Position = new Avalonia.PixelPoint(centerX, centerY);
+                    
+                    Console.WriteLine($"[WINDOW] Positioned MainWindow: X={centerX}, Y={centerY}, W=1920, H=950");
+                }
+
                 desktop.MainWindow = mainWindow;
                 mainWindow.Show();
+
+                // Set MainWindow to Normal (Windowed) mode
+                mainWindow.WindowState = Avalonia.Controls.WindowState.Normal;
+                Console.WriteLine($"[WINDOW] MainWindow set to normal (windowed) mode");
 
                 // now safe to close the login window (shutdown mode will keep app alive because we changed MainWindow)
                 loginWindow?.Close();

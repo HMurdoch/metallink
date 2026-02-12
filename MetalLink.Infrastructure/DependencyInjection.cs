@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MetalLink.Application.Interfaces;
+using MetalLink.Application.Services;
 using MetalLink.Infrastructure.Persistence;
 using MetalLink.Infrastructure.Persistence.Repositories;
 using MetalLink.Infrastructure.Security;
@@ -34,13 +35,20 @@ public static class DependencyInjection
 
         // Repositories
         services.AddScoped<ICustomerRepository, CustomerRepository>();
+        services.AddScoped<IBuyerRepository, BuyerRepository>();
         services.AddScoped<IOperatorRepository, OperatorRepository>();
-        services.AddScoped<ICustomerDocumentRepository, CustomerDocumentRepository>();
-        services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
+        services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IPriceRepository, PriceRepository>();
+        services.AddScoped<ITicketReceivingRepository, TicketReceivingRepository>();
+        services.AddScoped<ITicketSendingRepository, TicketSendingRepository>();
 
         // Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Application Services
+        services.AddScoped<TicketNumberService>();
+        services.AddScoped<IAccountNumberGenerator, AccountNumberGenerator>();
 
         // Token service
         services.AddSingleton<ITokenService, TokenService>();

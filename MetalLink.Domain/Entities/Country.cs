@@ -7,12 +7,13 @@ public class Country
 {
     public int CountryId { get; set; }
 
-    public string  Name { get; set; } = string.Empty;
-    public string? Code { get; set; }
+    public string? CountryCode { get; set; }
+    public string CountryName { get; set; } = string.Empty;
 
-    public bool     IsActive    { get; set; } = true;
-    public DateTime? CreatedTime { get; set; }
-    public DateTime? UpdatedTime { get; set; }
+    public int CreatedByOperatorId { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset CreatedTime { get; set; }
+    public DateTimeOffset UpdatedTime { get; set; }
 
     public ICollection<Site> Sites { get; set; } = new List<Site>();
 }

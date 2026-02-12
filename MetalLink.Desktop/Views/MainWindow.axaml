@@ -9,43 +9,101 @@
         MinWidth="1150"
         MinHeight="700"
         Title="Metal Link Desktop"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource Brush.AppBackground}">
 
   <Window.Resources>
     <converters:SectionToViewConverter x:Key="SectionToViewConverter"/>
   </Window.Resources>
 
-  <!-- ✅ Nav button styling -->
+  <!-- Nav button styling with subtle blue selection stripe -->
   <Window.Styles>
+
+    <!-- Base nav button -->
     <Style Selector="Button.NavButton">
-      <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="BorderBrush" Value="Transparent"/>
-      <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Padding" Value="12,10"/>
-      <Setter Property="HorizontalContentAlignment" Value="Left"/>
-      <Setter Property="HorizontalAlignment" Value="Stretch"/>
-      <Setter Property="Foreground" Value="White"/>
-      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="12,10" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+      <Setter Property="FontSize" Value="14" />
+
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions>
+            <BrushTransition Property="Background" Duration="0:0:0.12" />
+          </Transitions>
+        </Setter.Value>
+      </Setter>
+
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Grid>
+              <Border x:Name="Stripe"
+                      Width="3"
+                      HorizontalAlignment="Left"
+                      Background="{StaticResource Brush.AccentGradient}"
+                      Opacity="0" />
+
+              <Border Margin="6,0,0,0"
+                      Background="{TemplateBinding Background}"
+                      CornerRadius="4">
+                <ContentPresenter Content="{TemplateBinding Content}"
+                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  Margin="{TemplateBinding Padding}"
+                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                  VerticalAlignment="Center" />
+              </Border>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
     </Style>
 
     <!-- Sub-nav item under Customers -->
     <Style Selector="Button.SubNavButton">
-      <Setter Property="Padding" Value="28,8"/>
-      <Setter Property="FontSize" Value="13"/>
-      <Setter Property="Foreground" Value="#cfd4df"/>
+      <Setter Property="Padding" Value="28,8" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.TextMuted}" />
     </Style>
 
+    <!-- Hover / pressed / focus backgrounds -->
     <Style Selector="Button.NavButton:pointerover">
-      <Setter Property="Background" Value="#2a2f3a"/>
+      <!-- Remove default gray flash by taking full control of hover visual -->
+      <Setter Property="Background" Value="#262B35" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+      <!-- Disable extra background transitions on hover -->
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions />
+        </Setter.Value>
+      </Setter>
     </Style>
 
     <Style Selector="Button.NavButton:pressed">
-      <Setter Property="Background" Value="#343b49"/>
+      <Setter Property="Background" Value="#2E3440" />
     </Style>
 
     <Style Selector="Button.NavButton:focus">
-      <Setter Property="Background" Value="#2a2f3a"/>
+      <Setter Property="Background" Value="#262B35" />
     </Style>
+
+    <!-- Show blue stripe when hovered / pressed / focused -->
+    <Style Selector="Button.NavButton:pointerover /template/ Border#Stripe">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="Button.NavButton:pressed /template/ Border#Stripe">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="Button.NavButton:focus /template/ Border#Stripe">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
   </Window.Styles>
 
   <Grid>
@@ -53,15 +111,75 @@
       <ColumnDefinition Width="260"/>
       <ColumnDefinition Width="*"/>
     </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
 
     <!-- Left navigation -->
-    <Border Grid.Column="0" Background="#20232a">
+    <Border Grid.Column="0" Grid.RowSpan="2" Background="{StaticResource Brush.NavBackground}">
       <DockPanel>
 
-        <!-- Top header -->
+        <!-- Top header with animated branding -->
         <StackPanel DockPanel.Dock="Top" Margin="12,12,12,8" Spacing="3">
-          <TextBlock Text="Metal Link Desktop" FontSize="16" FontWeight="Bold" Foreground="White"/>
-          <TextBlock Text="{Binding LoggedInUserDisplay}" FontSize="12" Foreground="#b7bcc9"/>
+          <Grid>
+            <!-- Base layer -->
+            <TextBlock Text="Metal Link Desktop" 
+                       FontSize="22" 
+                       FontWeight="Bold" 
+                       Foreground="#f5f5f5"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center" />
+            
+            <!-- Animated gradient overlay with color sweep -->
+            <TextBlock Text="Metal Link Desktop" 
+                       FontSize="22" 
+                       FontWeight="Bold"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"
+                       Opacity="0">
+              <TextBlock.Foreground>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                  <GradientStop Color="#1E88E5" Offset="0" />
+                  <GradientStop Color="#8EC5FC" Offset="0.3" />
+                  <GradientStop Color="#4FC3F7" Offset="0.5" />
+                  <GradientStop Color="#8EC5FC" Offset="0.7" />
+                  <GradientStop Color="#1E88E5" Offset="1" />
+                </LinearGradientBrush>
+              </TextBlock.Foreground>
+              <TextBlock.Styles>
+                <Style Selector="TextBlock">
+                  <Style.Animations>
+                    <!-- Color sweep animation with intensity variation -->
+                    <Animation Duration="0:0:3" IterationCount="INFINITE">
+                      <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0" />
+                      </KeyFrame>
+                      <KeyFrame Cue="15%">
+                        <Setter Property="Opacity" Value="0.7" />
+                      </KeyFrame>
+                      <KeyFrame Cue="30%">
+                        <Setter Property="Opacity" Value="0.95" />
+                      </KeyFrame>
+                      <KeyFrame Cue="50%">
+                        <Setter Property="Opacity" Value="0.95" />
+                      </KeyFrame>
+                      <KeyFrame Cue="65%">
+                        <Setter Property="Opacity" Value="0.7" />
+                      </KeyFrame>
+                      <KeyFrame Cue="80%">
+                        <Setter Property="Opacity" Value="0" />
+                      </KeyFrame>
+                      <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="0" />
+                      </KeyFrame>
+                    </Animation>
+                  </Style.Animations>
+                </Style>
+              </TextBlock.Styles>
+            </TextBlock>
+          </Grid>
+          <TextBlock Text="{Binding LoggedInUserDisplay}" FontSize="12" Foreground="#b7bcc9" TextAlignment="Center"/>
         </StackPanel>
 
         <!-- Navigation items -->
@@ -72,6 +190,9 @@
           <Button Content="Customers"
                   Command="{Binding ShowCustomersCommand}"
                   Classes="NavButton SubNavButton"/>
+          <Button Content="Buyers"
+                  Command="{Binding ShowBuyersCommand}"
+                  Classes="NavButton SubNavButton"/>
           <Button Content="Companies &amp; Sites"
                   Command="{Binding ShowCompanyAndSitesCommand}"
                   Classes="NavButton SubNavButton"/>
@@ -79,7 +200,14 @@
                   Command="{Binding ShowProductsAndPricesCommand}"
                   Classes="NavButton SubNavButton" />                  
 
-          <Button Content="Tickets" Command="{Binding ShowTicketsCommand}" Classes="NavButton"/>
+          <Button Content="Tickets" Classes="NavButton"/>
+          <Button Content="Receiving"
+                  Command="{Binding ShowTicketsReceivingCommand}"
+                  Classes="NavButton SubNavButton"/>
+          <Button Content="Sending"
+                  Command="{Binding ShowTicketsSendingCommand}"
+                  Classes="NavButton SubNavButton"/>
+
           <Button Content="Documents" Command="{Binding ShowDocumentsCommand}" Classes="NavButton"/>
           <Button Content="Camera" Command="{Binding ShowCameraCommand}" Classes="NavButton"/>
           <Button Content="Reports" Command="{Binding ShowReportsCommand}" Classes="NavButton"/>
@@ -94,8 +222,36 @@
     </Border>
 
     <!-- Main content -->
-    <Grid Grid.Column="1" Background="#1f2229">
-      <ContentControl Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}}"/>
+    <Grid Grid.Column="1" Grid.Row="0" Background="{StaticResource Brush.MainBackground}">
+      <TransitioningContentControl Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}}">
+        <TransitioningContentControl.PageTransition>
+          <CrossFade Duration="0:0:0.18" />
+        </TransitioningContentControl.PageTransition>
+      </TransitioningContentControl>
     </Grid>
+
+    <!-- Bottom status bar -->
+    <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{StaticResource Brush.StatusBackground}" Padding="8,4">
+      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="16">
+        <!-- Main status message -->
+        <TextBlock Grid.Column="0"
+                   Text="{Binding StatusMessage}"
+                   Foreground="#c0c4cf"
+                   VerticalAlignment="Center"
+                   TextTrimming="CharacterEllipsis" />
+
+        <!-- Customers loaded this session -->
+        <TextBlock Grid.Column="1"
+                   Text="{Binding CustomersLoadedCount, StringFormat='Customers loaded: {0}'}"
+                   Foreground="#9fa4b2"
+                   VerticalAlignment="Center" />
+
+        <!-- Tickets created this session -->
+        <TextBlock Grid.Column="2"
+                   Text="{Binding TicketsCreatedCount, StringFormat='Tickets created: {0}'}"
+                   Foreground="#9fa4b2"
+                   VerticalAlignment="Center" />
+      </Grid>
+    </Border>
   </Grid>
 </Window>

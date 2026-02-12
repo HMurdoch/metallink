@@ -4,9 +4,11 @@ public enum EnumMainSection
 {
     Dashboard,
     Customers,
+    Buyers,
     CompanyAndSites,
     ProductsAndPrices,
-    Tickets,
+    TicketsReceiving, // Receiving / inbound
+    TicketsSending,   // Sending / outbound
     Documents,
     Camera,
     Reports,

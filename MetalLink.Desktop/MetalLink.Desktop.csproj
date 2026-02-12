@@ -31,13 +31,11 @@
 
   <!-- <ItemGroup>
     <AvaloniaXaml Include="App.axaml" />
-    <AvaloniaXaml Include="Views\**\*.axaml" />
+    <AvaloniaXaml Include="Views\\**\\*.axaml" />
   </ItemGroup> -->
 
-  <!-- ✅ Only assets need to be explicit.
-       App.axaml and Views\**\*.axaml are picked up automatically by Avalonia. -->
   <ItemGroup>
-    <AvaloniaResource Include="Assets\**" />
+    <AvaloniaResource Include="Assets\\**" />
   </ItemGroup>
 
   <ItemGroup>

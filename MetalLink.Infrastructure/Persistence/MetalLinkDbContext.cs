@@ -1,652 +1,422 @@
 using Microsoft.EntityFrameworkCore;
 using MetalLink.Domain.Entities;
+using System.Linq.Expressions;
 
 namespace MetalLink.Infrastructure.Persistence;
 
 public class MetalLinkDbContext : DbContext
 {
-      public MetalLinkDbContext(DbContextOptions<MetalLinkDbContext> options)
-            : base(options)
-      {
-      }
-
-      // Existing sets
-      public DbSet<Customer> Customers => Set<Customer>();
-      public DbSet<Operator> Operators => Set<Operator>();
-      public DbSet<CustomerDocument> CustomerDocuments => Set<CustomerDocument>();
-      public DbSet<Ticket> Tickets => Set<Ticket>();
-
-      // NEW sets
-      public DbSet<Company> Companies => Set<Company>();
-      public DbSet<Site> Sites => Set<Site>();
-      public DbSet<Province> Provinces => Set<Province>();
-      public DbSet<Country> Countries => Set<Country>();
-
-      protected override void OnModelCreating(ModelBuilder modelBuilder)
-      {
-            base.OnModelCreating(modelBuilder);
-
-            ConfigureCustomer(modelBuilder);
-            ConfigureOperator(modelBuilder);
-            ConfigureCustomerDocument(modelBuilder);
-            ConfigureTicket(modelBuilder);
-
-            // NEW
-            ConfigureCompany(modelBuilder);
-            ConfigureSite(modelBuilder);
-            ConfigureProvince(modelBuilder);
-            ConfigureCountry(modelBuilder);
-      }
-
-      // -------------------------
-      // CUSTOMER
-      // -------------------------
-
-      private void ConfigureCustomer(ModelBuilder modelBuilder)
-      {
-            var entity = modelBuilder.Entity<Customer>();
-
-            entity.ToTable("customers", "metal_link");
-
-            entity.HasKey(c => c.CustomerId);
-
-            entity.Property(c => c.CustomerId)
-                  .HasColumnName("customer_id")
-                  .ValueGeneratedOnAdd();
-
-            // Company is required
-            entity.Property(c => c.CompanyId)
-                  .HasColumnName("company_id")
-                  .IsRequired(); // long + required
-
-            // Site is required (your business rule)
-            entity.Property(c => c.SiteId)
-                  .HasColumnName("site_id")
-                  .IsRequired(); // ✅ NO IsRequired(false)
-
-            entity.Property(c => c.FirstName)
-                  .HasColumnName("first_name")
-                  .HasMaxLength(50);
-
-            entity.Property(c => c.LastName)
-                  .HasColumnName("last_name")
-                  .HasMaxLength(50);
-
-            entity.Property(c => c.IsCompany)
-                  .HasColumnName("is_company");
-
-            entity.Property(c => c.IdNumber)
-                  .HasColumnName("id_number")
-                  .HasMaxLength(20);
-
-            entity.Property(c => c.AccountNumber)
-                  .HasColumnName("account_number")
-                  .HasColumnType("bigint")
-                  .ValueGeneratedOnAdd();
-
-            entity.Property(c => c.PriceCode)
-                  .HasColumnName("price_code")
-                  .HasMaxLength(10);
-
-            entity.Property(c => c.PhoneNumber)
-                  .HasColumnName("phone_number")
-                  .HasMaxLength(20);
-
-            entity.Property(c => c.MobileNumber)
-                  .HasColumnName("mobile_number")
-                  .HasMaxLength(20);
-
-            entity.Property(c => c.Email)
-                  .HasColumnName("email")
-                  .HasMaxLength(100);
-
-            entity.Property(c => c.Taxable)
-                  .HasColumnName("taxable")
-                  .IsRequired();
-
-            entity.Property(c => c.IsActive)
-                  .HasColumnName("is_active")
-                  .IsRequired();
-
-            entity.Property(c => c.CreatedTime)
-                  .HasDefaultValueSql("now()")
-                  .HasColumnName("created_time")
-                  .ValueGeneratedOnAdd()
-                  .IsRequired();
-
-            entity.Property(c => c.UpdatedTime)
-                  .HasDefaultValueSql("now()")
-                  .HasColumnName("updated_time")
-                  .ValueGeneratedOnAddOrUpdate()
-                  .IsRequired();
-            // Relationships
-
-            entity.HasOne(c => c.Company)
-                  .WithMany(co => co.Customers)
-                  .HasForeignKey(c => c.CompanyId)
-                  .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(c => c.Site)
-                  .WithMany(s => s.Customers)
-                  .HasForeignKey(c => c.SiteId)
-                  .OnDelete(DeleteBehavior.Restrict); // ✅ NO IsRequired(false) here either
-      }
-      // -------------------------
-      // COMPANY
-      // -------------------------
-
-      private static void ConfigureCompany(ModelBuilder modelBuilder)
-      {
-            var entity = modelBuilder.Entity<Company>();
-
-            entity.ToTable("companies", schema: "metal_link");
-
-            entity.HasKey(c => c.CompanyId)
-                  .HasName("pk_companies_company_id");
-
-            entity.Property(c => c.CompanyId)
-                  .HasColumnName("company_id")
-                  .ValueGeneratedOnAdd();
-
-            entity.Property(c => c.CompanyName)
-                  .HasColumnName("company_name")
-                  .IsRequired()
-                  .HasMaxLength(200);
-
-            entity.Property(c => c.VatNumber)
-                  .HasColumnName("vat_number")
-                  .HasMaxLength(50);
-
-            entity.Property(c => c.IsActive)
-                  .HasColumnName("is_active")
-                  .IsRequired();
-
-            entity.Property(c => c.CreatedTime)
-                  .HasDefaultValueSql("now()")
-                  .HasColumnName("created_time")
-                  .ValueGeneratedOnAdd()
-                  .IsRequired();
-
-            entity.Property(c => c.UpdatedTime)
-                  .HasDefaultValueSql("now()")
-                  .HasColumnName("updated_time")
-                  .ValueGeneratedOnAddOrUpdate()
-                  .IsRequired();
-
-            entity.HasIndex(c => c.CompanyName)
-                  .HasDatabaseName("companies_company_name_idx");
-
-            entity.HasIndex(c => c.VatNumber)
-                  .HasDatabaseName("companies_vat_number_idx");
-
-            // Navigation: Company → Sites
-            entity.HasMany(c => c.Sites)
-                  .WithOne(s => s.Company)
-                  .HasForeignKey(s => s.CompanyId)
-                  .HasConstraintName("fk_sites_company_id_companies");
-
-            // Navigation: Company → Customers
-            entity.HasMany(c => c.Customers)
-                  .WithOne(cu => cu.Company)
-                  .HasForeignKey(cu => cu.CompanyId)
-                  .HasConstraintName("fk_customers_company_id_companies");
-      }
-
-      public override int SaveChanges()
-      {
-            ApplyTimestamps();
-            return base.SaveChanges();
-      }
-
-      public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-      {
-            ApplyTimestamps();
-            return base.SaveChangesAsync(cancellationToken);
-      }
-
-      private void ApplyTimestamps()
-      {
-            var now = DateTimeOffset.UtcNow;
-
-            foreach (var entry in ChangeTracker.Entries())
-            {
-                  if (entry.Entity is Company c)
-                  {
-                        if (entry.State == EntityState.Added)
-                        {
-                              if (c.CreatedTime == default) c.CreatedTime = now;
-                              c.UpdatedTime = now;
-                        }
-                        else if (entry.State == EntityState.Modified)
-                        {
-                              c.UpdatedTime = now;
-                        }
-                  }
-
-                  // If Site also has these columns, repeat the same for Site
-                  // if (entry.Entity is Site s) { ... }
-            }
-      }
-
-      // -------------------------
-      // SITE
-      // -------------------------
-
-      private static void ConfigureSite(ModelBuilder modelBuilder)
-      {
-            var entity = modelBuilder.Entity<Site>();
-
-            entity.ToTable("sites", schema: "metal_link");
-
-            entity.HasKey(s => s.SiteId)
-                  .HasName("pk_sites_site_id");
-
-            entity.Property(s => s.SiteId)
-                  .HasColumnName("site_id")
-                  .ValueGeneratedOnAdd();
-
-            entity.Property(s => s.CompanyId)
-                  .HasColumnName("company_id")
-                  .IsRequired();
-
-            entity.Property(s => s.SiteName)
-                  .HasColumnName("site_name")
-                  .IsRequired()
-                  .HasMaxLength(200);
-
-            entity.Property(s => s.SiteCode)
-                  .HasColumnName("site_code")
-                  .HasMaxLength(50);
-
-            entity.Property(s => s.AddressLine1)
-                  .HasColumnName("address_line1")
-                  .HasMaxLength(200);
-
-            entity.Property(s => s.AddressLine2)
-                  .HasColumnName("address_line2")
-                  .HasMaxLength(200);
-
-            entity.Property(s => s.Suburb)
-                  .HasColumnName("suburb")
-                  .HasMaxLength(100);
-
-            entity.Property(s => s.City)
-                  .HasColumnName("city")
-                  .HasMaxLength(100);
-
-            entity.Property(s => s.PostalCode)
-                  .HasColumnName("postal_code")
-                  .HasMaxLength(20);
-
-            entity.Property(s => s.ProvinceId)
-                  .HasColumnName("province_id")
-                  .IsRequired(false);
-
-            entity.Property(s => s.CountryId)
-                  .HasColumnName("country_id")
-                  .IsRequired(false);
-
-            entity.Property(s => s.IsActive)
-                  .HasColumnName("is_active")
-                  .IsRequired();
-
-            entity.Property(c => c.CreatedTime)
-                  .HasDefaultValueSql("now()")
-                  .HasColumnName("created_time")
-                  .ValueGeneratedOnAdd()
-                  .IsRequired();
-
-            entity.Property(c => c.UpdatedTime)
-                  .HasDefaultValueSql("now()")
-                  .HasColumnName("updated_time")
-                  .ValueGeneratedOnAddOrUpdate()
-                  .IsRequired();
-
-            entity.HasIndex(s => s.SiteCode)
-                  .HasDatabaseName("sites_site_code_idx");
-
-            entity.HasIndex(s => new { s.CompanyId, s.SiteName })
-                  .HasDatabaseName("sites_company_id_site_name_idx");
-
-            // FK → Company
-            entity.HasOne(s => s.Company)
-                  .WithMany(c => c.Sites)
-                  .HasForeignKey(s => s.CompanyId)
-                  .HasConstraintName("fk_sites_company_id_companies");
-
-            // FK → Province (optional/required depending on your model)
-            entity.HasOne(s => s.Province)
-                  .WithMany(p => p.Sites)
-                  .HasForeignKey(s => s.ProvinceId)
-                  .HasConstraintName("fk_sites_province_id_provinces");
-
-            // NEW: FK → Country
-            entity.HasOne(s => s.Country)
-                  .WithMany(c => c.Sites)
-                  .HasForeignKey(s => s.CountryId)
-                  .HasConstraintName("fk_sites_country_id_countries");
-      }
-
-      // -------------------------
-      // PROVINCE
-      // -------------------------
-
-      private static void ConfigureProvince(ModelBuilder modelBuilder)
-      {
-            var entity = modelBuilder.Entity<Province>();
-
-            entity.ToTable("provinces", schema: "metal_link");
-
-            entity.HasKey(p => p.ProvinceId)
-                  .HasName("pk_provinces_province_id");
-
-            entity.Property(p => p.ProvinceId)
-                  .HasColumnName("province_id")
-                  .ValueGeneratedOnAdd();
-
-            entity.Property(p => p.ProvinceName)
-                  .HasColumnName("name")
-                  .IsRequired()
-                  .HasMaxLength(100);
-
-            entity.Property(p => p.ProvinceCode)
-                  .HasColumnName("code")
-                  .IsRequired()
-                  .HasMaxLength(10);
-
-            entity.Property(p => p.IsActive)
-                  .HasColumnName("is_active")
-                  .IsRequired();
-
-            entity.Property(p => p.CreatedTime)
-                  .HasColumnName("created_time")
-                  .IsRequired();
-
-            entity.Property(p => p.UpdatedTime)
-                  .HasColumnName("updated_time")
-                  .IsRequired();
-
-            entity.HasIndex(p => p.ProvinceCode)
-                  .HasDatabaseName("provinces_code_idx");
-
-            entity.HasIndex(p => p.ProvinceName)
-                  .HasDatabaseName("provinces_name_idx");
-
-            // Navigation: Province → Sites
-            entity.HasMany(p => p.Sites)
-                  .WithOne(s => s.Province)
-                  .HasForeignKey(s => s.ProvinceId)
-                  .HasConstraintName("fk_sites_province_id_provinces");
-      }
-
-      // -------------------------
-      // COUNTRY
-      // -------------------------
-
-      private static void ConfigureCountry(ModelBuilder modelBuilder)
-      {
-            var entity = modelBuilder.Entity<Country>();
-
-            entity.ToTable("countries", schema: "metal_link");
-
-            entity.HasKey(c => c.CountryId)
-                  .HasName("pk_countries_country_id");
-
-            entity.Property(c => c.CountryId)
-                  .HasColumnName("country_id")
-                  .ValueGeneratedOnAdd();
-
-            entity.Property(c => c.Name)
-                  .HasColumnName("name")
-                  .IsRequired()
-                  .HasMaxLength(50);
-
-            entity.Property(c => c.Code)
-                  .HasColumnName("code")
-                  .HasMaxLength(10);
-
-            entity.Property(c => c.IsActive)
-                  .HasColumnName("is_active")
-                  .IsRequired();
-
-            entity.Property(c => c.CreatedTime)
-                  .HasDefaultValueSql("now()")
-                  .HasColumnName("created_time")
-                  .ValueGeneratedOnAdd()
-                  .IsRequired();
-
-            entity.Property(c => c.UpdatedTime)
-                  .HasDefaultValueSql("now()")
-                  .HasColumnName("updated_time")
-                  .ValueGeneratedOnAddOrUpdate()
-                  .IsRequired();
-
-            entity.HasIndex(c => c.Code)
-                  .HasDatabaseName("countries_code_idx");
-
-            entity.HasIndex(c => c.Name)
-                  .HasDatabaseName("countries_name_idx");
-      }
-
-      // -------------------------
-      // OPERATOR
-      // -------------------------
-
-      private static void ConfigureOperator(ModelBuilder modelBuilder)
-      {
-            var entity = modelBuilder.Entity<Operator>();
-
-            entity.ToTable("operators", schema: "metal_link");
-
-            entity.HasKey(o => o.OperatorId)
-                  .HasName("pk_operators_operator_id");
-
-            entity.Property(o => o.OperatorId)
-                  .HasColumnName("operator_id")
-                  .ValueGeneratedOnAdd();
-
-            entity.Property(o => o.SiteId)
-                  .HasColumnName("site_id")
-                  .IsRequired();
-
-            entity.Property(o => o.Username)
-                  .HasColumnName("username")
-                  .IsRequired()
-                  .HasMaxLength(100);
-
-            entity.Property(o => o.DisplayName)
-                  .HasColumnName("display_name")
-                  .IsRequired()
-                  .HasMaxLength(200);
-
-            entity.Property(o => o.PasswordHash)
-                  .HasColumnName("password_hash")
-                  .IsRequired()
-                  .HasMaxLength(512);
-
-            entity.Property(o => o.Role)
-                  .HasColumnName("role")
-                  .IsRequired()
-                  .HasMaxLength(50);
-
-            entity.Property(o => o.IsActive)
-                  .HasColumnName("is_active")
-                  .IsRequired();
-
-            entity.Property(o => o.CreatedTime)
-                  .HasColumnName("created_time")
-                  .IsRequired();
-
-            entity.Property(o => o.UpdatedTime)
-                  .HasColumnName("updated_time")
-                  .IsRequired();
-
-            entity.HasIndex(o => o.Username)
-                  .IsUnique()
-                  .HasDatabaseName("operators_username_idx");
-      }
-
-      // -------------------------
-      // CUSTOMER DOCUMENT
-      // -------------------------
-
-      private static void ConfigureCustomerDocument(ModelBuilder modelBuilder)
-      {
-            var entity = modelBuilder.Entity<CustomerDocument>();
-
-            entity.ToTable("customer_documents", schema: "metal_link");
-
-            entity.HasKey(d => d.CustomerDocumentId)
-                  .HasName("pk_customer_documents_customer_document_id");
-
-            entity.Property(d => d.CustomerDocumentId)
-                  .HasColumnName("customer_document_id")
-                  .ValueGeneratedOnAdd();
-
-            entity.Property(d => d.CustomerId)
-                  .HasColumnName("customer_id")
-                  .IsRequired();
-
-            entity.Property(d => d.DocumentType)
-                  .HasColumnName("document_type")
-                  .IsRequired()
-                  .HasMaxLength(100);
-
-            entity.Property(d => d.FileName)
-                  .HasColumnName("file_name")
-                  .IsRequired()
-                  .HasMaxLength(255);
-
-            entity.Property(d => d.ContentType)
-                  .HasColumnName("content_type")
-                  .IsRequired()
-                  .HasMaxLength(100);
-
-            entity.Property(d => d.StorageKey)
-                  .HasColumnName("storage_key")
-                  .IsRequired()
-                  .HasMaxLength(500);
-
-            entity.Property(d => d.CreatedTime)
-                  .HasColumnName("created_time")
-                  .IsRequired();
-
-            entity.HasIndex(d => d.CustomerId)
-                  .HasDatabaseName("customer_documents_customer_id_idx");
-
-            entity.HasOne<Customer>()
-                  .WithMany()
-                  .HasForeignKey(d => d.CustomerId)
-                  .HasConstraintName("fk_customer_documents_customer_id_customers");
-      }
-
-      // -------------------------
-      // TICKET
-      // -------------------------
-
-      private static void ConfigureTicket(ModelBuilder modelBuilder)
-      {
-            var entity = modelBuilder.Entity<Ticket>();
-
-            entity.ToTable("tickets", schema: "metal_link");
-
-            entity.HasKey(t => t.TicketId)
-                  .HasName("pk_tickets_ticket_id");
-
-            entity.Property(t => t.TicketId)
-                  .HasColumnName("ticket_id")
-                  .ValueGeneratedOnAdd();
-
-            entity.Property(t => t.SiteId)
-                  .HasColumnName("site_id")
-                  .IsRequired();
-
-            entity.Property(t => t.CustomerId)
-                  .HasColumnName("customer_id")
-                  .IsRequired();
-
-            entity.Property(t => t.OperatorId)
-                  .HasColumnName("operator_id")
-                  .IsRequired();
-
-            entity.Property(t => t.TicketNumber)
-                  .HasColumnName("ticket_number")
-                  .IsRequired()
-                  .HasMaxLength(50);
-
-            entity.Property(t => t.TicketType)
-                  .HasColumnName("ticket_type")
-                  .IsRequired()
-                  .HasMaxLength(50);
-
-            entity.Property(t => t.FirstWeightKg)
-                  .HasColumnName("first_weight_kg")
-                  .HasColumnType("numeric(18,3)");
-
-            entity.Property(t => t.SecondWeightKg)
-                  .HasColumnName("second_weight_kg")
-                  .HasColumnType("numeric(18,3)");
-
-            entity.Property(t => t.NetWeightKg)
-                  .HasColumnName("net_weight_kg")
-                  .HasColumnType("numeric(18,3)")
-                  .IsRequired();
-
-            entity.Property(t => t.UnitPricePerKg)
-                  .HasColumnName("unit_price_per_kg")
-                  .HasColumnType("numeric(18,4)")
-                  .IsRequired();
-
-            entity.Property(t => t.TotalAmount)
-                  .HasColumnName("total_amount")
-                  .HasColumnType("numeric(18,2)")
-                  .IsRequired();
-
-            entity.Property(t => t.CurrencyCode)
-                  .HasColumnName("currency_code")
-                  .IsRequired()
-                  .HasMaxLength(10);
-
-            entity.Property(t => t.ProductDescription)
-                  .HasColumnName("product_description")
-                  .HasMaxLength(200);
-
-            entity.Property(t => t.Notes)
-                  .HasColumnName("notes")
-                  .HasMaxLength(500);
-
-            entity.Property(t => t.CreatedTime)
-                  .HasColumnName("created_time")
-                  .IsRequired();
-
-            entity.Property(t => t.UpdatedTime)
-                  .HasColumnName("updated_time")
-                  .IsRequired();
-
-            entity.HasIndex(t => t.TicketNumber)
-                  .IsUnique()
-                  .HasDatabaseName("tickets_ticket_number_idx");
-
-            entity.HasIndex(t => t.CustomerId)
-                  .HasDatabaseName("tickets_customer_id_idx");
-
-            entity.HasIndex(t => t.SiteId)
-                  .HasDatabaseName("tickets_site_id_idx");
-
-            entity.HasOne<Customer>()
-                  .WithMany()
-                  .HasForeignKey(t => t.CustomerId)
-                  .HasConstraintName("fk_tickets_customer_id_customers");
-
-            entity.HasOne<Operator>()
-                  .WithMany()
-                  .HasForeignKey(t => t.OperatorId)
-                  .HasConstraintName("fk_tickets_operator_id_operators");
-
-            // Optional: FK to Site for referential integrity
-            entity.HasOne<Site>()
-                  .WithMany()
-                  .HasForeignKey(t => t.SiteId)
-                  .HasConstraintName("fk_tickets_site_id_sites");
-      }
+    public MetalLinkDbContext(DbContextOptions<MetalLinkDbContext> options) : base(options) { }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+        // Register the audit interceptor to auto-update UpdatedTime on all changes
+        optionsBuilder.AddInterceptors(new AuditInterceptor());
+        
+        // Log all SQL commands to console
+        optionsBuilder.LogTo(Console.WriteLine, new[] { DbLoggerCategory.Database.Command.Name });
+    }
+
+    public DbSet<Company> Companies => Set<Company>();
+    public DbSet<Site> Sites => Set<Site>();
+    public DbSet<Province> Provinces => Set<Province>();
+    public DbSet<Country> Countries => Set<Country>();
+    public DbSet<Currency> Currencies => Set<Currency>();
+
+    public DbSet<ImagePath> ImagePaths => Set<ImagePath>();
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Buyer> Buyers => Set<Buyer>();
+    public DbSet<Operator> Operators => Set<Operator>();
+
+    public DbSet<Product> Products => Set<Product>();
+    public DbSet<Price> Prices => Set<Price>();
+
+    public DbSet<TicketType> TicketTypes => Set<TicketType>();
+
+    public DbSet<TicketReceiving> ReceivingTickets => Set<TicketReceiving>();
+    public DbSet<TicketReceivingLine> ReceivingTicketLines => Set<TicketReceivingLine>();
+    public DbSet<TicketSending> SendingTickets => Set<TicketSending>();
+    public DbSet<TicketSendingLine> SendingTicketLines => Set<TicketSendingLine>();
+
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        ConfigureCompanies(modelBuilder);
+        ConfigureSites(modelBuilder);
+        ConfigureProvinces(modelBuilder);
+        ConfigureCountries(modelBuilder);
+        ConfigureCurrencies(modelBuilder);
+
+        ConfigureImagePaths(modelBuilder);
+        ConfigureCustomers(modelBuilder);
+        ConfigureBuyers(modelBuilder);
+        ConfigureOperators(modelBuilder);
+
+        ConfigureProducts(modelBuilder);
+        ConfigurePrices(modelBuilder);
+
+        ConfigureTicketTypes(modelBuilder);
+        ConfigureReceivingTickets(modelBuilder);
+        ConfigureReceivingTicketLines(modelBuilder);
+        ConfigureSendingTickets(modelBuilder);
+        ConfigureSendingTicketLines(modelBuilder);
+
+        // Global soft-delete filter: automatically apply WHERE is_active = true
+        // for all entities that have an IsActive boolean property.
+        ApplyIsActiveGlobalQueryFilter(modelBuilder);
+    }
+
+    private static void ConfigureCompanies(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<Company>();
+        e.ToTable("companies", "metal_link");
+        e.HasKey(x => x.CompanyId);
+        e.Property(x => x.CompanyId).HasColumnName("company_id").ValueGeneratedOnAdd();
+        e.Property(x => x.CompanyName).HasColumnName("company_name").HasMaxLength(255).IsRequired();
+        e.Property(x => x.VatNumber).HasColumnName("vat_number").HasMaxLength(50);
+        e.Property(x => x.ReceivingSendingFlag).HasColumnName("receiving_sending_flag");
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+    }
+
+    private static void ConfigureSites(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<Site>();
+        e.ToTable("sites", "metal_link");
+        e.HasKey(x => x.SiteId);
+        e.Property(x => x.SiteId).HasColumnName("site_id").ValueGeneratedOnAdd();
+        e.Property(x => x.CompanyId).HasColumnName("company_id");
+        e.Property(x => x.SiteName).HasColumnName("site_name").HasMaxLength(255).IsRequired();
+        e.Property(x => x.SiteCode).HasColumnName("site_code").HasMaxLength(50);
+        e.Property(x => x.AddressLine1).HasColumnName("address_line1").HasMaxLength(255);
+        e.Property(x => x.AddressLine2).HasColumnName("address_line2").HasMaxLength(255);
+        e.Property(x => x.Suburb).HasColumnName("suburb").HasMaxLength(255);
+        e.Property(x => x.City).HasColumnName("city").HasMaxLength(255);
+        e.Property(x => x.PostalCode).HasColumnName("postal_code").HasMaxLength(20);
+        e.Property(x => x.ProvinceId).HasColumnName("province_id").IsRequired();
+        e.Property(x => x.CountryId).HasColumnName("country_id").IsRequired();
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+
+        e.HasOne(x => x.Company).WithMany(x => x.Sites).HasForeignKey(x => x.CompanyId);
+        e.HasOne(x => x.Province).WithMany(x => x.Sites).HasForeignKey(x => x.ProvinceId);
+        e.HasOne(x => x.Country).WithMany(x => x.Sites).HasForeignKey(x => x.CountryId);
+    }
+
+    private static void ConfigureProvinces(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<Province>();
+        e.ToTable("provinces", "metal_link");
+        e.HasKey(x => x.ProvinceId);
+        e.Property(x => x.ProvinceId).HasColumnName("province_id").ValueGeneratedOnAdd();
+        e.Property(x => x.ProvinceCode).HasColumnName("province_code").HasMaxLength(10);
+        e.Property(x => x.ProvinceName).HasColumnName("province_name").HasMaxLength(255).IsRequired();
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+    }
+
+    private static void ConfigureCountries(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<Country>();
+        e.ToTable("countries", "metal_link");
+        e.HasKey(x => x.CountryId);
+        e.Property(x => x.CountryId).HasColumnName("country_id").ValueGeneratedOnAdd();
+        e.Property(x => x.CountryCode).HasColumnName("country_code").HasMaxLength(10);
+        e.Property(x => x.CountryName).HasColumnName("country_name").HasMaxLength(255).IsRequired();
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+    }
+
+    private static void ConfigureCurrencies(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<Currency>();
+        e.ToTable("currencies", "metal_link");
+        e.HasKey(x => x.CurrencyId);
+        e.Property(x => x.CurrencyId).HasColumnName("currency_id").ValueGeneratedNever();
+        e.Property(x => x.CurrencyCode).HasColumnName("currency_code").HasMaxLength(10).IsRequired();
+        e.Property(x => x.CurrencyName).HasColumnName("currency_name").HasMaxLength(255).IsRequired();
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+    }
+
+    private static void ConfigureImagePaths(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<ImagePath>();
+        e.ToTable("image_paths", "metal_link");
+        e.HasKey(x => x.ImagePathId);
+        e.Property(x => x.ImagePathId).HasColumnName("image_path_id").ValueGeneratedOnAdd();
+        e.Property(x => x.IdCardImagePath).HasColumnName("id_card_image_path");
+        e.Property(x => x.DriverLicenseImagePath).HasColumnName("driver_license_image_path");
+        e.Property(x => x.PhotoImagePath).HasColumnName("photo_image_path");
+        e.Property(x => x.SignatureImagePath).HasColumnName("signature_image_path");
+        e.Property(x => x.FingerprintImagePath).HasColumnName("fingerprint_image_path");
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+    }
+
+    private static void ConfigureCustomers(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<Customer>();
+        e.ToTable("customers", "metal_link");
+        e.HasKey(x => x.CustomerId);
+        e.Property(x => x.CustomerId).HasColumnName("customer_id").ValueGeneratedOnAdd();
+        e.Property(x => x.FirstName).HasColumnName("first_name").HasMaxLength(255);
+        e.Property(x => x.LastName).HasColumnName("last_name").HasMaxLength(255);
+        e.Property(x => x.IdNumber).HasColumnName("id_number").HasMaxLength(20);
+        e.Property(x => x.AccountNumber).HasColumnName("account_number");
+        e.Property(x => x.IsCompany).HasColumnName("is_company");
+        e.Property(x => x.CompanyId).HasColumnName("company_id");
+        e.Property(x => x.SiteId).HasColumnName("site_id");
+        e.Property(x => x.IsTaxable).HasColumnName("is_taxable");
+        e.Property(x => x.PriceCode).HasColumnName("price_code").HasMaxLength(10);
+        e.Property(x => x.PhoneNumber).HasColumnName("phone_number").HasMaxLength(20);
+        e.Property(x => x.MobileNumber).HasColumnName("mobile_number").HasMaxLength(20);
+        e.Property(x => x.Email).HasColumnName("email").HasMaxLength(255);
+        e.Property(x => x.ImagePathId).HasColumnName("image_path_id");
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+
+        e.HasOne(x => x.Company).WithMany(x => x.Customers).HasForeignKey(x => x.CompanyId);
+        e.HasOne(x => x.Site).WithMany(x => x.Customers).HasForeignKey(x => x.SiteId);
+        e.HasOne(x => x.ImagePath).WithMany().HasForeignKey(x => x.ImagePathId);
+    }
+
+    private static void ConfigureBuyers(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<Buyer>();
+        e.ToTable("buyers", "metal_link");
+        e.HasKey(x => x.BuyerId);
+        e.Property(x => x.BuyerId).HasColumnName("buyer_id").ValueGeneratedOnAdd();
+        e.Property(x => x.FirstName).HasColumnName("first_name").HasMaxLength(255);
+        e.Property(x => x.LastName).HasColumnName("last_name").HasMaxLength(255);
+        e.Property(x => x.IdNumber).HasColumnName("id_number").HasMaxLength(20);
+        e.Property(x => x.AccountNumber).HasColumnName("account_number");
+        e.Property(x => x.CompanyId).HasColumnName("company_id").IsRequired();
+        e.Property(x => x.SiteId).HasColumnName("site_id").IsRequired();
+        e.Property(x => x.IsTaxable).HasColumnName("is_taxable");
+        e.Property(x => x.PriceCode).HasColumnName("price_code").HasMaxLength(10);
+        e.Property(x => x.PhoneNumber).HasColumnName("phone_number").HasMaxLength(20);
+        e.Property(x => x.MobileNumber).HasColumnName("mobile_number").HasMaxLength(20);
+        e.Property(x => x.Email).HasColumnName("email").HasMaxLength(255);
+        e.Property(x => x.ImagePathId).HasColumnName("image_path_id");
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+
+        e.HasOne(x => x.Company).WithMany().HasForeignKey(x => x.CompanyId);
+        e.HasOne(x => x.Site).WithMany().HasForeignKey(x => x.SiteId);
+        e.HasOne(x => x.ImagePath).WithMany().HasForeignKey(x => x.ImagePathId);
+    }
+
+    private static void ConfigureOperators(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<Operator>();
+        e.ToTable("operators", "metal_link");
+        e.HasKey(x => x.OperatorId);
+        e.Property(x => x.OperatorId).HasColumnName("operator_id").ValueGeneratedOnAdd();
+        e.Property(x => x.Username).HasColumnName("username").HasMaxLength(255).IsRequired();
+        e.Property(x => x.DisplayName).HasColumnName("display_name").HasMaxLength(255).IsRequired();
+        e.Property(x => x.PasswordHash).HasColumnName("password_hash").IsRequired();
+        e.Property(x => x.Role).HasColumnName("role").HasMaxLength(50).IsRequired();
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+    }
+
+    private static void ConfigureProducts(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<Product>();
+        e.ToTable("products", "metal_link");
+        e.HasKey(x => x.ProductId);
+        e.Property(x => x.ProductId).HasColumnName("product_id").ValueGeneratedOnAdd();
+        e.Property(x => x.ProductCode).HasColumnName("product_code").HasMaxLength(50).IsRequired();
+        e.Property(x => x.ProductName).HasColumnName("product_name").HasMaxLength(255).IsRequired();
+        e.Property(x => x.Grade).HasColumnName("grade").HasMaxLength(50);
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+    }
+
+    private static void ConfigurePrices(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<Price>();
+        e.ToTable("prices", "metal_link");
+        e.HasKey(x => x.PriceId);
+        e.Property(x => x.PriceId).HasColumnName("price_id").ValueGeneratedOnAdd();
+        e.Property(x => x.ProductId).HasColumnName("product_id").IsRequired();
+        e.Property(x => x.PriceA).HasColumnName("price_a");
+        e.Property(x => x.PriceB).HasColumnName("price_b");
+        e.Property(x => x.PriceC).HasColumnName("price_c");
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+
+        e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+    }
+
+    private static void ConfigureTicketTypes(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<TicketType>();
+        e.ToTable("ticket_types", "metal_link");
+        e.HasKey(x => x.TicketTypeId);
+        e.Property(x => x.TicketTypeId).HasColumnName("ticket_type_id").ValueGeneratedNever();
+        e.Property(x => x.TicketTypeName).HasColumnName("ticket_type_name").HasMaxLength(50).IsRequired();
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+    }
+
+    private static void ConfigureReceivingTickets(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<TicketReceiving>();
+        e.ToTable("receiving_tickets", "metal_link");
+        e.HasKey(x => x.TicketReceivingId);
+        e.Property(x => x.TicketReceivingId).HasColumnName("receiving_ticket_id").ValueGeneratedOnAdd();
+        e.Property(x => x.CustomerId).HasColumnName("customer_id").IsRequired();
+        e.Property(x => x.InvoiceNumber).HasColumnName("invoice_number");
+        e.Property(x => x.TicketTypeId).HasColumnName("ticket_type_id").IsRequired();
+        e.Property(x => x.TicketNumber).HasColumnName("ticket_number").HasMaxLength(100).IsRequired();
+        e.Property(x => x.NetWeightKg).HasColumnName("net_weight_kg").IsRequired();
+        e.Property(x => x.InitializeWeightKg).HasColumnName("initialize_weight_kg");
+        e.Property(x => x.TicketState).HasColumnName("ticket_state").HasMaxLength(1).HasDefaultValue('C');
+        e.Property(x => x.DriverName).HasColumnName("driver_name");
+        e.Property(x => x.VehicleRegistration).HasColumnName("vehicle_registration");
+        e.Property(x => x.TrailerRegistration).HasColumnName("trailer_registration");
+        e.Property(x => x.Notes).HasColumnName("notes");
+        e.Property(x => x.OfmWeighbridgeTicket).HasColumnName("ofm_weighbridge_ticket");
+        e.Property(x => x.CkNumber).HasColumnName("ck_number");
+        e.Property(x => x.DeliveryNumber).HasColumnName("delivery_number");
+        e.Property(x => x.ForeignTicket).HasColumnName("foreign_ticket");
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+
+        e.HasOne(x => x.Customer).WithMany().HasForeignKey(x => x.CustomerId);
+        e.HasOne(x => x.TicketType).WithMany(x => x.TicketsReceiving).HasForeignKey(x => x.TicketTypeId);
+        e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
+    }
+
+    private static void ConfigureReceivingTicketLines(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<TicketReceivingLine>();
+        e.ToTable("receiving_ticket_lines", "metal_link");
+        e.HasKey(x => x.ReceivingTicketLineId);
+        e.Property(x => x.ReceivingTicketLineId).HasColumnName("receiving_ticket_line_id").ValueGeneratedOnAdd();
+        e.Property(x => x.ReceivingTicketId).HasColumnName("receiving_ticket_id").IsRequired();
+        e.Property(x => x.ProductId).HasColumnName("product_id").IsRequired();
+        e.Property(x => x.FirstWeightKg).HasColumnName("first_weight_kg");
+        e.Property(x => x.SecondWeightKg).HasColumnName("second_weight_kg");
+        e.Property(x => x.NetWeightKg).HasColumnName("net_weight_kg").IsRequired();
+        e.Property(x => x.UnitPricePerKg).HasColumnName("unit_price_per_kg").IsRequired();
+        e.Property(x => x.Tare).HasColumnName("tare").HasDefaultValue(0m);
+        e.Property(x => x.Notes).HasColumnName("notes");
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+
+        e.HasOne(x => x.TicketReceiving).WithMany(x => x.Lines).HasForeignKey(x => x.ReceivingTicketId);
+        e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+        e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
+    }
+
+    private static void ConfigureSendingTickets(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<TicketSending>();
+        e.ToTable("sending_tickets", "metal_link");
+        e.HasKey(x => x.TicketSendingId);
+        e.Property(x => x.TicketSendingId).HasColumnName("sending_ticket_id").ValueGeneratedOnAdd();
+        e.Property(x => x.BuyerId).HasColumnName("buyer_id").IsRequired();
+        e.Property(x => x.InvoiceNumber).HasColumnName("invoice_number");
+        e.Property(x => x.TicketTypeId).HasColumnName("ticket_type_id").IsRequired();
+        e.Property(x => x.TicketNumber).HasColumnName("ticket_number").HasMaxLength(100).IsRequired();
+        e.Property(x => x.NetWeightKg).HasColumnName("net_weight_kg").IsRequired();
+        e.Property(x => x.InitializeWeightKg).HasColumnName("initialize_weight_kg");
+        e.Property(x => x.TicketState).HasColumnName("ticket_state").HasMaxLength(1).HasDefaultValue('H');
+        e.Property(x => x.DriverName).HasColumnName("driver_name");
+        e.Property(x => x.VehicleRegistration).HasColumnName("vehicle_registration");
+        e.Property(x => x.TrailerRegistration).HasColumnName("trailer_registration");
+        e.Property(x => x.Notes).HasColumnName("notes");
+        e.Property(x => x.OfmWeighbridgeTicket).HasColumnName("ofm_weighbridge_ticket");
+        e.Property(x => x.CkNumber).HasColumnName("ck_number");
+        e.Property(x => x.DeliveryNumber).HasColumnName("delivery_number");
+        e.Property(x => x.ForeignTicket).HasColumnName("foreign_ticket");
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+
+        e.HasOne(x => x.Buyer).WithMany(x => x.TicketsSending).HasForeignKey(x => x.BuyerId);
+        e.HasOne(x => x.TicketType).WithMany(x => x.TicketsSending).HasForeignKey(x => x.TicketTypeId);
+        e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
+    }
+
+    private static void ApplyIsActiveGlobalQueryFilter(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            // Only apply to CLR types with an IsActive property
+            var clrType = entityType.ClrType;
+            var isActiveProp = clrType.GetProperty("IsActive");
+            if (isActiveProp == null || isActiveProp.PropertyType != typeof(bool))
+                continue;
+
+            // Build expression: (e) => EF.Property<bool>(e, "IsActive") == true
+            var parameter = Expression.Parameter(clrType, "e");
+            var propertyMethod = typeof(EF).GetMethod(nameof(EF.Property))!.MakeGenericMethod(typeof(bool));
+            var isActiveProperty = Expression.Call(propertyMethod, parameter, Expression.Constant("IsActive"));
+            var body = Expression.Equal(isActiveProperty, Expression.Constant(true));
+            var lambda = Expression.Lambda(body, parameter);
+
+            modelBuilder.Entity(clrType).HasQueryFilter(lambda);
+        }
+    }
+
+    private static void ConfigureSendingTicketLines(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<TicketSendingLine>();
+        e.ToTable("sending_ticket_lines", "metal_link");
+        e.HasKey(x => x.TicketSendingLineId);
+        e.Property(x => x.TicketSendingLineId).HasColumnName("sending_ticket_line_id").ValueGeneratedOnAdd();
+        e.Property(x => x.TicketSendingId).HasColumnName("sending_ticket_id").IsRequired();
+        e.Property(x => x.ProductId).HasColumnName("product_id").IsRequired();
+        e.Property(x => x.FirstWeightKg).HasColumnName("first_weight_kg");
+        e.Property(x => x.SecondWeightKg).HasColumnName("second_weight_kg");
+        e.Property(x => x.NetWeightKg).HasColumnName("net_weight_kg").IsRequired();
+        e.Property(x => x.UnitPricePerKg).HasColumnName("unit_price_per_kg").IsRequired();
+        e.Property(x => x.Tare).HasColumnName("tare").HasDefaultValue(0m);
+        e.Property(x => x.Notes).HasColumnName("notes");
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+
+        e.HasOne(x => x.TicketSending).WithMany(x => x.Lines).HasForeignKey(x => x.TicketSendingId);
+        e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+        e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
+    }
+
 }

@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="using:MetalLink.Desktop.Views"
     mc:Ignorable="d">
 
   <!-- Templates for lookup DTOs -->
@@ -22,6 +23,8 @@
     <Style Selector="TextBox">
       <Setter Property="BorderBrush" Value="#444a55" />
       <Setter Property="BorderThickness" Value="1" />
+      <!-- Match button text size -->
+      <Setter Property="FontSize" Value="11" />
     </Style>
 
     <Style Selector="TextBox:focus">
@@ -33,34 +36,200 @@
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="BorderBrush" Value="#444a55" />
       <Setter Property="BorderThickness" Value="1" />
+      <!-- Match button text size -->
+      <Setter Property="FontSize" Value="11" />
     </Style>
 
     <Style Selector="ComboBox:focus">
       <Setter Property="BorderBrush" Value="#5c7cfa" />
     </Style>
+
+    <!-- DataGrid overall -->
+    <Style Selector="DataGrid">
+      <Setter Property="Background" Value="{StaticResource Brush.PanelBackground}" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+      <Setter Property="GridLinesVisibility" Value="Horizontal" />
+      <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="VerticalGridLinesBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <!-- DataGrid cells: force same font size as row-action buttons -->
+    <Style Selector="DataGridCell">
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+
+    <!-- Header row (slightly larger + bold) -->
+    <Style Selector="DataGridColumnHeader">
+      <Setter Property="Background" Value="{StaticResource Brush.NavBackground}" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.TextMuted}" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+
+    <!-- Rows: subtle hover + blue selection -->
+    <Style Selector="DataGridRow">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions>
+            <BrushTransition Property="Background" Duration="0:0:0.12" />
+          </Transitions>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="DataGridRow:pointerover">
+      <Setter Property="Background" Value="#20FFFFFF" />
+    </Style>
+
+    <Style Selector="DataGridRow:selected">
+      <Setter Property="Background" Value="#303B82F6" />
+    </Style>
+
+    <!-- Row action buttons in the results grid -->
+    <Style Selector="Button.row-action">
+      <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+      <Setter Property="Background" Value="#30333A" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Padding" Value="6,2" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+      <Setter Property="RenderTransform">
+        <Setter.Value>
+          <ScaleTransform ScaleX="1" ScaleY="1" />
+        </Setter.Value>
+      </Setter>
+
+      <Setter Property="Transitions">
+        <Setter.Value>
+          <Transitions>
+            <BrushTransition Property="Background" Duration="0:0:0.10" />
+            <BrushTransition Property="BorderBrush" Duration="0:0:0.10" />
+          </Transitions>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="Button.row-action:pointerover">
+      <Setter Property="Background" Value="#3A4150" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.AccentGradient}" />
+    </Style>
+
+    <Style Selector="Button.row-action:pressed">
+      <Setter Property="RenderTransform">
+        <Setter.Value>
+          <ScaleTransform ScaleX="0.97" ScaleY="0.97" />
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style Selector="Button.row-action:disabled">
+      <Setter Property="Background" Value="#2A2D34" />
+      <Setter Property="Foreground" Value="#80838C" />
+      <Setter Property="BorderBrush" Value="#3A3D45" />
+    </Style>
   </UserControl.Styles>
 
-  <Border Background="#1f2229" Padding="16">
+  <Border Background="{StaticResource Brush.MainBackground}" Padding="16">
     <ScrollViewer>
       <StackPanel Spacing="16">
 
-        <!-- Header -->
-        <TextBlock
-            Text="Customers"
-            FontSize="20"
-            FontWeight="Bold"
-            Foreground="#f5f5f5" />
+        <!-- Header with animated glow -->
+        <StackPanel Spacing="4">
+          <Grid>
+            <TextBlock
+                Text="Customers"
+                FontSize="20"
+                FontWeight="Bold"
+                Foreground="{StaticResource Brush.TextPrimary}" />
+            <!-- Animated glow overlay -->
+            <TextBlock
+                Text="Customers"
+                FontSize="20"
+                FontWeight="Bold"
+                Foreground="#4a9eff"
+                Opacity="0">
+              <TextBlock.Styles>
+                <Style Selector="TextBlock">
+                  <Style.Animations>
+                    <Animation Duration="0:0:5" IterationCount="INFINITE" Delay="0:0:0">
+                      <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0" />
+                      </KeyFrame>
+                      <KeyFrame Cue="10%">
+                        <Setter Property="Opacity" Value="0.8" />
+                      </KeyFrame>
+                      <KeyFrame Cue="30%">
+                        <Setter Property="Opacity" Value="0.8" />
+                      </KeyFrame>
+                      <KeyFrame Cue="40%">
+                        <Setter Property="Opacity" Value="0" />
+                      </KeyFrame>
+                      <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="0" />
+                      </KeyFrame>
+                    </Animation>
+                  </Style.Animations>
+                </Style>
+              </TextBlock.Styles>
+            </TextBlock>
+          </Grid>
+          <Border Height="2"
+                  Margin="0,0,0,8"
+                  CornerRadius="1">
+            <Border.Background>
+              <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                <LinearGradientBrush.GradientStops>
+                  <GradientStop Color="#1E88E5" Offset="0" />
+                  <GradientStop Color="#8EC5FC" Offset="0.5" />
+                  <GradientStop Color="#1E88E5" Offset="1" />
+                </LinearGradientBrush.GradientStops>
+                <LinearGradientBrush.Transform>
+                  <TranslateTransform X="-200">
+                    <TranslateTransform.Transitions>
+                      <Transitions />
+                    </TranslateTransform.Transitions>
+                  </TranslateTransform>
+                </LinearGradientBrush.Transform>
+              </LinearGradientBrush>
+            </Border.Background>
+            <Border.Styles>
+              <Style Selector="Border">
+                <Style.Animations>
+                  <Animation Duration="0:0:5" IterationCount="INFINITE">
+                    <KeyFrame Cue="0%">
+                      <Setter Property="Opacity" Value="0.5" />
+                    </KeyFrame>
+                    <KeyFrame Cue="50%">
+                      <Setter Property="Opacity" Value="1.0" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                      <Setter Property="Opacity" Value="0.5" />
+                    </KeyFrame>
+                  </Animation>
+                </Style.Animations>
+              </Style>
+            </Border.Styles>
+          </Border>
+        </StackPanel>
 
         <!-- SEARCH EXISTING CUSTOMER -->
-        <Border Background="#252932" Padding="12" CornerRadius="4">
+        <Border Background="{StaticResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
-            <TextBlock Text="Search existing customer" Foreground="#f5f5f5" FontWeight="Bold" />
+            <TextBlock Text="Search Existing Customer" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" />
 
-            <!-- 2-column search grid -->
-            <Grid Margin="0,8,0,0">
+            <!-- 4-column search grid (250px each = 1000px total) -->
+            <Grid Margin="0,8,0,0" Width="1000" HorizontalAlignment="Left">
               <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="275" />
+                <ColumnDefinition Width="275" />
+                <ColumnDefinition Width="275" />
+                <ColumnDefinition Width="275" />
               </Grid.ColumnDefinitions>
               <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -68,38 +237,32 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
-              <!-- Row 0: Customer ID / ID Number (SWAPPED) -->
-              <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+              <!-- Row 0: Customer ID / ID Number / First Name / Last Name -->
+              <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Customer ID" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding SearchCustomerIdText}" />
               </StackPanel>
-              <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
+              <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="ID Number" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding SearchIdNumberText}" />
               </StackPanel>
-
-              <!-- Row 1: First / Last name -->
-              <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2">
+              <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="First Name" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding SearchFirstNameText}" />
               </StackPanel>
-              <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
+              <StackPanel Grid.Row="0" Grid.Column="3" Spacing="2">
                 <TextBlock Text="Last Name" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding SearchLastNameText}" />
               </StackPanel>
 
-              <!-- Row 2: Company (letter + company dropdown) / Site -->
-              <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2">
+              <!-- Row 1: Company / Site / Account Number / Price Code -->
+              <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Company" Foreground="#c0c4cf" />
                 <Grid>
                   <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="50" />
                     <ColumnDefinition Width="*" />
                   </Grid.ColumnDefinitions>
 
@@ -121,8 +284,8 @@
                 </Grid>
               </StackPanel>
 
-              <!-- Site: non-editable, enabled only when company selected -->
-              <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
+              <!-- Site -->
+              <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Site" Foreground="#c0c4cf" />
                 <ComboBox
                     ItemsSource="{Binding SearchSiteSuggestions}"
@@ -132,56 +295,74 @@
                     ItemTemplate="{StaticResource SiteLookupTemplate}" />
               </StackPanel>
 
-              <!-- Row 3: Account / Price -->
-              <StackPanel Grid.Row="3" Grid.Column="0" Spacing="2">
+              <!-- Account Number -->
+              <StackPanel Grid.Row="1" Grid.Column="2" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Account Number" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding SearchAccountNumberText, Mode=TwoWay}" />
               </StackPanel>
-              <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2">
+
+              <!-- Price Code -->
+              <StackPanel Grid.Row="1" Grid.Column="3" Spacing="2">
                 <TextBlock Text="Price Code" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchPriceCodeText}" />
+                <ComboBox
+                  ItemsSource="{Binding PriceCodeOptions}"
+                  SelectedItem="{Binding SearchPriceCode, Mode=TwoWay}"
+                  HorizontalAlignment="Stretch">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding Label}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
               </StackPanel>
 
-              <!-- Row 6: Postal / Phone -->
-              <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2">
+              <!-- Row 2: Phone / Mobile / Email / (empty) -->
+              <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Phone" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding SearchPhoneNumberText}" />
               </StackPanel>
-              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2">
+              <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Mobile" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding SearchMobileNumberText}" />
               </StackPanel>
-
-              <!-- Row 7: Mobile / Email -->
-              <StackPanel Grid.Row="5" Grid.Column="0" Spacing="2">
+              <StackPanel Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Spacing="2">
                 <TextBlock Text="Email" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding SearchEmailText}" />
               </StackPanel>
 
-              <!-- Row 8: Taxable -->
-              <StackPanel Grid.Row="6" Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                <CheckBox
-                    Content="Taxable"
-                    IsChecked="{Binding SearchTaxable}" />
-              </StackPanel>
-
-              <!-- Row 8: Search button -->
-              <Button
-                  Grid.Row="7"
-                  Grid.Column="0"
-                  Grid.ColumnSpan="2"
-                  Margin="0,8,0,0"
-                  HorizontalAlignment="Right"
+              <!-- Row 4: Search button -->
+              <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
+                <Button
+                  HorizontalAlignment="Center"
+                  Width="100"
+                  Content="Clear"
+                  Command="{Binding ClearCustomerSearchCommand}" />
+                <Button
+                  Classes="primary"
+                  HorizontalAlignment="Center"
+                  Width="100"
                   Content="Search"
                   Command="{Binding SearchCustomerCommand}" />
+              </StackPanel>
             </Grid>
 
-            <!-- Results grid -->
-            <DataGrid
-                Margin="0,12,0,0"
-                AutoGenerateColumns="False"
-                ItemsSource="{Binding CustomerSearchResults}"
-                SelectedItem="{Binding FoundCustomer, Mode=TwoWay}">
+            <!-- Results and Details Side-by-Side -->
+            <Grid Margin="0,12,0,0">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1100" />
+                <ColumnDefinition Width="500" />
+              </Grid.ColumnDefinitions>
+
+              <!-- Left Column: Results grid -->
+              <StackPanel Grid.Column="0" Spacing="0">
+                <TextBlock Text="Customer Search Results" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" />
+                <DataGrid
+                    Margin="0,8,0,0"
+                    Width="1100"
+                    HorizontalAlignment="Left"
+                    AutoGenerateColumns="False"
+                    ItemsSource="{Binding PagedCustomerSearchResults}"
+                    SelectedItem="{Binding FoundCustomer, Mode=TwoWay}">
               <DataGrid.Columns>
                 <DataGridTextColumn Header="Customer ID" Binding="{Binding CustomerId}" IsReadOnly="True" />
                 <DataGridTextColumn Header="First Name"
@@ -191,39 +372,40 @@
                 <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" IsReadOnly="True" />
                 <DataGridTextColumn Header="Account" Binding="{Binding AccountNumberFormatted}" IsReadOnly="True" />
                 <DataGridTextColumn Header="Mobile" Binding="{Binding MobileNumber}" IsReadOnly="True" />
-                <DataGridTextColumn Header="Email" Binding="{Binding Email}" IsReadOnly="True" />
+                <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*" IsReadOnly="True" />
 
-                <!-- NEW: Action buttons -->
-                <DataGridTemplateColumn Header="">
+                <!-- Action buttons -->
+                <DataGridTemplateColumn Header="Actions" Width="150">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
                       <StackPanel Orientation="Horizontal" Spacing="4">
                         <Button
+                            Classes="row-action"
                             Content="Log Ticket"
-                            Padding="4,0"
                             Command="{Binding DataContext.LogTicketCommand,
                                               RelativeSource={RelativeSource AncestorType=UserControl}}"
                             CommandParameter="{Binding}" />
                         <Button
-                            Content="Edit"
-                            Padding="4,0"
-                            Command="{Binding DataContext.EditCustomerCommand,
-                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
-                            CommandParameter="{Binding}" />
-                        <Button
+                            Classes="row-action"
                             Content="Delete"
-                            Padding="4,0"
-                            Command="{Binding DataContext.EditCustomerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            Command="{Binding DataContext.DeleteCustomerCommand,
+                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
                             CommandParameter="{Binding}" />
                       </StackPanel>
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
               </DataGrid.Columns>
-            </DataGrid>
+                </DataGrid>
 
-            <!-- Selected customer detail table -->
-            <Border Margin="0,12,0,0" Padding="8" Background="#1f2229" CornerRadius="4">
+                <!-- Pagination Control -->
+                <local:PaginationControl DataContext="{Binding PaginationViewModel}" Margin="0,8,0,0" />
+              </StackPanel>
+
+              <!-- Right Column: Customer Details (400px) -->
+              <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="0">
+                <TextBlock Text="Customer Details" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" />
+                <Border Margin="0,8,0,0" Padding="8" Background="{StaticResource Brush.MainBackground}" CornerRadius="4">
               <Grid>
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="Auto" />
@@ -248,183 +430,308 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Customer ID" Foreground="#c0c4cf" Margin="0,0,8,2" />
-                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedCustomerIdDisplay}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedCustomerIdDisplay}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="First Name" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedFirstName}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedFirstName}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Last Name" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedLastName}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedLastName}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Company Name" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedCompanyName}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="3" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedCompanyName}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Site Name" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedSiteName}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="4" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedSiteName}" Foreground="#f5f5f5" FontSize="11" />
 
                 <!-- NEW: Taxable under Company Name -->
                 <TextBlock Grid.Row="5" Grid.Column="0" Text="Taxable" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedTaxable}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="5" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedTaxable}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="6" Grid.Column="0" Text="ID Number" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SelectedIdNumber}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="6" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedIdNumber}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="7" Grid.Column="0" Text="Account Number" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding SelectedAccountNumberFormatted}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="7" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedAccountNumberFormatted}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="8" Grid.Column="0" Text="Price Code" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding SelectedPriceCode}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="8" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedPriceCode}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="9" Grid.Column="0" Text="Phone" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding SelectedPhoneNumber}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="9" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedPhoneNumber}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="10" Grid.Column="0" Text="Mobile" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding SelectedMobileNumber}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="10" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedMobileNumber}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="11" Grid.Column="0" Text="Email" Foreground="#c0c4cf" Margin="0,4,8,0" />
-                <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding SelectedEmail}" Foreground="#f5f5f5" />
+                <TextBlock Grid.Row="11" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedEmail}" Foreground="#f5f5f5" FontSize="11" />
+
+                <!-- Site address (read-only, from Site/CAS) -->
+                <TextBlock Grid.Row="12" Grid.Column="0" Text="Site Address" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="12" Grid.Column="1" VerticalAlignment="Center" Text="{Binding CustomerSiteAddressSummary}" Foreground="#f5f5f5" FontSize="11" TextWrapping="Wrap" />
               </Grid>
             </Border>
+
+            <!-- Customer Images Display -->
+            <Border Margin="0,12,0,0" 
+                    Padding="12" 
+                    Background="#1f2937" 
+                    CornerRadius="4"
+                    BorderBrush="#4b5563"
+                    BorderThickness="1"
+                    IsVisible="{Binding SelectedCustomer, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <StackPanel Spacing="8">
+                <TextBlock Text="Customer Images" 
+                           FontWeight="Bold" 
+                           Foreground="{StaticResource Brush.TextPrimary}"
+                           FontSize="13"/>
+                
+                <UniformGrid Rows="2" Columns="3">
+                  <!-- ID Card -->
+                  <Border BorderBrush="#4b5563" BorderThickness="1" Margin="4" Background="#111827">
+                    <StackPanel>
+                      <TextBlock Text="ID Card" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
+                      <Image Source="{Binding SelectedIdCardImage}" 
+                             Width="125" Height="125" Stretch="Uniform" Margin="4"/>
+                    </StackPanel>
+                  </Border>
+                  
+                  <!-- Driver License -->
+                  <Border BorderBrush="#4b5563" BorderThickness="1" Margin="4" Background="#111827">
+                    <StackPanel>
+                      <TextBlock Text="Driver License" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
+                      <Image Source="{Binding SelectedDriverLicenseImage}" 
+                             Width="125" Height="125" Stretch="Uniform" Margin="4"/>
+                    </StackPanel>
+                  </Border>
+                  
+                  <!-- Photo -->
+                  <Border BorderBrush="#4b5563" BorderThickness="1" Margin="4" Background="#111827">
+                    <StackPanel>
+                      <TextBlock Text="Photo" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
+                      <Image Source="{Binding SelectedPhotoImage}" 
+                             Width="125" Height="125" Stretch="Uniform" Margin="4"/>
+                    </StackPanel>
+                  </Border>
+                  
+                  <!-- Signature -->
+                  <Border BorderBrush="#4b5563" BorderThickness="1" Margin="4" Background="#111827">
+                    <StackPanel>
+                      <TextBlock Text="Signature" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
+                      <Image Source="{Binding SelectedSignatureImage}" 
+                             Width="125" Height="125" Stretch="Uniform" Margin="4"/>
+                    </StackPanel>
+                  </Border>
+                  
+                  <!-- Fingerprint -->
+                  <Border BorderBrush="#4b5563" BorderThickness="1" Margin="4" Background="#111827">
+                    <StackPanel>
+                      <TextBlock Text="Fingerprint" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
+                      <Image Source="{Binding SelectedFingerprintImage}" 
+                             Width="125" Height="125" Stretch="Uniform" Margin="4"/>
+                    </StackPanel>
+                  </Border>
+                </UniformGrid>
+              </StackPanel>
+            </Border>
+              </StackPanel>
+            </Grid>
           </StackPanel>
         </Border>
 
         <!-- CREATE NEW CUSTOMER -->
-        <Border Background="#252932" Padding="12" CornerRadius="4">
+        <Border Background="{StaticResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
-            <TextBlock Text="Create/Edit customer" Foreground="#f5f5f5" FontWeight="Bold" />
+            <TextBlock Text="Create/Edit customer" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" />
 
+            <!-- 4-column form grid -->
             <Grid Margin="0,8,0,0">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-              </Grid.ColumnDefinitions>
-              <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-              </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="275" />
+                  <ColumnDefinition Width="275" />
+                  <ColumnDefinition Width="275" />
+                  <ColumnDefinition Width="275" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-              <!-- Row 0: First / Last name -->
-              <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
-                <TextBlock Text="First Name" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding NewFirstName}" />
-              </StackPanel>
-              <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
-                <TextBlock Text="Last Name" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding NewLastName}" />
-              </StackPanel>
+                <!-- Row 0: First Name / Last Name / ID Number / (empty) -->
+                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2" Margin="0,0,12,0">
+                  <TextBlock Text="First Name" Foreground="#c0c4cf" />
+                  <TextBox Text="{Binding NewFirstName}" />
+                </StackPanel>
+                <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2" Margin="0,0,12,0">
+                  <TextBlock Text="Last Name" Foreground="#c0c4cf" />
+                  <TextBox Text="{Binding NewLastName}" />
+                </StackPanel>
+                <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2" Margin="0,0,12,0">
+                  <TextBlock Text="ID Number" Foreground="#c0c4cf" />
+                  <TextBox Text="{Binding NewIdNumber}" />
+                </StackPanel>
+                <StackPanel Grid.Row="0" Grid.Column="3" Spacing="2">
+                  <!-- Empty column -->
+                </StackPanel>
 
-              <!-- Row 1: IsCompany + Taxable -->
-              <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                <CheckBox Content="Is Company" IsChecked="{Binding NewIsCompany}" />
-                <CheckBox Content="Taxable" IsChecked="{Binding NewTaxable}" Margin="12,0,0,0" />
-              </StackPanel>
-
-              <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
-                <TextBlock Text="Company" Foreground="#c0c4cf" />
-                <Grid>
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="70" />
-                    <ColumnDefinition Width="*" />
-                  </Grid.ColumnDefinitions>
-
-                  <!-- Letter dropdown -->
+                <!-- Row 1: Company / Site / Account Number / Price Code -->
+                <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2" Margin="0,0,12,0">
+                  <TextBlock Text="Company" Foreground="#c0c4cf" />
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="50" />
+                      <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ComboBox
+                        Grid.Column="0"
+                        ItemsSource="{Binding CompanyLetterFilters}"
+                        SelectedItem="{Binding SelectedNewCompanyLetter}"
+                        IsEnabled="{Binding NewIsCompany}"
+                        HorizontalAlignment="Stretch" />
+                    <ComboBox
+                        Grid.Column="1"
+                        Margin="4,0,0,0"
+                        ItemsSource="{Binding NewCompanySuggestions}"
+                        SelectedItem="{Binding SelectedNewCompany}"
+                        IsEnabled="{Binding NewIsCompany}"
+                        HorizontalContentAlignment="Stretch"
+                        ItemTemplate="{StaticResource CompanyLookupTemplate}" />
+                  </Grid>
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2" Margin="0,0,12,0">
+                  <TextBlock Text="Site" Foreground="#c0c4cf" />
                   <ComboBox
-                      Grid.Column="0"
-                      ItemsSource="{Binding CompanyLetterFilters}"
-                      SelectedItem="{Binding SelectedNewCompanyLetter}"
-                      IsEnabled="{Binding NewIsCompany}"
-                      HorizontalAlignment="Stretch" />
-
-                  <!-- Companies for selected letter -->
-                  <ComboBox
-                      Grid.Column="1"
-                      Margin="4,0,0,0"
-                      ItemsSource="{Binding NewCompanySuggestions}"
-                      SelectedItem="{Binding SelectedNewCompany}"
+                      HorizontalAlignment="Stretch"
+                      ItemsSource="{Binding NewSiteSuggestions}"
+                      SelectedItem="{Binding SelectedNewSite}"
                       IsEnabled="{Binding NewIsCompany}"
                       HorizontalContentAlignment="Stretch"
-                      ItemTemplate="{StaticResource CompanyLookupTemplate}" />
-                </Grid>
-              </StackPanel>
+                      ItemTemplate="{StaticResource SiteLookupTemplate}" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="2" Spacing="2" Margin="0,0,12,0">
+                  <TextBlock Text="Account Number" Foreground="#c0c4cf" />
+                  <TextBox
+                    Text="{Binding NewAccountNumberDisplay}"
+                    IsReadOnly="True"
+                    IsTabStop="False"/>
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="3" Spacing="2">
+                  <TextBlock Text="Price Code" Foreground="#c0c4cf" />
+                  <ComboBox
+                    ItemsSource="{Binding PriceCodeOptions}"
+                    SelectedItem="{Binding SelectedPriceCodeChar, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    HorizontalAlignment="Stretch">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding Label}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
 
-              <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
-                <TextBlock Text="Site" Foreground="#c0c4cf" />
-                <ComboBox
-                    HorizontalAlignment="Stretch"
-                    ItemsSource="{Binding NewSiteSuggestions}"
-                    SelectedItem="{Binding SelectedNewSite}"
-                    IsEnabled="{Binding NewIsCompany}"
-                    HorizontalContentAlignment="Stretch"
-                    ItemTemplate="{StaticResource SiteLookupTemplate}" />
-              </StackPanel>
-
-              <!-- Row 3: ID / Account -->
-              <StackPanel Grid.Row="3" Grid.Column="0" Spacing="2">
-                <TextBlock Text="ID Number" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding NewIdNumber}" />
-              </StackPanel>
-              <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2">
-                <TextBlock Text="Account Number" Foreground="#c0c4cf" />
-                <TextBox
-                  Text="{Binding NewAccountNumberDisplay}"
-                  IsReadOnly="True"
-                  IsTabStop="False"/>
-              </StackPanel>
-
-              <!-- Row 4: Price / Phone -->
-              <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2">
-                <TextBlock Text="Price Code" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding NewPriceCode}" />
-              </StackPanel>
-              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2">
-                <TextBlock Text="Phone" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding NewPhoneNumber}" />
-              </StackPanel>
-
-
-              <!-- Row 8: Postal / Mobile -->
-              <StackPanel Grid.Row="5" Grid.Column="0" Spacing="2">
-                <TextBlock Text="Mobile" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding NewMobileNumber}" />
-              </StackPanel>
-              <StackPanel Grid.Row="5" Grid.Column="1" Spacing="2">
-                <TextBlock Text="Email" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding NewEmail}" />
-              </StackPanel>
-
-              <StackPanel
-                  Grid.Row="6"
-                  Grid.Column="1"
-                  Orientation="Horizontal"
-                  HorizontalAlignment="Right"
-                  Spacing="8"
-                  Margin="0,20,0,0">
-
-                <Button
-                    Width="100"
-                    Content="Clear"
-                    Command="{Binding ClearNewCustomerCommand}" />
-
-                <Button
-                    Width="100"
-                    Content="Create"
-                    Command="{Binding CreateCustomerCommand}"
-                    IsEnabled="{Binding CanCreateCustomer}"
-                    IsVisible="{Binding IsCreateMode}" />
-
-                <Button
-                    Width="100"
-                    Content="Update"
-                    Command="{Binding UpdateCustomerCommand}"
-                    IsEnabled="{Binding CanUpdateCustomer}"
-                    IsVisible="{Binding IsEditMode}" />
-              </StackPanel>
+                <!-- Row 2: Is Company / Taxable / Phone / Mobile / Email -->
+                <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Spacing="8" Margin="0,0,12,0">
+                  <CheckBox Content="Is Company" IsChecked="{Binding NewIsCompany}" />
+                  <CheckBox Content="Taxable" IsChecked="{Binding NewTaxable}" Margin="12,0,0,0" />
+                </StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2" Margin="0,0,12,0">
+                  <TextBlock Text="Phone" Foreground="#c0c4cf" />
+                  <TextBox Text="{Binding NewPhoneNumber}" />
+                </StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="2" Spacing="2" Margin="0,0,12,0">
+                  <TextBlock Text="Mobile" Foreground="#c0c4cf" />
+                  <TextBox Text="{Binding NewMobileNumber}" />
+                </StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="3" Spacing="2">
+                  <TextBlock Text="Email" Foreground="#c0c4cf" />
+                  <TextBox Text="{Binding NewEmail}" />
+                </StackPanel>
             </Grid>
+
+            <!-- Customer Images Row (Single row of 5 images) -->
+            <StackPanel Margin="0,16,0,0" Spacing="8">
+              <TextBlock Text="Customer Images (Optional)" 
+                         FontWeight="Bold" 
+                         Foreground="{StaticResource Brush.TextPrimary}"
+                         FontSize="13" />
+              
+              <UniformGrid Rows="1" Columns="5" Width="1100" HorizontalAlignment="Left">
+                <!-- ID Card -->
+                <StackPanel Spacing="4" Margin="0,0,8,0">
+                  <TextBlock Text="ID Card" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
+                  <Border BorderBrush="#4b5563" BorderThickness="1" Background="#111827" Height="130" Width="130">
+                    <Image Source="{Binding IdCardImage}" Stretch="Uniform" Margin="2"/>
+                  </Border>
+                  <Button Content="📄 Scan ID" Command="{Binding CaptureIdCardCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
+                </StackPanel>
+                
+                <!-- Driver License -->
+                <StackPanel Spacing="4" Margin="0,0,8,0">
+                  <TextBlock Text="Driver License" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
+                  <Border BorderBrush="#4b5563" BorderThickness="1" Background="#111827" Height="130" Width="130">
+                    <Image Source="{Binding DriverLicenseImage}" Stretch="Uniform" Margin="2"/>
+                  </Border>
+                  <Button Content="📄 License" Command="{Binding CaptureDriverLicenseCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
+                </StackPanel>
+                
+                <!-- Photo -->
+                <StackPanel Spacing="4" Margin="0,0,8,0">
+                  <TextBlock Text="Photo" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
+                  <Border BorderBrush="#4b5563" BorderThickness="1" Background="#111827" Height="130" Width="130">
+                    <Image Source="{Binding PhotoImage}" Stretch="Uniform" Margin="2"/>
+                  </Border>
+                  <Button Content="📷 Take Photo" Command="{Binding CapturePhotoCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
+                </StackPanel>
+
+                <!-- Signature -->
+                <StackPanel Spacing="4" Margin="0,0,8,0">
+                  <TextBlock Text="Signature" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
+                  <Border BorderBrush="#4b5563" BorderThickness="1" Background="#111827" Height="130" Width="130">
+                    <Image Source="{Binding SignatureImage}" Stretch="Uniform" Margin="2"/>
+                  </Border>
+                  <Button Content="✍ Signature" Command="{Binding CaptureSignatureCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
+                </StackPanel>
+
+                <!-- Fingerprint -->
+                <StackPanel Spacing="4">
+                  <TextBlock Text="Fingerprint" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
+                  <Border BorderBrush="#4b5563" BorderThickness="1" Background="#111827" Height="130" Width="130">
+                    <Image Source="{Binding FingerprintImage}" Stretch="Uniform" Margin="2"/>
+                  </Border>
+                  <Button Content="👆 Fingerprint" Command="{Binding CaptureFingerprintCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
+                </StackPanel>
+              </UniformGrid>
+            </StackPanel>
+
+            <!-- Action Buttons -->
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="8"
+                Margin="0,20,0,0">
+
+              <Button
+                  Width="100"
+                  Content="Clear"
+                  Command="{Binding ClearNewCustomerCommand}" />
+
+              <Button
+                  Classes="primary"
+                  Width="100"
+                  Content="Create"
+                  Command="{Binding CreateCustomerCommand}"
+                  IsEnabled="{Binding CanCreateCustomer}"
+                  IsVisible="{Binding IsCreateMode}" />
+
+              <Button
+                  Classes="primary"
+                  Width="100"
+                  Content="Update"
+                  Command="{Binding UpdateCustomerCommand}"
+                  IsEnabled="{Binding CanUpdateCustomer}"
+                  IsVisible="{Binding IsEditMode}" />
+            </StackPanel>
 
             <TextBlock
                 Margin="0,4,0,0"
