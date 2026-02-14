@@ -20,6 +20,8 @@ public partial class MainWindowViewModel
     // Mirrors ReceivingLineItem so the UI and behaviours match exactly.
     public sealed class SendingLineItem : System.ComponentModel.INotifyPropertyChanged
     {
+        private bool _isEditable;
+
         private decimal _tare;
 
         public long TicketSendingLineId { get; init; }
@@ -40,6 +42,19 @@ public partial class MainWindowViewModel
         public decimal VatAmount { get; init; }
         public decimal TotalInclVat { get; init; }
 
+        public bool IsEditable
+        {
+            get => _isEditable;
+            set
+            {
+                if (_isEditable != value)
+                {
+                    _isEditable = value;
+                    OnPropertyChanged(nameof(IsEditable));
+                }
+            }
+        }
+
         public decimal Tare
         {
             get => _tare;
@@ -50,14 +65,22 @@ public partial class MainWindowViewModel
                     _tare = value;
                     OnPropertyChanged(nameof(Tare));
                     OnPropertyChanged(nameof(DisplayFirstWeightKg));
+                    OnPropertyChanged(nameof(DisplaySecondWeightKg));
                     OnPropertyChanged(nameof(DisplayWeightKg));
                 }
             }
         }
 
-        // Display properties that account for Tare deduction
-        public decimal DisplayFirstWeightKg => FirstWeightKg - Tare;
-        public decimal DisplayWeightKg => WeightKg - Tare;
+        // Display properties:
+        // Receiving deducts tare, Sending ADDS tare (tare represents additional tare weight on second weight).
+        // This class is used for Sending lines, so we add tare.
+        public decimal DisplayFirstWeightKg => FirstWeightKg;
+        // For Sending UI:
+        // - Second Weight column shows adjusted SW (raw SW + tare)
+        // - Weight column shows adjusted net: (SW + tare) - FW
+        // Note: DB values remain unchanged; this is display/working logic only.
+        public decimal DisplaySecondWeightKg => SecondWeightKg + Tare;
+        public decimal DisplayWeightKg => (SecondWeightKg + Tare) - FirstWeightKg;
 
         public string Notes { get; init; } = string.Empty;
 
@@ -305,6 +328,14 @@ public partial class MainWindowViewModel
             SendingLines.Clear();
             if (lines != null)
             {
+                // Determine the last ACTIVE line deterministically.
+                // CreatedTime can be unreliable across clients; IDs are monotonic.
+                var lastActiveLineId = lines
+                    .Where(l => l.IsActive)
+                    .OrderBy(l => l.TicketSendingLineId)
+                    .LastOrDefault()?
+                    .TicketSendingLineId;
+
                 foreach (var dto in lines)
                 {
                     var lineItem = new SendingLineItem
@@ -323,16 +354,29 @@ public partial class MainWindowViewModel
                         Notes = dto.Notes ?? string.Empty
                     };
                     lineItem.Tare = dto.Tare;
+                    // IsEditable set after load loop
                     lineItem.PropertyChanged += (s, e) =>
                     {
                         if (e.PropertyName == nameof(SendingLineItem.Tare))
                         {
                             RecalculateSendingTotals();
-                            _ = _ticketSendingService.UpdateLineTareAsync(dto.TicketSendingId, dto.TicketSendingLineId, lineItem.Tare);
+
+                            if (lineItem.IsEditable)
+                            {
+                                TicketFirstWeightText = (lineItem.SecondWeightKg + lineItem.Tare).ToString("0.00");
+                                TicketSecondWeightText = "0";
+                                SendingWeightText = string.Empty;
+
+                                _ = _ticketSendingService.UpdateLineTareAsync(dto.TicketSendingId, dto.TicketSendingLineId, lineItem.Tare);
+                            }
                         }
                     };
                     SendingLines.Add(lineItem);
                 }
+
+                // Only last/current line is editable/deletable
+                foreach (var li in SendingLines)
+                    li.IsEditable = lastActiveLineId.HasValue && li.TicketSendingLineId == lastActiveLineId.Value;
             }
 
             RecalculateSendingTotals();
@@ -415,6 +459,9 @@ public partial class MainWindowViewModel
 
             // Reload lines from the updated ticket so the grid matches the server
             SendingLines.Clear();
+            // Only the last/current line is editable
+            var lastActiveLineId = updatedTicket.Lines.Where(l => l.IsActive).OrderBy(l => l.CreatedTime).LastOrDefault()?.TicketSendingLineId;
+
             foreach (var lineDto in updatedTicket.Lines)
             {
                 var lineItem = new SendingLineItem
@@ -438,14 +485,34 @@ public partial class MainWindowViewModel
                     if (e.PropertyName == nameof(SendingLineItem.Tare))
                     {
                         RecalculateSendingTotals();
-                        _ = _ticketSendingService.UpdateLineTareAsync(lineDto.TicketSendingId, lineDto.TicketSendingLineId, lineItem.Tare);
+
+                        if (lineItem.IsEditable)
+                        {
+                            TicketFirstWeightText = (lineItem.SecondWeightKg + lineItem.Tare).ToString("0.00");
+                            TicketSecondWeightText = "0";
+                            SendingWeightText = string.Empty;
+
+                            _ = _ticketSendingService.UpdateLineTareAsync(lineDto.TicketSendingId, lineDto.TicketSendingLineId, lineItem.Tare);
+                        }
                     }
                 };
                 SendingLines.Add(lineItem);
             }
 
+            // Only last/current line is editable/deletable
+            foreach (var li in SendingLines)
+                li.IsEditable = lastActiveLineId.HasValue && li.TicketSendingLineId == lastActiveLineId.Value;
+
             // Set state to 'M' after first line is added (match Receiving behaviour)
             CurrentTicketState = 'M';
+
+            // Update scale measurement: next FW = last line SW + tare, reset SW
+            var lastActive = updatedTicket.Lines.Where(l => l.IsActive).OrderBy(l => l.CreatedTime).LastOrDefault();
+            if (lastActive != null)
+            {
+                TicketFirstWeightText = ((lastActive.SecondWeightKg ?? 0m) + lastActive.Tare).ToString("0.00");
+                TicketSecondWeightText = "0";
+            }
 
             RecalculateSendingTotals();
 
@@ -500,8 +567,8 @@ public partial class MainWindowViewModel
         SendingTotalVat = totalVat;
         SendingTotalInclVat = totalIncl;
 
-        // Match Receiving: show net total as SUM(weights) - SUM(tare)
-        SendingLinesTotalWeight = totalWeight - totalTare;
+        // Sending: tare is ADDED to net (SUM(SW-FW) + SUM(tare))
+        SendingLinesTotalWeight = totalWeight + totalTare;
 
         // Notify state-driven buttons (Finalize enabled when H/M)
         OnPropertyChanged(nameof(IsFinalizeTicketEnabled));
@@ -514,27 +581,69 @@ public partial class MainWindowViewModel
             StatusMessage = "No line item selected to remove.";
             return;
         }
+
+        if (!line.IsEditable)
+        {
+            StatusMessage = "Only the last/current line item can be deleted.";
+            return;
+        }
         
         if (IsBusy) return;
 
+        // Show confirmation dialog
+        var confirmMessage = $"Are you sure you want to delete the line item for {line.ProductName}? (Weight: {line.WeightKg:N2} kg)";
+        var confirmed = await ConfirmAsync(confirmMessage);
+        if (!confirmed)
+            return;
+
         IsBusy = true;
-        StatusMessage = "Removing ticket line...";
+        StatusMessage = "Deleting ticket line...";
 
         try
         {
+            // Soft delete on API
             await _ticketSendingService.DeleteTicketSendingLineAsync(line.TicketSendingId, line.TicketSendingLineId);
 
-            SendingLines.Remove(line);
+            // Reload from API so IsEditable is recalculated (only last active line editable/deletable)
+            await LoadSendingLinesForTicketAsync(line.TicketSendingId);
 
-            // If no lines remain, return to Header state
-            if (SendingLines.Count == 0)
+            // Refresh selected ticket details (updates totals / header state and weights)
+            if (LastCreatedTicket?.TicketId == line.TicketSendingId)
             {
-                CurrentTicketState = 'H';
+                var updated = await _ticketSendingService.GetTicketSendingByIdAsync(line.TicketSendingId);
+                if (updated != null)
+                {
+                    CurrentTicketState = updated.TicketState;
+
+                    // Update First Weight according to rules:
+                    // - H: First Weight comes from InitializeWeightKg
+                    // - M: First Weight becomes the last ACTIVE line's (SecondWeightKg + Tare)
+                    if (updated.TicketTypeName?.Equals("weighbridge", StringComparison.OrdinalIgnoreCase) == true)
+                    {
+                        if (updated.TicketState == 'H')
+                        {
+                            TicketFirstWeightText = updated.InitializeWeightKg?.ToString("0.00") ?? "0";
+                        }
+                        else if (updated.TicketState == 'M' && updated.Lines != null)
+                        {
+                            var lastActive = updated.Lines
+                                .Where(l => l.IsActive)
+                                .OrderBy(l => l.TicketSendingLineId)
+                                .LastOrDefault();
+
+                            TicketFirstWeightText = lastActive != null
+                                ? (((lastActive.SecondWeightKg ?? 0m) + lastActive.Tare).ToString("0.00"))
+                                : (updated.InitializeWeightKg?.ToString("0.00") ?? "0");
+                        }
+
+                        // Preparing for the next line weigh-in
+                        TicketSecondWeightText = "0";
+                        SendingWeightText = string.Empty;
+                    }
+                }
             }
 
-            RecalculateSendingTotals();
-
-            StatusMessage = $"✓ Removed line for product {line.ProductName}";
+            StatusMessage = $"✓ Deleted line for product {line.ProductName}.";
         }
         catch (HttpRequestException ex)
         {
@@ -668,7 +777,7 @@ public partial class MainWindowViewModel
 
     // --- Sending Ticket Search Properties ---
 
-    private string _searchSendingTicketCustomerIdText = string.Empty;
+    private string _searchSendingTicketBuyerIdText = string.Empty;
     private string _searchSendingTicketIdNumberText = string.Empty;
     private string _searchSendingTicketFirstNameText = string.Empty;
     private string _searchSendingTicketLastNameText = string.Empty;
@@ -678,10 +787,10 @@ public partial class MainWindowViewModel
     private string _searchSendingTicketCreatedFromText = string.Empty;
     private string _searchSendingTicketCreatedToText = string.Empty;
 
-    public string SearchSendingTicketCustomerIdText
+    public string SearchSendingTicketBuyerIdText
     {
-        get => _searchSendingTicketCustomerIdText;
-        set { _searchSendingTicketCustomerIdText = value ?? string.Empty; OnPropertyChanged(); }
+        get => _searchSendingTicketBuyerIdText;
+        set { _searchSendingTicketBuyerIdText = value ?? string.Empty; OnPropertyChanged(); }
     }
 
     public string SearchSendingTicketIdNumberText
@@ -938,12 +1047,13 @@ public partial class MainWindowViewModel
                     // Only consider ACTIVE lines; if none remain active, fall back to InitializeWeightKg
                     var lastActiveLine = details.Lines
                         .Where(l => l.IsActive)
-                        .OrderBy(l => l.CreatedTime)
+                        .OrderBy(l => l.TicketSendingLineId)
                         .LastOrDefault();
 
                     if (lastActiveLine != null)
                     {
-                        TicketFirstWeightText = (lastActiveLine.SecondWeightKg ?? 0m).ToString("0.00");
+                        // For Sending, next FW = last line (SW + Tare)
+                        TicketFirstWeightText = ((lastActiveLine.SecondWeightKg ?? 0m) + lastActiveLine.Tare).ToString("0.00");
                     }
                 }
             }
@@ -987,7 +1097,14 @@ public partial class MainWindowViewModel
 
             if (details.TicketState == 'C')
             {
-                // Complete tickets are view-only: clear create/edit line grid and prepare next ticket number
+                // Complete tickets are view-only.
+                // Reset create/edit weights (First Weight must be 0 for a new ticket).
+                TicketFirstWeightText = "0";
+                TicketSecondWeightText = "0";
+                TicketPlatformWeightText = "0";
+                SendingWeightText = string.Empty;
+
+                // Clear create/edit line grid and prepare next ticket number
                 LastCreatedTicket = null;
                 SendingLines.Clear();
                 RecalculateSendingTotals();
@@ -1282,7 +1399,7 @@ public partial class MainWindowViewModel
                 CompanyId = SearchTicketSelectedCompany?.CompanyId,
                 SiteId = SearchTicketSelectedSite?.SiteId,
                 TicketType = ticketType,
-                BuyerId = ParseIntOrNull(SearchSendingTicketCustomerIdText),
+                BuyerId = ParseIntOrNull(SearchSendingTicketBuyerIdText),
                 FirstName = string.IsNullOrWhiteSpace(SearchSendingTicketFirstNameText) ? null : SearchSendingTicketFirstNameText.Trim(),
                 LastName = string.IsNullOrWhiteSpace(SearchSendingTicketLastNameText) ? null : SearchSendingTicketLastNameText.Trim(),
                 IdNumber = string.IsNullOrWhiteSpace(SearchSendingTicketIdNumberText) ? null : SearchSendingTicketIdNumberText.Trim(),
@@ -1298,7 +1415,7 @@ public partial class MainWindowViewModel
 
                 var results = await _ticketSendingService.SearchNewBuyersWithoutTicketsAsync(new TicketSearchRequestDto
                 {
-                    BuyerId = ParseLongOrNull(SearchSendingTicketCustomerIdText),
+                    BuyerId = ParseLongOrNull(SearchSendingTicketBuyerIdText),
                     FirstName = string.IsNullOrWhiteSpace(SearchSendingTicketFirstNameText) ? null : SearchSendingTicketFirstNameText.Trim(),
                     LastName = string.IsNullOrWhiteSpace(SearchSendingTicketLastNameText) ? null : SearchSendingTicketLastNameText.Trim(),
                     IdNumber = string.IsNullOrWhiteSpace(SearchSendingTicketIdNumberText) ? null : SearchSendingTicketIdNumberText.Trim(),
@@ -1382,7 +1499,7 @@ public partial class MainWindowViewModel
 
     private void ClearSendingTicketSearch()
     {
-        SearchSendingTicketCustomerIdText = string.Empty;
+        SearchSendingTicketBuyerIdText = string.Empty;
         SearchSendingTicketIdNumberText = string.Empty;
         SearchSendingTicketFirstNameText = string.Empty;
         SearchSendingTicketLastNameText = string.Empty;

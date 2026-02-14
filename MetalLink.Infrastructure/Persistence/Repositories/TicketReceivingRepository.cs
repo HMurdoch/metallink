@@ -186,7 +186,10 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         var year = DateTime.Now.Year;
         var prefix = $"RCV-{site?.SiteCode ?? "000"}-{year}";
 
+        // IMPORTANT: include soft-deleted tickets when generating next number
+        // because ticket numbers are unique even across inactive rows.
         var lastTicket = await _context.Set<TicketReceiving>()
+            .IgnoreQueryFilters()
             .Where(t => t.TicketNumber.StartsWith(prefix))
             .OrderByDescending(t => t.TicketNumber)
             .FirstOrDefaultAsync();
@@ -212,5 +215,12 @@ public class TicketReceivingRepository : ITicketReceivingRepository
             .FirstOrDefaultAsync();
 
         return lastTicket?.TicketNumber;
+    }
+
+    public async Task<long> GetNextTicketSequenceValueAsync(string prefix)
+    {
+        var seq = $"metal_link.ticket_number_{prefix.ToLowerInvariant()}_seq";
+        var sql = $"SELECT nextval('{seq}')";
+        return await _context.Database.SqlQueryRaw<long>(sql).SingleAsync();
     }
 }

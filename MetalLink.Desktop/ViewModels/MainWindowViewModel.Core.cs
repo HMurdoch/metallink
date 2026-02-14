@@ -66,6 +66,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand FinalizeTicketCommand { get; }
     public ICommand AddReceivingLineCommand { get; }
     public ICommand RemoveReceivingLineCommand { get; }
+    public ICommand RemoveSendingLineCommand { get; }
     public ICommand ReadWeighbridgeCommand { get; }
     public ICommand ReadWeighbridgeSecondCommand { get; }
     public ICommand ReadPlatformCommand { get; }
@@ -86,6 +87,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand ShowDocumentsCommand { get; }
     public ICommand ShowCameraCommand { get; }
     public ICommand ShowReportsCommand { get; }   // ✅ ADDED
+    public ICommand ShowStockLevelsCommand { get; }
+    public ICommand ShowStockMovementCommand { get; }
     public ICommand ShowSettingsCommand { get; }  // ✅ ADDED
 
     // Camera commands
@@ -453,6 +456,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         FinalizeTicketCommand = new AsyncCommand(FinalizeTicketRoutedAsync);
         AddReceivingLineCommand = new AsyncCommand(AddReceivingLineAsync);
         RemoveReceivingLineCommand = new AsyncRelayCommand<ReceivingLineItem?>(RemoveReceivingLineAsync);
+        RemoveSendingLineCommand = new AsyncRelayCommand<SendingLineItem?>(RemoveSendingLineAsync);
         ReadWeighbridgeCommand = new AsyncCommand(ReadWeighbridgeAsync);
         ReadWeighbridgeSecondCommand = new AsyncCommand(ReadWeighbridgeSecondAsync);
         ReadPlatformCommand = new AsyncCommand(ReadPlatformAsync);
@@ -492,12 +496,20 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         });
         ShowTicketsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.TicketsReceiving);
         ShowTicketsReceivingCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.TicketsReceiving);
-        ShowTicketsSendingCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.TicketsSending);
+        ShowTicketsSendingCommand = ReactiveUI.ReactiveCommand.CreateFromTask(async () =>
+        {
+            CurrentSection = EnumMainSection.TicketsSending;
+            // Avoid state bleed from Receiving: sending uses its own Buyer field.
+            TicketBuyerIdText = string.Empty;
+            await OnEnterTicketsSendingAsync();
+        });
         ShowDocumentsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Documents);
         ShowCameraCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Camera);
 
         // ✅ ADDED: Reports + Settings behave like other nav items
         ShowReportsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Reports);
+        ShowStockLevelsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.StockLevels);
+        ShowStockMovementCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.StockMovement);
         ShowSettingsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Settings);
 
         EditCustomerCommand = new RelayCommand<CustomerDto>(OnEditCustomer);

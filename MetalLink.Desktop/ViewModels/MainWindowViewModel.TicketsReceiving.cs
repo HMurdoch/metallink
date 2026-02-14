@@ -17,6 +17,7 @@ public partial class MainWindowViewModel
     // Receiving line item model used for the grid
     public sealed class ReceivingLineItem : INotifyPropertyChanged
     {
+        private bool _isEditable;
         private decimal _tare;
 
         public long TicketLineId { get; init; }
@@ -31,6 +32,19 @@ public partial class MainWindowViewModel
         public decimal VatAmount { get; init; }
         public decimal TotalInclVat { get; init; }
         
+        public bool IsEditable
+        {
+            get => _isEditable;
+            set
+            {
+                if (_isEditable != value)
+                {
+                    _isEditable = value;
+                    OnPropertyChanged(nameof(IsEditable));
+                }
+            }
+        }
+
         public decimal Tare
         {
             get => _tare;
@@ -531,8 +545,15 @@ public partial class MainWindowViewModel
 
             // Clear and repopulate the receiving lines from the response
             ReceivingLines.Clear();
+            // Determine the last ACTIVE line deterministically.
+            // CreatedTime may be missing/zero in some responses; IDs are monotonic.
+            var lastActiveLineId = response.Lines
+                .Where(l => l.IsActive)
+                .OrderBy(l => l.ReceivingTicketLineId)
+                .LastOrDefault()?
+                .ReceivingTicketLineId;
             foreach (var dto in response.Lines)
-            {
+            { 
                 Console.WriteLine($"[DEBUG LINE ADD RESPONSE] ProductId={dto.ProductId}, ProductName={dto.ProductName}, Notes='{dto.Notes}'");
                 var lineItem = new ReceivingLineItem
                 {
@@ -555,11 +576,16 @@ public partial class MainWindowViewModel
                     if (e.PropertyName == nameof(ReceivingLineItem.Tare))
                     {
                         RecalculateReceivingTotals();
-                        _ = SaveTareToApiAsync(LastCreatedTicket.TicketId, lineItem.TicketLineId, lineItem.Tare);
+                        if (lineItem.IsEditable)
+                            _ = SaveTareToApiAsync(LastCreatedTicket.TicketId, lineItem.TicketLineId, lineItem.Tare);
                     }
                 };
                 ReceivingLines.Add(lineItem);
             }
+
+            // Only last/current line editable/deletable
+            foreach (var li in ReceivingLines)
+                li.IsEditable = lastActiveLineId.HasValue && li.TicketLineId == lastActiveLineId.Value;
 
             RecalculateReceivingTotals();
             
@@ -662,6 +688,12 @@ public partial class MainWindowViewModel
         if (line == null)
         {
             StatusMessage = "No line item selected to remove.";
+            return;
+        }
+
+        if (!line.IsEditable)
+        {
+            StatusMessage = "Only the last/current line item can be deleted.";
             return;
         }
         
@@ -1407,24 +1439,32 @@ public partial class MainWindowViewModel
                     Notes = line.Notes ?? string.Empty,
                 };
                 lineItem.Tare = line.Tare;
+                // IsEditable will be set after all lines are loaded (only last/current line editable)
                 lineItem.PropertyChanged += (s, e) =>
                 {
                     if (e.PropertyName == nameof(ReceivingLineItem.Tare))
                     {
                         RecalculateReceivingTotals();
-                        _ = SaveTareToApiAsync(receivingDetails.TicketReceivingId, lineItem.TicketLineId, lineItem.Tare);
+                        if (lineItem.IsEditable)
+                            _ = SaveTareToApiAsync(receivingDetails.TicketReceivingId, lineItem.TicketLineId, lineItem.Tare);
                     }
                 };
                 ReceivingLines.Add(lineItem);
             }
 
+            // Set which line is editable: ONLY the last active line.
+            // CreatedTime can be unreliable across clients; IDs are monotonic.
+            var lastActiveLineId = lines.Where(l => l.IsActive).OrderBy(l => l.ReceivingTicketLineId).LastOrDefault()?.ReceivingTicketLineId;
+            foreach (var li in ReceivingLines)
+                li.IsEditable = lastActiveLineId.HasValue && li.TicketLineId == lastActiveLineId.Value;
+
             // If lines are loaded and the ticket is in Multi-line state,
-            // set First Weight to the last line's Second Weight (matches required behaviour).
+            // set First Weight to the last active line's Second Weight.
             if (ticketState == 'M' && lines.Count > 0)
             {
                 var lastActiveLine = lines
                     .Where(l => l.IsActive)
-                    .OrderBy(l => l.CreatedTime)
+                    .OrderBy(l => l.ReceivingTicketLineId)
                     .LastOrDefault();
 
                 if (lastActiveLine != null)

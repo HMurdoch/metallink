@@ -238,22 +238,8 @@ public sealed class TicketReceivingService
 
             Console.WriteLine($"[DEBUG SERVICE] Last ticket number={lastTicketNumber}");
             
-            // Extract numeric part: "RPL-00000003" -> "00000003"
-            var numericPart = lastTicketNumber.Substring(prefix.Length + 1);
-            Console.WriteLine($"[DEBUG SERVICE] Numeric part={numericPart}");
-            
-            // Convert to int and increment
-            if (int.TryParse(numericPart, out int lastNumber))
-            {
-                int nextNumber = lastNumber + 1;
-                // Format with prefix and pad to 8 digits
-                var generatedNumber = $"{prefix}-{nextNumber:D8}";
-                Console.WriteLine($"[DEBUG SERVICE] Generated number={generatedNumber}");
-                return generatedNumber;
-            }
-            
-            Console.WriteLine($"[DEBUG SERVICE] Failed to parse numeric part: {numericPart}");
-            return string.Empty;
+            // API now returns the NEXT atomic ticket number.
+            return lastTicketNumber;
         }
         catch (Exception ex)
         {

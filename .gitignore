@@ -1,6 +1,10 @@
 # Visual Studio 2015+
 .vs/
 
+# Documentation
+!SYSTEM_RULES.md
+!ScratchPad.md
+
 # Build results
 [Bb]in/
 [Oo]bj/

@@ -42,6 +42,8 @@ public static class DependencyInjection
         services.AddScoped<IPriceRepository, PriceRepository>();
         services.AddScoped<ITicketReceivingRepository, TicketReceivingRepository>();
         services.AddScoped<ITicketSendingRepository, TicketSendingRepository>();
+        services.AddScoped<IStockLevelRepository, StockLevelRepository>();
+        services.AddScoped<IStockMovementRepository, StockMovementRepository>();
 
         // Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();

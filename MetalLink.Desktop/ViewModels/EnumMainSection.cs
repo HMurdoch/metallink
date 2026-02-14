@@ -12,5 +12,7 @@ public enum EnumMainSection
     Documents,
     Camera,
     Reports,
+    StockLevels,
+    StockMovement,
     Settings
 }

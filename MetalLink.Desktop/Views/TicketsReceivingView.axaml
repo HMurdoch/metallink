@@ -226,7 +226,7 @@
                 <TextBlock Text="Company" Foreground="#c0c4cf" />
                 <Grid>
                   <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="80" />
+                    <ColumnDefinition Width="88" />
                     <ColumnDefinition Width="*" />
                   </Grid.ColumnDefinitions>
                   <ComboBox Grid.Column="0"
@@ -590,7 +590,7 @@
                       <TextBlock Text="Product" Foreground="#c0c4cf" />
                       <Grid>
                         <Grid.ColumnDefinitions>
-                          <ColumnDefinition Width="80" />
+                          <ColumnDefinition Width="88" />
                           <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <ComboBox Grid.Column="0"
@@ -859,7 +859,7 @@
                 <TextBlock Text="Product" Foreground="#c0c4cf" />
                 <Grid>
                   <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="80" />
+                    <ColumnDefinition Width="88" />
                     <ColumnDefinition Width="*" />
                   </Grid.ColumnDefinitions>
                   <ComboBox Grid.Column="0"
@@ -938,6 +938,7 @@
                     <DataTemplate>
                       <TextBox x:Name="TareTextBox"
                                Text="{Binding Tare, StringFormat='{}{0:N2}', Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                               IsEnabled="{Binding IsEditable}"
                                HorizontalAlignment="Stretch"
                                Foreground="{StaticResource Brush.TextPrimary}"
                                Background="#1f2937"
@@ -986,7 +987,8 @@
                           Command="{Binding DataContext.RemoveReceivingLineCommand,
                                                 RelativeSource={RelativeSource AncestorType=UserControl}}"
                           CommandParameter="{Binding}"
-                          IsEnabled="True" />
+                          IsEnabled="{Binding IsEditable}"
+                          IsVisible="{Binding IsEditable}" />
                       </StackPanel>
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>

@@ -16,6 +16,8 @@ public class TicketsReceivingController : ControllerBase
     private readonly ICustomerRepository _customerRepo;
     private readonly IProductRepository _productRepo;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IStockLevelRepository _stockLevelRepo;
+    private readonly IStockMovementRepository _stockMovementRepo;
     private readonly TicketNumberService _ticketNumberService;
     private readonly WeightCalculationService _weightCalculationService;
     private readonly PriceLookupService _priceLookupService;
@@ -25,6 +27,8 @@ public class TicketsReceivingController : ControllerBase
         ICustomerRepository customerRepo,
         IProductRepository productRepo,
         IUnitOfWork unitOfWork,
+        IStockLevelRepository stockLevelRepo,
+        IStockMovementRepository stockMovementRepo,
         TicketNumberService ticketNumberService,
         WeightCalculationService weightCalculationService,
         PriceLookupService priceLookupService)
@@ -33,6 +37,8 @@ public class TicketsReceivingController : ControllerBase
         _customerRepo = customerRepo;
         _productRepo = productRepo;
         _unitOfWork = unitOfWork;
+        _stockLevelRepo = stockLevelRepo;
+        _stockMovementRepo = stockMovementRepo;
         _ticketNumberService = ticketNumberService;
         _weightCalculationService = weightCalculationService;
         _priceLookupService = priceLookupService;
@@ -109,8 +115,16 @@ public class TicketsReceivingController : ControllerBase
     [HttpGet("last-ticket-number/{prefix}")]
     public async Task<IActionResult> GetLastTicketNumberByPrefix(string prefix)
     {
-        var lastTicketNumber = await _ticketReceivingRepo.GetLastTicketNumberByPrefixAsync(prefix);
-        return Ok(new { ticketNumber = lastTicketNumber });
+        // Backwards-compatible route: now returns the NEXT atomic ticket number.
+        var ticketTypeId = prefix.ToUpperInvariant() switch
+        {
+            "RWB" => 1,
+            "RPL" => 2,
+            _ => throw new ArgumentException($"Invalid prefix: {prefix}")
+        };
+
+        var next = await _ticketNumberService.GetNextReceivingTicketNumberAsync(ticketTypeId);
+        return Ok(new { ticketNumber = next });
     }
 
     [HttpGet("next-ticket-number/{ticketTypeId}")]
@@ -236,6 +250,19 @@ public class TicketsReceivingController : ControllerBase
         Console.WriteLine($"[API ADD LINE] Line created: FW={line.FirstWeightKg}, SW={line.SecondWeightKg}, NetWeight={line.NetWeightKg}");
 
         ticket.AddLine(line);
+
+        // Stock update + movement log (Purchase)
+        var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(dto.ProductId, operatorId, ct);
+        await _stockMovementRepo.AddAsync(
+            productId: dto.ProductId,
+            baseWeightKg: baseWeight,
+            buyWeightKg: line.NetWeightKg,
+            sellWeightKg: 0m,
+            createdByOperatorId: operatorId,
+            notes: $"Purchase - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
+            ct: ct);
+        await _stockLevelRepo.UpdateWeightKgAsync(dto.ProductId, baseWeight + line.NetWeightKg, ct);
+
         await _ticketReceivingRepo.UpdateAsync(ticket);
         await _unitOfWork.SaveChangesAsync(ct);
 
@@ -377,6 +404,43 @@ public class TicketsReceivingController : ControllerBase
             Console.WriteLine($"[DEBUG API] Stack trace: {ex.StackTrace}");
             return StatusCode(500, new { error = ex.Message });
         }
+    }
+
+    [HttpDelete("{id}/lines/{lineId}")]
+    public async Task<ActionResult> DeleteTicketReceivingLine(int id, int lineId, CancellationToken ct = default)
+    {
+        var ticket = await _ticketReceivingRepo.GetByIdAsync(id);
+        if (ticket == null)
+            return NotFound("Ticket not found");
+
+        var line = ticket.Lines?.FirstOrDefault(l => l.ReceivingTicketLineId == lineId);
+        if (line == null)
+            return NotFound("Line item not found");
+
+        // Soft delete line
+        line.SoftDelete();
+
+        // Stock update + movement log (Purchase Deleted)
+        var operatorId = (int)User.GetOperatorId();
+
+        var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(line.ProductId, operatorId, ct);
+        await _stockMovementRepo.AddAsync(
+            productId: line.ProductId,
+            baseWeightKg: baseWeight,
+            buyWeightKg: 0m,
+            sellWeightKg: line.NetWeightKg,
+            createdByOperatorId: operatorId,
+            notes: $"Purchase Deleted - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
+            ct: ct);
+        await _stockLevelRepo.UpdateWeightKgAsync(line.ProductId, baseWeight - line.NetWeightKg, ct);
+
+        // If the last active line is deleted, revert ticket back to Header-only state.
+        ticket.RevertToHeaderIfNoActiveLines();
+
+        await _ticketReceivingRepo.UpdateAsync(ticket);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return Ok(new { message = "Line deleted (soft).", ticketState = ticket.TicketState });
     }
 
     [HttpPut("{id}/lines/{lineId}/tare")]

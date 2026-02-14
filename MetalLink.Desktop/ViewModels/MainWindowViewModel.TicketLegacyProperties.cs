@@ -12,11 +12,20 @@ namespace MetalLink.Desktop.ViewModels;
 public partial class MainWindowViewModel
 {
     // Legacy ticket properties for search/edit functionality
+    // Receiving: Customer
     private string _ticketCustomerIdText = string.Empty;
     public string TicketCustomerIdText
     {
         get => _ticketCustomerIdText;
         set { _ticketCustomerIdText = value; OnPropertyChanged(); }
+    }
+
+    // Sending: Buyer (separate field to prevent state bleed when switching sections)
+    private string _ticketBuyerIdText = string.Empty;
+    public string TicketBuyerIdText
+    {
+        get => _ticketBuyerIdText;
+        set { _ticketBuyerIdText = value; OnPropertyChanged(); }
     }
 
     private string _ticketNumber = string.Empty;
@@ -156,17 +165,11 @@ public partial class MainWindowViewModel
 
     private async Task OnTicketTypeChangedAsync(int ticketTypeId)
     {
-        // Generate ticket number based on ticket type
-        // For Receiving: 1=Weighbridge (RWB), 2=Platform (RPL)
-        // For Sending: 3=Weighbridge (SWB), 4=Platform (SPL)
-        string prefix = ticketTypeId switch
-        {
-            1 => "RWB",  // Receiving Weighbridge
-            2 => "RPL",  // Receiving Platform
-            3 => "SWB",  // Sending Weighbridge
-            4 => "SPL",  // Sending Platform
-            _ => "RPL"   // Default to Platform
-        };
+        // Generate ticket number based on ticket type AND current section
+        // ticketTypeId here is always 1 (weighbridge) or 2 (platform).
+        string prefix = CurrentSection == EnumMainSection.TicketsSending
+            ? (ticketTypeId == 1 ? "SWB" : "SPL")
+            : (ticketTypeId == 1 ? "RWB" : "RPL");
 
         // Try to call RegenerateTicketNumberAsync on the derived class implementations
         // This will be implemented in TicketsReceiving and TicketsSending partial classes

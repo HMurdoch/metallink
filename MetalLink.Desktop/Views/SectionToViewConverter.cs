@@ -24,6 +24,8 @@ public class SectionToViewConverter : IValueConverter
             EnumMainSection.Documents => new DocumentsView(),
             EnumMainSection.Camera => new CameraView(),
             EnumMainSection.Reports => new ReportsView(),
+            EnumMainSection.StockLevels => new StockLevelsView(),
+            EnumMainSection.StockMovement => new StockMovementView(),
             EnumMainSection.Settings => new SettingsView(),
             _ => null
         };

@@ -204,10 +204,10 @@
                 <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
-              <!-- Row 0: Customer ID / ID Number -->
+              <!-- Row 0: Buyer ID / ID Number -->
               <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
-                <TextBlock Text="Customer ID" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchSendingTicketCustomerIdText}" />
+                <TextBlock Text="Buyer ID" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchSendingTicketBuyerIdText}" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
                 <TextBlock Text="ID Number" Foreground="#c0c4cf" />
@@ -229,7 +229,7 @@
                 <TextBlock Text="Company" Foreground="#c0c4cf" />
                 <Grid>
                   <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="80" />
+                    <ColumnDefinition Width="88" />
                     <ColumnDefinition Width="*" />
                   </Grid.ColumnDefinitions>
                   <ComboBox Grid.Column="0"
@@ -305,7 +305,7 @@
               <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding TicketId}" Width="80" IsReadOnly="True" />
                 <DataGridTextColumn Header="Ticket #" Binding="{Binding TicketNumber}" Width="140" IsReadOnly="True" />
-                <DataGridTextColumn Header="Customer ID" Binding="{Binding CustomerId}" Width="100" IsReadOnly="True" />
+                <DataGridTextColumn Header="Buyer ID" Binding="{Binding CustomerId}" Width="100" IsReadOnly="True" />
                 <DataGridTextColumn Header="First Name" Binding="{Binding FirstName}" Width="120" IsReadOnly="True" />
                 <DataGridTextColumn Header="Last Name" Binding="{Binding LastName}" Width="120" IsReadOnly="True" />
                 <DataGridTextColumn Header="Account #" Binding="{Binding AccountNumber}" Width="100" IsReadOnly="True" />
@@ -382,13 +382,13 @@
                 <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
-              <!-- Row 0: Ticket Number and Customer ID (both ticket types) -->
+              <!-- Row 0: Ticket Number and Buyer ID (both ticket types) -->
               <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
                 <TextBlock Text="Ticket Number" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
                 <TextBlock Text="{Binding SelectedSendingTicketDetails.TicketNumber}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
-                <TextBlock Text="Customer ID" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
+                <TextBlock Text="Buyer ID" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
                 <TextBlock Text="{Binding SelectedSendingTicketDetails.CustomerId, StringFormat='{}{0:D8}'}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
 
@@ -557,7 +557,7 @@
                       <TextBlock Text="Product" Foreground="#c0c4cf" />
                       <Grid>
                         <Grid.ColumnDefinitions>
-                          <ColumnDefinition Width="80" />
+                          <ColumnDefinition Width="88" />
                           <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <ComboBox Grid.Column="0"
@@ -603,32 +603,6 @@
                           Spacing="8"
                           Margin="0,8,0,0"
                           IsVisible="{Binding SelectedSendingTicketLines.Count}">
-                <StackPanel Orientation="Horizontal" Spacing="16">
-                  <StackPanel Spacing="2">
-                    <TextBlock Text="Total ex VAT"
-                               Foreground="#c0c4cf"
-                               FontSize="11" />
-                    <TextBlock Text="{Binding SelectedSendingTicketLinesTotalExVat, StringFormat='{}{0:N2}'}"
-                               Foreground="#4a9eff"
-                               FontWeight="Bold" />
-                  </StackPanel>
-                  <StackPanel Spacing="2">
-                    <TextBlock Text="VAT"
-                               Foreground="#c0c4cf"
-                               FontSize="11" />
-                    <TextBlock Text="{Binding SelectedSendingTicketLinesTotalVat, StringFormat='{}{0:N2}'}"
-                               Foreground="#4a9eff"
-                               FontWeight="Bold" />
-                  </StackPanel>
-                  <StackPanel Spacing="2">
-                    <TextBlock Text="Total incl VAT"
-                               Foreground="#c0c4cf"
-                               FontSize="11" />
-                    <TextBlock Text="{Binding SelectedSendingTicketLinesTotalInclVat, StringFormat='{}{0:N2}'}"
-                               Foreground="#4a9eff"
-                               FontWeight="Bold" />
-                  </StackPanel>
-                </StackPanel>
               </StackPanel>
             </StackPanel>
 
@@ -660,10 +634,10 @@
                 <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
-              <!-- Row 0: Customer ID / Ticket Number (auto-generated, read-only) -->
+              <!-- Row 0: Buyer ID / Ticket Number (auto-generated, read-only) -->
               <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
-                <TextBlock Text="Customer ID" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding TicketCustomerIdText}" IsReadOnly="True" />
+                <TextBlock Text="Buyer ID" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding TicketBuyerIdText}" IsReadOnly="True" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Ticket Number" Foreground="#c0c4cf" />
@@ -826,7 +800,7 @@
                 <TextBlock Text="Product" Foreground="#c0c4cf" />
                 <Grid>
                   <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="80" />
+                    <ColumnDefinition Width="88" />
                     <ColumnDefinition Width="*" />
                   </Grid.ColumnDefinitions>
                   <ComboBox Grid.Column="0"
@@ -894,7 +868,7 @@
                                     IsVisible="{Binding AreWeighbridgeFieldsVisible}" />
                 <!-- Second Weight (SW) - Weighbridge only -->
                 <DataGridTextColumn Header="Second Weight (kg)"
-                                    Binding="{Binding SecondWeightKg, StringFormat='{}{0:N2}'}"
+                                    Binding="{Binding DisplaySecondWeightKg, StringFormat='{}{0:N2}'}"
                                     Width="140"
                                     IsVisible="{Binding AreWeighbridgeFieldsVisible}" />
                 <DataGridTextColumn Header="Weight (kg)"
@@ -905,6 +879,7 @@
                     <DataTemplate>
                       <TextBox x:Name="TareTextBox"
                                Text="{Binding Tare, StringFormat='{}{0:N2}', Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                               IsEnabled="{Binding IsEditable}"
                                HorizontalAlignment="Stretch"
                                Foreground="{StaticResource Brush.TextPrimary}"
                                Background="#1f2937"
@@ -953,7 +928,8 @@
                           Command="{Binding DataContext.RemoveSendingLineCommand,
                                                 RelativeSource={RelativeSource AncestorType=UserControl}}"
                           CommandParameter="{Binding}"
-                          IsEnabled="True" />
+                          IsEnabled="{Binding IsEditable}"
+                          IsVisible="{Binding IsEditable}" />
                       </StackPanel>
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>

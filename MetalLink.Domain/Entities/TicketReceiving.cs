@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MetalLink.Domain.Entities;
 
@@ -109,6 +110,20 @@ public class TicketReceiving
     {
         Lines.Add(line);
         UpdatedTime = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// If a ticket has no active lines, it must revert back to Header-only state ('H').
+    /// This supports soft-delete of line items.
+    /// </summary>
+    public void RevertToHeaderIfNoActiveLines()
+    {
+        var hasAnyActiveLines = Lines?.Any(l => l.IsActive) ?? false;
+        if (!hasAnyActiveLines)
+        {
+            TicketState = 'H';
+            UpdatedTime = DateTimeOffset.UtcNow;
+        }
     }
 
     public void SoftDelete(DateTimeOffset now)

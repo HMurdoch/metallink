@@ -43,8 +43,9 @@ public partial class TicketsReceivingView : UserControl
     {
         if (sender is TextBox textBox)
         {
-            // Select all text when the TextBox gets focus
-            textBox.SelectAll();
+            // DataGrid cell editors can steal selection on focus.
+            // Defer selection to ensure the caret/selection is applied after the template finishes focusing.
+            Dispatcher.UIThread.Post(textBox.SelectAll);
         }
     }
 }

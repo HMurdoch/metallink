@@ -208,8 +208,10 @@
                   Command="{Binding ShowTicketsSendingCommand}"
                   Classes="NavButton SubNavButton"/>
 
-          <Button Content="Documents" Command="{Binding ShowDocumentsCommand}" Classes="NavButton"/>
-          <Button Content="Camera" Command="{Binding ShowCameraCommand}" Classes="NavButton"/>
+          <Button Content="Stock" Classes="NavButton"/>
+          <Button Content="Stock Levels" Command="{Binding ShowStockLevelsCommand}" Classes="NavButton SubNavButton"/>
+          <Button Content="Stock Movement" Command="{Binding ShowStockMovementCommand}" Classes="NavButton SubNavButton"/>
+
           <Button Content="Reports" Command="{Binding ShowReportsCommand}" Classes="NavButton"/>
           <Button Content="Settings" Command="{Binding ShowSettingsCommand}" Classes="NavButton"/>
         </StackPanel>

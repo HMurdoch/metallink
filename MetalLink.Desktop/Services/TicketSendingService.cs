@@ -280,18 +280,8 @@ public sealed class TicketSendingService
                 return $"{prefix}-00000001";
             }
             
-            // Extract numeric part: "SPL-00000003" -> "00000003"
-            var numericPart = lastTicketNumber.Substring(prefix.Length + 1);
-            
-            // Convert to int and increment
-            if (int.TryParse(numericPart, out int lastNumber))
-            {
-                int nextNumber = lastNumber + 1;
-                // Format with prefix and pad to 8 digits
-                return $"{prefix}-{nextNumber:D8}";
-            }
-            
-            return string.Empty;
+            // API now returns the NEXT atomic ticket number.
+            return lastTicketNumber;
         }
         catch
         {

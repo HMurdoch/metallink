@@ -28,10 +28,8 @@ public class TicketNumberService
     public async Task<string> GetNextReceivingTicketNumberAsync(int ticketTypeId)
     {
         var prefix = GetReceivingPrefix(ticketTypeId);
-        var lastNumber = await GetLastReceivingTicketNumberAsync(ticketTypeId);
-        var nextNumber = lastNumber + 1;
-
-        return $"{prefix}-{nextNumber:D8}";
+        var seqValue = await _ticketReceivingRepo.GetNextTicketSequenceValueAsync(prefix);
+        return $"{prefix}-{seqValue:D8}";
     }
 
     /// <summary>
@@ -42,10 +40,8 @@ public class TicketNumberService
     public async Task<string> GetNextSendingTicketNumberAsync(int ticketTypeId)
     {
         var prefix = GetSendingPrefix(ticketTypeId);
-        var lastNumber = await GetLastSendingTicketNumberAsync(ticketTypeId);
-        var nextNumber = lastNumber + 1;
-
-        return $"{prefix}-{nextNumber:D8}";
+        var seqValue = await _ticketSendingRepo.GetNextTicketSequenceValueAsync(prefix);
+        return $"{prefix}-{seqValue:D8}";
     }
 
     /// <summary>
@@ -72,28 +68,6 @@ public class TicketNumberService
             2 => "SPL", // Sending Platform
             _ => throw new ArgumentException($"Invalid ticket type id: {ticketTypeId}")
         };
-    }
-
-    /// <summary>
-    /// Gets the last sequential number for a given receiving ticket type
-    /// </summary>
-    private async Task<int> GetLastReceivingTicketNumberAsync(int ticketTypeId)
-    {
-        var prefix = GetReceivingPrefix(ticketTypeId);
-        var lastTicketNumber = await _ticketReceivingRepo.GetLastTicketNumberByPrefixAsync(prefix);
-        
-        return ExtractNumberFromTicketNumber(lastTicketNumber, prefix);
-    }
-
-    /// <summary>
-    /// Gets the last sequential number for a given sending ticket type
-    /// </summary>
-    private async Task<int> GetLastSendingTicketNumberAsync(int ticketTypeId)
-    {
-        var prefix = GetSendingPrefix(ticketTypeId);
-        var lastTicketNumber = await _ticketSendingRepo.GetLastTicketNumberByPrefixAsync(prefix);
-        
-        return ExtractNumberFromTicketNumber(lastTicketNumber, prefix);
     }
 
     /// <summary>

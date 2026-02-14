@@ -216,12 +216,22 @@ public class TicketSendingRepository : ITicketSendingRepository
 
     public async Task<string?> GetLastTicketNumberByPrefixAsync(string prefix)
     {
+        // IMPORTANT: include soft-deleted tickets when generating next number
+        // because ticket numbers are unique even across inactive rows.
         var lastTicket = await _context.Set<TicketSending>()
+            .IgnoreQueryFilters()
             .Where(t => t.TicketNumber.StartsWith(prefix))
             .OrderByDescending(t => t.TicketNumber)
             .FirstOrDefaultAsync();
 
         return lastTicket?.TicketNumber;
+    }
+
+    public async Task<long> GetNextTicketSequenceValueAsync(string prefix)
+    {
+        var seq = $"metal_link.ticket_number_{prefix.ToLowerInvariant()}_seq";
+        var sql = $"SELECT nextval('{seq}')";
+        return await _context.Database.SqlQueryRaw<long>(sql).SingleAsync();
     }
 
     public async Task<HashSet<long>> GetBuyerIdsWithActiveTicketsAsync(long? companyId = null, long? siteId = null, CancellationToken ct = default)

@@ -42,6 +42,7 @@ public interface ITicketSendingRepository
     Task UpdateAsync(TicketSending ticket);
     Task<string> GenerateTicketNumberAsync(long siteId);
     Task<string?> GetLastTicketNumberByPrefixAsync(string prefix);
+    Task<long> GetNextTicketSequenceValueAsync(string prefix);
 
     Task<HashSet<long>> GetBuyerIdsWithActiveTicketsAsync(long? companyId = null, long? siteId = null, CancellationToken ct = default);
 }
