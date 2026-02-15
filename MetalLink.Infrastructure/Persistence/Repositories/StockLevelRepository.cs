@@ -30,7 +30,7 @@ public sealed class StockLevelRepository : IStockLevelRepository
         ", ct);
 
         var weight = await _db.Database.SqlQuery<decimal>($@"
-                SELECT weight_kg
+                SELECT weight_kg AS ""Value""
                 FROM metal_link.stock_levels
                 WHERE product_id = {productId} AND is_active = true
                 LIMIT 1

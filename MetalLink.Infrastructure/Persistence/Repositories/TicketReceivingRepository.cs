@@ -220,7 +220,7 @@ public class TicketReceivingRepository : ITicketReceivingRepository
     public async Task<long> GetNextTicketSequenceValueAsync(string prefix)
     {
         var seq = $"metal_link.ticket_number_{prefix.ToLowerInvariant()}_seq";
-        var sql = $"SELECT nextval('{seq}')";
+        var sql = $"SELECT nextval('{seq}') AS \"Value\"";
         return await _context.Database.SqlQueryRaw<long>(sql).SingleAsync();
     }
 }
