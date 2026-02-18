@@ -216,10 +216,7 @@ public class TicketSendingRepository : ITicketSendingRepository
 
     public async Task<string?> GetLastTicketNumberByPrefixAsync(string prefix)
     {
-        // IMPORTANT: include soft-deleted tickets when generating next number
-        // because ticket numbers are unique even across inactive rows.
         var lastTicket = await _context.Set<TicketSending>()
-            .IgnoreQueryFilters()
             .Where(t => t.TicketNumber.StartsWith(prefix))
             .OrderByDescending(t => t.TicketNumber)
             .FirstOrDefaultAsync();
@@ -234,8 +231,16 @@ public class TicketSendingRepository : ITicketSendingRepository
         return await _context.Database.SqlQueryRaw<long>(sql).SingleAsync();
     }
 
-    public async Task<HashSet<long>> GetBuyerIdsWithActiveTicketsAsync(long? companyId = null, long? siteId = null, CancellationToken ct = default)
+    public async Task<long> PeekNextTicketSequenceValueAsync(string prefix)
     {
+        var seq = $"metal_link.ticket_number_{prefix.ToLowerInvariant()}_seq";
+        var sql = $"SELECT CASE WHEN s.is_called THEN s.last_value + 1 ELSE s.last_value END AS \"Value\" FROM {seq} s";
+        return await _context.Database.SqlQueryRaw<long>(sql).SingleAsync();
+    }
+
+    public async Task<HashSet<long>> GetBuyerIdsWithActiveTicketsAsync(long? companyId = null, long? siteId = null, CancellationToken ct = default)
+    { 
+
         var query = _context.Set<TicketSending>()
             .Where(t => t.IsActive)
             .AsQueryable();

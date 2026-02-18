@@ -234,25 +234,13 @@
 
     <!-- Bottom status bar -->
     <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{StaticResource Brush.StatusBackground}" Padding="8,4">
-      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="16">
+      <Grid ColumnDefinitions="*" ColumnSpacing="16">
         <!-- Main status message -->
         <TextBlock Grid.Column="0"
                    Text="{Binding StatusMessage}"
                    Foreground="#c0c4cf"
                    VerticalAlignment="Center"
                    TextTrimming="CharacterEllipsis" />
-
-        <!-- Customers loaded this session -->
-        <TextBlock Grid.Column="1"
-                   Text="{Binding CustomersLoadedCount, StringFormat='Customers loaded: {0}'}"
-                   Foreground="#9fa4b2"
-                   VerticalAlignment="Center" />
-
-        <!-- Tickets created this session -->
-        <TextBlock Grid.Column="2"
-                   Text="{Binding TicketsCreatedCount, StringFormat='Tickets created: {0}'}"
-                   Foreground="#9fa4b2"
-                   VerticalAlignment="Center" />
       </Grid>
     </Border>
   </Grid>

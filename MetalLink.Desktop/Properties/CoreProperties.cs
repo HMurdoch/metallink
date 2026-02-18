@@ -74,15 +74,8 @@ public partial class MainWindowViewModel
             // if target index < previous index we treat as "back"
             IsSlideFromLeft = (int)_currentSection < (int)_previousSection;
 
-            // Initialize ticket form when entering Receiving or Sending sections
-            if (_currentSection == EnumMainSection.TicketsReceiving)
-            {
-                _ = OnEnterTicketsReceivingAsync();
-            }
-            else if (_currentSection == EnumMainSection.TicketsSending)
-            {
-                _ = OnEnterTicketsSendingAsync();
-            }
+            // TicketsReceiving/TicketsSending now manage their own state in isolated viewmodels.
+            // No shared shell initialization here.
 
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsDashboardSectionVisible));
@@ -170,5 +163,5 @@ public partial class MainWindowViewModel
         set { _animatedTotalProductsInDb = value; OnPropertyChanged(); }
     }
 
-    public bool HasUnsavedChanges => HasUnsavedNewCustomer || HasUnsavedTicketReceiving || HasUnsavedTicketSending;
+    public bool HasUnsavedChanges => HasUnsavedNewCustomer;
 }

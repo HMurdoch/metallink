@@ -40,4 +40,14 @@ public interface ICustomerRepository
     Task SoftDeleteAsync(int customerId, CancellationToken cancellationToken = default);
     Task<long> GetNextAccountNumberAsync(CancellationToken ct);
 
+    Task<IReadOnlyList<Customer>> SearchCustomersWithZeroReceivingTicketsAsync(
+        long? companyId,
+        long? siteId,
+        int? customerId,
+        string? firstName,
+        string? lastName,
+        string? idNumber,
+        long? accountNumber,
+        CancellationToken cancellationToken = default);
+
 }

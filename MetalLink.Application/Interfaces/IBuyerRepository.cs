@@ -39,4 +39,14 @@ public interface IBuyerRepository
     Task UpdateAsync(Buyer buyer, CancellationToken cancellationToken = default);
     Task SoftDeleteAsync(int buyerId, CancellationToken cancellationToken = default);
     Task<long> GetNextAccountNumberAsync(CancellationToken ct);
+
+    Task<IReadOnlyList<Buyer>> SearchBuyersWithZeroSendingTicketsAsync(
+        long? companyId,
+        long? siteId,
+        int? buyerId,
+        string? firstName,
+        string? lastName,
+        string? idNumber,
+        long? accountNumber,
+        CancellationToken cancellationToken = default);
 }

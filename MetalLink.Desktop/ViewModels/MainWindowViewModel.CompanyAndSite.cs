@@ -898,7 +898,11 @@ public partial class MainWindowViewModel
             foreach (var c in items.OrderBy(x => x.CompanyName))
                 CompanyResults.Add(c);
 
-            SelectedSearchCompany = SearchCompanySuggestions.FirstOrDefault();
+            // Do not auto-select a company; leave selection to the user.
+            SelectedSearchCompany = null;
+            SearchSiteSuggestions.Clear();
+            SelectedSearchSite = null;
+            IsSearchSiteEnabled = false;
         }
         catch (Exception ex)
         {

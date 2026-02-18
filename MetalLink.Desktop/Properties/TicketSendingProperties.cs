@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using MetalLink.Shared.Products;
 using MetalLink.Shared.Sites;
-using MetalLink.Shared.Tickets;
+using MetalLink.Shared.Tickets.Sending;
 
 namespace MetalLink.Desktop.Properties;
 

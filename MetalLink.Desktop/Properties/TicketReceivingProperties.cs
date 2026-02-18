@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 using MetalLink.Shared.Customers;
 using MetalLink.Shared.Products;
 using MetalLink.Shared.Sites;
-using MetalLink.Shared.Tickets;
+using MetalLink.Shared.Tickets.Receiving;
 
 namespace MetalLink.Desktop.Properties;
 

@@ -39,6 +39,19 @@ public partial class TicketsSendingView : UserControl
         }
     }
 
+    private async void TareTextBox_LostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is not MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel vm) return;
+        if (sender is not TextBox tb) return;
+        if (tb.DataContext is not MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel.SendingLineRow row) return;
+
+        if (!decimal.TryParse(tb.Text?.Replace(',', '.').Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var tare))
+            return;
+
+        if (!row.IsEditable) return;
+        await vm.UpdateLastLineTareAsync(row.TicketSendingLineId, tare);
+    }
+
     private void TareTextBox_GotFocus(object? sender, Avalonia.Input.GotFocusEventArgs e)
     {
         if (sender is TextBox textBox)

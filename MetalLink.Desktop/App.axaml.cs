@@ -18,7 +18,6 @@ public partial class App : Application
     public BuyerService BuyerService { get; private set; } = null!;
     public CompanyAndSiteService CompanyAndSiteService { get; private set; } = null!;
     public ProductsAndPricesService ProductsAndPricesService { get; private set; } = null!;
-    public TicketService TicketService { get; private set; } = null!;
     public TicketReceivingService TicketReceivingService { get; private set; } = null!;
     public TicketSendingService TicketSendingService { get; private set; } = null!;
     public IScaleService ScaleService { get; private set; } = null!;
@@ -39,6 +38,10 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        Avalonia.Threading.Dispatcher.UIThread.UnhandledException += (_, e) =>
+        {
+            System.Console.Error.WriteLine("[FATAL] UIThread exception: " + e.Exception);
+        };
         // Initialize services
         ApiClient = new ApiClient(AuthState);
         AuthService = new AuthService(AuthState);
@@ -46,7 +49,6 @@ public partial class App : Application
         BuyerService = new BuyerService(ApiClient, AuthState);
         CompanyAndSiteService = new CompanyAndSiteService(ApiClient, AuthState);
         ProductsAndPricesService = new ProductsAndPricesService(ApiClient, AuthState);
-        TicketService = new TicketService(ApiClient, AuthState);
         TicketReceivingService = new TicketReceivingService(ApiClient, AuthState);
         TicketSendingService = new TicketSendingService(ApiClient, AuthState);
         ScaleService = new MockScaleService();

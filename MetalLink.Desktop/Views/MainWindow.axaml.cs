@@ -11,8 +11,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // ✅ Create VM with App dependency (fixes AVLN3000)
-        if (Application.Current is App app)
+        // Only create a default VM if one was not provided (e.g. by LoginViewModel)
+        if (DataContext == null && Application.Current is App app)
         {
             DataContext = new MainWindowViewModel(app);
         }

@@ -43,4 +43,6 @@ public interface ITicketReceivingRepository
     Task<string> GenerateTicketNumberAsync(long siteId);
     Task<string?> GetLastTicketNumberByPrefixAsync(string prefix);
     Task<long> GetNextTicketSequenceValueAsync(string prefix);
+    Task<long> PeekNextTicketSequenceValueAsync(string prefix);
 }
+

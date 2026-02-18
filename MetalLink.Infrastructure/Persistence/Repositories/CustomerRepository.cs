@@ -328,6 +328,52 @@ public class CustomerRepository : ICustomerRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Customer>> SearchCustomersWithZeroReceivingTicketsAsync(
+        long? companyId,
+        long? siteId,
+        int? customerId,
+        string? firstName,
+        string? lastName,
+        string? idNumber,
+        long? accountNumber,
+        CancellationToken cancellationToken = default)
+    {
+        const int MaxResults = 500;
+
+        var query = _db.Customers
+            .Include(c => c.Company!)
+            .Include(c => c.Site!)
+            .Where(c => c.IsActive)
+            .Where(c => !_db.ReceivingTickets.Any(t => t.CustomerId == c.CustomerId))
+            .AsQueryable();
+
+        if (companyId.HasValue)
+            query = query.Where(c => c.CompanyId == companyId.Value);
+        if (siteId.HasValue)
+            query = query.Where(c => c.SiteId == siteId.Value);
+        if (customerId.HasValue)
+            query = query.Where(c => c.CustomerId == customerId.Value);
+        if (!string.IsNullOrWhiteSpace(firstName))
+        {
+            var term = firstName.ToLower();
+            query = query.Where(c => c.FirstName != null && c.FirstName.ToLower().Contains(term));
+        }
+        if (!string.IsNullOrWhiteSpace(lastName))
+        {
+            var term = lastName.ToLower();
+            query = query.Where(c => c.LastName != null && c.LastName.ToLower().Contains(term));
+        }
+        if (!string.IsNullOrWhiteSpace(idNumber))
+        {
+            var term = idNumber.ToLower();
+            query = query.Where(c => c.IdNumber != null && c.IdNumber.ToLower().Contains(term));
+        }
+        if (accountNumber.HasValue)
+            query = query.Where(c => c.AccountNumber == accountNumber.Value);
+
+        return await query.OrderBy(c => c.CustomerId).Take(MaxResults).ToListAsync(cancellationToken);
+    }
+
     public async Task SoftDeleteAsync(int customerId, CancellationToken cancellationToken = default)
     {
         var customer = await _db.Customers

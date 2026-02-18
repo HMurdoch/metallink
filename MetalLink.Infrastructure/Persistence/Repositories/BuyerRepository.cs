@@ -330,6 +330,52 @@ public class BuyerRepository : IBuyerRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Buyer>> SearchBuyersWithZeroSendingTicketsAsync(
+        long? companyId,
+        long? siteId,
+        int? buyerId,
+        string? firstName,
+        string? lastName,
+        string? idNumber,
+        long? accountNumber,
+        CancellationToken cancellationToken = default)
+    {
+        const int MaxResults = 500;
+
+        var query = _db.Buyers
+            .Include(b => b.Company!)
+            .Include(b => b.Site!)
+            .Where(b => b.IsActive)
+            .Where(b => !_db.SendingTickets.Any(t => t.BuyerId == b.BuyerId))
+            .AsQueryable();
+
+        if (companyId.HasValue)
+            query = query.Where(b => b.CompanyId == companyId.Value);
+        if (siteId.HasValue)
+            query = query.Where(b => b.SiteId == siteId.Value);
+        if (buyerId.HasValue)
+            query = query.Where(b => b.BuyerId == buyerId.Value);
+        if (!string.IsNullOrWhiteSpace(firstName))
+        {
+            var term = firstName.ToLower();
+            query = query.Where(b => b.FirstName != null && b.FirstName.ToLower().Contains(term));
+        }
+        if (!string.IsNullOrWhiteSpace(lastName))
+        {
+            var term = lastName.ToLower();
+            query = query.Where(b => b.LastName != null && b.LastName.ToLower().Contains(term));
+        }
+        if (!string.IsNullOrWhiteSpace(idNumber))
+        {
+            var term = idNumber.ToLower();
+            query = query.Where(b => b.IdNumber != null && b.IdNumber.ToLower().Contains(term));
+        }
+        if (accountNumber.HasValue)
+            query = query.Where(b => b.AccountNumber == accountNumber.Value);
+
+        return await query.OrderBy(b => b.BuyerId).Take(MaxResults).ToListAsync(cancellationToken);
+    }
+
     public async Task SoftDeleteAsync(int buyerId, CancellationToken cancellationToken = default)
     {
         var buyer = await _db.Buyers

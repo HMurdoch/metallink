@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace MetalLink.Shared.Tickets;
+namespace MetalLink.Shared.Tickets.Sending;
 
 public class TicketSendingDto
 {
@@ -107,6 +107,9 @@ public class CreateTicketSendingLineDto
 
 public class TicketSendingSearchRequestDto
 {
+    // When true, search returns buyers with 0 sending tickets (instead of tickets)
+    public bool NewBuyerOnly { get; set; }
+
     public string? SearchTerm { get; set; }
     public long? CompanyId { get; set; }
     public long? SiteId { get; set; }

@@ -21,7 +21,9 @@ using MetalLink.Desktop.Hardware;
 using MetalLink.Desktop.Services;
 using MetalLink.Shared.Customers;
 using MetalLink.Shared.Buyers;
-using MetalLink.Shared.Tickets;
+// Ticket DTOs are no longer shared.
+using MetalLink.Shared.Tickets.Receiving;
+using MetalLink.Shared.Tickets.Sending;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.Generic;
 using System.Threading;
@@ -31,13 +33,12 @@ namespace MetalLink.Desktop.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChanged
 {
-    private Task AddLineRoutedAsync() => CurrentSection == EnumMainSection.TicketsSending ? AddSendingLineAsync() : AddReceivingLineAsync();
+    // NOTE: Core UI state like CurrentSection/StatusMessage/IsBusy/*Counts
+    // lives in the partial `Properties/CoreProperties.cs`.
 
-    private Task CreateTicketHeaderRoutedAsync() => CurrentSection == EnumMainSection.TicketsSending ? CreateSendingTicketHeaderAsync() : CreateTicketHeaderAsync();
+    // MainWindow.axaml expects LoggedInUserDisplay (CoreProperties exposes LoggedInUser).
+    public string LoggedInUserDisplay => LoggedInUser;
 
-    private Task FinalizeTicketRoutedAsync() => CurrentSection == EnumMainSection.TicketsSending ? FinalizeSendingTicketAsync() : FinalizeTicketAsync();
-
-    private Task ClearTicketRoutedAsync() => CurrentSection == EnumMainSection.TicketsSending ? ClearSendingTicketAsync() : ClearTicketAsync();
     // --- Services / dependencies ---
 
     private readonly App _app;
@@ -45,7 +46,6 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     private readonly ApiClient _apiClient;
     private readonly CustomerService _customerService;
     private readonly BuyerService _buyerService;
-    private readonly TicketService _ticketService;
     private readonly TicketReceivingService _ticketReceivingService;
     private readonly TicketSendingService _ticketSendingService;
     private readonly ProvinceService _provinceService;
@@ -62,8 +62,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand SearchCustomerCommand { get; }
     public ICommand CreateCustomerCommand { get; }
     public ICommand CreateBuyerCommand { get; }
-    public ICommand CreateTicketCommand { get; }
-    public ICommand FinalizeTicketCommand { get; }
+    // (legacy routed) FinalizeTicketCommand removed; use FinalizeReceivingTicketCommand / FinalizeSendingTicketCommand
     public ICommand AddReceivingLineCommand { get; }
     public ICommand RemoveReceivingLineCommand { get; }
     public ICommand RemoveSendingLineCommand { get; }
@@ -84,6 +83,10 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand ShowTicketsCommand { get; }
     public ICommand ShowTicketsReceivingCommand { get; }
     public ICommand ShowTicketsSendingCommand { get; }
+
+    // Per-system ticket viewmodels (no shared ticket state/commands)
+    public MetalLink.Desktop.ViewModels.Receiving.TicketsReceivingViewModel Receiving { get; }
+    public MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel Sending { get; }
     public ICommand ShowDocumentsCommand { get; }
     public ICommand ShowCameraCommand { get; }
     public ICommand ShowReportsCommand { get; }   // ✅ ADDED
@@ -104,13 +107,6 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     // Ticket Report commands
     public ICommand DownloadTicketReportCommand { get; }
 
-    // Ticket search commands
-    public ICommand SearchTicketsCommand { get; }
-    public ICommand ClearTicketSearchCommand { get; }
-    public ICommand DeleteTicketCommand { get; }
-    public ICommand EditTicketCommand { get; }
-    public ICommand CancelEditTicketCommand { get; }
-    
     // Receiving ticket search commands
     public ICommand SearchReceivingTicketsCommand { get; }
     public ICommand ClearReceivingTicketSearchCommand { get; }
@@ -126,9 +122,6 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand PrintSendingTicketCommand { get; }
     
     // Ticket line commands
-    public ICommand EditTicketLineCommand { get; }
-    public ICommand DeleteTicketLineCommand { get; }
-
     // Buyers
     public ICommand EditBuyerCommand { get; }
     public ICommand DeleteBuyerCommand { get; }
@@ -145,20 +138,27 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand CaptureSignatureCommand { get; }
 
     // Ticket receiving commands
-    public ICommand AddLineCommand { get; }
-    public ICommand RemoveLineCommand { get; }
+    // Receiving ticket commands
+    public ICommand AddReceivingLineToTicketCommand { get; }
+    public ICommand CreateReceivingTicketHeaderCommand { get; }
+    public ICommand FinalizeReceivingTicketCommand { get; }
+
+    // Sending ticket commands
+    public ICommand AddSendingLineToTicketCommand { get; }
+    public ICommand CreateSendingTicketHeaderCommand { get; }
+    public ICommand FinalizeSendingTicketCommand { get; }
+
+    // Shared UI helpers
     public ICommand SaveTicketCommand { get; }
-    public ICommand ClearTicketCommand { get; }
+    public ICommand ClearReceivingTicketCommand { get; }
+    public ICommand ClearSendingTicketCommand { get; }
     public ICommand CaptureWeightCommand { get; }
     public ICommand CapturePlatePhotoCommand { get; }
     public ICommand CaptureLoadPhotoCommand { get; }
     public ICommand ClearSearchCommand { get; }
     public ICommand PrintTicketCommand { get; }
     public ICommand ScrollToAddLinesCommand { get; }
-    public ICommand CreateTicketHeaderCommand { get; }
-    public ICommand SaveEditedTicketLineCommand { get; }
-    public ICommand CancelEditTicketLineCommand { get; }
-
+    public ICommand SaveAndResetReceivingTicketCommand { get; }
     // Customer image capture commands
     public ICommand CaptureIdCardCommand { get; }
     public ICommand CaptureDriverLicenseCommand { get; }
@@ -180,8 +180,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     // BuyersView.axaml binds to this name
     public ICommand SearchBuyerCommand { get; }
 
-    // Ticket state from selected ticket
-    private char _currentTicketState = 'C';
+#if false // Legacy shared ticket state/fields/commands (migrating to per-system VMs)
+    // Ticket state moved to per-system ticket viewmodels (Receiving/Sending).
     public char CurrentTicketState
     {
         get => _currentTicketState;
@@ -204,6 +204,39 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             OnPropertyChanged(nameof(SecondWeightReadResetEnabled));
             OnPropertyChanged(nameof(AreFirstWeightButtonsEnabled));
             OnPropertyChanged(nameof(AreSecondWeightButtonsEnabled));
+            OnPropertyChanged(nameof(CreateTicketModeText));
+            OnPropertyChanged(nameof(IsCreateTicketModeVisible));
+        }
+    }
+
+    public bool IsCreateTicketModeVisible => !string.IsNullOrWhiteSpace(CreateTicketModeText);
+
+    public string CreateTicketModeText
+    {
+        get
+        {
+            if (CurrentTicketState == 'H' || CurrentTicketState == 'M')
+            {
+                return !string.IsNullOrWhiteSpace(TicketNumber)
+                    ? $"Editing in-progress ticket: {TicketNumber}"
+                    : "Editing in-progress ticket";
+            }
+
+            if (CurrentTicketState == 'C')
+            {
+                var selectedState = CurrentSection == EnumMainSection.TicketsSending
+                    ? SelectedSendingTicketDetails?.TicketState
+                    : SelectedReceivingTicketDetails?.TicketState;
+
+                if (selectedState == 'C')
+                {
+                    return "New ticket (based on selected completed ticket)";
+                }
+
+                return "New ticket";
+            }
+
+            return string.Empty;
         }
     }
 
@@ -339,15 +372,15 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         {
             var show = CurrentSection switch
             {
-                EnumMainSection.TicketsReceiving => !SearchReceivingNewCustomersCheckbox && HasSelectedReceivingTicket,
-                EnumMainSection.TicketsSending => !SearchSendingNewBuyersCheckbox && HasSelectedSendingTicket,
+                EnumMainSection.TicketsReceiving => HasSelectedReceivingTicket,
+                EnumMainSection.TicketsSending => HasSelectedSendingTicket,
                 _ => false
             };
 
             Console.WriteLine(
                 $"[DEBUG] ShouldShowTicketDetails: Section={CurrentSection}, " +
-                $"SearchReceivingNewCustomersCheckbox={SearchReceivingNewCustomersCheckbox}, HasSelectedReceivingTicket={HasSelectedReceivingTicket}, " +
-                $"SearchSendingNewBuyersCheckbox={SearchSendingNewBuyersCheckbox}, HasSelectedSendingTicket={HasSelectedSendingTicket}, " +
+                $"HasSelectedReceivingTicket={HasSelectedReceivingTicket}, " +
+                $"HasSelectedSendingTicket={HasSelectedSendingTicket}, " +
                 $"show={show}");
 
             return show;
@@ -396,6 +429,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             };
         }
     }
+#endif
 
     public MainWindowViewModel(App app)
     {
@@ -404,7 +438,6 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         _apiClient = app.ApiClient;
         _customerService = app.CustomerService;
         _buyerService = app.BuyerService;
-        _ticketService = app.TicketService;
         _ticketReceivingService = app.TicketReceivingService;
         _ticketSendingService = app.TicketSendingService;
         _provinceService = app.ProvinceService;
@@ -414,7 +447,74 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         _ticketReportService = app.TicketReportService;
         _signaturePadService = app.SignaturePadService;
 
+        // Construct isolated ticket viewmodels.
+        Receiving = new MetalLink.Desktop.ViewModels.Receiving.TicketsReceivingViewModel(
+            app.TicketReceivingService,
+            app.CompanyAndSiteService,
+            app.ScaleService,
+            app.ProductsAndPricesService);
+        Sending = new MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel(
+            app.TicketSendingService,
+            app.CompanyAndSiteService,
+            app.ScaleService,
+            app.ProductsAndPricesService);
+
+        // Propagate per-section status messages into the global status bar.
+        Receiving.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(Receiving.StatusMessage) && CurrentSection == EnumMainSection.TicketsReceiving)
+                StatusMessage = Receiving.StatusMessage;
+        };
+        Sending.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(Sending.StatusMessage) && CurrentSection == EnumMainSection.TicketsSending)
+                StatusMessage = Sending.StatusMessage;
+        };
+        // Default section after login
+        CurrentSection = EnumMainSection.Dashboard;
+
+        // Section navigation (used by MainWindow.axaml menu)
+        ShowDashboardCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Dashboard);
+        ShowCustomersCommand = new AsyncRelayCommand(async () =>
+        {
+            CurrentSection = EnumMainSection.Customers;
+            await ClearNewCustomerFormAsync();
+        });
+        ShowBuyersCommand = new AsyncRelayCommand(async () =>
+        {
+            CurrentSection = EnumMainSection.Buyers;
+            await ClearNewBuyerFormAsync();
+        });
+        ShowCompanyAndSitesCommand = new RelayCommand(() => CurrentSection = EnumMainSection.CompanyAndSites);
+        ShowProductsAndPricesCommand = new RelayCommand(() => CurrentSection = EnumMainSection.ProductsAndPrices);
+        ShowTicketsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.TicketsReceiving);
+        ShowTicketsReceivingCommand = new RelayCommand(() => CurrentSection = EnumMainSection.TicketsReceiving);
+        ShowTicketsSendingCommand = new RelayCommand(() => CurrentSection = EnumMainSection.TicketsSending);
+        ShowDocumentsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Documents);
+        ShowCameraCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Camera);
+        ShowReportsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Reports);
+        ShowStockLevelsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.StockLevels);
+        ShowStockMovementCommand = new RelayCommand(() => CurrentSection = EnumMainSection.StockMovement);
+        ShowSettingsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Settings);
+
+        // Core commands used by CustomersView/BuyersView (Search/Clear)
+        SearchCustomerCommand = new AsyncCommand(SearchCustomerAsync);
+        ClearCustomerSearchCommand = new RelayCommand(ClearCustomerSearch);
+
+        // BuyersView binds to SearchBuyerCommand
+        SearchBuyerCommand = new AsyncCommand(SearchBuyerAsync);
+        ClearBuyerSearchCommand = new RelayCommand(ClearBuyerSearch);
+
+        // Kick off independent lookups (do NOT share selection state).
+        // IMPORTANT: run after the UI loop starts to avoid startup deadlocks.
+        Dispatcher.UIThread.Post(async () =>
+        {
+            try { await Receiving.InitializeAsync(); } catch (Exception ex) { Console.Error.WriteLine("[ERROR] Receiving.InitializeAsync failed: " + ex); }
+            try { await Sending.InitializeAsync(); } catch (Exception ex) { Console.Error.WriteLine("[ERROR] Sending.InitializeAsync failed: " + ex); }
+        });
+
         // Initialize ticket type options for search view
+#if false // Tickets moved to per-system viewmodels
         InitializeTicketTypeOptions();
 
         _ = LoadDashboardStatsAsync();
@@ -452,8 +552,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         SearchCustomerCommand = new AsyncCommand(SearchCustomerAsync);
         CreateCustomerCommand = new AsyncCommand(CreateCustomerAsync);
         CreateBuyerCommand = new AsyncCommand(CreateBuyerAsync);
-        CreateTicketCommand = new AsyncCommand(CreateTicketAsync);
-        FinalizeTicketCommand = new AsyncCommand(FinalizeTicketRoutedAsync);
+        FinalizeReceivingTicketCommand = new AsyncCommand(FinalizeTicketAsync);
+        FinalizeSendingTicketCommand = new AsyncCommand(FinalizeSendingTicketAsync);
         AddReceivingLineCommand = new AsyncCommand(AddReceivingLineAsync);
         RemoveReceivingLineCommand = new AsyncRelayCommand<ReceivingLineItem?>(RemoveReceivingLineAsync);
         RemoveSendingLineCommand = new AsyncRelayCommand<SendingLineItem?>(RemoveSendingLineAsync);
@@ -554,17 +654,10 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         // Ticket Report Command
         DownloadTicketReportCommand = new AsyncCommand(DownloadTicketReportAsync);
 
-        // Ticket search commands
-        SearchTicketsCommand = new AsyncCommand(SearchTicketsAsync);
-        ClearTicketSearchCommand = new RelayCommand(ClearTicketSearch);
-        DeleteTicketCommand = new AsyncRelayCommand<TicketSearchResultDto?>(DeleteTicketAsync);
-        EditTicketCommand = new RelayCommand<TicketSearchResultDto>(OnEditTicket);
-        CancelEditTicketCommand = new RelayCommand(OnCancelEditTicket);
-        
         // Receiving ticket search commands
         SearchReceivingTicketsCommand = new AsyncCommand(SearchReceivingTicketsAsync);
         ClearReceivingTicketSearchCommand = new RelayCommand(ClearReceivingTicketSearch);
-        DeleteReceivingTicketCommand = new AsyncRelayCommand<TicketSearchResultDto?>(DeleteReceivingTicketAsync);
+        DeleteReceivingTicketCommand = new AsyncRelayCommand<MetalLink.Shared.Tickets.Receiving.TicketReceivingSearchResultDto?>(DeleteReceivingTicketAsync);
         PrintReceivingTicketCommand = new AsyncCommand(PrintReceivingTicketAsync);
         ShowLineNotesCommand = new RelayCommand<string>(ShowLineNotes);
         CloseLineNotesCommand = new RelayCommand(CloseLineNotes);
@@ -572,33 +665,31 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         // Sending ticket search commands
         SearchSendingTicketsCommand = new AsyncCommand(SearchSendingTicketsAsync);
         ClearSendingTicketSearchCommand = new RelayCommand(ClearSendingTicketSearch);
-        DeleteSendingTicketCommand = new AsyncRelayCommand<TicketSearchResultDto?>(DeleteSendingTicketAsync);
+        DeleteSendingTicketCommand = new AsyncRelayCommand<MetalLink.Shared.Tickets.Sending.TicketSendingSearchResultDto?>(DeleteSendingTicketAsync);
         PrintSendingTicketCommand = new AsyncCommand(PrintSendingTicketAsync);
         
         // Ticket line commands
-        EditTicketLineCommand = new RelayCommand<TicketLineDto>(OnEditTicketLine);
-        DeleteTicketLineCommand = new AsyncRelayCommand<TicketLineDto?>(DeleteTicketLineAsync);
-
         // Signature
         CaptureSignatureCommand = new AsyncCommand(CaptureSignatureAsync);
 
-        // Ticket create/edit commands (route based on current section)
-        AddLineCommand = new AsyncCommand(AddLineRoutedAsync);
-        RemoveLineCommand = new AsyncRelayCommand<ReceivingLineItem?>(RemoveReceivingLineAsync);
+        // Ticket commands (explicit per system)
+        AddReceivingLineToTicketCommand = new AsyncCommand(AddReceivingLineAsync);
+        AddSendingLineToTicketCommand = new AsyncCommand(AddSendingLineAsync);
         SaveTicketCommand = new AsyncCommand(SaveTicketAsync);
-        ClearTicketCommand = new AsyncCommand(ClearTicketRoutedAsync);
+        ClearReceivingTicketCommand = new AsyncCommand(ClearTicketAsync);
+        ClearSendingTicketCommand = new AsyncCommand(ClearSendingTicketAsync);
         CaptureWeightCommand = new AsyncCommand(CaptureWeightAsync);
         CapturePlatePhotoCommand = new AsyncCommand(CapturePlatePhotoAsync);
         CaptureLoadPhotoCommand = new AsyncCommand(CaptureLoadPhotoAsync);
         
         // Ticket search commands (additional)
-        ClearSearchCommand = new RelayCommand(ClearTicketSearch);
-        PrintTicketCommand = new AsyncCommand(PrintTicketAsync);
+        ClearSearchCommand = new RelayCommand(ClearReceivingTicketSearch);
+        PrintTicketCommand = new AsyncCommand(PrintReceivingTicketAsync);
         ScrollToAddLinesCommand = new RelayCommand(ScrollToAddLines);
-        CreateTicketHeaderCommand = new AsyncCommand(CreateTicketHeaderRoutedAsync);
-        SaveEditedTicketLineCommand = new AsyncCommand(SaveEditedTicketLineAsync);
-        CancelEditTicketLineCommand = new RelayCommand(CancelEditTicketLine);
-
+        CreateReceivingTicketHeaderCommand = new AsyncCommand(CreateTicketHeaderAsync);
+        CreateSendingTicketHeaderCommand = new AsyncCommand(CreateSendingTicketHeaderAsync);
+        SaveAndResetReceivingTicketCommand = new AsyncCommand(SaveAndResetReceivingTicketAsync);
+#endif
         // Customer image capture commands
         CaptureIdCardCommand = new AsyncCommand(CaptureIdCardAsync);
         CaptureDriverLicenseCommand = new AsyncCommand(CaptureDriverLicenseAsync);
@@ -658,118 +749,13 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         return Task.CompletedTask;
     }
 
-    private async Task CreateTicketAsync()
-    {
-        if (IsBusy) return;
-        IsBusy = true;
-        StatusMessage = "Creating ticket...";
-
-        try
-        {
-            // --- Basic validation ---
-            if (!long.TryParse(TicketCustomerIdText, out var customerId) || customerId <= 0)
-            {
-                StatusMessage = "Customer ID must be a valid positive number.";
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(TicketNumber))
-            {
-                StatusMessage = "Ticket Number is required.";
-                return;
-            }
-
-            if (!decimal.TryParse(NormalizeDecimalText(TicketUnitPriceText),
-                    System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out var unitPrice) || unitPrice < 0)
-            {
-                StatusMessage = "Unit price must be a valid non-negative number.";
-                return;
-            }
-
-            decimal? ParseWeight(string text)
-            {
-                if (string.IsNullOrWhiteSpace(text))
-                    return null;
-
-                if (decimal.TryParse(NormalizeDecimalText(text),
-                        System.Globalization.NumberStyles.Any,
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        out var value))
-                {
-                    return value;
-                }
-
-                throw new FormatException($"Invalid weight value: '{text}'.");
-            }
-
-            var firstWeight = ParseWeight(TicketFirstWeightText);
-            var secondWeight = ParseWeight(TicketSecondWeightText);
-
-            // --- Call API ---
-            var dto = await _ticketService.CreateTicketAsync(
-                customerId: customerId,
-                ticketType: string.IsNullOrWhiteSpace(TicketType) ? "weighbridge" : TicketType.Trim(),
-                ticketNumber: TicketNumber.Trim(),
-                firstWeightKg: firstWeight,
-                secondWeightKg: secondWeight,
-                unitPricePerKg: unitPrice,
-                currencyCode: string.IsNullOrWhiteSpace(TicketCurrencyCode) ? "ZAR" : TicketCurrencyCode.Trim(),
-                productDescription: string.IsNullOrWhiteSpace(TicketProductDescription) ? null : TicketProductDescription.Trim(),
-                notes: string.IsNullOrWhiteSpace(TicketNotes) ? null : TicketNotes.Trim(),
-                vehicleRegistration: string.IsNullOrWhiteSpace(TicketVehicleRegistration) ? null : TicketVehicleRegistration.Trim(),
-                ofmWeighbridgeTicket: string.IsNullOrWhiteSpace(TicketOfmWeighbridgeTicket) ? null : TicketOfmWeighbridgeTicket.Trim(),
-                foreignTicket: string.IsNullOrWhiteSpace(TicketForeignTicket) ? null : TicketForeignTicket.Trim(),
-                ckNumber: string.IsNullOrWhiteSpace(TicketCkNumber) ? null : TicketCkNumber.Trim()
-            );
-
-            if (dto == null)
-            {
-                StatusMessage = "Ticket create failed - API returned no result.";
-                return;
-            }
-
-            LastCreatedTicket = dto;
-            StatusMessage =
-                $"Ticket {dto.TicketNumber} created. Net {dto.NetWeightKg} kg, Total {dto.TotalAmount:0.00} {dto.CurrencyCode}.";
-
-            // Prepare for next ticket
-            TicketNumber = GenerateNextTicketNumber();
-            TicketFirstWeightText = string.Empty;
-            TicketSecondWeightText = string.Empty;
-            TicketUnitPriceText = string.Empty;
-            TicketProductDescription = string.Empty;
-            TicketNotes = string.Empty;
-            TicketVehicleRegistration = string.Empty;
-            TicketOfmWeighbridgeTicket = string.Empty;
-            TicketForeignTicket = string.Empty;
-            TicketCkNumber = string.Empty;
-        }
-        catch (System.Net.Http.HttpRequestException ex)
-        {
-            StatusMessage = $"Error calling API: {ex.Message}";
-        }
-        catch (FormatException ex)
-        {
-            StatusMessage = ex.Message;
-        }
-        catch (System.Exception ex)
-        {
-            StatusMessage = $"Error creating ticket: {ex.Message}";
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
     private static string NormalizeDecimalText(string text)
     {
         // Accept both comma and dot as decimal separators and normalize to invariant culture
         return text.Replace(',', '.').Trim();
     }
 
+#if false // Ticket header/weights/save logic moved to per-system ticket viewmodels
     private string GenerateNextTicketNumber()
     {
         // Simple client-side ticket number pattern:
@@ -901,10 +887,6 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
             CurrentTicketState = 'H';
             
-            // Untick "New Customer?" checkbox
-            SearchReceivingNewCustomersCheckbox = false;
-            Console.WriteLine($"[DEBUG] CreateTicketHeaderAsync: Unticked SearchReceivingNewCustomersCheckbox");
-            
             // Load the newly created ticket details
             await LoadSelectedReceivingTicketDetailsAsync(response.TicketReceivingId);
             Console.WriteLine($"[DEBUG] CreateTicketHeaderAsync: Loaded ticket details for new ticket {response.TicketReceivingId}");
@@ -984,6 +966,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             IsBusy = false;
         }
     }
+
+#endif
 
     private async Task<bool> ConfirmAsync(string message)
     {
@@ -1328,6 +1312,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         && SelectedNewCompany != null
         && SelectedNewSite != null;
 
+#if false // Ticket weight capture moved to per-system ticket viewmodels
     // --- Scale reading ---
 
     private async Task ReadWeighbridgeAsync()
@@ -1496,6 +1481,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         ReceivingWeightText = string.Empty;
         StatusMessage = "Platform weight reset to 0.";
     }
+
+#endif
 
     // --- Documents ---
 
@@ -2475,6 +2462,14 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         SearchMobileNumberText = string.Empty;
         SearchEmailText = string.Empty;
         SearchAccountNumberText = string.Empty;
+
+        // Reset company/site dropdowns (CompanyAndSiteProperties)
+        SelectedCompanyLetter = "ALL";
+        SelectedSearchCompany = null;
+        SearchSiteSuggestions.Clear();
+        SelectedSearchSite = null;
+        IsSearchSiteEnabled = false;
+
         CustomerSearchResults.Clear();
         PagedCustomerSearchResults.Clear();
         FoundCustomer = null;

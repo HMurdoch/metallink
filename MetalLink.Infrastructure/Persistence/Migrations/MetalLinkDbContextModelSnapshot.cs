@@ -3,7 +3,6 @@ using MetalLink.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -15,29 +14,6 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.8")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63);
-
-            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("MetalLink.Domain.Entities.TicketReceivingLine", b =>
-                {
-                    b.Property<int>("ReceivingTicketLineId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("receiving_ticket_line_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReceivingTicketLineId"));
-
-                    b.Property<decimal>("Tare")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("tare");
-
-                    b.HasKey("ReceivingTicketLineId");
-
-                    b.ToTable("receiving_ticket_lines", "metal_link");
-                });
 #pragma warning restore 612, 618
         }
     }

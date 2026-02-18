@@ -33,6 +33,17 @@ public class TicketNumberService
     }
 
     /// <summary>
+    /// Peeks the next receiving ticket number without advancing the underlying database sequence.
+    /// Use this for UI display only.
+    /// </summary>
+    public async Task<string> PeekNextReceivingTicketNumberAsync(int ticketTypeId)
+    {
+        var prefix = GetReceivingPrefix(ticketTypeId);
+        var seqValue = await _ticketReceivingRepo.PeekNextTicketSequenceValueAsync(prefix);
+        return $"{prefix}-{seqValue:D8}";
+    }
+
+    /// <summary>
     /// Gets the next sending ticket number based on ticket type
     /// </summary>
     /// <param name="ticketTypeId">1 = Weighbridge (SWB), 2 = Platform (SPL)</param>
@@ -41,6 +52,17 @@ public class TicketNumberService
     {
         var prefix = GetSendingPrefix(ticketTypeId);
         var seqValue = await _ticketSendingRepo.GetNextTicketSequenceValueAsync(prefix);
+        return $"{prefix}-{seqValue:D8}";
+    }
+
+    /// <summary>
+    /// Peeks the next sending ticket number without advancing the underlying database sequence.
+    /// Use this for UI display only.
+    /// </summary>
+    public async Task<string> PeekNextSendingTicketNumberAsync(int ticketTypeId)
+    {
+        var prefix = GetSendingPrefix(ticketTypeId);
+        var seqValue = await _ticketSendingRepo.PeekNextTicketSequenceValueAsync(prefix);
         return $"{prefix}-{seqValue:D8}";
     }
 

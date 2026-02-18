@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MetalLink.Desktop.Auth;
-using MetalLink.Shared.Tickets;
+using MetalLink.Shared.Tickets.Receiving;
 
 namespace MetalLink.Desktop.Services;
 
@@ -53,17 +53,17 @@ public sealed class TicketReceivingService
     /// <summary>
     /// Search for receiving tickets
     /// </summary>
-    public async Task<IReadOnlyList<TicketSearchResultDto>> SearchTicketsReceivingAsync(
+    public async Task<IReadOnlyList<TicketReceivingSearchResultDto>> SearchTicketsReceivingAsync(
         TicketReceivingSearchRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        var result = await _apiClient.PostAsync<TicketReceivingSearchRequestDto, TicketSearchResultDto[]>(
+        var result = await _apiClient.PostAsync<TicketReceivingSearchRequestDto, TicketReceivingSearchResultDto[]>(
             "api/tickets-receiving/search",
             request,
             cancellationToken
         );
 
-        return result ?? Array.Empty<TicketSearchResultDto>();
+        return result ?? Array.Empty<TicketReceivingSearchResultDto>();
     }
 
     /// <summary>
@@ -99,6 +99,20 @@ public sealed class TicketReceivingService
             $"api/tickets-receiving/{ticketReceivingId}",
             cancellationToken
         );
+    }
+
+    /// <summary>
+    /// Add a single line to a receiving ticket (platform OR weighbridge).
+    /// </summary>
+    public Task<TicketReceivingDto?> AddTicketReceivingLineAsync(
+        long ticketReceivingId,
+        CreateTicketReceivingLineDto line,
+        CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync<CreateTicketReceivingLineDto, TicketReceivingDto>(
+            $"api/tickets-receiving/{ticketReceivingId}/lines",
+            line,
+            cancellationToken);
     }
 
     /// <summary>
@@ -185,6 +199,30 @@ public sealed class TicketReceivingService
         );
     }
 
+    public async Task<bool> UpdateLineTareAsync(
+        long ticketReceivingId,
+        long ticketReceivingLineId,
+        decimal tare,
+        CancellationToken cancellationToken = default)
+    {
+        var body = new { tare };
+
+        try
+        {
+            var response = await _apiClient.PutAsJsonAsync(
+                $"api/tickets-receiving/{ticketReceivingId}/lines/{ticketReceivingLineId}/tare",
+                body,
+                cancellationToken
+            );
+
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     /// <summary>
     /// Update delivery status of a receiving ticket
     /// </summary>
@@ -213,38 +251,36 @@ public sealed class TicketReceivingService
 
     public async Task<string> GenerateTicketNumberAsync(string prefix)
     {
+        // Requirement: compute next ticket number by looking at the LAST STORED ticket number in the table.
+        // Example: last stored RWB-00000033 -> next RWB-00000034.
+
+        prefix = prefix.ToUpperInvariant();
+
         try
         {
-            Console.WriteLine($"[DEBUG SERVICE] GenerateTicketNumberAsync called with prefix={prefix}");
-            // Get last ticket number from API
-            var result = await _apiClient.GetAsync<System.Collections.Generic.Dictionary<string, object>>($"api/tickets-receiving/last-ticket-number/{prefix}");
-            Console.WriteLine($"[DEBUG SERVICE] API result={result}");
-            
-            if (result == null || !result.ContainsKey("ticketNumber"))
-            {
-                // No previous ticket, start with 00000001
-                var firstNumber = $"{prefix}-00000001";
-                Console.WriteLine($"[DEBUG SERVICE] No previous ticket, returning {firstNumber}");
-                return firstNumber;
-            }
+            var resp = await _apiClient.GetAsync<System.Collections.Generic.Dictionary<string, object>>(
+                $"api/tickets-receiving/last-stored-ticket-number/{prefix}");
 
-            var lastTicketNumber = result["ticketNumber"]?.ToString();
-            if (string.IsNullOrEmpty(lastTicketNumber))
-            {
-                var firstNumber = $"{prefix}-00000001";
-                Console.WriteLine($"[DEBUG SERVICE] Empty ticketNumber, returning {firstNumber}");
-                return firstNumber;
-            }
+            string? last = null;
+            if (resp != null && resp.TryGetValue("ticketNumber", out var lastObj))
+                last = lastObj?.ToString();
 
-            Console.WriteLine($"[DEBUG SERVICE] Last ticket number={lastTicketNumber}");
-            
-            // API now returns the NEXT atomic ticket number.
-            return lastTicketNumber;
+            if (string.IsNullOrWhiteSpace(last))
+                return $"{prefix}-00000001";
+
+            var parts = last.Split('-');
+            var numericPart = parts.Length >= 2 ? parts[^1] : "";
+            var width = numericPart.Length > 0 ? numericPart.Length : 8;
+
+            if (!long.TryParse(numericPart, out var lastNumber))
+                return $"{prefix}-00000001";
+
+            var next = lastNumber + 1;
+            return $"{prefix}-{next.ToString().PadLeft(width, '0')}";
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"[DEBUG SERVICE ERROR] {ex.Message} {ex.StackTrace}");
-            return string.Empty;
+            return $"{prefix}-00000001";
         }
     }
 
