@@ -305,8 +305,14 @@
         </Border>
 
         <!-- TICKET RESULTS -->
-        <Border Background="{StaticResource Brush.PanelBackground}" Padding="12" CornerRadius="4" Margin="0,8,0,0">
-          <StackPanel Spacing="8">
+        <Grid Margin="0,8,0,0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="{Binding ResultsMainColumnWidth}" />
+            <ColumnDefinition Width="{Binding ResultsSpacerColumnWidth}" />
+          </Grid.ColumnDefinitions>
+
+          <Border Grid.Column="0" Background="{StaticResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
+            <StackPanel Spacing="8">
             <TextBlock Text="Ticket Results"
                        Foreground="{StaticResource Brush.TextPrimary}"
                        FontWeight="Bold" />
@@ -318,8 +324,8 @@
               <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding TicketId}" Width="80" IsReadOnly="True" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                 <DataGridTextColumn Header="Ticket #" Binding="{Binding TicketNumber}" Width="140" IsReadOnly="True" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
-                <DataGridTextColumn Header="Type" Binding="{Binding TicketType}" Width="100" IsReadOnly="True" />
-                <DataGridTextColumn Header="Customer ID" Binding="{Binding CustomerId}" Width="100" IsReadOnly="True" />
+                <DataGridTextColumn Header="Type" Binding="{Binding TicketType}" Width="100" IsReadOnly="True" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                <DataGridTextColumn Header="Customer ID" Binding="{Binding CustomerId}" Width="140" IsReadOnly="True" />
                 <DataGridTextColumn Header="First Name" Binding="{Binding FirstName}" Width="120" IsReadOnly="True" />
                 <DataGridTextColumn Header="Last Name" Binding="{Binding LastName}" Width="120" IsReadOnly="True" />
                 <DataGridTextColumn Header="Account #" Binding="{Binding AccountNumber}" Width="100" IsReadOnly="True" />
@@ -342,8 +348,12 @@
                 </DataGridTemplateColumn>
               </DataGrid.Columns>
             </DataGrid>
-          </StackPanel>
-        </Border>
+            </StackPanel>
+          </Border>
+
+          <!-- Spacer column (used to make results 60% width in New Customer mode) -->
+          <Border Grid.Column="1" Background="Transparent" />
+        </Grid>
 
         <!-- SELECTED TICKET DETAILS + LINES -->
         <Border Background="{StaticResource Brush.PanelBackground}"
@@ -386,8 +396,15 @@
                            Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
 
-              <!-- PLATFORM TICKET (TicketTypeId=2) - Row 1: Net Weight -->
-              <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2" Margin="0,8,0,0"
+              <!-- PLATFORM TICKET (TicketTypeId=2) - Row 1: Notes -->
+              <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Spacing="2" Margin="0,8,0,0"
+                          IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=2}">
+                <TextBlock Text="Notes" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.Notes}" Foreground="#f5f5f5" FontSize="11" TextWrapping="Wrap" />
+              </StackPanel>
+
+              <!-- PLATFORM TICKET (TicketTypeId=2) - Row 2: Net Weight -->
+              <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2" Margin="0,8,0,0"
                           IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=2}">
                 <TextBlock Text="Net Weight (kg)" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
                 <TextBlock Text="{Binding CalculatedNetWeightKg, StringFormat='{}{0:N2}'}"
@@ -445,8 +462,15 @@
                 <TextBlock Text="{Binding SelectedReceivingTicketDetails.CkNumber}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
 
-              <!-- WEIGHBRIDGE TICKET (TicketTypeId=1) - Row 4: Net Weight (in Blue) -->
-              <StackPanel Grid.Row="5" Grid.Column="0" Spacing="2" Margin="0,8,0,0"
+              <!-- WEIGHBRIDGE TICKET (TicketTypeId=1) - Row 5: Notes -->
+              <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Spacing="2" Margin="0,8,0,0"
+                          IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
+                <TextBlock Text="Notes" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.Notes}" Foreground="#f5f5f5" FontSize="11" TextWrapping="Wrap" />
+              </StackPanel>
+
+              <!-- WEIGHBRIDGE TICKET (TicketTypeId=1) - Row 6: Net Weight (in Blue) -->
+              <StackPanel Grid.Row="6" Grid.Column="0" Spacing="2" Margin="0,8,0,0"
                           IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
                 <TextBlock Text="Net Weight (kg)" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
                 <TextBlock Text="{Binding CalculatedNetWeightKg, StringFormat='{}{0:N2}'}"

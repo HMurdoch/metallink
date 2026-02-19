@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Threading;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using MetalLink.Desktop.Services;
 using MetalLink.Desktop.Views;
@@ -204,7 +205,15 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
                 // New-customer mode (or no selection): no ticket details
                 SelectedReceivingTicketDetails = null;
                 SelectedReceivingTicketLines.Clear();
+
+                // Notes must only be populated for WIP tickets under Create.
+                TicketNotes = null;
+
                 CurrentTicketState = 'C';
+
+                // In "new ticket" flow, ticket type must be editable.
+                IsTicketTypeEnabled = true;
+                OnPropertyChanged(nameof(IsTicketTypeEnabled));
 
                 // Defaults for new create in Receiving: Platform
                 SelectedTicketTypeOption = TicketTypeOptions.FirstOrDefault(o => o.Key == "platform");
@@ -335,6 +344,8 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
             OnPropertyChanged();
             OnPropertyChanged(nameof(ShouldShowTicketDetails));
             OnPropertyChanged(nameof(ShouldShowTicketColumns));
+            OnPropertyChanged(nameof(ResultsMainColumnWidth));
+            OnPropertyChanged(nameof(ResultsSpacerColumnWidth));
 
             // Clear results when switching modes
             SelectedReceivingTicket = null;
@@ -347,6 +358,10 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
     public bool ShouldShowTicketDetails => !IsNewCustomerOnly && SelectedReceivingTicketDetails != null;
 
     public bool ShouldShowTicketColumns => !IsNewCustomerOnly;
+
+    // Results width: when New Customer? is active, show results at ~60% width.
+    public GridLength ResultsMainColumnWidth => IsNewCustomerOnly ? new GridLength(3, GridUnitType.Star) : new GridLength(1, GridUnitType.Star);
+    public GridLength ResultsSpacerColumnWidth => IsNewCustomerOnly ? new GridLength(2, GridUnitType.Star) : new GridLength(0, GridUnitType.Pixel);
 
     private static string FormatClientLabel(long id, string? first, string? last, string? company, string? site)
     {
@@ -382,6 +397,10 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
         ReceivingLineNotes = string.Empty;
 
         CurrentTicketState = 'C';
+
+        // In "new ticket" flow, ticket type must be editable.
+        IsTicketTypeEnabled = true;
+        OnPropertyChanged(nameof(IsTicketTypeEnabled));
 
         // Default ticket type for new create in Receiving is Platform
         SelectedTicketTypeOption = TicketTypeOptions.FirstOrDefault(o => o.Key == "platform");
@@ -438,7 +457,9 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
         TicketDeliveryNumber = details.DeliveryNumber;
         TicketForeignTicket = details.ForeignTicket;
         TicketCkNumber = details.CkNumber;
-        TicketNotes = details.Notes;
+
+        // Notes must only be populated for WIP tickets under Create.
+        TicketNotes = (details.TicketState == 'H' || details.TicketState == 'M') ? details.Notes : null;
 
         // Populate Create panel depending on state
         if (details.TicketState == 'H' || details.TicketState == 'M')
@@ -508,10 +529,20 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
             OnPropertyChanged();
             OnPropertyChanged(nameof(CreateTicketModeText));
             OnPropertyChanged(nameof(IsCreateTicketModeVisible));
+
+            // Button/section enablement depends on state
+            OnPropertyChanged(nameof(CreateHeaderButtonVisible));
+            OnPropertyChanged(nameof(SaveResetButtonVisible));
+            OnPropertyChanged(nameof(AddLineButtonEnabled));
+            OnPropertyChanged(nameof(IsFinalizeTicketEnabled));
+
+            // Weight capture controls depend on state
             OnPropertyChanged(nameof(IsFirstWeightEnabled));
             OnPropertyChanged(nameof(IsSecondWeightEnabled));
             OnPropertyChanged(nameof(AreFirstWeightButtonsEnabled));
             OnPropertyChanged(nameof(AreSecondWeightButtonsEnabled));
+
+            // Totals/grids depend on state
             OnPropertyChanged(nameof(ReceivingLinesWithTotals));
             OnPropertyChanged(nameof(CreatingTicketTotalWeight));
         }
@@ -655,6 +686,10 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
     {
         if (IsBusy) return;
 
+        // Remember if we are creating from "New Customer?" mode so we can reset UI correctly afterwards.
+        var wasNewCustomerMode = IsNewCustomerOnly;
+        var selectedRowBeforeCreate = SelectedReceivingTicket;
+
         var customerId = ExtractCustomerIdFromText(TicketCustomerIdText);
         if (customerId <= 0)
         {
@@ -707,10 +742,47 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
                 return;
             }
 
-            // If we created from New Customer mode, switch back to normal ticket mode.
-            if (IsNewCustomerOnly)
+            if (wasNewCustomerMode)
+            {
+                // Requirement: if New Customer? was used, treat as creating a brand new ticket:
+                // - untick the checkbox
+                // - clear results
+                // - add the newly created ticket row and select it
                 IsNewCustomerOnly = false;
 
+                ReceivingTicketSearchResults.Clear();
+
+                var newRow = new TicketReceivingSearchResultDto
+                {
+                    TicketId = created.TicketReceivingId,
+                    TicketNumber = created.TicketNumber,
+                    TicketType = created.TicketTypeName,
+                    TicketTypeId = created.TicketTypeId,
+                    CustomerId = created.CustomerId,
+                    FirstName = selectedRowBeforeCreate?.FirstName,
+                    LastName = selectedRowBeforeCreate?.LastName,
+                    CompanyName = selectedRowBeforeCreate?.CompanyName,
+                    SiteName = selectedRowBeforeCreate?.SiteName,
+                    AccountNumber = selectedRowBeforeCreate?.AccountNumber,
+                    NetWeightKg = created.NetWeightKg,
+                    TicketStatus = created.TicketState,
+                    CreatedTime = created.CreatedTime
+                };
+
+                ReceivingTicketSearchResults.Add(newRow);
+                SelectedReceivingTicket = newRow;
+
+                // Keep details pane and create pane in sync
+                SelectedReceivingTicketDetails = created;
+                SelectedReceivingTicketLines.Clear();
+                foreach (var l in created.Lines.Where(l => l.IsActive)) SelectedReceivingTicketLines.Add(l);
+
+                CurrentTicketState = created.TicketState;
+                StatusMessage = $"Header created: {created.TicketNumber}";
+                return;
+            }
+
+            // Normal mode: refresh results from server.
             CurrentTicketState = created.TicketState;
             await SearchReceivingTicketsAsync();
 
@@ -781,11 +853,35 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
         var ticketId = SelectedReceivingTicketDetails.TicketReceivingId;
         await _ticketReceivingService.UpdateTicketStateAsync(ticketId, 'C');
 
-        await SearchReceivingTicketsAsync();
-        MoveReceivingTicketToTop(ticketId);
-        SelectedReceivingTicket = ReceivingTicketSearchResults.FirstOrDefault(r => r.TicketId == ticketId) ?? ReceivingTicketSearchResults.FirstOrDefault();
-
+        // Reload details (NetWeightKg, state etc.)
         await LoadSelectedReceivingTicketDetailsAsync(ticketId);
+
+        // Requirement: update the existing row in the Results grid (Net Weight + Status)
+        var idx = ReceivingTicketSearchResults.ToList().FindIndex(r => r.TicketId == ticketId);
+        if (idx >= 0)
+        {
+            var existing = ReceivingTicketSearchResults[idx];
+            var updatedRow = new TicketReceivingSearchResultDto
+            {
+                TicketId = existing.TicketId,
+                TicketNumber = existing.TicketNumber,
+                TicketType = existing.TicketType,
+                TicketTypeId = existing.TicketTypeId,
+                CustomerId = existing.CustomerId,
+                FirstName = existing.FirstName,
+                LastName = existing.LastName,
+                CompanyName = existing.CompanyName,
+                SiteName = existing.SiteName,
+                AccountNumber = existing.AccountNumber,
+                NetWeightKg = SelectedReceivingTicketDetails?.NetWeightKg ?? existing.NetWeightKg,
+                TicketStatus = SelectedReceivingTicketDetails?.TicketState ?? 'C',
+                CreatedTime = existing.CreatedTime
+            };
+
+            ReceivingTicketSearchResults[idx] = updatedRow;
+            SelectedReceivingTicket = updatedRow;
+        }
+
         StatusMessage = "Ticket finalized.";
     }
 
