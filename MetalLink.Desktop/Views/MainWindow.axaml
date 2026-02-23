@@ -1,8 +1,13 @@
 <Window xmlns="https://github.com/avaloniaui"
+        
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:MetalLink.Desktop.ViewModels"
         xmlns:views="using:MetalLink.Desktop.Views"
+        xmlns:controls="using:MetalLink.Desktop.Views.Controls"
         xmlns:converters="using:MetalLink.Desktop.Views"
+        xmlns:appConv="using:MetalLink.Desktop.Converters"
+        xmlns:icons="https://github.com/projektanker/icons.avalonia"
+        xmlns:app="clr-namespace:MetalLink.Desktop"
         x:Class="MetalLink.Desktop.Views.MainWindow"
         Width="1500"
         Height="800"
@@ -10,10 +15,11 @@
         MinHeight="700"
         Title="Metal Link Desktop"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource Brush.AppBackground}">
+        Background="{DynamicResource Brush.WindowBaseBackground}">
 
   <Window.Resources>
     <converters:SectionToViewConverter x:Key="SectionToViewConverter"/>
+    <appConv:NavIndentConverter x:Key="NavIndentConverter" />
   </Window.Resources>
 
   <!-- Nav button styling with subtle blue selection stripe -->
@@ -21,19 +27,18 @@
 
     <!-- Base nav button -->
     <Style Selector="Button.NavButton">
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
       <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderBrush" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="Padding" Value="12,10" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
-      <Setter Property="HorizontalAlignment" Value="Stretch" />
-      <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
-      <Setter Property="FontSize" Value="14" />
 
+      <!-- Width transition lives on the left column host; opacity transition used for label fade -->
       <Setter Property="Transitions">
         <Setter.Value>
           <Transitions>
             <BrushTransition Property="Background" Duration="0:0:0.12" />
+            <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
           </Transitions>
         </Setter.Value>
       </Setter>
@@ -45,12 +50,12 @@
               <Border x:Name="Stripe"
                       Width="3"
                       HorizontalAlignment="Left"
-                      Background="{StaticResource Brush.AccentGradient}"
+                      Background="{DynamicResource Brush.AccentGradient}"
                       Opacity="0" />
 
               <Border Margin="6,0,0,0"
                       Background="{TemplateBinding Background}"
-                      CornerRadius="4">
+                      CornerRadius="6">
                 <ContentPresenter Content="{TemplateBinding Content}"
                                   ContentTemplate="{TemplateBinding ContentTemplate}"
                                   Margin="{TemplateBinding Padding}"
@@ -63,18 +68,25 @@
       </Setter>
     </Style>
 
+    <!-- Section headers (non-clickable visual) -->
+    <Style Selector="Button.NavHeader">
+      <Setter Property="IsEnabled" Value="False" />
+      <Setter Property="Opacity" Value="0.75" />
+      <Setter Property="Cursor" Value="Arrow" />
+    </Style>
+
     <!-- Sub-nav item under Customers -->
     <Style Selector="Button.SubNavButton">
       <Setter Property="Padding" Value="28,8" />
       <Setter Property="FontSize" Value="13" />
-      <Setter Property="Foreground" Value="{StaticResource Brush.TextMuted}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}" />
     </Style>
+
 
     <!-- Hover / pressed / focus backgrounds -->
     <Style Selector="Button.NavButton:pointerover">
-      <!-- Remove default gray flash by taking full control of hover visual -->
-      <Setter Property="Background" Value="#262B35" />
-      <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+      <Setter Property="Background" Value="{DynamicResource Brush.PanelBackground}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
       <!-- Disable extra background transitions on hover -->
       <Setter Property="Transitions">
         <Setter.Value>
@@ -84,11 +96,12 @@
     </Style>
 
     <Style Selector="Button.NavButton:pressed">
-      <Setter Property="Background" Value="#2E3440" />
+      <Setter Property="Background" Value="{DynamicResource Brush.PanelBackground}" />
+      <Setter Property="Opacity" Value="0.9" />
     </Style>
 
     <Style Selector="Button.NavButton:focus">
-      <Setter Property="Background" Value="#262B35" />
+      <Setter Property="Background" Value="{DynamicResource Brush.PanelBackground}" />
     </Style>
 
     <!-- Show blue stripe when hovered / pressed / focused -->
@@ -107,8 +120,12 @@
   </Window.Styles>
 
   <Grid>
+    <!-- Opaque base so the window is never see-through -->
+    <!-- Brushed aluminium background (IMAGE) -->
+    <Border Grid.ColumnSpan="2" Grid.RowSpan="2" Background="{DynamicResource Brush.MetalBackground}" IsHitTestVisible="False" />
+
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="260"/>
+      <ColumnDefinition Width="Auto"/>
       <ColumnDefinition Width="*"/>
     </Grid.ColumnDefinitions>
     <Grid.RowDefinitions>
@@ -116,105 +133,160 @@
       <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
 
-    <!-- Left navigation -->
-    <Border Grid.Column="0" Grid.RowSpan="2" Background="{StaticResource Brush.NavBackground}">
+    <!-- Left navigation with glass effect border -->
+    <Border Grid.Column="0" Grid.RowSpan="2"
+            Width="{Binding NavColumnWidth}"
+            Background="{DynamicResource Brush.NavBackground}"
+            BorderBrush="{DynamicResource Brush.GlassBorder}"
+            BorderThickness="0,0,1,0">
+      <Border.Transitions>
+        <Transitions>
+          <DoubleTransition Property="Width" Duration="0:0:0.18" Easing="CubicEaseOut"/>
+        </Transitions>
+      </Border.Transitions>
       <DockPanel>
 
-        <!-- Top header with animated branding -->
-        <StackPanel DockPanel.Dock="Top" Margin="12,12,12,8" Spacing="3">
-          <Grid>
-            <!-- Base layer -->
-            <TextBlock Text="Metal Link Desktop" 
-                       FontSize="22" 
-                       FontWeight="Bold" 
-                       Foreground="#f5f5f5"
-                       TextAlignment="Center"
-                       HorizontalAlignment="Center" />
-            
-            <!-- Animated gradient overlay with color sweep -->
-            <TextBlock Text="Metal Link Desktop" 
-                       FontSize="22" 
-                       FontWeight="Bold"
-                       TextAlignment="Center"
-                       HorizontalAlignment="Center"
-                       Opacity="0">
-              <TextBlock.Foreground>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                  <GradientStop Color="#1E88E5" Offset="0" />
-                  <GradientStop Color="#8EC5FC" Offset="0.3" />
-                  <GradientStop Color="#4FC3F7" Offset="0.5" />
-                  <GradientStop Color="#8EC5FC" Offset="0.7" />
-                  <GradientStop Color="#1E88E5" Offset="1" />
-                </LinearGradientBrush>
-              </TextBlock.Foreground>
-              <TextBlock.Styles>
-                <Style Selector="TextBlock">
-                  <Style.Animations>
-                    <!-- Color sweep animation with intensity variation -->
-                    <Animation Duration="0:0:3" IterationCount="INFINITE">
-                      <KeyFrame Cue="0%">
-                        <Setter Property="Opacity" Value="0" />
-                      </KeyFrame>
-                      <KeyFrame Cue="15%">
-                        <Setter Property="Opacity" Value="0.7" />
-                      </KeyFrame>
-                      <KeyFrame Cue="30%">
-                        <Setter Property="Opacity" Value="0.95" />
-                      </KeyFrame>
-                      <KeyFrame Cue="50%">
-                        <Setter Property="Opacity" Value="0.95" />
-                      </KeyFrame>
-                      <KeyFrame Cue="65%">
-                        <Setter Property="Opacity" Value="0.7" />
-                      </KeyFrame>
-                      <KeyFrame Cue="80%">
-                        <Setter Property="Opacity" Value="0" />
-                      </KeyFrame>
-                      <KeyFrame Cue="100%">
-                        <Setter Property="Opacity" Value="0" />
-                      </KeyFrame>
-                    </Animation>
-                  </Style.Animations>
-                </Style>
-              </TextBlock.Styles>
-            </TextBlock>
+        <!-- Top bar: hamburger + branding -->
+        <Grid DockPanel.Dock="Top" Margin="12,12,12,8" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*" RowSpacing="10">
+          <!-- Logo video -->
+          <Border Padding="0" CornerRadius="10" BorderThickness="1" BorderBrush="{DynamicResource Brush.BorderSubtle}"
+                  Background="{DynamicResource Brush.NavBackground}"
+                  ClipToBounds="True">
+            <!-- Prefer video when libvlc is available; otherwise fall back to the existing GIF -->
+            <Grid>
+              <controls:FfmpegLoopingVideoView Source="avares://MetalLink.Desktop/Assets/rotating_logo_1.mp4"
+                                              Height="96"
+                                              HorizontalAlignment="Stretch" />
+            </Grid>
+          </Border>
+
+          <!-- Top bar: hamburger + branding -->
+          <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10">
+          <Button Command="{Binding ToggleNavCommand}"
+                  Width="40" Height="40"
+                  Background="Transparent"
+                  BorderThickness="0"
+                  Classes="NavButton">
+            <icons:Icon Value="fa-solid fa-bars" Width="18" Height="18" />
+          </Button>
+
+          <!-- Logo tile (shows even when collapsed) -->
+          <Border Grid.Column="1" Width="40" Height="40" CornerRadius="10" BorderThickness="1" BorderBrush="{DynamicResource Brush.BorderSubtle}">
+            <Border.Background>
+              <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#6B7280" Offset="0" />
+                <GradientStop Color="#111827" Offset="0.55" />
+                <GradientStop Color="#9CA3AF" Offset="1" />
+              </LinearGradientBrush>
+            </Border.Background>
+            <TextBlock Text="ML" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+
+          <StackPanel Grid.Column="2" Spacing="2" Opacity="{Binding NavLabelOpacity}" VerticalAlignment="Center">
+            <TextBlock Text="Operations Suite" FontSize="12" Foreground="{DynamicResource Brush.TextMuted}" />
+
+            <!-- Accent underline -->
+            <Border Height="2" Width="92" Margin="0,6,0,0" HorizontalAlignment="Left" Background="{DynamicResource Brush.AccentGradient}" />
+          </StackPanel>
           </Grid>
-          <TextBlock Text="{Binding LoggedInUserDisplay}" FontSize="12" Foreground="#b7bcc9" TextAlignment="Center"/>
-        </StackPanel>
 
-        <!-- Navigation items -->
-        <StackPanel Margin="16,12,12,12" Spacing="8">
-          <Button Content="Dashboard" Command="{Binding ShowDashboardCommand}" Classes="NavButton"/>
+          <Border Grid.Row="2" Height="1" Background="{DynamicResource Brush.BorderSubtle}" />
+        </Grid>
 
-          <Button Content="Entities" Classes="NavButton"/>
-          <Button Content="Customers"
-                  Command="{Binding ShowCustomersCommand}"
-                  Classes="NavButton SubNavButton"/>
-          <Button Content="Buyers"
-                  Command="{Binding ShowBuyersCommand}"
-                  Classes="NavButton SubNavButton"/>
-          <Button Content="Companies &amp; Sites"
-                  Command="{Binding ShowCompanyAndSitesCommand}"
-                  Classes="NavButton SubNavButton"/>
-          <Button Content="Products &amp; Prices"
-                  Command="{Binding ShowProductsAndPricesCommand}"
-                  Classes="NavButton SubNavButton" />                  
+        <!-- User info (hidden when collapsed) -->
+        <Border DockPanel.Dock="Top" Margin="12,0,12,8" Opacity="{Binding NavLabelOpacity}">
+          <TextBlock Text="{Binding LoggedInUserDisplay}" FontSize="12" Foreground="{DynamicResource Brush.TextMuted}" />
+        </Border>
 
-          <Button Content="Tickets" Classes="NavButton"/>
-          <Button Content="Receiving"
-                  Command="{Binding ShowTicketsReceivingCommand}"
-                  Classes="NavButton SubNavButton"/>
-          <Button Content="Sending"
-                  Command="{Binding ShowTicketsSendingCommand}"
-                  Classes="NavButton SubNavButton"/>
+        <!-- Navigation items (explicit buttons for reliability) -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="12,8,12,12" Spacing="6">
 
-          <Button Content="Stock" Classes="NavButton"/>
-          <Button Content="Stock Levels" Command="{Binding ShowStockLevelsCommand}" Classes="NavButton SubNavButton"/>
-          <Button Content="Stock Movement" Command="{Binding ShowStockMovementCommand}" Classes="NavButton SubNavButton"/>
+            <Button Command="{Binding ShowDashboardCommand}" Classes="NavButton" Padding="12,10">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12">
+                <icons:Icon Value="fa-solid fa-gauge" Width="16" Height="16" />
+                <TextBlock Grid.Column="1" Text="Dashboard" Opacity="{Binding NavLabelOpacity}" />
+              </Grid>
+            </Button>
 
-          <Button Content="Reports" Command="{Binding ShowReportsCommand}" Classes="NavButton"/>
-          <Button Content="Settings" Command="{Binding ShowSettingsCommand}" Classes="NavButton"/>
-        </StackPanel>
+            <TextBlock Text="ENTITIES" Margin="10,14,0,2" FontSize="11" Opacity="{Binding NavLabelOpacity}" Foreground="{DynamicResource Brush.TextMuted}" LetterSpacing="1" />
+
+            <Button Command="{Binding ShowCustomersCommand}" Classes="NavButton" Padding="12,10">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+                <icons:Icon Value="fa-solid fa-users" Width="16" Height="16" />
+                <TextBlock Grid.Column="1" Text="Customers" Opacity="{Binding NavLabelOpacity}" />
+              </Grid>
+            </Button>
+
+            <Button Command="{Binding ShowBuyersCommand}" Classes="NavButton" Padding="12,10">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+                <icons:Icon Value="fa-solid fa-user-tie" Width="16" Height="16" />
+                <TextBlock Grid.Column="1" Text="Buyers" Opacity="{Binding NavLabelOpacity}" />
+              </Grid>
+            </Button>
+
+            <Button Command="{Binding ShowCompanyAndSitesCommand}" Classes="NavButton" Padding="12,10">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+                <icons:Icon Value="fa-solid fa-building" Width="16" Height="16" />
+                <TextBlock Grid.Column="1" Text="Companies &amp; Sites" Opacity="{Binding NavLabelOpacity}" />
+              </Grid>
+            </Button>
+
+            <Button Command="{Binding ShowProductsAndPricesCommand}" Classes="NavButton" Padding="12,10">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+                <icons:Icon Value="fa-solid fa-tags" Width="16" Height="16" />
+                <TextBlock Grid.Column="1" Text="Products &amp; Prices" Opacity="{Binding NavLabelOpacity}" />
+              </Grid>
+            </Button>
+
+            <TextBlock Text="TICKETS" Margin="10,14,0,2" FontSize="11" Opacity="{Binding NavLabelOpacity}" Foreground="{DynamicResource Brush.TextMuted}" LetterSpacing="1" />
+
+            <Button Command="{Binding ShowTicketsReceivingCommand}" Classes="NavButton" Padding="12,10">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+                <icons:Icon Value="fa-solid fa-arrow-down" Width="16" Height="16" />
+                <TextBlock Grid.Column="1" Text="Receiving" Opacity="{Binding NavLabelOpacity}" />
+              </Grid>
+            </Button>
+
+            <Button Command="{Binding ShowTicketsSendingCommand}" Classes="NavButton" Padding="12,10">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+                <icons:Icon Value="fa-solid fa-arrow-up" Width="16" Height="16" />
+                <TextBlock Grid.Column="1" Text="Sending" Opacity="{Binding NavLabelOpacity}" />
+              </Grid>
+            </Button>
+
+            <TextBlock Text="STOCK" Margin="10,14,0,2" FontSize="11" Opacity="{Binding NavLabelOpacity}" Foreground="{DynamicResource Brush.TextMuted}" LetterSpacing="1" />
+
+            <Button Command="{Binding ShowStockLevelsCommand}" Classes="NavButton" Padding="12,10">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+                <icons:Icon Value="fa-solid fa-warehouse" Width="16" Height="16" />
+                <TextBlock Grid.Column="1" Text="Stock Levels" Opacity="{Binding NavLabelOpacity}" />
+              </Grid>
+            </Button>
+
+            <Button Command="{Binding ShowStockMovementCommand}" Classes="NavButton" Padding="12,10">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+                <icons:Icon Value="fa-solid fa-right-left" Width="16" Height="16" />
+                <TextBlock Grid.Column="1" Text="Stock Movement" Opacity="{Binding NavLabelOpacity}" />
+              </Grid>
+            </Button>
+
+            <Button Command="{Binding ShowReportsCommand}" Classes="NavButton" Padding="12,10">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12">
+                <icons:Icon Value="fa-solid fa-chart-column" Width="16" Height="16" />
+                <TextBlock Grid.Column="1" Text="Reports" Opacity="{Binding NavLabelOpacity}" />
+              </Grid>
+            </Button>
+
+            <Button Command="{Binding ShowSettingsCommand}" Classes="NavButton" Padding="12,10">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12">
+                <icons:Icon Value="fa-solid fa-gear" Width="16" Height="16" />
+                <TextBlock Grid.Column="1" Text="Settings" Opacity="{Binding NavLabelOpacity}" />
+              </Grid>
+            </Button>
+
+          </StackPanel>
+        </ScrollViewer>
 
         <StackPanel DockPanel.Dock="Bottom" Margin="12,8,12,12" Spacing="8">
           <!-- Footer actions if needed -->
@@ -224,21 +296,35 @@
     </Border>
 
     <!-- Main content -->
-    <Grid Grid.Column="1" Grid.Row="0" Background="{StaticResource Brush.MainBackground}">
-      <TransitioningContentControl Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}}">
-        <TransitioningContentControl.PageTransition>
-          <CrossFade Duration="0:0:0.18" />
-        </TransitioningContentControl.PageTransition>
-      </TransitioningContentControl>
+    <Grid Grid.Column="1" Grid.Row="0" Background="Transparent"
+          RowDefinitions="*" ColumnDefinitions="*">
+      <!-- Light tint only; keep brushed metal visible -->
+      <!-- Must not intercept pointer/wheel events -->
+      <Border Background="{DynamicResource Brush.MainBackground}"
+              Opacity="0.12"
+              IsHitTestVisible="False" />
+
+      <!-- Single-view host with scrolling -->
+      <ScrollViewer x:Name="MainContentScroll"
+                    Grid.Row="0" Grid.Column="0"
+                    VerticalAlignment="Stretch"
+                    HorizontalAlignment="Stretch"
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Disabled"
+                    >
+        <ContentControl Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}}"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Top" />
+      </ScrollViewer>
     </Grid>
 
     <!-- Bottom status bar -->
-    <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{StaticResource Brush.StatusBackground}" Padding="8,4">
+    <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource Brush.StatusBackground}" Padding="8,4">
       <Grid ColumnDefinitions="*" ColumnSpacing="16">
         <!-- Main status message -->
         <TextBlock Grid.Column="0"
                    Text="{Binding StatusMessage}"
-                   Foreground="#c0c4cf"
+                   Foreground="{DynamicResource Brush.TextMuted}"
                    VerticalAlignment="Center"
                    TextTrimming="CharacterEllipsis" />
       </Grid>

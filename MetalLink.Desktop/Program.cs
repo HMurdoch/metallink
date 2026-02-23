@@ -1,5 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
+using Projektanker.Icons.Avalonia;
+using Projektanker.Icons.Avalonia.FontAwesome;
 using System;
 using System.Threading.Tasks;
 
@@ -33,5 +35,7 @@ sealed class Program
             .UsePlatformDetect()
             .UseReactiveUI()
             .WithInterFont()
+            // Icon provider init (FontAwesome)
+            .AfterSetup(_ => IconProvider.Current.Register<FontAwesomeIconProvider>())
             .LogToTrace();
 }

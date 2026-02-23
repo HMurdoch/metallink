@@ -2,10 +2,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MetalLink.Desktop.Views.StockLevelsView">
 
-  <Border Padding="24" Background="{StaticResource Brush.MainBackground}">
+  <Border Padding="24" Background="{DynamicResource Brush.MainBackground}">
     <StackPanel Spacing="8">
-      <TextBlock Text="Stock Levels" FontSize="22" FontWeight="Bold" Foreground="{StaticResource Brush.TextPrimary}" />
-      <TextBlock Text="Placeholder screen (to be implemented)." Foreground="{StaticResource Brush.TextMuted}" />
+      <TextBlock Text="Stock Levels" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource Brush.TextPrimary}" />
+      <TextBlock Text="Placeholder screen (to be implemented)." Foreground="{DynamicResource Brush.TextMuted}" />
     </StackPanel>
   </Border>
 

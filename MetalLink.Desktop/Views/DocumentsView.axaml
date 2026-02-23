@@ -41,9 +41,9 @@
     </Style> -->
   </UserControl.Styles>
 
-  <Border Background="#1f2229" Padding="16">
-    <ScrollViewer>
-      <StackPanel Spacing="16">
+  <Border Background="{DynamicResource Brush.MainBackground}" Padding="16">
+    
+<StackPanel Spacing="16">
 
         <TextBlock
             Text="Customer Documents"
@@ -52,8 +52,8 @@
             Foreground="#f5f5f5" />
 
         <!-- Load docs -->
-        <Border Background="#252932" Padding="12" CornerRadius="4">
-          <StackPanel Spacing="8">
+        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
+    <StackPanel Spacing="8">
             <TextBlock Text="Load documents for customer" Foreground="#f5f5f5" FontWeight="Bold" />
 
             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -83,8 +83,8 @@
         </Border>
 
         <!-- Upload docs -->
-        <Border Background="#252932" Padding="12" CornerRadius="4">
-          <StackPanel Spacing="8">
+        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
+    <StackPanel Spacing="8">
             <TextBlock Text="Upload new document" Foreground="#f5f5f5" FontWeight="Bold" />
 
             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -100,7 +100,7 @@
                   Text="{Binding NewDocumentFilePath}" />
             </StackPanel>
 
-            <StackPanel Spacing="2">
+      <StackPanel Spacing="2">
               <TextBlock
                   Text="Document type is required."
                   Foreground="#ff8888"
@@ -122,11 +122,11 @@
         </Border>
 
       <!-- Signature Capture (Signature Pad → Customer Document) -->
-      <Border Background="#252932"
+      <Border Background="{DynamicResource Brush.GlassPanel}"
               Padding="12"
               CornerRadius="4"
               Margin="0,12,0,0">
-        <StackPanel Spacing="6">
+  <StackPanel Spacing="6">
 
           <TextBlock Text="Signature Capture (Pad → Customer Document)"
                      FontSize="14"
@@ -160,6 +160,5 @@
       </Border>
 
       </StackPanel>
-    </ScrollViewer>
   </Border>
 </UserControl>

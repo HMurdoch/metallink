@@ -29,6 +29,10 @@ public class MetalLinkDbContext : DbContext
     public DbSet<Buyer> Buyers => Set<Buyer>();
     public DbSet<Operator> Operators => Set<Operator>();
 
+    public DbSet<Setting> Settings => Set<Setting>();
+    public DbSet<SettingOption> SettingOptions => Set<SettingOption>();
+    public DbSet<OperatorSetting> OperatorSettings => Set<OperatorSetting>();
+
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Price> Prices => Set<Price>();
 
@@ -54,6 +58,9 @@ public class MetalLinkDbContext : DbContext
         ConfigureCustomers(modelBuilder);
         ConfigureBuyers(modelBuilder);
         ConfigureOperators(modelBuilder);
+        ConfigureSettings(modelBuilder);
+        ConfigureSettingOptions(modelBuilder);
+        ConfigureOperatorSettings(modelBuilder);
 
         ConfigureProducts(modelBuilder);
         ConfigurePrices(modelBuilder);
@@ -240,6 +247,73 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
         e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+    }
+
+    private static void ConfigureSettings(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<Setting>();
+        e.ToTable("settings", "metal_link");
+        e.HasKey(x => x.SettingId);
+        e.Property(x => x.SettingId).HasColumnName("setting_id").ValueGeneratedOnAdd();
+        e.Property(x => x.SettingName).HasColumnName("setting_name").HasMaxLength(255).IsRequired();
+        e.Property(x => x.SettingDescription).HasColumnName("setting_description").HasMaxLength(500);
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.TimeCreated).HasColumnName("time_created").HasDefaultValueSql("now()");
+        e.Property(x => x.TimeUpdated).HasColumnName("time_updated").HasDefaultValueSql("now()");
+
+        e.HasIndex(x => x.SettingName)
+            .HasDatabaseName("settings_setting_name_active_idx")
+            .IsUnique()
+            .HasFilter("is_active = true");
+        e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
+    }
+
+    private static void ConfigureSettingOptions(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<SettingOption>();
+        e.ToTable("setting_options", "metal_link");
+        e.HasKey(x => x.SettingOptionId);
+        e.Property(x => x.SettingOptionId).HasColumnName("setting_option_id").ValueGeneratedOnAdd();
+        e.Property(x => x.SettingId).HasColumnName("setting_id").IsRequired();
+        e.Property(x => x.SettingOptionValue).HasColumnName("setting_option_value").HasMaxLength(255).IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.TimeCreated).HasColumnName("time_created").HasDefaultValueSql("now()");
+        e.Property(x => x.TimeUpdated).HasColumnName("time_updated").HasDefaultValueSql("now()");
+
+        e.HasIndex(x => new { x.SettingId, x.SettingOptionValue })
+            .HasDatabaseName("setting_options_setting_id_value_active_idx")
+            .IsUnique()
+            .HasFilter("is_active = true");
+
+        e.HasOne(x => x.Setting).WithMany(x => x.Options).HasForeignKey(x => x.SettingId);
+        e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
+    }
+
+    private static void ConfigureOperatorSettings(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<OperatorSetting>();
+        e.ToTable("operator_settings", "metal_link");
+        e.HasKey(x => x.OperatorSettingId);
+        e.Property(x => x.OperatorSettingId).HasColumnName("operator_setting_id").ValueGeneratedOnAdd();
+        e.Property(x => x.OperatorId).HasColumnName("operator_id").IsRequired();
+        e.Property(x => x.SettingId).HasColumnName("setting_id").IsRequired();
+        e.Property(x => x.SettingOptionId).HasColumnName("setting_option_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.TimeCreated).HasColumnName("time_created").HasDefaultValueSql("now()");
+        e.Property(x => x.TimeUpdated).HasColumnName("time_updated").HasDefaultValueSql("now()");
+
+        e.HasIndex(x => new { x.OperatorId, x.SettingId })
+            .HasDatabaseName("operator_settings_operator_setting_active_idx")
+            .IsUnique()
+            .HasFilter("is_active = true");
+
+        e.HasOne(x => x.Operator).WithMany().HasForeignKey(x => x.OperatorId);
+        e.HasOne(x => x.Setting).WithMany().HasForeignKey(x => x.SettingId);
+        e.HasOne(x => x.SettingOption).WithMany().HasForeignKey(x => x.SettingOptionId);
+        e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
     }
 
     private static void ConfigureProducts(ModelBuilder modelBuilder)

@@ -4,18 +4,20 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
              x:Class="MetalLink.Desktop.Views.ReportsView">
-  
-  <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <StackPanel Margin="20" Spacing="20">
+
+  <Border Background="{DynamicResource Brush.MainBackground}" Padding="16">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+      <StackPanel Margin="4" Spacing="16">
       
       <!-- Header -->
       <TextBlock Text="Reports" 
                  FontSize="28" 
                  FontWeight="Bold" 
-                 Margin="0,0,0,10"/>
+                 Margin="0,0,0,10"
+                 Foreground="{DynamicResource Brush.TextPrimary}"/>
       
       <!-- Stock Reports Section -->
-      <Border Background="#F5F5F5" 
+      <Border Background="{DynamicResource Brush.GlassPanel}" 
               CornerRadius="8" 
               Padding="20">
         <StackPanel Spacing="15">
@@ -23,7 +25,7 @@
           <TextBlock Text="Stock Reports" 
                      FontSize="20" 
                      FontWeight="SemiBold"
-                     Foreground="#2196F3"/>
+                     Foreground="{DynamicResource Brush.TextPrimary}"/>
           
           <!-- Stock on Hand Report -->
           <Border Background="White" 
@@ -86,7 +88,7 @@
               </Grid>
               
               <!-- Filters -->
-              <Border Background="#F9F9F9" 
+              <Border Background="{DynamicResource Brush.GlassPanel}" 
                       CornerRadius="4" 
                       Padding="10"
                       Margin="0,10,0,0">
@@ -146,7 +148,7 @@
       </Border>
       
       <!-- Ticket Reports Section -->
-      <Border Background="#F5F5F5" 
+      <Border Background="{DynamicResource Brush.GlassPanel}" 
               CornerRadius="8" 
               Padding="20">
         <StackPanel Spacing="15">
@@ -183,7 +185,7 @@
       </Border>
       
       <!-- Admin Actions -->
-      <Border Background="#FFF3E0" 
+      <Border Background="{DynamicResource Brush.GlassPanel}" 
               CornerRadius="8" 
               Padding="20">
         <StackPanel Spacing="15">
@@ -219,7 +221,7 @@
       </Border>
       
       <!-- Help Text -->
-      <Border Background="#E3F2FD" 
+      <Border Background="{DynamicResource Brush.GlassPanel}" 
               CornerRadius="4" 
               Padding="15">
         <StackPanel Spacing="5">
@@ -247,5 +249,5 @@
       
     </StackPanel>
   </ScrollViewer>
-  
+  </Border>
 </UserControl>

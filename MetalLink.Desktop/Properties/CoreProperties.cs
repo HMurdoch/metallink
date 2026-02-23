@@ -70,7 +70,6 @@ public partial class MainWindowViewModel
 
             _previousSection = _currentSection;
             _currentSection = value;
-
             // if target index < previous index we treat as "back"
             IsSlideFromLeft = (int)_currentSection < (int)_previousSection;
 
@@ -82,6 +81,13 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(IsCustomerSectionVisible));
             OnPropertyChanged(nameof(IsTicketsReceivingSectionVisible));
             OnPropertyChanged(nameof(IsTicketsSendingSectionVisible));
+            OnPropertyChanged(nameof(IsBuyersSectionVisible));
+            OnPropertyChanged(nameof(IsCompanyAndSitesSectionVisible));
+            OnPropertyChanged(nameof(IsProductsAndPricesSectionVisible));
+            OnPropertyChanged(nameof(IsStockLevelsSectionVisible));
+            OnPropertyChanged(nameof(IsStockMovementSectionVisible));
+            OnPropertyChanged(nameof(IsReportsSectionVisible));
+            OnPropertyChanged(nameof(IsSettingsSectionVisible));
             OnPropertyChanged(nameof(IsDocumentSectionVisible));
             OnPropertyChanged(nameof(IsCameraSectionVisible));
             OnPropertyChanged(nameof(TicketsPageHeading));
@@ -110,6 +116,14 @@ public partial class MainWindowViewModel
     public bool IsCustomerSectionVisible  => CurrentSection == EnumMainSection.Customers;
     public bool IsTicketsReceivingSectionVisible => CurrentSection == EnumMainSection.TicketsReceiving;
     public bool IsTicketsSendingSectionVisible => CurrentSection == EnumMainSection.TicketsSending;
+    public bool IsBuyersSectionVisible => CurrentSection == EnumMainSection.Buyers;
+    public bool IsCompanyAndSitesSectionVisible => CurrentSection == EnumMainSection.CompanyAndSites;
+    public bool IsProductsAndPricesSectionVisible => CurrentSection == EnumMainSection.ProductsAndPrices;
+    public bool IsStockLevelsSectionVisible => CurrentSection == EnumMainSection.StockLevels;
+    public bool IsStockMovementSectionVisible => CurrentSection == EnumMainSection.StockMovement;
+    public bool IsReportsSectionVisible => CurrentSection == EnumMainSection.Reports;
+    public bool IsSettingsSectionVisible => CurrentSection == EnumMainSection.Settings;
+
     public bool IsDocumentSectionVisible  => CurrentSection == EnumMainSection.Documents;
     public bool IsCameraSectionVisible    => CurrentSection == EnumMainSection.Camera;
 

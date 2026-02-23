@@ -1,5 +1,22 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MetalLink.Desktop.Views.SettingsView">
-  <TextBlock Text="Settings (TODO)" Margin="16"/>
+  <StackPanel Margin="24" Spacing="16">
+    <TextBlock Text="Settings" FontSize="22" FontWeight="Bold"/>
+
+    <Border Background="{DynamicResource Brush.PanelBackground}" CornerRadius="8" Padding="16">
+      <StackPanel Spacing="10">
+        <TextBlock Text="Appearance" FontSize="16" FontWeight="SemiBold"/>
+
+        <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+          <TextBlock Text="Theme" VerticalAlignment="Center"/>
+
+          <RadioButton Content="Light" GroupName="Theme" IsChecked="{Binding IsLightTheme}" />
+          <RadioButton Content="Dark" GroupName="Theme" IsChecked="{Binding IsDarkTheme}" />
+        </StackPanel>
+
+        <TextBlock Text="Theme is stored per operator in the database." Opacity="0.7" FontSize="12"/>
+      </StackPanel>
+    </Border>
+  </StackPanel>
 </UserControl>

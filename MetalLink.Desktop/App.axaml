@@ -1,20 +1,25 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fluent="clr-namespace:Avalonia.Themes.Fluent;assembly=Avalonia.Themes.Fluent"
              x:Class="MetalLink.Desktop.App"
              xmlns:local="clr-namespace:MetalLink.Desktop">
 
   <!-- Global styles -->
   <Application.Styles>
-    <!-- Fluent base theme -->
-    <FluentTheme />
-    <!-- DataGrid theme (important for DataGrid to look right) -->
+    <!-- Base control theme (provides templates for ScrollViewer, etc.) -->
+    <fluent:FluentTheme />
+
+    <!-- SukiUI styles -->
+    <StyleInclude Source="avares://SukiUI/Theme/DataGridStyle.axaml" />
+
+    <!-- Fallback DataGrid theme include (kept for safety; can be removed once we fully rely on SukiUI) -->
     <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
 
     <!-- Primary button styles -->
     <Style Selector="Button.primary">
       <Setter Property="Foreground" Value="White" />
       <Setter Property="Background" Value="{DynamicResource Brush.AccentGradient}" />
-      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="CornerRadius" Value="6" />
       <Setter Property="Padding" Value="12,6" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="HorizontalAlignment" Value="Left" />
@@ -57,8 +62,70 @@
 
     <!-- Modern Animations & Transitions -->
     
-    <!-- Smooth button hover effect for all buttons -->
+    <!-- Default 3D-ish buttons (bevel + emboss + shadow). Nav buttons override this in MainWindow. -->
     <Style Selector="Button">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+      <Setter Property="Background" Value="{DynamicResource Brush.MetalButtonFace}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderSubtle}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="12,8" />
+
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Grid>
+              <!-- Outer chrome ring (3D depth) -->
+              <Border BorderThickness="2" CornerRadius="12" BoxShadow="0 12 24 0 #33000000">
+                <Border.BorderBrush>
+                  <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#99FFFFFF" Offset="0" />
+                    <GradientStop Color="#55FFFFFF" Offset="0.5" />
+                    <GradientStop Color="#22FFFFFF" Offset="1" />
+                  </LinearGradientBrush>
+                </Border.BorderBrush>
+              </Border>
+
+              <!-- Main button body (brushed metal) -->
+              <Border x:Name="Body"
+                      Background="{TemplateBinding Background}"
+                      BorderBrush="#AA555D68"
+                      BorderThickness="1"
+                      CornerRadius="10"
+                      Margin="2">
+                <Grid>
+                  <!-- Top bevel highlight (raised edge) -->
+                  <Border Height="18" VerticalAlignment="Top" Margin="6,1,6,0" CornerRadius="8,8,0,0">
+                    <Border.Background>
+                      <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#55FFFFFF" Offset="0" />
+                        <GradientStop Color="#00FFFFFF" Offset="1" />
+                      </LinearGradientBrush>
+                    </Border.Background>
+                  </Border>
+
+                  <!-- Bottom shadow (recess edge) -->
+                  <Border Height="10" VerticalAlignment="Bottom" Margin="6,0,6,1" CornerRadius="0,0,8,8">
+                    <Border.Background>
+                      <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#00000000" Offset="0" />
+                        <GradientStop Color="#44000000" Offset="1" />
+                      </LinearGradientBrush>
+                    </Border.Background>
+                  </Border>
+
+                  <ContentPresenter Content="{TemplateBinding Content}"
+                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                    Margin="{TemplateBinding Padding}"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                </Grid>
+              </Border>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+
       <Setter Property="Transitions">
         <Setter.Value>
           <Transitions>
@@ -72,10 +139,20 @@
     <Style Selector="Button:pointerover">
       <Setter Property="RenderTransform" Value="scale(1.02)"/>
       <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.AccentGradient}" />
     </Style>
     
     <Style Selector="Button:pressed">
       <Setter Property="RenderTransform" Value="scale(0.98)"/>
+      <Setter Property="Opacity" Value="0.9" />
+    </Style>
+
+    <Style Selector="Button:pressed /template/ Border#Outer">
+      <Setter Property="BoxShadow" Value="0 2 8 0 #33000000" />
+    </Style>
+
+    <Style Selector="Button:pointerover /template/ Border#Outer">
+      <Setter Property="BoxShadow" Value="0 14 28 0 #28000000" />
     </Style>
 
     <!-- Border fade-in animation -->
@@ -141,8 +218,65 @@
       </Style.Animations>
     </Style>
 
-    <!-- Smooth transitions for text inputs -->
+    <!-- Text inputs: use our own template so background/border are ALWAYS visible (theme-independent) -->
     <Style Selector="TextBox">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+      <Setter Property="Background" Value="{DynamicResource Brush.InputBackground}" />
+      <Setter Property="CaretBrush" Value="{DynamicResource Brush.TextPrimary}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.InputBorder}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="10,7" />
+
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="TextBox">
+            <Grid>
+              <!-- Outer chrome bevel (3D depth) -->
+              <Border BorderThickness="2" CornerRadius="12" Margin="0">
+                <Border.BorderBrush>
+                  <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#88FFFFFF" Offset="0" />
+                    <GradientStop Color="#44FFFFFF" Offset="0.5" />
+                    <GradientStop Color="#11FFFFFF" Offset="1" />
+                  </LinearGradientBrush>
+                </Border.BorderBrush>
+              </Border>
+
+              <!-- Glossy black glass body -->
+              <Border Background="#DD0A0D12"
+                      BorderBrush="#99333A42"
+                      BorderThickness="1"
+                      CornerRadius="10"
+                      Margin="2">
+                <Grid>
+                  <!-- Inner shadow (recess effect) -->
+                  <Border Margin="1" CornerRadius="9" BoxShadow="0 2 6 0 #AA000000 inset" />
+
+                  <!-- Top specular highlight (glass shine) -->
+                  <Border Height="16" VerticalAlignment="Top" Margin="8,1,8,0" CornerRadius="8,8,0,0">
+                    <Border.Background>
+                      <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#44FFFFFF" Offset="0" />
+                        <GradientStop Color="#00FFFFFF" Offset="1" />
+                      </LinearGradientBrush>
+                    </Border.Background>
+                  </Border>
+
+                  <ScrollViewer Name="PART_ScrollViewer"
+                                Margin="{TemplateBinding Padding}"
+                                HorizontalScrollBarVisibility="Hidden"
+                                VerticalScrollBarVisibility="Hidden">
+                    <TextPresenter Name="PART_TextPresenter"
+                                   Text="{TemplateBinding Text}" />
+                  </ScrollViewer>
+                </Grid>
+              </Border>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+
       <Setter Property="Transitions">
         <Setter.Value>
           <Transitions>
@@ -227,41 +361,192 @@
 
   <!-- Brand colors / brushes and shared styles -->
   <Application.Resources>
-    <!-- Brand colors (tune to match MetalLink logo exactly) -->
-    <Color x:Key="Color.PrimaryBlue">#1E88E5</Color>
-    <Color x:Key="Color.LightBlue">#8EC5FC</Color>
-    <Color x:Key="Color.PrimaryBlueDark">#0D47A1</Color>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <!-- SukiUI base resources (Light/Dark) -->
+        <ResourceInclude Source="avares://SukiUI/Theme/Shadcn/BlackWhiteTheme.axaml" />
+      </ResourceDictionary.MergedDictionaries>
 
-    <!-- Dark theme neutrals -->
-    <Color x:Key="Color.BackgroundDark">#1F2229</Color>
-    <Color x:Key="Color.NavBackground">#20232A</Color>
-    <Color x:Key="Color.StatusBackground">#181A20</Color>
-    <Color x:Key="Color.PanelDark">#252932</Color>
-    <Color x:Key="Color.TextPrimary">#F5F5F5</Color>
-    <Color x:Key="Color.TextMuted">#C0C4CF</Color>
-    <Color x:Key="Color.BorderSubtle">#3A404A</Color>
+      <!-- Brand colors (tune to match MetalLink logo exactly) -->
+      <Color x:Key="Color.PrimaryBlue">#1E88E5</Color>
+      <Color x:Key="Color.LightBlue">#8EC5FC</Color>
+      <Color x:Key="Color.PrimaryBlueDark">#0D47A1</Color>
 
-    <!-- Brushes -->
-    <LinearGradientBrush x:Key="Brush.AppBackground"
-                         StartPoint="0,0" EndPoint="0,1">
-      <GradientStop Color="{StaticResource Color.PrimaryBlueDark}" Offset="0" />
-      <GradientStop Color="{StaticResource Color.BackgroundDark}" Offset="0.25" />
-      <GradientStop Color="{StaticResource Color.BackgroundDark}" Offset="1" />
-    </LinearGradientBrush>
+      <!-- Accent brush is theme-independent -->
+      <LinearGradientBrush x:Key="Brush.AccentGradient" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="{StaticResource Color.PrimaryBlue}" Offset="0" />
+        <GradientStop Color="{StaticResource Color.LightBlue}" Offset="1" />
+      </LinearGradientBrush>
 
-    <LinearGradientBrush x:Key="Brush.AccentGradient"
-                         StartPoint="0,0" EndPoint="1,0">
-      <GradientStop Color="{StaticResource Color.PrimaryBlue}" Offset="0" />
-      <GradientStop Color="{StaticResource Color.LightBlue}" Offset="1" />
-    </LinearGradientBrush>
+      <!-- Theme-specific resources (single ThemeDictionaries block; avoids duplicate Light/Dark keys) -->
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <!-- Light palette -->
+          <Color x:Key="Color.Background">#F2F4F7</Color>
+          <Color x:Key="Color.NavBackground">#E6F2F4F7</Color>
+          <Color x:Key="Color.Panel">#FFFFFF</Color>
+          <Color x:Key="Color.StatusBackground">#EEF1F5</Color>
+          <Color x:Key="Color.TextPrimary">#111827</Color>
+          <Color x:Key="Color.TextMuted">#4B5563</Color>
+          <Color x:Key="Color.BorderSubtle">#D1D5DB</Color>
 
-    <SolidColorBrush x:Key="Brush.NavBackground" Color="{StaticResource Color.NavBackground}" />
-    <SolidColorBrush x:Key="Brush.MainBackground" Color="{StaticResource Color.BackgroundDark}" />
-    <SolidColorBrush x:Key="Brush.PanelBackground" Color="{StaticResource Color.PanelDark}" />
-    <SolidColorBrush x:Key="Brush.StatusBackground" Color="{StaticResource Color.StatusBackground}" />
-    <SolidColorBrush x:Key="Brush.BorderSubtle" Color="{StaticResource Color.BorderSubtle}" />
-    <SolidColorBrush x:Key="Brush.TextPrimary" Color="{StaticResource Color.TextPrimary}" />
-    <SolidColorBrush x:Key="Brush.TextMuted" Color="{StaticResource Color.TextMuted}" />
+          <!-- Brushes -->
+          <SolidColorBrush x:Key="Brush.WindowBaseBackground" Color="{StaticResource Color.Background}" />
+          <SolidColorBrush x:Key="Brush.NavBackground" Color="{StaticResource Color.NavBackground}" />
+          <SolidColorBrush x:Key="Brush.PanelBackground" Color="{StaticResource Color.Panel}" />
+          <SolidColorBrush x:Key="Brush.StatusBackground" Color="{StaticResource Color.StatusBackground}" />
+          <SolidColorBrush x:Key="Brush.BorderSubtle" Color="{StaticResource Color.BorderSubtle}" />
+          <SolidColorBrush x:Key="Brush.TextPrimary" Color="{StaticResource Color.TextPrimary}" />
+          <SolidColorBrush x:Key="Brush.TextMuted" Color="{StaticResource Color.TextMuted}" />
+          
+          <!-- Glass panel for dashboard cards - translucent to show metal -->
+          <SolidColorBrush x:Key="Brush.GlassPanel" Color="#40FFFFFF" />
+          <SolidColorBrush x:Key="Brush.GlassPanelDarker" Color="#30FFFFFF" />
+          <SolidColorBrush x:Key="Brush.GlassBorder" Color="#60000000" />
+
+          <!-- Inputs -->
+          <SolidColorBrush x:Key="Brush.InputBackground" Color="#F3F4F6" />
+          <SolidColorBrush x:Key="Brush.InputBorder" Color="#C7CDD6" />
+
+          <!-- Main content area - very translucent to show brushed metal -->
+          <SolidColorBrush x:Key="Brush.MainBackground" Color="#33F2F4F7" />
+
+          <!-- App background gradient (subtle) -->
+          <LinearGradientBrush x:Key="Brush.AppBackground" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#F7FAFF" Offset="0" />
+            <GradientStop Color="#EEF2F7" Offset="1" />
+          </LinearGradientBrush>
+
+          <!-- Brushed metal IMAGE background (silver sheet) -->
+          <ImageBrush x:Key="Brush.MetalBackgroundVector"
+                      Source="avares://MetalLink.Desktop/Assets/vector-brushed-metal-background.jpg"
+                      Stretch="UniformToFill" />
+
+          <ImageBrush x:Key="Brush.MetalButtonFace"
+                      Source="avares://MetalLink.Desktop/Assets/brushed_button.png"
+                      Stretch="None"
+                      TileMode="Tile"
+                      DestinationRect="0,0,256,256" />
+
+          <!-- Active background -->
+          <ImageBrush x:Key="Brush.MetalBackground"
+                      Source="avares://MetalLink.Desktop/Assets/image.jpg"
+                      Stretch="UniformToFill" />
+
+          <!-- (Legacy gradient overlay kept, but we will stop using it) -->
+          <LinearGradientBrush x:Key="Brush.BrushedOverlay" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#00FFFFFF" Offset="0" />
+            <GradientStop Color="#66FFFFFF" Offset="0.06" />
+            <GradientStop Color="#00FFFFFF" Offset="0.12" />
+            <GradientStop Color="#55FFFFFF" Offset="0.18" />
+            <GradientStop Color="#00FFFFFF" Offset="0.24" />
+            <GradientStop Color="#44FFFFFF" Offset="0.30" />
+            <GradientStop Color="#00FFFFFF" Offset="0.36" />
+            <GradientStop Color="#55FFFFFF" Offset="0.42" />
+            <GradientStop Color="#00FFFFFF" Offset="0.48" />
+            <GradientStop Color="#3AFFFFFF" Offset="0.54" />
+            <GradientStop Color="#00FFFFFF" Offset="0.60" />
+            <GradientStop Color="#4AFFFFFF" Offset="0.66" />
+            <GradientStop Color="#00FFFFFF" Offset="0.72" />
+            <GradientStop Color="#33FFFFFF" Offset="0.78" />
+            <GradientStop Color="#00FFFFFF" Offset="0.84" />
+            <GradientStop Color="#22FFFFFF" Offset="0.92" />
+            <GradientStop Color="#00FFFFFF" Offset="1" />
+          </LinearGradientBrush>
+
+          <!-- Diagonal sheen (adds more "metal" feel) -->
+          <LinearGradientBrush x:Key="Brush.BrushedSheen" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#00FFFFFF" Offset="0" />
+            <GradientStop Color="#18FFFFFF" Offset="0.35" />
+            <GradientStop Color="#00FFFFFF" Offset="0.7" />
+            <GradientStop Color="#12FFFFFF" Offset="1" />
+          </LinearGradientBrush>
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="Dark">
+          <!-- Dark palette -->
+          <Color x:Key="Color.Background">#1F2229</Color>
+          <Color x:Key="Color.NavBackground">#E620232A</Color>
+          <Color x:Key="Color.Panel">#252932</Color>
+          <Color x:Key="Color.StatusBackground">#181A20</Color>
+          <Color x:Key="Color.TextPrimary">#F5F5F5</Color>
+          <Color x:Key="Color.TextMuted">#C0C4CF</Color>
+          <Color x:Key="Color.BorderSubtle">#3A404A</Color>
+
+          <!-- Brushes -->
+          <SolidColorBrush x:Key="Brush.WindowBaseBackground" Color="{StaticResource Color.Background}" />
+          <SolidColorBrush x:Key="Brush.NavBackground" Color="{StaticResource Color.NavBackground}" />
+          <SolidColorBrush x:Key="Brush.PanelBackground" Color="{StaticResource Color.Panel}" />
+          <SolidColorBrush x:Key="Brush.StatusBackground" Color="{StaticResource Color.StatusBackground}" />
+          <SolidColorBrush x:Key="Brush.BorderSubtle" Color="{StaticResource Color.BorderSubtle}" />
+          <SolidColorBrush x:Key="Brush.TextPrimary" Color="{StaticResource Color.TextPrimary}" />
+          <SolidColorBrush x:Key="Brush.TextMuted" Color="{StaticResource Color.TextMuted}" />
+          
+          <!-- Glass panel for dashboard cards - translucent to show metal -->
+          <SolidColorBrush x:Key="Brush.GlassPanel" Color="#40252932" />
+          <SolidColorBrush x:Key="Brush.GlassPanelDarker" Color="#30111827" />
+          <SolidColorBrush x:Key="Brush.GlassBorder" Color="#60FFFFFF" />
+
+          <!-- Inputs -->
+          <SolidColorBrush x:Key="Brush.InputBackground" Color="#1B1F27" />
+          <SolidColorBrush x:Key="Brush.InputBorder" Color="#4B5563" />
+
+          <!-- Main content area - very translucent to show brushed metal -->
+          <SolidColorBrush x:Key="Brush.MainBackground" Color="#331F2229" />
+
+          <!-- App background gradient -->
+          <LinearGradientBrush x:Key="Brush.AppBackground" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="{StaticResource Color.PrimaryBlueDark}" Offset="0" />
+            <GradientStop Color="{StaticResource Color.Background}" Offset="0.25" />
+            <GradientStop Color="{StaticResource Color.Background}" Offset="1" />
+          </LinearGradientBrush>
+
+          <!-- Brushed metal IMAGE background (silver sheet) -->
+          <ImageBrush x:Key="Brush.MetalBackgroundVector"
+                      Source="avares://MetalLink.Desktop/Assets/vector-brushed-metal-background.jpg"
+                      Stretch="UniformToFill" />
+
+          <ImageBrush x:Key="Brush.MetalButtonFace"
+                      Source="avares://MetalLink.Desktop/Assets/brushed_button.png"
+                      Stretch="None"
+                      TileMode="Tile"
+                      DestinationRect="0,0,256,256" />
+
+          <!-- Active background -->
+          <ImageBrush x:Key="Brush.MetalBackground"
+                      Source="avares://MetalLink.Desktop/Assets/image.jpg"
+                      Stretch="UniformToFill" />
+
+          <LinearGradientBrush x:Key="Brush.BrushedOverlay" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#00000000" Offset="0" />
+            <GradientStop Color="#35FFFFFF" Offset="0.06" />
+            <GradientStop Color="#00000000" Offset="0.12" />
+            <GradientStop Color="#2CFFFFFF" Offset="0.18" />
+            <GradientStop Color="#00000000" Offset="0.24" />
+            <GradientStop Color="#24FFFFFF" Offset="0.30" />
+            <GradientStop Color="#00000000" Offset="0.36" />
+            <GradientStop Color="#2CFFFFFF" Offset="0.42" />
+            <GradientStop Color="#00000000" Offset="0.48" />
+            <GradientStop Color="#1EFFFFFF" Offset="0.54" />
+            <GradientStop Color="#00000000" Offset="0.60" />
+            <GradientStop Color="#28FFFFFF" Offset="0.66" />
+            <GradientStop Color="#00000000" Offset="0.72" />
+            <GradientStop Color="#18FFFFFF" Offset="0.78" />
+            <GradientStop Color="#00000000" Offset="0.84" />
+            <GradientStop Color="#12FFFFFF" Offset="0.92" />
+            <GradientStop Color="#00000000" Offset="1" />
+          </LinearGradientBrush>
+
+          <LinearGradientBrush x:Key="Brush.BrushedSheen" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#00000000" Offset="0" />
+            <GradientStop Color="#22FFFFFF" Offset="0.35" />
+            <GradientStop Color="#00000000" Offset="0.7" />
+            <GradientStop Color="#1AFFFFFF" Offset="1" />
+          </LinearGradientBrush>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+
+    </ResourceDictionary>
   </Application.Resources>
 
 </Application>

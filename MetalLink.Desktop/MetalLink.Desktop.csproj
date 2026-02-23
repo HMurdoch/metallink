@@ -24,6 +24,11 @@
       </PackageReference>
       <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
       <PackageReference Include="LiveChartsCore.SkiaSharpView.Avalonia" Version="2.0.0-rc6.1" />
+      <PackageReference Include="Projektanker.Icons.Avalonia" Version="9.*" />
+      <PackageReference Include="Projektanker.Icons.Avalonia.FontAwesome" Version="9.*" />
+      <PackageReference Include="SukiUI" Version="6.*" />
+      <PackageReference Include="Xabe.FFmpeg" Version="5.*" />
+      <PackageReference Include="Xabe.FFmpeg.Downloader" Version="5.*" />
       <PackageReference Include="System.IO.Ports" Version="8.0.0" />
       <PackageReference Include="Material.Icons" Version="2.1.0" />
       <PackageReference Include="Material.Icons.Avalonia" Version="2.1.0" />

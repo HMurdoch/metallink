@@ -12,7 +12,7 @@ public class SectionToViewConverter : IValueConverter
         if (value is not EnumMainSection section)
             return null;
 
-        return section switch
+        Control? view = section switch
         {
             EnumMainSection.Dashboard => new DashboardView(),
             EnumMainSection.Customers => new CustomersView(),
@@ -28,6 +28,18 @@ public class SectionToViewConverter : IValueConverter
             EnumMainSection.StockMovement => new StockMovementView(),
             EnumMainSection.Settings => new SettingsView(),
             _ => null
+        };
+
+        Console.WriteLine($"[NAV] Converter: {section} -> {(view == null ? "<null>" : view.GetType().Name)}");
+
+        return view ?? new Border
+        {
+            Padding = new Avalonia.Thickness(24),
+            Child = new TextBlock
+            {
+                Text = $"No view mapped for section: {section}",
+                FontSize = 18
+            }
         };
     }
 

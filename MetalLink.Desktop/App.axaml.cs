@@ -1,3 +1,4 @@
+using System;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -30,11 +31,13 @@ public partial class App : Application
     public SiteService SiteService { get; private set; } = null!;
     public ProvinceService ProvinceService { get; private set; } = null!;
 
+    public ThemeService ThemeService { get; private set; } = null!;
 
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
     }
+
 
     public override void OnFrameworkInitializationCompleted()
     {
@@ -60,6 +63,8 @@ public partial class App : Application
         FingerprintScanner = new MockFingerprintScanner();
         SiteService = new SiteService(ApiClient);
         ProvinceService = new ProvinceService(ApiClient);
+
+        ThemeService = new ThemeService(ApiClient);
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {

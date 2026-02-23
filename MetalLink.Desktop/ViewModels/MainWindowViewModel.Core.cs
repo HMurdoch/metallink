@@ -39,6 +39,30 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     // MainWindow.axaml expects LoggedInUserDisplay (CoreProperties exposes LoggedInUser).
     public string LoggedInUserDisplay => LoggedInUser;
 
+    // --- Navigation UI state ---
+    private bool _isNavCollapsed;
+    public bool IsNavCollapsed
+    {
+        get => _isNavCollapsed;
+        set
+        {
+            if (_isNavCollapsed == value) return;
+            _isNavCollapsed = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(NavColumnWidth));
+            OnPropertyChanged(nameof(NavLabelOpacity));
+        }
+    }
+
+    public double NavColumnWidth => IsNavCollapsed ? 64 : 260;
+
+    // Used to fade labels in/out.
+    public double NavLabelOpacity => IsNavCollapsed ? 0 : 1;
+
+    public ICommand ToggleNavCommand { get; }
+
+    public ObservableCollection<NavItemViewModel> NavItems { get; } = new();
+
     // --- Services / dependencies ---
 
     private readonly App _app;
@@ -54,8 +78,6 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     private readonly ICameraService _cameraService;
     private readonly TicketReportService _ticketReportService;
     private readonly ISignaturePadService _signaturePadService;
-    public new event PropertyChangedEventHandler? PropertyChanged;
-
     // Commands
     public ICommand CheckDbCommand { get; }
     public ICommand LogoutCommand { get; }
@@ -497,6 +519,10 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         ShowStockMovementCommand = new RelayCommand(() => CurrentSection = EnumMainSection.StockMovement);
         ShowSettingsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Settings);
 
+        ToggleNavCommand = new RelayCommand(() => IsNavCollapsed = !IsNavCollapsed);
+
+        BuildNavItems();
+
         // Core commands used by CustomersView/BuyersView (Search/Clear)
         SearchCustomerCommand = new AsyncCommand(SearchCustomerAsync);
         ClearCustomerSearchCommand = new RelayCommand(ClearCustomerSearch);
@@ -740,6 +766,34 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         InitializeCountries();
         await LoadProvincesAsync();
         await ClearNewCustomerFormAsync();
+    }
+
+    private void BuildNavItems()
+    {
+        NavItems.Clear();
+
+        // Top-level
+        NavItems.Add(new NavItemViewModel { Title = "Dashboard", IconKey = "fa-solid fa-gauge", Command = ShowDashboardCommand });
+
+        // Entities
+        NavItems.Add(new NavItemViewModel { Title = "Entities", IconKey = "fa-solid fa-database", Command = ShowCustomersCommand, IsHeader = true });
+        NavItems.Add(new NavItemViewModel { Title = "Customers", IconKey = "fa-solid fa-users", Command = ShowCustomersCommand, IsIndented = true });
+        NavItems.Add(new NavItemViewModel { Title = "Buyers", IconKey = "fa-solid fa-user-tie", Command = ShowBuyersCommand, IsIndented = true });
+        NavItems.Add(new NavItemViewModel { Title = "Companies & Sites", IconKey = "fa-solid fa-building", Command = ShowCompanyAndSitesCommand, IsIndented = true });
+        NavItems.Add(new NavItemViewModel { Title = "Products & Prices", IconKey = "fa-solid fa-tags", Command = ShowProductsAndPricesCommand, IsIndented = true });
+
+        // Tickets
+        NavItems.Add(new NavItemViewModel { Title = "Tickets", IconKey = "fa-solid fa-ticket", Command = ShowTicketsReceivingCommand, IsHeader = true });
+        NavItems.Add(new NavItemViewModel { Title = "Receiving", IconKey = "fa-solid fa-arrow-down", Command = ShowTicketsReceivingCommand, IsIndented = true });
+        NavItems.Add(new NavItemViewModel { Title = "Sending", IconKey = "fa-solid fa-arrow-up", Command = ShowTicketsSendingCommand, IsIndented = true });
+
+        // Stock
+        NavItems.Add(new NavItemViewModel { Title = "Stock", IconKey = "fa-solid fa-cubes", Command = ShowStockLevelsCommand, IsHeader = true });
+        NavItems.Add(new NavItemViewModel { Title = "Stock Levels", IconKey = "fa-solid fa-warehouse", Command = ShowStockLevelsCommand, IsIndented = true });
+        NavItems.Add(new NavItemViewModel { Title = "Stock Movement", IconKey = "fa-solid fa-right-left", Command = ShowStockMovementCommand, IsIndented = true });
+
+        NavItems.Add(new NavItemViewModel { Title = "Reports", IconKey = "fa-solid fa-chart-column", Command = ShowReportsCommand });
+        NavItems.Add(new NavItemViewModel { Title = "Settings", IconKey = "fa-solid fa-gear", Command = ShowSettingsCommand });
     }
 
     private Task SwitchSectionAsync(EnumMainSection section)
@@ -1799,13 +1853,6 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         }
 
         setValue(target);
-    }
-
-    // --- OnPropertyChanged override ---
-
-    protected new void OnPropertyChanged([CallerMemberName] string? name = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 
     // --- Image upload helpers ---

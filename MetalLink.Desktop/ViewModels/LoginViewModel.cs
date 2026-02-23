@@ -80,6 +80,16 @@ public class LoginViewModel : INotifyPropertyChanged
 
             if (Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
+                // Load and apply per-operator theme before we show the main window.
+                try
+                {
+                    await _app.ThemeService.LoadFromServerAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine("[WARN] Failed to load theme from server: " + ex);
+                }
+
                 var mainWindow = new MainWindow
                 {
                     DataContext = new MainWindowViewModel(_app)
