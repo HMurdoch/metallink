@@ -67,7 +67,9 @@
     </Style>
 
     <Style Selector="DataGridRow:selected">
-      <Setter Property="Background" Value="#303B82F6" />
+      <!-- Make selection clearly visible on dark backgrounds -->
+      <Setter Property="Background" Value="#FF2D6CDF" />
+      <Setter Property="Foreground" Value="White" />
     </Style>
 
     <!-- Row action buttons (for Delete in Sending lines grid) -->
@@ -359,6 +361,7 @@
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
               <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />

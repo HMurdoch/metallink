@@ -8,7 +8,9 @@ public sealed class NavIndentConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
     {
-        if (value is bool b && b)
+        // value = IsNavCollapsed
+        // When nav is collapsed, we must NOT indent, otherwise the icons get pushed off-screen.
+        if (value is bool isCollapsed && !isCollapsed)
             return new Thickness(18, 0, 0, 0);
 
         return new Thickness(0);

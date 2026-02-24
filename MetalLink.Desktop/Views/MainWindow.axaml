@@ -212,28 +212,32 @@
             <TextBlock Text="ENTITIES" Margin="10,14,0,2" FontSize="11" Opacity="{Binding NavLabelOpacity}" Foreground="{DynamicResource Brush.TextMuted}" LetterSpacing="1" />
 
             <Button Command="{Binding ShowCustomersCommand}" Classes="NavButton" Padding="12,10">
-              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12"
+                    Margin="{Binding IsNavCollapsed, Converter={StaticResource NavIndentConverter}}">
                 <icons:Icon Value="fa-solid fa-users" Width="16" Height="16" />
                 <TextBlock Grid.Column="1" Text="Customers" Opacity="{Binding NavLabelOpacity}" />
               </Grid>
             </Button>
 
             <Button Command="{Binding ShowBuyersCommand}" Classes="NavButton" Padding="12,10">
-              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12"
+                    Margin="{Binding IsNavCollapsed, Converter={StaticResource NavIndentConverter}}">
                 <icons:Icon Value="fa-solid fa-user-tie" Width="16" Height="16" />
                 <TextBlock Grid.Column="1" Text="Buyers" Opacity="{Binding NavLabelOpacity}" />
               </Grid>
             </Button>
 
             <Button Command="{Binding ShowCompanyAndSitesCommand}" Classes="NavButton" Padding="12,10">
-              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12"
+                    Margin="{Binding IsNavCollapsed, Converter={StaticResource NavIndentConverter}}">
                 <icons:Icon Value="fa-solid fa-building" Width="16" Height="16" />
                 <TextBlock Grid.Column="1" Text="Companies &amp; Sites" Opacity="{Binding NavLabelOpacity}" />
               </Grid>
             </Button>
 
             <Button Command="{Binding ShowProductsAndPricesCommand}" Classes="NavButton" Padding="12,10">
-              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12"
+                    Margin="{Binding IsNavCollapsed, Converter={StaticResource NavIndentConverter}}">
                 <icons:Icon Value="fa-solid fa-tags" Width="16" Height="16" />
                 <TextBlock Grid.Column="1" Text="Products &amp; Prices" Opacity="{Binding NavLabelOpacity}" />
               </Grid>
@@ -242,14 +246,16 @@
             <TextBlock Text="TICKETS" Margin="10,14,0,2" FontSize="11" Opacity="{Binding NavLabelOpacity}" Foreground="{DynamicResource Brush.TextMuted}" LetterSpacing="1" />
 
             <Button Command="{Binding ShowTicketsReceivingCommand}" Classes="NavButton" Padding="12,10">
-              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12"
+                    Margin="{Binding IsNavCollapsed, Converter={StaticResource NavIndentConverter}}">
                 <icons:Icon Value="fa-solid fa-arrow-down" Width="16" Height="16" />
                 <TextBlock Grid.Column="1" Text="Receiving" Opacity="{Binding NavLabelOpacity}" />
               </Grid>
             </Button>
 
             <Button Command="{Binding ShowTicketsSendingCommand}" Classes="NavButton" Padding="12,10">
-              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12"
+                    Margin="{Binding IsNavCollapsed, Converter={StaticResource NavIndentConverter}}">
                 <icons:Icon Value="fa-solid fa-arrow-up" Width="16" Height="16" />
                 <TextBlock Grid.Column="1" Text="Sending" Opacity="{Binding NavLabelOpacity}" />
               </Grid>
@@ -258,14 +264,16 @@
             <TextBlock Text="STOCK" Margin="10,14,0,2" FontSize="11" Opacity="{Binding NavLabelOpacity}" Foreground="{DynamicResource Brush.TextMuted}" LetterSpacing="1" />
 
             <Button Command="{Binding ShowStockLevelsCommand}" Classes="NavButton" Padding="12,10">
-              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12"
+                    Margin="{Binding IsNavCollapsed, Converter={StaticResource NavIndentConverter}}">
                 <icons:Icon Value="fa-solid fa-warehouse" Width="16" Height="16" />
                 <TextBlock Grid.Column="1" Text="Stock Levels" Opacity="{Binding NavLabelOpacity}" />
               </Grid>
             </Button>
 
             <Button Command="{Binding ShowStockMovementCommand}" Classes="NavButton" Padding="12,10">
-              <Grid ColumnDefinitions="24,*" ColumnSpacing="12" Margin="18,0,0,0">
+              <Grid ColumnDefinitions="24,*" ColumnSpacing="12"
+                    Margin="{Binding IsNavCollapsed, Converter={StaticResource NavIndentConverter}}">
                 <icons:Icon Value="fa-solid fa-right-left" Width="16" Height="16" />
                 <TextBlock Grid.Column="1" Text="Stock Movement" Opacity="{Binding NavLabelOpacity}" />
               </Grid>
