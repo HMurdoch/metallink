@@ -1,0 +1,82 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:MetalLink.Desktop.Views.Controls"
+        xmlns:conv="using:MetalLink.Desktop.Converters"
+        x:Class="MetalLink.Desktop.Views.DistributionWindow"
+        Width="600" Height="600"
+        WindowStartupLocation="CenterOwner"
+        TransparencyLevelHint="None"
+        Background="{DynamicResource Brush.WindowBackground}">
+
+  <Grid RowDefinitions="Auto,*" Margin="16" RowSpacing="12" ColumnDefinitions="2*,*" ColumnSpacing="12">
+
+    <Grid.Resources>
+      <conv:BoolInvertConverter x:Key="BoolInvert" />
+      <conv:CurrencyConverter x:Key="Currency" />
+    </Grid.Resources>
+
+    <Border Grid.ColumnSpan="2"
+            Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+            CornerRadius="10" Padding="12" Width="500"> 
+      <DockPanel>
+        <TextBlock Text="{Binding Title}"
+                   FontSize="12"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource Brush.TextPrimary}"
+                   VerticalAlignment="Center" />
+        <TextBlock Text="  :  "
+                   FontSize="12"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource Brush.TextPrimary}"
+                   VerticalAlignment="Center" />
+
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <TextBlock FontSize="12" Text="Weight" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
+          <ToggleSwitch IsChecked="{Binding IsCashMode, Mode=TwoWay}"
+                        OnContent=""
+                        OffContent="" />
+          <TextBlock FontSize="12" Text="Cash" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <!-- Content already uses the root grid columns -->
+    <Grid Grid.Row="1" Grid.ColumnSpan="3" ColumnDefinitions="3*" ColumnSpacing="12">
+      <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+              CornerRadius="10" Padding="12">
+        <controls:PieChartControl Slices="{Binding PieSlices}" />
+      </Border>
+
+      <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+              CornerRadius="10" Padding="12">
+        <StackPanel>
+          <TextBlock Text="Legend" FontWeight="Bold" Foreground="{DynamicResource Brush.TextPrimary}" Margin="0,0,0,8" />
+          <ItemsControl ItemsSource="{Binding Slices}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid ColumnDefinitions="18,*,Auto" ColumnSpacing="10" Margin="0,4">
+                  <Border Width="14" Height="14" CornerRadius="3" Background="{Binding Brush}" />
+                  <TextBlock Grid.Column="1" Text="{Binding Label}" Foreground="{DynamicResource Brush.TextPrimary}" />
+                  <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+                    <!-- Weight mode -->
+                    <TextBlock Text="{Binding KgText}"
+                               IsVisible="{Binding DataContext.IsCashMode, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolInvert}}"
+                               Foreground="{DynamicResource Brush.TextMuted}" />
+
+                    <!-- Cash mode -->
+                    <TextBlock Text="{Binding CashValue, Converter={StaticResource Currency}}"
+                               IsVisible="{Binding DataContext.IsCashMode, RelativeSource={RelativeSource AncestorType=Window}}"
+                               Foreground="{DynamicResource Brush.TextMuted}" />
+
+                    <TextBlock Text="{Binding PercentText}"
+                               Foreground="{DynamicResource Brush.TextMuted}" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Grid>
+</Window>

@@ -3,9 +3,51 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     DataContext="{Binding Sending}"
-    xmlns:local="using:MetalLink.Desktop.Views">
+    xmlns:local="using:MetalLink.Desktop.Views"
+    xmlns:Primitives="clr-namespace:Avalonia.Controls.Primitives;assembly=Avalonia.Controls.DataGrid">
+
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <!-- Custom DataGridRow template with shimmer overlay (selected row emphasis) -->
+      <ControlTheme x:Key="ShimmerDataGridRowTheme" TargetType="DataGridRow">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid>
+            <!-- Base row background -->
+            <Border x:Name="RowBackground"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}" />
+
+            <!-- Shimmer overlay (animated when selected) -->
+            <Border x:Name="Shimmer"
+                    Opacity="0"
+                    IsHitTestVisible="False">
+              <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                  <GradientStop Color="#00FFFFFF" Offset="0" />
+                  <GradientStop Color="#33FFFFFF" Offset="0.45" />
+                  <GradientStop Color="#66B0E0FF" Offset="0.50" />
+                  <GradientStop Color="#33FFFFFF" Offset="0.55" />
+                  <GradientStop Color="#00FFFFFF" Offset="1" />
+                </LinearGradientBrush>
+              </Border.Background>
+              <Border.RenderTransform>
+                <TranslateTransform X="-400" />
+              </Border.RenderTransform>
+            </Border>
+
+            <!-- Cells presenter -->
+            <Primitives:DataGridCellsPresenter />
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    </ResourceDictionary>
+  </UserControl.Resources>
 
   <UserControl.Styles>
+
     <!-- Default textbox border + font to match Customers view -->
     <Style Selector="TextBox">
       <Setter Property="BorderBrush" Value="#444a55" />
@@ -51,25 +93,65 @@
       <Setter Property="FontWeight" Value="Bold" />
     </Style>
 
-    <Style Selector="DataGridRow">
+    <!-- Animate the actual row background presenter (template Border) for the tickets grid -->
+    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow /template/ Border">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="Transitions">
-        <Setter.Value>
-          <Transitions>
-            <BrushTransition Property="Background" Duration="0:0:0.12" />
-          </Transitions>
-        </Setter.Value>
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.45" />
+          <DoubleTransition Property="Opacity" Duration="0:0:0.45" />
+        </Transitions>
       </Setter>
     </Style>
 
-    <Style Selector="DataGridRow:pointerover">
+    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow:pointerover /template/ Border">
       <Setter Property="Background" Value="#20FFFFFF" />
+      <Setter Property="Opacity" Value="1" />
     </Style>
 
-    <Style Selector="DataGridRow:selected">
-      <!-- Make selection clearly visible on dark backgrounds -->
-      <Setter Property="Background" Value="#FF2D6CDF" />
+    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow:selected /template/ Border">
+      <!-- Selected row emphasis -->
+      <Setter Property="Background" Value="#334155" />
+    </Style>
+
+    <!-- Animate the selected row background so it visibly "breathes" -->
+    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow:selected">
       <Setter Property="Foreground" Value="White" />
+    </Style>
+
+    <!-- Keep selection solid; animated effects are unreliable with current DataGrid template -->
+    <!-- Use our shimmer row theme for the tickets grid -->
+    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow">
+      <Setter Property="Theme" Value="{StaticResource ShimmerDataGridRowTheme}" />
+    </Style>
+
+    <!-- Selected row base color -->
+    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow:selected">
+      <Setter Property="Background" Value="#334155" />
+    </Style>
+
+    <!-- Shimmer animation when selected -->
+    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow:selected /template/ Border#Shimmer">
+      <Setter Property="Opacity" Value="0.75" />
+      <Style.Animations>
+        <Animation Duration="0:0:2.6" IterationCount="Infinite">
+          <KeyFrame Cue="0%">
+            <Setter Property="RenderTransform">
+              <TranslateTransform X="-400" />
+            </Setter>
+          </KeyFrame>
+          <KeyFrame Cue="100%">
+            <Setter Property="RenderTransform">
+              <TranslateTransform X="400" />
+            </Setter>
+          </KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+
+    <!-- Non-selected: shimmer hidden -->
+    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow:not(:selected) /template/ Border#Shimmer">
+      <Setter Property="Opacity" Value="0" />
     </Style>
 
     <!-- Row action buttons (for Delete in Sending lines grid) -->
@@ -305,7 +387,7 @@
                        Foreground="{DynamicResource Brush.TextPrimary}"
                        FontWeight="Bold" />
 
-            <DataGrid
+            <DataGrid x:Name="SendingTicketsGrid"
                 AutoGenerateColumns="False"
                 ItemsSource="{Binding SendingTicketSearchResults}"
                 SelectedItem="{Binding SelectedSendingTicket, Mode=TwoWay}">
@@ -349,10 +431,19 @@
           <StackPanel Spacing="12">
             
             <!-- Ticket Details Header -->
-            <TextBlock Text="Ticket Details"
-                       Foreground="{DynamicResource Brush.TextPrimary}"
-                       FontSize="13"
-                       FontWeight="Bold" />
+            <DockPanel>
+              <TextBlock Text="Ticket Details"
+                         Foreground="{DynamicResource Brush.TextPrimary}"
+                         FontSize="13"
+                         FontWeight="Bold" />
+
+              <Button DockPanel.Dock="Right"
+                      Content="Distribution"
+                      Command="{Binding OpenDistributionCommand}"
+                      Classes="primary"
+                      Width="140"
+                      HorizontalAlignment="Right" />
+            </DockPanel>
 
             <!-- Ticket Details Grid - Different layouts for Platform vs Weighbridge (match Receiving) -->
             <Grid IsVisible="{Binding SelectedSendingTicketDetails, Converter={x:Static ObjectConverters.IsNotNull}}">

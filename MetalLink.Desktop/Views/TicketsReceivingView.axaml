@@ -364,10 +364,19 @@
           <StackPanel Spacing="12">
 
             <!-- Ticket Details Header -->
-            <TextBlock Text="Ticket Details"
-                       Foreground="{DynamicResource Brush.TextPrimary}"
-                       FontSize="13"
-                       FontWeight="Bold" />
+            <DockPanel>
+              <TextBlock Text="Ticket Details"
+                         Foreground="{DynamicResource Brush.TextPrimary}"
+                         FontSize="13"
+                         FontWeight="Bold" />
+
+              <Button DockPanel.Dock="Right"
+                      Content="Distribution"
+                      Command="{Binding OpenDistributionCommand}"
+                      Classes="primary"
+                      Width="140"
+                      HorizontalAlignment="Right" />
+            </DockPanel>
 
             <!-- Ticket Details Grid - Different layouts for Platform vs Weighbridge -->
             <Grid IsVisible="{Binding SelectedReceivingTicketDetails, Converter={x:Static ObjectConverters.IsNotNull}}">

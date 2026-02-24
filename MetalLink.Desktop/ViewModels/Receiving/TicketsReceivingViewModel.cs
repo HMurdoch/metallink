@@ -18,6 +18,8 @@ using MetalLink.Shared.Tickets.Receiving;
 
 namespace MetalLink.Desktop.ViewModels.Receiving;
 
+using MetalLink.Desktop.ViewModels.Distribution;
+
 /// <summary>
 /// Receiving ticket system ViewModel. Must not reference Sending.
 /// </summary>
@@ -80,6 +82,8 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
             IsNotesModalVisible = true;
         });
         CloseLineNotesCommand = new RelayCommand(() => { IsNotesModalVisible = false; SelectedLineNotesContent = string.Empty; });
+
+        OpenDistributionCommand = new RelayCommand(OpenDistribution);
         DownloadTicketReportCommand = new AsyncCommand(() => Task.CompletedTask);
     }
 
@@ -899,6 +903,8 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
 
     public ICommand ShowLineNotesCommand { get; }
     public ICommand CloseLineNotesCommand { get; }
+
+    public ICommand OpenDistributionCommand { get; }
     public bool IsNotesModalVisible { get; set; }
     public string SelectedLineNotesContent { get; set; } = string.Empty;
     public string ReceivingLineNotes { get; set; } = string.Empty;
@@ -1322,6 +1328,25 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
         public event EventHandler? CanExecuteChanged;
         public bool CanExecute(object? parameter) => true;
         public void Execute(object? parameter) => _execute();
+    }
+
+    private void OpenDistribution()
+    {
+        if (SelectedReceivingTicketDetails is null)
+            return;
+
+        var lifetime = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+        var owner = lifetime?.MainWindow;
+        if (owner is null)
+            return;
+
+        var vm = TicketDistributionViewModel.FromReceiving(SelectedReceivingTicketDetails);
+        var win = new MetalLink.Desktop.Views.DistributionWindow
+        {
+            DataContext = vm
+        };
+
+        win.ShowDialog(owner);
     }
 
     private sealed class RelayCommand<T> : ICommand

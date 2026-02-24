@@ -18,6 +18,8 @@ using MetalLink.Shared.Tickets.Sending;
 
 namespace MetalLink.Desktop.ViewModels.Sending;
 
+using MetalLink.Desktop.ViewModels.Distribution;
+
 /// <summary>
 /// Sending ticket system ViewModel. Must not reference Receiving.
 /// </summary>
@@ -67,6 +69,8 @@ public sealed class TicketsSendingViewModel : ViewModelBase
             IsNotesModalVisible = false;
             SelectedLineNotesContent = string.Empty;
         });
+
+        OpenDistributionCommand = new RelayCommand(OpenDistribution);
 
         // Keep totals in sync when the selected ticket's line collection changes
         SelectedSendingTicketLines.CollectionChanged += (_, __) =>
@@ -741,6 +745,8 @@ public sealed class TicketsSendingViewModel : ViewModelBase
     public ICommand ShowLineNotesCommand { get; }
     public ICommand CloseLineNotesCommand { get; }
 
+    public ICommand OpenDistributionCommand { get; }
+
     private bool _isNotesModalVisible;
     public bool IsNotesModalVisible
     {
@@ -1296,6 +1302,25 @@ public sealed class TicketsSendingViewModel : ViewModelBase
         public event EventHandler? CanExecuteChanged;
         public bool CanExecute(object? parameter) => true;
         public void Execute(object? parameter) => _execute();
+    }
+
+    private void OpenDistribution()
+    {
+        if (SelectedSendingTicketDetails is null)
+            return;
+
+        var lifetime = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+        var owner = lifetime?.MainWindow;
+        if (owner is null)
+            return;
+
+        var vm = TicketDistributionViewModel.FromSending(SelectedSendingTicketDetails);
+        var win = new MetalLink.Desktop.Views.DistributionWindow
+        {
+            DataContext = vm
+        };
+
+        win.ShowDialog(owner);
     }
 
     private sealed class RelayCommand<T> : ICommand
