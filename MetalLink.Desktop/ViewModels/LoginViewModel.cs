@@ -91,45 +91,67 @@ public class LoginViewModel : INotifyPropertyChanged
                     Console.Error.WriteLine("[WARN] Failed to load theme/appearance from server: " + ex);
                 }
 
+                var loginWindow = desktop.MainWindow; // should be the LoginWindow
+
+                // Show intro video window first (normal sized, centered)
+                var intro = new IntroWindow();
+
+                // Tell intro which monitor bounds to center within
+                if (loginWindow != null && loginWindow.Screens.Primary != null)
+                {
+                    var loginScreen = loginWindow.Screens.ScreenFromWindow(loginWindow) ?? loginWindow.Screens.Primary;
+                    var bounds = loginScreen.WorkingArea;
+                    intro.SetTargetBounds(bounds);
+
+                    // Initial center (before intro sizes itself to the video)
+                    // so it doesn't flash in the wrong place.
+                    var initialW = 600;
+                    var initialH = 900;
+                    intro.Width = initialW;
+                    intro.Height = initialH;
+                    intro.Position = new Avalonia.PixelPoint(
+                        bounds.X + (bounds.Width - initialW) / 2,
+                        bounds.Y + (bounds.Height - initialH) / 2);
+                }
+
+                desktop.MainWindow = intro;
+                intro.Show();
+
+                // Close login window immediately after intro shows
+                loginWindow?.Close();
+
+                // Play intro sequence (6 seconds total)
+                await intro.PlayAsync();
+
+                // Now create and show the main window
                 var mainWindow = new MainWindow
                 {
                     DataContext = new MainWindowViewModel(_app)
                 };
 
                 var vm = (MainWindowViewModel)mainWindow.DataContext;
-
-                // fire-and-forget safely (don't block startup)
                 _ = vm.InitializeLookupsAsync();
-
-                var loginWindow = desktop.MainWindow; // should be the LoginWindow
 
                 // Set MainWindow initial size to 1920x950
                 mainWindow.Width = 1920;
                 mainWindow.Height = 950;
-                
-                // Position on the same monitor as LoginWindow
-                if (loginWindow != null && loginWindow.Screens.Primary != null)
+
+                // Position on the same monitor as intro/login
+                if (intro.Screens.Primary != null)
                 {
-                    var loginScreen = loginWindow.Screens.ScreenFromWindow(loginWindow) ?? loginWindow.Screens.Primary;
-                    var bounds = loginScreen.WorkingArea;
-                    
-                    // Center the window on the monitor
+                    var screen = intro.Screens.ScreenFromWindow(intro) ?? intro.Screens.Primary;
+                    var bounds = screen.WorkingArea;
                     var centerX = bounds.X + (bounds.Width - 1920) / 2;
                     var centerY = bounds.Y + (bounds.Height - 950) / 2;
                     mainWindow.Position = new Avalonia.PixelPoint(centerX, centerY);
-                    
-                    Console.WriteLine($"[WINDOW] Positioned MainWindow: X={centerX}, Y={centerY}, W=1920, H=950");
                 }
 
                 desktop.MainWindow = mainWindow;
                 mainWindow.Show();
-
-                // Set MainWindow to Normal (Windowed) mode
                 mainWindow.WindowState = Avalonia.Controls.WindowState.Normal;
-                Console.WriteLine($"[WINDOW] MainWindow set to normal (windowed) mode");
 
-                // now safe to close the login window (shutdown mode will keep app alive because we changed MainWindow)
-                loginWindow?.Close();
+                // Close intro after main window is shown
+                intro.Close();
             }
         }
         catch (HttpRequestException ex)

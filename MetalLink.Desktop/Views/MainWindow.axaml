@@ -27,6 +27,8 @@
 
     <!-- Base nav button -->
     <Style Selector="Button.NavButton">
+      <!-- Ensure the hover/selection background fills the full nav column width -->
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="CornerRadius" Value="6" />
       <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
       <Setter Property="Background" Value="Transparent" />
@@ -155,6 +157,7 @@
             <!-- Prefer video when libvlc is available; otherwise fall back to the existing GIF -->
             <Grid>
               <controls:FfmpegLoopingVideoView Source="avares://MetalLink.Desktop/Assets/rotating_logo_1.mp4"
+                                            StretchMode="UniformToFill"
                                               Height="96"
                                               HorizontalAlignment="Stretch" />
             </Grid>
@@ -320,7 +323,8 @@
                     VerticalScrollBarVisibility="Auto"
                     HorizontalScrollBarVisibility="Disabled"
                     >
-        <ContentControl Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}}"
+        <ContentControl x:Name="MainContentHost"
+                        Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}}"
                         HorizontalContentAlignment="Stretch"
                         VerticalContentAlignment="Top" />
       </ScrollViewer>

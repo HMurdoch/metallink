@@ -40,14 +40,16 @@
       </DockPanel>
     </Border>
 
-    <!-- Content already uses the root grid columns -->
-    <Grid Grid.Row="1" Grid.ColumnSpan="3" ColumnDefinitions="3*" ColumnSpacing="12">
-      <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+    <!-- Content uses two columns: Pie on the left, Legend on the right -->
+    <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="2*,*" ColumnSpacing="12">
+      <Border Grid.Column="0"
+              Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
               CornerRadius="10" Padding="12">
         <controls:PieChartControl Slices="{Binding PieSlices}" />
       </Border>
 
-      <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+      <Border Grid.Column="1"
+              Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
               CornerRadius="10" Padding="12">
         <StackPanel>
           <TextBlock Text="Legend" FontWeight="Bold" Foreground="{DynamicResource Brush.TextPrimary}" Margin="0,0,0,8" />

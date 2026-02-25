@@ -14,6 +14,45 @@ public partial class StockLevelsView : UserControl
 {
     private DataGrid? _grid;
 
+    private void OnMovementClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        // Navigate to Stock Movement and preselect this product.
+        var productId = (sender as Control)?.DataContext is StockLevelLookupDto row
+            ? row.ProductId
+            : (DataContext as StockLevelsViewModel)?.HoveredProductId;
+
+        var root = this.GetVisualRoot();
+        if (root is not Window { DataContext: MainWindowViewModel shellVm } win)
+            return;
+
+        if (Avalonia.Application.Current is not MetalLink.Desktop.App app)
+            return;
+
+        // Create the VM upfront so we can pass the product id.
+        var vm = new StockMovementViewModel(app.ApiClient);
+        vm.SetInitialProductId(productId);
+
+        // Navigate
+        shellVm.CurrentSection = EnumMainSection.StockMovement;
+
+        // Because the view is created by a converter (new instance), we set the DataContext
+        // on the content host after layout has switched.
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            try
+            {
+                // Find the ContentControl host in MainWindow
+                var host = win.FindControl<ContentControl>("MainContentHost");
+                if (host?.Content is Control view)
+                    view.DataContext = vm;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("[StockLevels] Failed to open Stock Movement: " + ex.Message);
+            }
+        });
+    }
+
     public StockLevelsView()
     {
         InitializeComponent();

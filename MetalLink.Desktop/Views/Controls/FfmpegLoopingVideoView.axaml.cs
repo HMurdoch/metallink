@@ -16,6 +16,19 @@ namespace MetalLink.Desktop.Views.Controls;
 
 public partial class FfmpegLoopingVideoView : UserControl
 {
+    public static readonly StyledProperty<Avalonia.Media.Stretch> StretchModeProperty =
+        AvaloniaProperty.Register<FfmpegLoopingVideoView, Avalonia.Media.Stretch>(
+            nameof(StretchMode),
+            Avalonia.Media.Stretch.UniformToFill);
+
+    public Avalonia.Media.Stretch StretchMode
+    {
+        get => GetValue(StretchModeProperty);
+        set => SetValue(StretchModeProperty, value);
+    }
+
+    public event EventHandler? FirstFrameRendered;
+    private bool _hasRenderedFirstFrame;
     public static readonly StyledProperty<Uri?> SourceProperty =
         AvaloniaProperty.Register<FfmpegLoopingVideoView, Uri?>(nameof(Source));
 
@@ -50,6 +63,7 @@ public partial class FfmpegLoopingVideoView : UserControl
         try { _cts?.Cancel(); } catch { }
         _cts?.Dispose();
         _cts = null;
+        _hasRenderedFirstFrame = false;
     }
 
     private void Start(Uri uri)
@@ -153,7 +167,14 @@ public partial class FfmpegLoopingVideoView : UserControl
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     if (_frame is not null)
+                    {
                         _frame.Source = bmp;
+                        if (!_hasRenderedFirstFrame)
+                        {
+                            _hasRenderedFirstFrame = true;
+                            FirstFrameRendered?.Invoke(this, EventArgs.Empty);
+                        }
+                    }
                 }, DispatcherPriority.Render);
 
                 await Task.Delay(delay, ct);
