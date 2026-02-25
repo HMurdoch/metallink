@@ -32,6 +32,7 @@ public partial class App : Application
     public ProvinceService ProvinceService { get; private set; } = null!;
 
     public ThemeService ThemeService { get; private set; } = null!;
+    public AppearanceService AppearanceService { get; private set; } = null!;
 
     public override void Initialize()
     {
@@ -65,6 +66,17 @@ public partial class App : Application
         ProvinceService = new ProvinceService(ApiClient);
 
         ThemeService = new ThemeService(ApiClient);
+        AppearanceService = new AppearanceService(ApiClient);
+
+        // When the theme switches we must re-resolve our "effective" brushes
+        // (they are stored as brush instances in Application resources).
+        ThemeService.ThemeChanged += (_, _) => AppearanceService.ReapplyForCurrentTheme();
+
+        // Initialize panel background to solid by default; AppearanceService will swap after login.
+        // At this stage theme dictionaries are loaded, so Brush.SolidPanelBackground is resolvable.
+        var theme = ActualThemeVariant;
+        if (Resources.TryGetResource("Brush.SolidPanelBackground", theme, out var solid))
+            Resources["Brush.PanelBackground"] = solid;
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {

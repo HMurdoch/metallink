@@ -42,6 +42,7 @@
     </Style>
   </UserControl.Styles>
 
+  <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
   <Border Background="{DynamicResource Brush.MainBackground}" Padding="16">
     
 <StackPanel Spacing="16">
@@ -53,7 +54,7 @@
                 Text="Products &amp; Prices"
                 FontSize="20"
                 FontWeight="Bold"
-                Foreground="#f5f5f5" />
+                Foreground="{DynamicResource Brush.TextPrimary}" />
             <!-- Animated glow overlay -->
             <TextBlock
                 Text="Products &amp; Prices"
@@ -128,11 +129,11 @@
         <!-- Search Products -->
         <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
     <StackPanel Spacing="10">
-            <TextBlock Text="Search product" Foreground="#f5f5f5" FontWeight="Bold" />
+            <TextBlock Text="Search product" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
 
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
               <StackPanel Grid.Column="0" Spacing="6">
-                <TextBlock Text="Product" Foreground="#c0c4cf" />
+                <TextBlock Text="Product" Foreground="{DynamicResource Brush.TextMuted}" />
                 <Grid ColumnDefinitions="70,*,*">
                   <ComboBox
                     Grid.Column="0"
@@ -161,7 +162,7 @@
         <!-- Product Results -->
         <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
     <StackPanel Spacing="8">
-            <TextBlock Text="Results" Foreground="#f5f5f5" FontWeight="Bold" />
+            <TextBlock Text="Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
 
             <DataGrid
               AutoGenerateColumns="False"
@@ -202,29 +203,29 @@
         <!-- Create/Edit Product -->
         <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
     <StackPanel Spacing="10">
-            <TextBlock Text="Create/Edit Product" Foreground="#f5f5f5" FontWeight="Bold" />
+            <TextBlock Text="Create/Edit Product" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
 
-            <Border Padding="12" Background="{DynamicResource Brush.MainBackground}" CornerRadius="8">
+            <Border Padding="12" Background="{DynamicResource Brush.PanelBackground}" CornerRadius="8">
         <StackPanel Spacing="10">
 
                 <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
 
                   <StackPanel Grid.Row="0" Grid.Column="0" Spacing="6">
-                    <TextBlock Text="Product code" Foreground="#c0c4cf" />
+                    <TextBlock Text="Product code" Foreground="{DynamicResource Brush.TextMuted}" />
                     <TextBox
                       Watermark="Product code"
                       Text="{Binding ProductCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                   </StackPanel>
 
                   <StackPanel Grid.Row="0" Grid.Column="1" Spacing="6">
-                    <TextBlock Text="Product name" Foreground="#c0c4cf" />
+                    <TextBlock Text="Product name" Foreground="{DynamicResource Brush.TextMuted}" />
                     <TextBox
                       Watermark="Product name"
                       Text="{Binding ProductName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                   </StackPanel>
 
                   <StackPanel Grid.Row="1" Grid.Column="0" Spacing="6">
-                    <TextBlock Text="Gradient (optional)" Foreground="#c0c4cf" />
+                    <TextBlock Text="Gradient (optional)" Foreground="{DynamicResource Brush.TextMuted}" />
                     <TextBox
                       Watermark="Gradient"
                       Text="{Binding ProductGrade, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
@@ -259,23 +260,23 @@
         <!-- Edit Price -->
         <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
     <StackPanel Spacing="10">
-            <TextBlock Text="Edit Price" Foreground="#f5f5f5" FontWeight="Bold" />
+            <TextBlock Text="Edit Price" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
 
             <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto" ColumnSpacing="10" RowSpacing="10">
 
               <!-- Row 0 -->
               <StackPanel Grid.Row="0" Grid.Column="0" Spacing="6">
-                <TextBlock Text="Price A" Foreground="#c0c4cf" />
+                <TextBlock Text="Price A" Foreground="{DynamicResource Brush.TextMuted}" />
                 <TextBox Text="{Binding PriceA, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
               </StackPanel>
 
               <StackPanel Grid.Row="0" Grid.Column="1" Spacing="6">
-                <TextBlock Text="Price B" Foreground="#c0c4cf" />
+                <TextBlock Text="Price B" Foreground="{DynamicResource Brush.TextMuted}" />
                 <TextBox Text="{Binding PriceB, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
               </StackPanel>
 
               <StackPanel Grid.Row="0" Grid.Column="2" Spacing="6">
-                <TextBlock Text="Price C" Foreground="#c0c4cf" />
+                <TextBlock Text="Price C" Foreground="{DynamicResource Brush.TextMuted}" />
                 <TextBox Text="{Binding PriceC, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
               </StackPanel>
 

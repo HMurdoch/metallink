@@ -44,6 +44,8 @@ public sealed class OperatorSettingsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateTheme([FromBody] UpdateThemeSettingDto dto, CancellationToken ct)
     {
+  
+
         if (dto == null || string.IsNullOrWhiteSpace(dto.Theme))
             return BadRequest("Theme is required.");
 
@@ -86,6 +88,88 @@ public sealed class OperatorSettingsController : ControllerBase
             operatorId: operatorId,
             settingId: themeSetting.SettingId,
             settingOptionId: themeOption.SettingOptionId,
+            createdByOperatorId: operatorId);
+
+        await _db.OperatorSettings.AddAsync(newRow, ct);
+        await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+
+        return NoContent();
+    }
+
+    [HttpGet("crystaline")]
+    [ProducesResponseType(typeof(CrystalineSettingDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCrystaline(CancellationToken ct)
+    {
+        var operatorId = (int)User.GetOperatorId();
+
+        var raw = await _db.OperatorSettings
+            .AsNoTracking()
+            .Where(x => x.OperatorId == operatorId
+                        && (x.Setting.SettingName.ToLower() == "crystaline" || x.Setting.SettingName.ToLower() == "crystalline"))
+            .OrderByDescending(x => x.IsActive)
+            .ThenByDescending(x => x.TimeUpdated)
+            .ThenByDescending(x => x.TimeCreated)
+            .Select(x => x.SettingOption.SettingOptionValue)
+            .FirstOrDefaultAsync(ct);
+
+        var enabled = string.IsNullOrWhiteSpace(raw) ? true : raw.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
+        return Ok(new CrystalineSettingDto { Crystaline = enabled });
+    }
+
+    [HttpPut("crystaline")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateCrystaline([FromBody] UpdateCrystalineSettingDto dto, CancellationToken ct)
+    {
+        var operatorId = (int)User.GetOperatorId();
+
+        // Be tolerant to DB naming differences (crystaline vs crystalline) and allow auto-provisioning.
+        var setting = await _db.Settings
+            .FirstOrDefaultAsync(s => s.IsActive && (s.SettingName.ToLower() == "crystaline" || s.SettingName.ToLower() == "crystalline"), ct);
+
+        if (setting == null)
+        {
+            // Auto-create setting if missing
+            setting = new MetalLink.Domain.Entities.Setting("crystaline", "Use crystal/transparent panels instead of solid panels", operatorId);
+            await _db.Settings.AddAsync(setting, ct);
+            await _db.SaveChangesAsync(ct);
+
+            // Create options
+            await _db.SettingOptions.AddAsync(new MetalLink.Domain.Entities.SettingOption(setting.SettingId, "true", operatorId), ct);
+            await _db.SettingOptions.AddAsync(new MetalLink.Domain.Entities.SettingOption(setting.SettingId, "false", operatorId), ct);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        var value = dto.Crystaline ? "true" : "false";
+        var option = await _db.SettingOptions
+            .FirstOrDefaultAsync(o => o.IsActive && o.SettingId == setting.SettingId && o.SettingOptionValue.ToLower() == value, ct);
+
+        if (option == null)
+        {
+            // Auto-create missing option if needed
+            option = new MetalLink.Domain.Entities.SettingOption(setting.SettingId, value, operatorId);
+            await _db.SettingOptions.AddAsync(option, ct);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
+        var actives = await _db.OperatorSettings
+            .Where(x => x.OperatorId == operatorId
+                        && x.SettingId == setting.SettingId
+                        && x.IsActive)
+            .ToListAsync(ct);
+
+        foreach (var active in actives)
+        {
+            _db.Entry(active).Property("IsActive").CurrentValue = false;
+        }
+
+        var newRow = new MetalLink.Domain.Entities.OperatorSetting(
+            operatorId: operatorId,
+            settingId: setting.SettingId,
+            settingOptionId: option.SettingOptionId,
             createdByOperatorId: operatorId);
 
         await _db.OperatorSettings.AddAsync(newRow, ct);

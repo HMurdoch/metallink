@@ -76,8 +76,8 @@
         <Setter.Value>
           <ControlTemplate TargetType="Button">
             <Grid>
-              <!-- Outer chrome ring (3D depth) -->
-              <Border BorderThickness="2" CornerRadius="12" BoxShadow="0 12 24 0 #33000000">
+              <!-- Outer chrome ring (disabled to prevent corner artifacts) -->
+              <Border BorderThickness="0" CornerRadius="12">
                 <Border.BorderBrush>
                   <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                     <GradientStop Color="#99FFFFFF" Offset="0" />
@@ -93,7 +93,7 @@
                       BorderBrush="#AA555D68"
                       BorderThickness="1"
                       CornerRadius="10"
-                      Margin="2">
+                      Margin="0">
                 <Grid>
                   <!-- Top bevel highlight (raised edge) -->
                   <Border Height="18" VerticalAlignment="Top" Margin="6,1,6,0" CornerRadius="8,8,0,0">
@@ -146,14 +146,6 @@
     <Style Selector="Button:pressed">
       <Setter Property="RenderTransform" Value="scale(0.98)"/>
       <Setter Property="Opacity" Value="0.9" />
-    </Style>
-
-    <Style Selector="Button:pressed /template/ Border#Outer">
-      <Setter Property="BoxShadow" Value="0 2 8 0 #33000000" />
-    </Style>
-
-    <Style Selector="Button:pointerover /template/ Border#Outer">
-      <Setter Property="BoxShadow" Value="0 14 28 0 #28000000" />
     </Style>
 
     <!-- Border fade-in animation -->
@@ -244,10 +236,10 @@
                 </Border.BorderBrush>
               </Border>
 
-              <!-- Glossy black glass body -->
-              <Border Background="#DD0A0D12"
-                      BorderBrush="#99333A42"
-                      BorderThickness="1"
+              <!-- Glossy body (use TemplateBinding so per-window/per-control styles work, e.g. Login) -->
+              <Border Background="{TemplateBinding Background}"
+                      BorderBrush="{TemplateBinding BorderBrush}"
+                      BorderThickness="{TemplateBinding BorderThickness}"
                       CornerRadius="10"
                       Margin="2">
                 <Grid>
@@ -270,6 +262,8 @@
                                 VerticalScrollBarVisibility="Hidden">
                     <TextPresenter Name="PART_TextPresenter"
                                    Text="{TemplateBinding Text}"
+                                   TextElement.Foreground="{TemplateBinding Foreground}"
+                                   TextElement.FontSize="{TemplateBinding FontSize}"
                                    CaretBrush="{TemplateBinding CaretBrush}"
                                    SelectionBrush="{DynamicResource Brush.AccentGradient}"
                                    SelectionForegroundBrush="White" />
@@ -389,6 +383,9 @@
   <!-- Brand colors / brushes and shared styles -->
   <Application.Resources>
     <ResourceDictionary>
+      <!-- Root-level switchable background for section containers (AppearanceService swaps at runtime). -->
+      <SolidColorBrush x:Key="Brush.PanelBackground" Color="Transparent" />
+
       <ResourceDictionary.MergedDictionaries>
         <!-- SukiUI base resources (Light/Dark) -->
         <ResourceInclude Source="avares://SukiUI/Theme/Shadcn/BlackWhiteTheme.axaml" />
@@ -420,15 +417,21 @@
           <!-- Brushes -->
           <SolidColorBrush x:Key="Brush.WindowBaseBackground" Color="{StaticResource Color.Background}" />
           <SolidColorBrush x:Key="Brush.NavBackground" Color="{StaticResource Color.NavBackground}" />
-          <SolidColorBrush x:Key="Brush.PanelBackground" Color="{StaticResource Color.Panel}" />
+
+          <SolidColorBrush x:Key="Brush.SolidPanelBackground" Color="{StaticResource Color.Panel}" />
+
           <SolidColorBrush x:Key="Brush.StatusBackground" Color="{StaticResource Color.StatusBackground}" />
           <SolidColorBrush x:Key="Brush.BorderSubtle" Color="{StaticResource Color.BorderSubtle}" />
           <SolidColorBrush x:Key="Brush.TextPrimary" Color="{StaticResource Color.TextPrimary}" />
           <SolidColorBrush x:Key="Brush.TextMuted" Color="{StaticResource Color.TextMuted}" />
           
           <!-- Glass panel for dashboard cards - translucent to show metal -->
-          <SolidColorBrush x:Key="Brush.GlassPanel" Color="#40FFFFFF" />
+          <SolidColorBrush x:Key="Brush.GlassPanelCrystal" Color="#40FFFFFF" />
           <SolidColorBrush x:Key="Brush.GlassPanelDarker" Color="#30FFFFFF" />
+          <SolidColorBrush x:Key="Brush.GlassBorderCrystal" Color="#60000000" />
+
+          <!-- Active (swapped by AppearanceService) -->
+          <SolidColorBrush x:Key="Brush.GlassPanel" Color="#40FFFFFF" />
           <SolidColorBrush x:Key="Brush.GlassBorder" Color="#60000000" />
 
           <!-- Inputs -->
@@ -504,15 +507,21 @@
           <!-- Brushes -->
           <SolidColorBrush x:Key="Brush.WindowBaseBackground" Color="{StaticResource Color.Background}" />
           <SolidColorBrush x:Key="Brush.NavBackground" Color="{StaticResource Color.NavBackground}" />
-          <SolidColorBrush x:Key="Brush.PanelBackground" Color="{StaticResource Color.Panel}" />
+
+          <SolidColorBrush x:Key="Brush.SolidPanelBackground" Color="{StaticResource Color.Panel}" />
+
           <SolidColorBrush x:Key="Brush.StatusBackground" Color="{StaticResource Color.StatusBackground}" />
           <SolidColorBrush x:Key="Brush.BorderSubtle" Color="{StaticResource Color.BorderSubtle}" />
           <SolidColorBrush x:Key="Brush.TextPrimary" Color="{StaticResource Color.TextPrimary}" />
           <SolidColorBrush x:Key="Brush.TextMuted" Color="{StaticResource Color.TextMuted}" />
           
           <!-- Glass panel for dashboard cards - translucent to show metal -->
-          <SolidColorBrush x:Key="Brush.GlassPanel" Color="#40252932" />
+          <SolidColorBrush x:Key="Brush.GlassPanelCrystal" Color="#40252932" />
           <SolidColorBrush x:Key="Brush.GlassPanelDarker" Color="#30111827" />
+          <SolidColorBrush x:Key="Brush.GlassBorderCrystal" Color="#60FFFFFF" />
+
+          <!-- Active (swapped by AppearanceService) -->
+          <SolidColorBrush x:Key="Brush.GlassPanel" Color="#40252932" />
           <SolidColorBrush x:Key="Brush.GlassBorder" Color="#60FFFFFF" />
 
           <!-- Inputs -->

@@ -5,6 +5,7 @@
              mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
              x:Class="MetalLink.Desktop.Views.ReportsView">
 
+  <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
   <Border Background="{DynamicResource Brush.MainBackground}" Padding="16">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
       <StackPanel Margin="4" Spacing="16">
@@ -28,10 +29,11 @@
                      Foreground="{DynamicResource Brush.TextPrimary}"/>
           
           <!-- Stock on Hand Report -->
-          <Border Background="White" 
-                  CornerRadius="4" 
-                  Padding="15"
-                  BoxShadow="0 2 4 0 #10000000">
+          <Border Background="{DynamicResource Brush.GlassPanel}"
+                  BorderBrush="{DynamicResource Brush.GlassBorder}"
+                  BorderThickness="1"
+                  CornerRadius="8"
+                  Padding="15">
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Grid.Column="0" Spacing="5">
                 <TextBlock Text="Stock on Hand Summary" 
@@ -58,10 +60,11 @@
           </Border>
           
           <!-- Stock Movement Report -->
-          <Border Background="White" 
-                  CornerRadius="4" 
-                  Padding="15"
-                  BoxShadow="0 2 4 0 #10000000">
+          <Border Background="{DynamicResource Brush.GlassPanel}"
+                  BorderBrush="{DynamicResource Brush.GlassBorder}"
+                  BorderThickness="1"
+                  CornerRadius="8"
+                  Padding="15">
             <StackPanel Spacing="10">
               <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Grid.Column="0" Spacing="5">
@@ -159,10 +162,11 @@
                      Foreground="#4CAF50"/>
           
           <!-- Ticket Report (Existing) -->
-          <Border Background="White" 
-                  CornerRadius="4" 
-                  Padding="15"
-                  BoxShadow="0 2 4 0 #10000000">
+          <Border Background="{DynamicResource Brush.GlassPanel}"
+                  BorderBrush="{DynamicResource Brush.GlassBorder}"
+                  BorderThickness="1"
+                  CornerRadius="8"
+                  Padding="15">
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Grid.Column="0" Spacing="5">
                 <TextBlock Text="Ticket Report" 
@@ -195,10 +199,11 @@
                      FontWeight="SemiBold"
                      Foreground="#FF9800"/>
           
-          <Border Background="White" 
-                  CornerRadius="4" 
-                  Padding="15"
-                  BoxShadow="0 2 4 0 #10000000">
+          <Border Background="{DynamicResource Brush.GlassPanel}"
+                  BorderBrush="{DynamicResource Brush.GlassBorder}"
+                  BorderThickness="1"
+                  CornerRadius="8"
+                  Padding="15">
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Grid.Column="0" Spacing="5">
                 <TextBlock Text="Recalculate Stock on Hand" 

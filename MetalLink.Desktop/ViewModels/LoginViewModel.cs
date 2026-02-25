@@ -84,10 +84,11 @@ public class LoginViewModel : INotifyPropertyChanged
                 try
                 {
                     await _app.ThemeService.LoadFromServerAsync();
+                    await _app.AppearanceService.LoadFromServerAsync();
                 }
                 catch (Exception ex)
                 {
-                    Console.Error.WriteLine("[WARN] Failed to load theme from server: " + ex);
+                    Console.Error.WriteLine("[WARN] Failed to load theme/appearance from server: " + ex);
                 }
 
                 var mainWindow = new MainWindow

@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia">
 
+  <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
   <Border Background="{DynamicResource Brush.MainBackground}" Padding="16">
     
 <StackPanel Spacing="12">

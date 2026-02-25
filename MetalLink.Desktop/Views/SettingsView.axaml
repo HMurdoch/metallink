@@ -15,7 +15,12 @@
           <RadioButton Content="Dark" GroupName="Theme" IsChecked="{Binding IsDarkTheme}" />
         </StackPanel>
 
-        <TextBlock Text="Theme is stored per operator in the database." Opacity="0.7" FontSize="12"/>
+        <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+          <TextBlock Text="Crystaline" VerticalAlignment="Center"/>
+          <ToggleSwitch IsChecked="{Binding IsCrystaline}" />
+        </StackPanel>
+
+        <TextBlock Text="Theme/Appearance are stored per operator in the database." Opacity="0.7" FontSize="12"/>
       </StackPanel>
     </Border>
   </StackPanel>

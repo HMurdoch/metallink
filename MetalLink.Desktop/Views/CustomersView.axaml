@@ -135,6 +135,7 @@
     </Style>
   </UserControl.Styles>
 
+  <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
   <Border Background="{DynamicResource Brush.MainBackground}" Padding="16">
     <StackPanel Spacing="16">
 
@@ -404,7 +405,7 @@
               <!-- Right Column: Customer Details (400px) -->
               <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="0">
                 <TextBlock Text="Customer Details" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
-                <Border Margin="0,8,0,0" Padding="8" Background="{DynamicResource Brush.MainBackground}" CornerRadius="4">
+                <Border Margin="0,8,0,0" Padding="8" Background="{DynamicResource Brush.PanelBackground}" CornerRadius="4">
               <Grid>
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="Auto" />

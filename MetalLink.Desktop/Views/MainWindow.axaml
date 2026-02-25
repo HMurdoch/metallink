@@ -308,7 +308,7 @@
           RowDefinitions="*" ColumnDefinitions="*">
       <!-- Light tint only; keep brushed metal visible -->
       <!-- Must not intercept pointer/wheel events -->
-      <Border Background="{DynamicResource Brush.MainBackground}"
+      <Border Background="{DynamicResource Brush.PanelBackground}"
               Opacity="0.12"
               IsHitTestVisible="False" />
 

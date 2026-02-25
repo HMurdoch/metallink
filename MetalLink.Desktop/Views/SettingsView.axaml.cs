@@ -12,7 +12,7 @@ public partial class SettingsView : UserControl
         // Wire up VM here because views are created via SectionToViewConverter.
         if (Application.Current is App app)
         {
-            DataContext = new MetalLink.Desktop.ViewModels.SettingsViewModel(app.ThemeService);
+            DataContext = new MetalLink.Desktop.ViewModels.SettingsViewModel(app.ThemeService, app.AppearanceService);
         }
     }
 }

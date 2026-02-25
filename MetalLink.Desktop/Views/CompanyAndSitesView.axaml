@@ -141,6 +141,7 @@
     </Style>
   </UserControl.Styles>
 
+  <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
   <Border Background="{DynamicResource Brush.MainBackground}" Padding="16">
     
 <StackPanel Spacing="16">
@@ -303,7 +304,7 @@
     <StackPanel Spacing="10">
             <TextBlock Text="Create/Edit Company" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
 
-            <Border Padding="12" Background="{DynamicResource Brush.MainBackground}" CornerRadius="8">
+            <Border Padding="12" Background="{DynamicResource Brush.PanelBackground}" CornerRadius="8">
         <StackPanel Spacing="10">
 
                 <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">

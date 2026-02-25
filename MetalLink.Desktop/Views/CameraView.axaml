@@ -3,7 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-  <Border Background="{DynamicResource Brush.MainBackground}" Padding="16">
+  <Border Background="{DynamicResource Brush.PanelBackground}" Padding="16">
     
 <StackPanel Spacing="16">
 

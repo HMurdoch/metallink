@@ -5,7 +5,7 @@
         x:DataType="vm:LoginViewModel"
         Width="420" Height="300"
         Title="Metal Link - Login"
-        Background="{DynamicResource Brush.WindowBaseBackground}">
+        Background="{DynamicResource Brush.MetalBackground}">
 
   <Window.Styles>
     <!-- Match main app typography: labels slightly larger/bolder than field text -->
@@ -20,8 +20,9 @@
     </Style>
   </Window.Styles>
 
-  <Border Background="{DynamicResource Brush.PanelBackground}"
-          BorderBrush="{DynamicResource Brush.BorderSubtle}"
+  <!-- Login should always be crystal on brushed aluminium -->
+  <Border Background="{DynamicResource Brush.GlassPanelCrystal}"
+          BorderBrush="{DynamicResource Brush.GlassBorderCrystal}"
           BorderThickness="1"
           CornerRadius="16" Margin="18" Padding="18">
     <StackPanel Spacing="10">

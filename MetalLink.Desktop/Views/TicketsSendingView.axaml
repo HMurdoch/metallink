@@ -207,6 +207,7 @@
   </UserControl.Resources>
 
   <Grid>
+    <!-- Keep brushed aluminium visible behind; section blocks use PanelBackground/GlassPanel -->
     <Border Background="{DynamicResource Brush.MainBackground}" Padding="16">
       <ScrollViewer x:Name="TicketsScrollViewer">
       <StackPanel Spacing="16">

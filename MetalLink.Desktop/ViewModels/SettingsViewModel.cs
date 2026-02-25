@@ -10,13 +10,16 @@ namespace MetalLink.Desktop.ViewModels;
 public sealed class SettingsViewModel : INotifyPropertyChanged
 {
     private readonly ThemeService _themeService;
+    private readonly AppearanceService _appearanceService;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public SettingsViewModel(ThemeService themeService)
+    public SettingsViewModel(ThemeService themeService, AppearanceService appearanceService)
     {
         _themeService = themeService;
+        _appearanceService = appearanceService;
         _themeService.ThemeChanged += (_, _) => OnPropertyChanged(nameof(IsDarkTheme));
+        _appearanceService.CrystalineChanged += (_, _) => OnPropertyChanged(nameof(IsCrystaline));
     }
 
     public bool IsDarkTheme
@@ -40,6 +43,41 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             _ = SetDarkAsync(!value);
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsDarkTheme));
+        }
+    }
+
+    public bool IsCrystaline
+    {
+        get => _appearanceService.IsCrystaline;
+        set
+        {
+            if (value == IsCrystaline) return;
+            _ = SetCrystalineAsync(value);
+        }
+    }
+
+    private async Task SetCrystalineAsync(bool enabled)
+    {
+        try
+        {
+            await _appearanceService.SetCrystalineAsync(enabled);
+            OnPropertyChanged(nameof(IsCrystaline));
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("[ERROR] Failed to update crystaline: " + ex);
+
+            // Re-sync from server (and re-apply locally) to avoid the toggle lying.
+            try
+            {
+                await _appearanceService.LoadFromServerAsync();
+            }
+            catch (Exception reloadEx)
+            {
+                Console.Error.WriteLine("[ERROR] Failed to reload crystaline: " + reloadEx);
+            }
+
+            OnPropertyChanged(nameof(IsCrystaline));
         }
     }
 
