@@ -139,84 +139,12 @@
   <Border Background="{DynamicResource Brush.MainBackground}" Padding="16">
     <StackPanel Spacing="16">
 
-        <!-- Header with animated glow -->
-        <StackPanel Spacing="4">
-          <Grid>
-            <TextBlock
-                Text="Customers"
-                FontSize="20"
-                FontWeight="Bold"
-                Foreground="{DynamicResource Brush.TextPrimary}" />
-            <!-- Animated glow overlay -->
-            <TextBlock
-                Text="Customers"
-                FontSize="20"
-                FontWeight="Bold"
-                Foreground="#4a9eff"
-                Opacity="0">
-              <TextBlock.Styles>
-                <Style Selector="TextBlock">
-                  <Style.Animations>
-                    <Animation Duration="0:0:5" IterationCount="INFINITE" Delay="0:0:0">
-                      <KeyFrame Cue="0%">
-                        <Setter Property="Opacity" Value="0" />
-                      </KeyFrame>
-                      <KeyFrame Cue="10%">
-                        <Setter Property="Opacity" Value="0.8" />
-                      </KeyFrame>
-                      <KeyFrame Cue="30%">
-                        <Setter Property="Opacity" Value="0.8" />
-                      </KeyFrame>
-                      <KeyFrame Cue="40%">
-                        <Setter Property="Opacity" Value="0" />
-                      </KeyFrame>
-                      <KeyFrame Cue="100%">
-                        <Setter Property="Opacity" Value="0" />
-                      </KeyFrame>
-                    </Animation>
-                  </Style.Animations>
-                </Style>
-              </TextBlock.Styles>
-            </TextBlock>
-          </Grid>
-          <Border Height="2"
-                  Margin="0,0,0,8"
-                  CornerRadius="1">
-            <Border.Background>
-              <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <LinearGradientBrush.GradientStops>
-                  <GradientStop Color="#1E88E5" Offset="0" />
-                  <GradientStop Color="#8EC5FC" Offset="0.5" />
-                  <GradientStop Color="#1E88E5" Offset="1" />
-                </LinearGradientBrush.GradientStops>
-                <LinearGradientBrush.Transform>
-                  <TranslateTransform X="-200">
-                    <TranslateTransform.Transitions>
-                      <Transitions />
-                    </TranslateTransform.Transitions>
-                  </TranslateTransform>
-                </LinearGradientBrush.Transform>
-              </LinearGradientBrush>
-            </Border.Background>
-            <Border.Styles>
-              <Style Selector="Border">
-                <Style.Animations>
-                  <Animation Duration="0:0:5" IterationCount="INFINITE">
-                    <KeyFrame Cue="0%">
-                      <Setter Property="Opacity" Value="0.5" />
-                    </KeyFrame>
-                    <KeyFrame Cue="50%">
-                      <Setter Property="Opacity" Value="1.0" />
-                    </KeyFrame>
-                    <KeyFrame Cue="100%">
-                      <Setter Property="Opacity" Value="0.5" />
-                    </KeyFrame>
-                  </Animation>
-                </Style.Animations>
-              </Style>
-            </Border.Styles>
-          </Border>
-        </StackPanel>
+        <!-- Header -->
+        <Image Source="avares://MetalLink.Desktop/Assets/customers_heading.png"
+               Height="40"
+               HorizontalAlignment="Left"
+               Margin="0,0,0,4"
+               Stretch="Uniform" />
 
         <!-- SEARCH EXISTING CUSTOMER -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">

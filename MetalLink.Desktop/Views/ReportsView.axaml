@@ -6,16 +6,23 @@
              x:Class="MetalLink.Desktop.Views.ReportsView">
 
   <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
-  <Border Background="{DynamicResource Brush.MainBackground}" Padding="16">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-      <StackPanel Margin="4" Spacing="16">
+  <Border Background="{DynamicResource Brush.MainBackground}">
+    <DockPanel>
+      <!-- Sticky Header Panel -->
+      <Border DockPanel.Dock="Top" 
+              Background="{DynamicResource Brush.PanelBackground}"
+              Padding="12,8"
+              CornerRadius="4"
+              Margin="16,16,16,8">
+        <Image Source="avares://MetalLink.Desktop/Assets/reports_heading.png"
+               Height="40"
+               HorizontalAlignment="Left"
+               Stretch="Uniform" />
+      </Border>
       
-      <!-- Header -->
-      <TextBlock Text="Reports" 
-                 FontSize="28" 
-                 FontWeight="Bold" 
-                 Margin="0,0,0,10"
-                 Foreground="{DynamicResource Brush.TextPrimary}"/>
+      <!-- Scrollable Content -->
+      <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16,8,16,16">
+        <StackPanel Margin="4" Spacing="16">
       
       <!-- Stock Reports Section -->
       <Border Background="{DynamicResource Brush.GlassPanel}" 
@@ -251,8 +258,8 @@
           </TextBlock>
         </StackPanel>
       </Border>
-      
-    </StackPanel>
-  </ScrollViewer>
+        </StackPanel>
+      </ScrollViewer>
+    </DockPanel>
   </Border>
 </UserControl>

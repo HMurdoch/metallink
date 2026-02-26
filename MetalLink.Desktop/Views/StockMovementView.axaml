@@ -4,9 +4,23 @@
              x:Class="MetalLink.Desktop.Views.StockMovementView">
 
   <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
-  <Border Padding="24" Background="{DynamicResource Brush.MainBackground}">
-    <StackPanel Spacing="14">
-      <TextBlock Text="Stock Movement" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource Brush.TextPrimary}" />
+  <Border Background="{DynamicResource Brush.MainBackground}">
+    <DockPanel>
+      <!-- Sticky Header Panel -->
+      <Border DockPanel.Dock="Top" 
+              Background="{DynamicResource Brush.PanelBackground}"
+              Padding="12,8"
+              CornerRadius="4"
+              Margin="16,16,16,8">
+        <Image Source="avares://MetalLink.Desktop/Assets/stock_movements_heading.png"
+               Height="40"
+               HorizontalAlignment="Left"
+               Stretch="Uniform" />
+      </Border>
+      
+      <!-- Scrollable Content -->
+      <ScrollViewer Padding="16,8,16,16">
+        <StackPanel Spacing="14">
 
       <!-- Filters -->
       <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
@@ -163,7 +177,8 @@
         </DockPanel>
       </Border>
 
-    </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </DockPanel>
   </Border>
-
 </UserControl>

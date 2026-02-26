@@ -142,93 +142,35 @@
   </UserControl.Styles>
 
   <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
-  <Border Background="{DynamicResource Brush.MainBackground}" Padding="16">
-    
-<StackPanel Spacing="16">
-
-        <!-- Header with animated glow -->
-  <StackPanel Spacing="4">
-          <Grid>
-            <TextBlock
-                Text="Companies &amp; Sites"
-                FontSize="20"
-                FontWeight="Bold"
-                Foreground="{DynamicResource Brush.TextPrimary}" />
-            <!-- Animated glow overlay -->
-            <TextBlock
-                Text="Companies &amp; Sites"
-                FontSize="20"
-                FontWeight="Bold"
-                Foreground="#4a9eff"
-                Opacity="0">
-              <TextBlock.Styles>
-                <Style Selector="TextBlock">
-                  <Style.Animations>
-                    <Animation Duration="0:0:5" IterationCount="INFINITE" Delay="0:0:0">
-                      <KeyFrame Cue="0%">
-                        <Setter Property="Opacity" Value="0" />
-                      </KeyFrame>
-                      <KeyFrame Cue="10%">
-                        <Setter Property="Opacity" Value="0.8" />
-                      </KeyFrame>
-                      <KeyFrame Cue="30%">
-                        <Setter Property="Opacity" Value="0.8" />
-                      </KeyFrame>
-                      <KeyFrame Cue="40%">
-                        <Setter Property="Opacity" Value="0" />
-                      </KeyFrame>
-                      <KeyFrame Cue="100%">
-                        <Setter Property="Opacity" Value="0" />
-                      </KeyFrame>
-                    </Animation>
-                  </Style.Animations>
-                </Style>
-              </TextBlock.Styles>
-            </TextBlock>
-          </Grid>
-          <Border Height="2"
-                  Margin="0,0,0,8"
-                  CornerRadius="1">
-            <Border.Background>
-              <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <LinearGradientBrush.GradientStops>
-                  <GradientStop Color="#1E88E5" Offset="0" />
-                  <GradientStop Color="#8EC5FC" Offset="0.5" />
-                  <GradientStop Color="#1E88E5" Offset="1" />
-                </LinearGradientBrush.GradientStops>
-                <LinearGradientBrush.Transform>
-                  <TranslateTransform X="-200">
-                    <TranslateTransform.Transitions>
-                      <Transitions />
-                    </TranslateTransform.Transitions>
-                  </TranslateTransform>
-                </LinearGradientBrush.Transform>
-              </LinearGradientBrush>
-            </Border.Background>
-            <Border.Styles>
-              <Style Selector="Border">
-                <Style.Animations>
-                  <Animation Duration="0:0:5" IterationCount="INFINITE">
-                    <KeyFrame Cue="0%">
-                      <Setter Property="Opacity" Value="0.5" />
-                    </KeyFrame>
-                    <KeyFrame Cue="50%">
-                      <Setter Property="Opacity" Value="1.0" />
-                    </KeyFrame>
-                    <KeyFrame Cue="100%">
-                      <Setter Property="Opacity" Value="0.5" />
-                    </KeyFrame>
-                  </Animation>
-                </Style.Animations>
-              </Style>
-            </Border.Styles>
-          </Border>
-        </StackPanel>
+  <Border Background="{DynamicResource Brush.MainBackground}">
+    <DockPanel>
+      <!-- Sticky Header Panel -->
+      <Border DockPanel.Dock="Top" 
+              Background="{DynamicResource Brush.PanelBackground}"
+              Padding="12,8"
+              CornerRadius="4"
+              Margin="16,16,16,8">
+        <Image Source="avares://MetalLink.Desktop/Assets/companies_and_sites_heading.png"
+               Height="40"
+               HorizontalAlignment="Left"
+               Stretch="Uniform" />
+      </Border>
+      
+      <!-- Scrollable Content -->
+      <ScrollViewer Padding="16,8,16,16">
+        <StackPanel Spacing="16">
 
         <!-- Search -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
     <StackPanel Spacing="10">
-            <TextBlock Text="Search company" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="▼" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip.Tip="Click to collapse/expand" />
+              <TextBlock Grid.Column="1" Text="Search Company" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
 
             <!-- 2-column layout, left column used -->
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
@@ -261,7 +203,14 @@
         <!-- Results -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
     <StackPanel Spacing="8">
-            <TextBlock Text="Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip.Tip="Click to collapse/expand" />
+              <TextBlock Grid.Column="1" Text="Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
 
             <DataGrid
               AutoGenerateColumns="False"
@@ -302,7 +251,14 @@
         <!-- Create/Edit Company -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
     <StackPanel Spacing="10">
-            <TextBlock Text="Create/Edit Company" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip.Tip="Click to collapse/expand" />
+              <TextBlock Grid.Column="1" Text="Create/Edit Company" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
 
             <Border Padding="12" Background="{DynamicResource Brush.PanelBackground}" CornerRadius="8">
         <StackPanel Spacing="10">
@@ -369,7 +325,14 @@
         <!-- Sites -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
     <StackPanel Spacing="8">
-            <TextBlock Text="Sites" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="▼" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip.Tip="Click to collapse/expand" />
+              <TextBlock Grid.Column="1" Text="Sites" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
 
             <DataGrid
               AutoGenerateColumns="False"
@@ -410,7 +373,14 @@
         <!-- Create/Edit Site -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
     <StackPanel Spacing="10">
-            <TextBlock Text="Create/Edit Site" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip.Tip="Click to collapse/expand" />
+              <TextBlock Grid.Column="1" Text="Create/Edit Site" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
 
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="10">
 
@@ -491,7 +461,9 @@
 
           </StackPanel>
         </Border>
-      </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </DockPanel>
   </Border>
 </UserControl>
 

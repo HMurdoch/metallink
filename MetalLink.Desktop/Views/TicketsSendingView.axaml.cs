@@ -61,4 +61,11 @@ public partial class TicketsSendingView : UserControl
             Dispatcher.UIThread.Post(textBox.SelectAll);
         }
     }
+
+    private void SendingTicketsGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        // Prevent automatic scrolling when selecting different rows
+        // This avoids the annoying "jump" behavior when clicking on different tickets
+        e.Handled = true;
+    }
 }

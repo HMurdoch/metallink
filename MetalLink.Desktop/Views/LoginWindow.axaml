@@ -28,17 +28,10 @@
     <StackPanel Spacing="10">
     <!-- Header (clean, readable) -->
     <StackPanel Spacing="6" HorizontalAlignment="Center" Margin="0,0,0,8">
-      <TextBlock Text="Metal Link"
-                 FontSize="22"
-                 FontWeight="Bold"
-                 HorizontalAlignment="Center">
-        <TextBlock.Foreground>
-          <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#1E88E5" Offset="0" />
-            <GradientStop Color="#8EC5FC" Offset="1" />
-          </LinearGradientBrush>
-        </TextBlock.Foreground>
-      </TextBlock>
+      <Image Source="avares://MetalLink.Desktop/Assets/metal_link_heading.png"
+             Height="40"
+             HorizontalAlignment="Center"
+             Margin="0,0,0,2" />
       <TextBlock Text="Sign in" FontSize="12" Foreground="{DynamicResource Brush.TextMuted}" HorizontalAlignment="Center" />
       <Border Height="2" Width="160" Background="{DynamicResource Brush.AccentGradient}" Opacity="0.8" />
     </StackPanel>
