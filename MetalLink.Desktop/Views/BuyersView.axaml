@@ -178,7 +178,7 @@
             </Grid>
 
             <!-- 4-column search grid (250px each = 1000px total) -->
-            <Grid Margin="0,8,0,0" Width="1000" HorizontalAlignment="Left">
+            <Grid x:Name="SearchCriteriaContent" Margin="0,8,0,0" Width="1000" HorizontalAlignment="Left">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="275" />
                 <ColumnDefinition Width="275" />

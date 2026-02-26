@@ -149,10 +149,17 @@
         <!-- SEARCH EXISTING CUSTOMER -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
-            <TextBlock Text="Search Existing Customer" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            <Grid PointerPressed="ToggleSearchCriteria" Cursor="Hand">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" x:Name="SearchCriteriaArrow" Text="▼" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Search Existing Customer" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
 
             <!-- 4-column search grid (250px each = 1000px total) -->
-            <Grid Margin="0,8,0,0" Width="1000" HorizontalAlignment="Left">
+            <Grid x:Name="SearchCriteriaContent" Margin="0,8,0,0" Width="1000" HorizontalAlignment="Left">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="275" />
                 <ColumnDefinition Width="275" />
@@ -283,8 +290,22 @@
 
               <!-- Left Column: Results grid -->
               <StackPanel Grid.Column="0" Spacing="0">
-                <TextBlock Text="Customer Search Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+                <Grid PointerPressed="ToggleSearchResults" Cursor="Hand">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" x:Name="SearchResultsArrow" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="Customer Search Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+                </Grid>
+                <Grid x:Name="SearchResultsContent" IsVisible="False">
+                  <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                  </Grid.RowDefinitions>
+                  
                 <DataGrid
+                    Grid.Row="0"
                     Margin="0,8,0,0"
                     Width="1100"
                     HorizontalAlignment="Left"
@@ -326,13 +347,22 @@
               </DataGrid.Columns>
                 </DataGrid>
 
-                <!-- Pagination Control -->
-                <local:PaginationControl DataContext="{Binding PaginationViewModel}" Margin="0,8,0,0" />
+                  <!-- Pagination Control -->
+                  <local:PaginationControl Grid.Row="1" DataContext="{Binding PaginationViewModel}" Margin="0,8,0,0" />
+                </Grid>
               </StackPanel>
 
               <!-- Right Column: Customer Details (400px) -->
               <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="0">
-                <TextBlock Text="Customer Details" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+                <Grid PointerPressed="ToggleCustomerDetails" Cursor="Hand">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" x:Name="CustomerDetailsArrow" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="Customer Details" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+                </Grid>
+                <StackPanel x:Name="CustomerDetailsContent" IsVisible="False">
                 <Border Margin="0,8,0,0" Padding="8" Background="{DynamicResource Brush.PanelBackground}" CornerRadius="4">
               <Grid>
                 <Grid.ColumnDefinitions>
@@ -462,6 +492,7 @@
                 </UniformGrid>
               </StackPanel>
             </Border>
+                </StackPanel>
               </StackPanel>
             </Grid>
           </StackPanel>
@@ -470,10 +501,17 @@
         <!-- CREATE NEW CUSTOMER -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
-            <TextBlock Text="Create/Edit customer" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            <Grid PointerPressed="ToggleCreateEdit" Cursor="Hand">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" x:Name="CreateEditArrow" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Create/Edit Customer" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
 
             <!-- 4-column form grid -->
-            <Grid Margin="0,8,0,0">
+            <Grid x:Name="CreateEditContent" IsVisible="False" Margin="0,8,0,0">
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="275" />
                   <ColumnDefinition Width="275" />
