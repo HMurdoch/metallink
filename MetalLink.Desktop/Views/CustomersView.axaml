@@ -146,7 +146,7 @@
                Margin="0,0,0,4"
                Stretch="Uniform" />
 
-        <!-- SEARCH EXISTING CUSTOMER -->
+        <!-- BLOCK 1: SEARCH CRITERIA -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
             <Grid PointerPressed="ToggleSearchCriteria" Cursor="Hand">
@@ -161,10 +161,10 @@
             <!-- 4-column search grid (250px each = 1000px total) -->
             <Grid x:Name="SearchCriteriaContent" Margin="0,8,0,0" Width="1000" HorizontalAlignment="Left">
               <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="275" />
-                <ColumnDefinition Width="275" />
-                <ColumnDefinition Width="275" />
-                <ColumnDefinition Width="275" />
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="300" />
               </Grid.ColumnDefinitions>
               <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -197,13 +197,14 @@
                 <TextBlock Text="Company" Foreground="#c0c4cf" />
                 <Grid>
                   <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="50" />
+                    <ColumnDefinition Width="70" />
                     <ColumnDefinition Width="*" />
                   </Grid.ColumnDefinitions>
 
                   <!-- Letter dropdown -->
                   <ComboBox
                       Grid.Column="0"
+                      Width="70"
                       ItemsSource="{Binding CompanyLetterFilters}"
                       SelectedItem="{Binding SelectedCompanyLetter}"
                       HorizontalAlignment="Stretch" />
@@ -273,6 +274,7 @@
                   Content="Clear"
                   Command="{Binding ClearCustomerSearchCommand}" />
                 <Button
+                  x:Name="SearchCustomersButton"
                   Classes="primary"
                   HorizontalAlignment="Center"
                   Width="100"
@@ -280,24 +282,27 @@
                   Command="{Binding SearchCustomerCommand}" />
               </StackPanel>
             </Grid>
+          </StackPanel>
+        </Border>
 
-            <!-- Results and Details Side-by-Side -->
-            <Grid Margin="0,12,0,0">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1100" />
-                <ColumnDefinition Width="500" />
-              </Grid.ColumnDefinitions>
+        <!-- BLOCKS 2 & 3: SEARCH RESULTS AND CUSTOMER DETAILS SIDE-BY-SIDE -->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="500" />
+          </Grid.ColumnDefinitions>
 
-              <!-- Left Column: Results grid -->
-              <StackPanel Grid.Column="0" Spacing="0">
-                <Grid PointerPressed="ToggleSearchResults" Cursor="Hand">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Grid.Column="0" x:Name="SearchResultsArrow" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Text="Customer Search Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
-                </Grid>
+          <!-- BLOCK 2: SEARCH RESULTS (Left Column) -->
+          <Border Grid.Column="0" Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4" Margin="0,0,8,0">
+            <StackPanel Spacing="8">
+              <Grid PointerPressed="ToggleSearchResults" Cursor="Hand">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="SearchResultsArrow" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" /><!-- Collapsed on load -->
+                <TextBlock Grid.Column="1" Text="Customer Search Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+              </Grid>
                 <Grid x:Name="SearchResultsContent" IsVisible="False">
                   <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -307,13 +312,12 @@
                 <DataGrid
                     Grid.Row="0"
                     Margin="0,8,0,0"
-                    Width="1100"
-                    HorizontalAlignment="Left"
+                    HorizontalAlignment="Stretch"
                     AutoGenerateColumns="False"
                     ItemsSource="{Binding PagedCustomerSearchResults}"
                     SelectedItem="{Binding FoundCustomer, Mode=TwoWay}">
               <DataGrid.Columns>
-                <DataGridTextColumn Header="Customer ID" Binding="{Binding CustomerId}" IsReadOnly="True" />
+                <DataGridTextColumn Header="Customer ID" Binding="{Binding CustomerId}" IsReadOnly="True" Width="130" />
                 <DataGridTextColumn Header="First Name"
                                     Binding="{Binding FirstName}" />
                 <DataGridTextColumn Header="Last Name"
@@ -324,7 +328,7 @@
                 <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*" IsReadOnly="True" />
 
                 <!-- Action buttons -->
-                <DataGridTemplateColumn Header="Actions" Width="150">
+                <DataGridTemplateColumn Header="Actions" Width="170">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
                       <StackPanel Orientation="Horizontal" Spacing="4">
@@ -350,20 +354,22 @@
                   <!-- Pagination Control -->
                   <local:PaginationControl Grid.Row="1" DataContext="{Binding PaginationViewModel}" Margin="0,8,0,0" />
                 </Grid>
-              </StackPanel>
+            </StackPanel>
+          </Border>
 
-              <!-- Right Column: Customer Details (400px) -->
-              <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="0">
-                <Grid PointerPressed="ToggleCustomerDetails" Cursor="Hand">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Grid.Column="0" x:Name="CustomerDetailsArrow" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Text="Customer Details" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
-                </Grid>
-                <StackPanel x:Name="CustomerDetailsContent" IsVisible="False">
-                <Border Margin="0,8,0,0" Padding="8" Background="{DynamicResource Brush.PanelBackground}" CornerRadius="4">
+          <!-- BLOCK 3: CUSTOMER DETAILS (Right Column) -->
+          <Border Grid.Column="1" Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
+            <StackPanel Spacing="8">
+              <Grid PointerPressed="ToggleCustomerDetails" Cursor="Hand">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="CustomerDetailsArrow" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" /><!-- Collapsed on load -->
+                <TextBlock Grid.Column="1" Text="Customer Details" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+              </Grid>
+            <StackPanel x:Name="CustomerDetailsContent" IsVisible="False"><!-- Collapsed on load -->
+              <Border Margin="0,8,0,0" Padding="8" Background="{DynamicResource Brush.PanelBackground}" CornerRadius="4">
               <Grid>
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="Auto" />
@@ -446,59 +452,63 @@
                 
                 <UniformGrid Rows="2" Columns="3">
                   <!-- ID Card -->
-                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}">
+                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}" Padding="5">
                     <StackPanel>
-                      <TextBlock Text="ID Card" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
-                      <Image Source="{Binding SelectedIdCardImage}" 
-                             Width="125" Height="125" Stretch="Uniform" Margin="4"/>
+                      <TextBlock Text="ID Card" FontSize="11" Foreground="#c0c4cf" Margin="0,0,0,4" FontWeight="SemiBold"/>
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding SelectedIdCardImage}" Width="120" Height="120" Stretch="Uniform"/>
+                      </Viewbox>
                     </StackPanel>
                   </Border>
                   
                   <!-- Driver License -->
-                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}">
+                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}" Padding="5">
                     <StackPanel>
-                      <TextBlock Text="Driver License" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
-                      <Image Source="{Binding SelectedDriverLicenseImage}" 
-                             Width="125" Height="125" Stretch="Uniform" Margin="4"/>
+                      <TextBlock Text="Driver License" FontSize="11" Foreground="#c0c4cf" Margin="0,0,0,4" FontWeight="SemiBold"/>
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding SelectedDriverLicenseImage}" Width="120" Height="120" Stretch="Uniform"/>
+                      </Viewbox>
                     </StackPanel>
                   </Border>
                   
                   <!-- Photo -->
-                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}">
+                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}" Padding="5">
                     <StackPanel>
-                      <TextBlock Text="Photo" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
-                      <Image Source="{Binding SelectedPhotoImage}" 
-                             Width="125" Height="125" Stretch="Uniform" Margin="4"/>
+                      <TextBlock Text="Photo" FontSize="11" Foreground="#c0c4cf" Margin="0,0,0,4" FontWeight="SemiBold"/>
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding SelectedPhotoImage}" Width="120" Height="120" Stretch="Uniform"/>
+                      </Viewbox>
                     </StackPanel>
                   </Border>
                   
                   <!-- Signature -->
-                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}">
+                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}" Padding="5">
                     <StackPanel>
-                      <TextBlock Text="Signature" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
-                      <Image Source="{Binding SelectedSignatureImage}" 
-                             Width="125" Height="125" Stretch="Uniform" Margin="4"/>
+                      <TextBlock Text="Signature" FontSize="11" Foreground="#c0c4cf" Margin="0,0,0,4" FontWeight="SemiBold"/>
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding SelectedSignatureImage}" Width="120" Height="120" Stretch="Uniform"/>
+                      </Viewbox>
                     </StackPanel>
                   </Border>
                   
                   <!-- Fingerprint -->
-                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}">
+                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}" Padding="5">
                     <StackPanel>
-                      <TextBlock Text="Fingerprint" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
-                      <Image Source="{Binding SelectedFingerprintImage}" 
-                             Width="125" Height="125" Stretch="Uniform" Margin="4"/>
+                      <TextBlock Text="Fingerprint" FontSize="11" Foreground="#c0c4cf" Margin="0,0,0,4" FontWeight="SemiBold"/>
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding SelectedFingerprintImage}" Width="120" Height="120" Stretch="Uniform"/>
+                      </Viewbox>
                     </StackPanel>
                   </Border>
                 </UniformGrid>
               </StackPanel>
-            </Border>
-                </StackPanel>
-              </StackPanel>
-            </Grid>
+              </Border>
+            </StackPanel>
           </StackPanel>
         </Border>
+        </Grid>
 
-        <!-- CREATE NEW CUSTOMER -->
+        <!-- BLOCK 4: CREATE NEW CUSTOMER -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
             <Grid PointerPressed="ToggleCreateEdit" Cursor="Hand">
@@ -506,12 +516,12 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" x:Name="CreateEditArrow" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="0" x:Name="CreateEditArrow" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" /><!-- Collapsed on load -->
               <TextBlock Grid.Column="1" Text="Create/Edit Customer" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
             </Grid>
 
             <!-- 4-column form grid -->
-            <Grid x:Name="CreateEditContent" IsVisible="False" Margin="0,8,0,0">
+            <Grid x:Name="CreateEditContent" IsVisible="False" Margin="0,8,0,0"><!-- Collapsed on load -->
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="275" />
                   <ColumnDefinition Width="275" />
@@ -519,6 +529,8 @@
                   <ColumnDefinition Width="275" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
                   <RowDefinition Height="Auto" />
                   <RowDefinition Height="Auto" />
                   <RowDefinition Height="Auto" />
@@ -546,11 +558,12 @@
                   <TextBlock Text="Company" Foreground="#c0c4cf" />
                   <Grid>
                     <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="50" />
+                      <ColumnDefinition Width="70" />
                       <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <ComboBox
                         Grid.Column="0"
+                        Width="70"
                         ItemsSource="{Binding CompanyLetterFilters}"
                         SelectedItem="{Binding SelectedNewCompanyLetter}"
                         IsEnabled="{Binding NewIsCompany}"
@@ -613,91 +626,103 @@
                   <TextBlock Text="Email" Foreground="#c0c4cf" />
                   <TextBox Text="{Binding NewEmail}" />
                 </StackPanel>
+
+              <!-- Customer Images Row (Single row of 5 images) -->
+              <StackPanel Grid.Row="3" Grid.ColumnSpan="4" Margin="0,16,0,0" Spacing="8">
+                <TextBlock Text="Customer Images (Optional)" 
+                          FontWeight="Bold" 
+                          Foreground="{DynamicResource Brush.TextPrimary}"
+                          FontSize="13" />
+                
+                <UniformGrid Rows="1" Columns="5" Width="1100" HorizontalAlignment="Left">
+                  <!-- ID Card -->
+                  <StackPanel Spacing="4" Margin="0,0,8,0">
+                    <TextBlock Text="ID Card" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
+                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Height="120" Width="120" Padding="5">
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding IdCardImage}" Width="110" Height="110" Stretch="Uniform"/>
+                      </Viewbox>
+                    </Border>
+                    <Button Content="📄 Scan ID" Command="{Binding CaptureIdCardCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
+                  </StackPanel>
+                  
+                  <!-- Driver License -->
+                  <StackPanel Spacing="4" Margin="0,0,8,0">
+                    <TextBlock Text="Driver License" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
+                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Height="120" Width="120" Padding="5">
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding DriverLicenseImage}" Width="110" Height="110" Stretch="Uniform"/>
+                      </Viewbox>
+                    </Border>
+                    <Button Content="📄 License" Command="{Binding CaptureDriverLicenseCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
+                  </StackPanel>
+                  
+                  <!-- Photo -->
+                  <StackPanel Spacing="4" Margin="0,0,8,0">
+                    <TextBlock Text="Photo" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
+                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Height="120" Width="120" Padding="5">
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding PhotoImage}" Width="110" Height="110" Stretch="Uniform"/>
+                      </Viewbox>
+                    </Border>
+                    <Button Content="📷 Take Photo" Command="{Binding CapturePhotoCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
+                  </StackPanel>
+
+                  <!-- Signature -->
+                  <StackPanel Spacing="4" Margin="0,0,8,0">
+                    <TextBlock Text="Signature" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
+                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Height="120" Width="120" Padding="5">
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding SignatureImage}" Width="110" Height="110" Stretch="Uniform"/>
+                      </Viewbox>
+                    </Border>
+                    <Button Content="✍ Signature" Command="{Binding CaptureSignatureCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
+                  </StackPanel>
+
+                  <!-- Fingerprint -->
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="Fingerprint" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
+                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Height="120" Width="120" Padding="5">
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding FingerprintImage}" Width="110" Height="110" Stretch="Uniform"/>
+                      </Viewbox>
+                    </Border>
+                    <Button Content="👆 Fingerprint" Command="{Binding CaptureFingerprintCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
+                  </StackPanel>
+                </UniformGrid>
+              </StackPanel>
+
+              <!-- Action Buttons -->
+              <StackPanel Grid.Row="4"
+                          Grid.ColumnSpan="4"
+                  Orientation="Horizontal"
+                  HorizontalAlignment="Right"
+                  Spacing="8"
+                  Margin="0,20,0,0">
+
+                <Button
+                    Width="100"
+                    Content="Clear"
+                    Command="{Binding ClearNewCustomerCommand}"
+                    IsEnabled="True" />
+
+                <Button
+                    Classes="primary"
+                    Width="100"
+                    Content="Create"
+                    Command="{Binding CreateCustomerCommand}"
+                    IsVisible="{Binding IsCreateMode}"
+                    IsEnabled="True" />
+
+                <Button
+                    Classes="primary"
+                    Width="100"
+                    Content="Update"
+                    Command="{Binding UpdateCustomerCommand}"
+                    IsVisible="{Binding IsEditMode}"
+                    IsEnabled="True" />
+              </StackPanel>
             </Grid>
-
-            <!-- Customer Images Row (Single row of 5 images) -->
-            <StackPanel Margin="0,16,0,0" Spacing="8">
-              <TextBlock Text="Customer Images (Optional)" 
-                         FontWeight="Bold" 
-                         Foreground="{DynamicResource Brush.TextPrimary}"
-                         FontSize="13" />
-              
-              <UniformGrid Rows="1" Columns="5" Width="1100" HorizontalAlignment="Left">
-                <!-- ID Card -->
-                <StackPanel Spacing="4" Margin="0,0,8,0">
-                  <TextBlock Text="ID Card" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
-                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Height="130" Width="130">
-                    <Image Source="{Binding IdCardImage}" Stretch="Uniform" Margin="2"/>
-                  </Border>
-                  <Button Content="📄 Scan ID" Command="{Binding CaptureIdCardCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
-                </StackPanel>
-                
-                <!-- Driver License -->
-                <StackPanel Spacing="4" Margin="0,0,8,0">
-                  <TextBlock Text="Driver License" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
-                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Height="130" Width="130">
-                    <Image Source="{Binding DriverLicenseImage}" Stretch="Uniform" Margin="2"/>
-                  </Border>
-                  <Button Content="📄 License" Command="{Binding CaptureDriverLicenseCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
-                </StackPanel>
-                
-                <!-- Photo -->
-                <StackPanel Spacing="4" Margin="0,0,8,0">
-                  <TextBlock Text="Photo" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
-                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Height="130" Width="130">
-                    <Image Source="{Binding PhotoImage}" Stretch="Uniform" Margin="2"/>
-                  </Border>
-                  <Button Content="📷 Take Photo" Command="{Binding CapturePhotoCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
-                </StackPanel>
-
-                <!-- Signature -->
-                <StackPanel Spacing="4" Margin="0,0,8,0">
-                  <TextBlock Text="Signature" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
-                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Height="130" Width="130">
-                    <Image Source="{Binding SignatureImage}" Stretch="Uniform" Margin="2"/>
-                  </Border>
-                  <Button Content="✍ Signature" Command="{Binding CaptureSignatureCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
-                </StackPanel>
-
-                <!-- Fingerprint -->
-                <StackPanel Spacing="4">
-                  <TextBlock Text="Fingerprint" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
-                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Height="130" Width="130">
-                    <Image Source="{Binding FingerprintImage}" Stretch="Uniform" Margin="2"/>
-                  </Border>
-                  <Button Content="👆 Fingerprint" Command="{Binding CaptureFingerprintCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
-                </StackPanel>
-              </UniformGrid>
-            </StackPanel>
-
-            <!-- Action Buttons -->
-            <StackPanel
-                Orientation="Horizontal"
-                HorizontalAlignment="Right"
-                Spacing="8"
-                Margin="0,20,0,0">
-
-              <Button
-                  Width="100"
-                  Content="Clear"
-                  Command="{Binding ClearNewCustomerCommand}" />
-
-              <Button
-                  Classes="primary"
-                  Width="100"
-                  Content="Create"
-                  Command="{Binding CreateCustomerCommand}"
-                  IsEnabled="{Binding CanCreateCustomer}"
-                  IsVisible="{Binding IsCreateMode}" />
-
-              <Button
-                  Classes="primary"
-                  Width="100"
-                  Content="Update"
-                  Command="{Binding UpdateCustomerCommand}"
-                  IsEnabled="{Binding CanUpdateCustomer}"
-                  IsVisible="{Binding IsEditMode}" />
-            </StackPanel>
 
             <TextBlock
                 Margin="0,4,0,0"

@@ -2,16 +2,101 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using MetalLink.Desktop.ViewModels;
+using System;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 
 namespace MetalLink.Desktop.Views;
 
 public partial class CustomersView : UserControl
 {
+    private int _previousResultCount = 0;
+    private Button? _searchButton;
+
     public CustomersView()
     {
         InitializeComponent();
         // NOTE: Selection is already handled via DataGrid SelectedItem binding.
         // Do NOT execute commands from PropertyChanged here; it causes recursion.
+        DataContextChanged += OnDataContextChanged;
+        Loaded += (s, e) => OnLoaded();
+    }
+
+    private void OnLoaded()
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            HookupSearchResultsMonitoring(vm);
+        }
+        
+        // Expand Create/Edit panel on load
+        var createEditArrow = this.FindControl<TextBlock>("CreateEditArrow");
+        var createEditContent = this.FindControl<Control>("CreateEditContent");
+        if (createEditArrow != null && createEditContent != null)
+        {
+            createEditArrow.Text = "▼";
+            createEditContent.IsVisible = true;
+        }
+        
+        // Set focus to Search button so user can press Enter to search
+        _searchButton = this.FindControl<Button>("SearchCustomersButton");
+        _searchButton?.Focus();
+    }
+
+    private void OnDataContextChanged(object? sender, EventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            HookupSearchResultsMonitoring(vm);
+        }
+    }
+
+    private void HookupSearchResultsMonitoring(MainWindowViewModel vm)
+    {
+        // Listen to PropertyChanged for the ObservableCollection reference itself
+        vm.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.PagedCustomerSearchResults))
+            {
+                // Collection reference changed, hook up to CollectionChanged
+                HookupCollectionMonitoring(vm);
+            }
+        };
+        
+        // Also hook up immediately in case the collection already exists
+        HookupCollectionMonitoring(vm);
+    }
+
+    private void HookupCollectionMonitoring(MainWindowViewModel vm)
+    {
+        var collection = vm.PagedCustomerSearchResults;
+        if (collection == null) return;
+        
+        // Listen to collection changes (items added/removed)
+        collection.CollectionChanged += async (s, e) =>
+        {
+            System.Console.WriteLine($"[CustomersView] PagedCustomerSearchResults collection changed: Count={collection.Count}, PreviousCount={_previousResultCount}");
+            
+            if (collection.Count > 0)
+            {
+                if (collection.Count != _previousResultCount)
+                {
+                    System.Console.WriteLine($"[CustomersView] Results count changed, expanding panels...");
+                    // Small delay to ensure controls are rendered before expanding
+                    await System.Threading.Tasks.Task.Delay(100);
+                    
+                    // Results changed, expand all three panels
+                    ExpandSearchResultsAndDetails();
+                    ExpandCreateEdit();
+                    _previousResultCount = collection.Count;
+                }
+            }
+            else if (collection.Count == 0)
+            {
+                System.Console.WriteLine($"[CustomersView] No results found");
+                _previousResultCount = 0;
+            }
+        };
     }
 
     private void InitializeComponent()
@@ -54,5 +139,42 @@ public partial class CustomersView : UserControl
         bool isCollapsed = arrow.Text == "▶";
         arrow.Text = isCollapsed ? "▼" : "▶";
         content.IsVisible = isCollapsed;
+    }
+
+    public void ExpandSearchResultsAndDetails()
+    {
+        ExpandPanel("SearchResultsArrow", "SearchResultsContent");
+        ExpandPanel("CustomerDetailsArrow", "CustomerDetailsContent");
+    }
+
+    public void ExpandCreateEdit()
+    {
+        ExpandPanel("CreateEditArrow", "CreateEditContent");
+    }
+
+    private void ExpandPanel(string arrowName, string contentName)
+    {
+        var arrow = this.FindControl<TextBlock>(arrowName);
+        var content = this.FindControl<Control>(contentName);
+        
+        System.Console.WriteLine($"[CustomersView] ExpandPanel: {arrowName} - arrow={arrow != null}, content={content != null}");
+        
+        if (arrow == null || content == null)
+        {
+            System.Console.WriteLine($"[CustomersView] ERROR: Could not find {arrowName} or {contentName}");
+            return;
+        }
+        
+        // Only expand if currently collapsed
+        if (arrow.Text == "▶")
+        {
+            System.Console.WriteLine($"[CustomersView] Expanding {arrowName}");
+            arrow.Text = "▼";
+            content.IsVisible = true;
+        }
+        else
+        {
+            System.Console.WriteLine($"[CustomersView] {arrowName} already expanded");
+        }
     }
 }
