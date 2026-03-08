@@ -500,7 +500,6 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         ShowCustomersCommand = new AsyncRelayCommand(async () =>
         {
             CurrentSection = EnumMainSection.Customers;
-            await ClearNewCustomerFormAsync();
         });
         ShowBuyersCommand = new AsyncRelayCommand(async () =>
         {
@@ -525,11 +524,27 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
         // Core commands used by CustomersView/BuyersView (Search/Clear)
         SearchCustomerCommand = new AsyncCommand(SearchCustomerAsync);
+        CreateCustomerCommand = new AsyncCommand(CreateCustomerAsync);
+        CreateBuyerCommand = new AsyncCommand(CreateBuyerAsync);
         ClearCustomerSearchCommand = new RelayCommand(ClearCustomerSearch);
+        ClearNewCustomerCommand = new RelayCommand(ClearNewCustomerForm);
+        ClearNewBuyerCommand = new AsyncRelayCommand(ClearNewBuyerFormAsync);
+        UpdateCustomerCommand = new AsyncRelayCommand(OnUpdateCustomerAsync, () => CanUpdateCustomer);
+        UpdateBuyerCommand = new AsyncRelayCommand(OnUpdateBuyerAsync, () => CanUpdateBuyer);
+        EditCustomerCommand = new RelayCommand<CustomerDto>(OnEditCustomer);
+        DeleteCustomerCommand = new AsyncRelayCommand<CustomerDto>(OnDeleteCustomerAsync);
+        EditBuyerCommand = new RelayCommand<BuyerDto>(OnEditBuyer);
+        DeleteBuyerCommand = new AsyncRelayCommand<BuyerDto>(OnDeleteBuyerAsync);
+        LogTicketCommand = new RelayCommand<CustomerDto>(OnLogTicket);
+        LogBuyerTicketCommand = new RelayCommand<BuyerDto>(OnLogBuyerTicket);
 
         // BuyersView binds to SearchBuyerCommand
         SearchBuyerCommand = new AsyncCommand(SearchBuyerAsync);
+        SearchCustomersCommand = new AsyncCommand(SearchCustomerAsync);
+        SearchBuyersCommand = new AsyncCommand(SearchBuyerAsync);
+        SearchBuyerCommand = SearchBuyersCommand;
         ClearBuyerSearchCommand = new RelayCommand(ClearBuyerSearch);
+        ClearCustomerSearchCommand = new RelayCommand(ClearCustomerSearch);
 
         // Kick off independent lookups (do NOT share selection state).
         // IMPORTANT: run after the UI loop starts to avoid startup deadlocks.
@@ -572,12 +587,9 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         SelectedTabIndex = 0;
         IsSearchSiteEnabled = false;
 
-        // Core commands
+        // Core commands (note: customer/buyer commands already initialized above)
         CheckDbCommand = new AsyncCommand(CheckDbAsync);
         LogoutCommand = new AsyncCommand(LogoutAsync);
-        SearchCustomerCommand = new AsyncCommand(SearchCustomerAsync);
-        CreateCustomerCommand = new AsyncCommand(CreateCustomerAsync);
-        CreateBuyerCommand = new AsyncCommand(CreateBuyerAsync);
         FinalizeReceivingTicketCommand = new AsyncCommand(FinalizeTicketAsync);
         FinalizeSendingTicketCommand = new AsyncCommand(FinalizeSendingTicketAsync);
         AddReceivingLineCommand = new AsyncCommand(AddReceivingLineAsync);
@@ -608,7 +620,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             // Trigger company data loading for dropdowns
             _ = CompanyLetterFilters; // Lazy load trigger
 
-            await ClearNewCustomerFormAsync();
+            await ClearNewCustomerForm();
         });
         
         ShowBuyersCommand = ReactiveUI.ReactiveCommand.CreateFromTask(async () =>
@@ -638,26 +650,10 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         ShowStockMovementCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.StockMovement);
         ShowSettingsCommand = ReactiveUI.ReactiveCommand.Create(() => CurrentSection = EnumMainSection.Settings);
 
-        EditCustomerCommand = new RelayCommand<CustomerDto>(OnEditCustomer);
-        EditBuyerCommand = new RelayCommand<BuyerDto>(OnEditBuyer);
-        DeleteCustomerCommand = new AsyncRelayCommand<CustomerDto>(execute: OnDeleteCustomerAsync);
-        LogTicketCommand = new RelayCommand<CustomerDto>(OnLogTicket);
-
-        DeleteBuyerCommand = new AsyncRelayCommand<BuyerDto>(execute: OnDeleteBuyerAsync);
-        LogBuyerTicketCommand = new RelayCommand<BuyerDto>(OnLogBuyerTicket);
-        ClearNewCustomerCommand = new AsyncRelayCommand(ClearNewCustomerFormAsync);
-        ClearNewBuyerCommand = new AsyncRelayCommand(ClearNewBuyerFormAsync);
-        ClearCustomerSearchCommand = new RelayCommand(ClearCustomerSearch);
-        ClearBuyerSearchCommand = new RelayCommand(ClearBuyerSearch);
-
+        // NOTE: Customer and Buyer commands are already initialized above (outside #if false block)
+        
         Console.WriteLine($"Next account number = {NewAccountNumber}");
         OnPropertyChanged(nameof(NewAccountNumberDisplay));
-
-        UpdateCustomerCommand = new AsyncRelayCommand(OnUpdateCustomerAsync, () => CanUpdateCustomer);
-        UpdateBuyerCommand = new AsyncRelayCommand(OnUpdateBuyerAsync, () => CanUpdateBuyer);
-        SearchCustomersCommand = new AsyncRelayCommand(SearchCustomerAsync);
-        SearchBuyersCommand = new AsyncRelayCommand(SearchBuyerAsync);
-        SearchBuyerCommand = SearchBuyersCommand;
         // Camera commands
         CaptureWbFrontBeforeCommand = new AsyncCommand(() =>
             CaptureAndUploadAsync(CameraDeviceType.WeighbridgeFront, "wb_front_before"));
@@ -765,7 +761,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     {
         InitializeCountries();
         await LoadProvincesAsync();
-        await ClearNewCustomerFormAsync();
+        ClearNewCustomerForm();
     }
 
     private void BuildNavItems()
@@ -1083,6 +1079,19 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
     // --- Customer search / create ---
 
+    private async Task LoadNextAccountNumberAsync()
+    {
+        try
+        {
+            NewAccountNumber = await _customerService.GetNextAccountNumberAsync();
+            OnPropertyChanged(nameof(NewAccountNumberDisplay));
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[ERROR] LoadNextAccountNumberAsync failed: {ex.Message}");
+        }
+    }
+
     private async Task SearchCustomerAsync()
     {
         if (IsBusy) return;
@@ -1329,7 +1338,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             
             // if you want the form cleared except the new account number, you can adjust here;
             // right now you probably still call ClearNewCustomerForm();
-            await ClearNewCustomerFormAsync();
+            ClearNewCustomerForm();
         }
         catch (HttpRequestException ex)
         {
@@ -2529,7 +2538,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         FoundBuyer = null;
     }
 
-    private async Task ClearNewCustomerFormAsync()
+    private void ClearNewCustomerForm()
     {
         // Reset edit mode
         FoundCustomer = null;
@@ -2572,7 +2581,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
         // Fetch a preview of the next globally-unique account number.
         // This uses the shared generator (max(customers,buyers)+1) and does not consume a sequence.
-        NewAccountNumber = await _customerService.GetNextAccountNumberAsync();
+        _ = LoadNextAccountNumberAsync();
         OnPropertyChanged(nameof(NewAccountNumberDisplay));
 
         OnPropertyChanged(nameof(CanCreateCustomer));

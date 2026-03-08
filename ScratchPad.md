@@ -423,7 +423,7 @@ MetalLink.Desktop/ViewModels/Sending/TicketsSendingViewModel.cs
 2) After Create Header in New Customer/Buyer mode: untick + clear results + add/select new ticket (red dot)
 When creating from New Customer/Buyer mode, we now:
 
-set IsNewCustomerOnly / IsNewBuyerOnly to false
+set IsCustomerOnly / IsBuyerOnly to false
 clear the Results grid collection
 add a new *SearchResultDto row built from the created ticket
 TicketStatus = created.TicketState (so H => red dot)
@@ -537,7 +537,7 @@ In TicketsReceivingView.axaml the “Type” column is now tied to the existing 
 
 Type column now has:
 IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}"
-Since ShouldShowTicketColumns => !IsNewCustomerOnly, the Type column is hidden when New Customer? is ticked.
+Since ShouldShowTicketColumns => !IsCustomerOnly, the Type column is hidden when New Customer? is ticked.
 
 2) Both systems: Results grid becomes 60% width in New Customer/Buyer mode, otherwise 100%
 Implemented by wrapping the Results Border in a 2-column Grid:
@@ -547,12 +547,12 @@ Column 1 = transparent spacer (only “exists” in new-customer/buyer mode)
 To avoid converters, I added two bound GridLength properties in each ViewModel:
 
 Receiving (TicketsReceivingViewModel)
-ResultsMainColumnWidth = 3* when IsNewCustomerOnly, else 1*
-ResultsSpacerColumnWidth = 2* when IsNewCustomerOnly, else 0
+ResultsMainColumnWidth = 3* when IsCustomerOnly, else 1*
+ResultsSpacerColumnWidth = 2* when IsCustomerOnly, else 0
 Sending (TicketsSendingViewModel)
-ResultsMainColumnWidth = 3* when IsNewBuyerOnly, else 1*
-ResultsSpacerColumnWidth = 2* when IsNewBuyerOnly, else 0
-And I notify these properties when the checkbox is toggled (OnPropertyChanged added in both IsNewCustomerOnly and IsNewBuyerOnly setters).
+ResultsMainColumnWidth = 3* when IsBuyerOnly, else 1*
+ResultsSpacerColumnWidth = 2* when IsBuyerOnly, else 0
+And I notify these properties when the checkbox is toggled (OnPropertyChanged added in both IsCustomerOnly and IsBuyerOnly setters).
 
 Files changed:
 
@@ -964,3 +964,45 @@ Can you run the dotnet ef database update command above and paste the console ou
 
 
 
+
+4
+I can see from the documentation that most phases are complete. However, I notice:
+
+UI_REFACTORING_PLAN.md shows Phase 3 is marked as “PENDING” in the title but “COMPLETE” in the details
+Phase 5 (Fix DataGrid Jumping) shows the implementation is done but needs user testing
+Could you please clarify which implementation you’d like me to proceed with? Here are some options:
+
+Option 1: Implement Phase 4: Collapsible Panels (which appears to be the next incomplete phase)
+
+Option 2: Work on something from UI_FIXES_PLAN.md
+
+Option 3: Address a specific bug or feature you have in mind
+
+Option 4: Review and test the DataGrid jumping fix (Phase 5)
+
+Option 5: Something else entirely based on the ScratchPad notes
+
+Please let me know which direction you’d like me to take, or if there’s a specific task you’d like me to implement!
+
+
+
+
+Please do 1 and implement Phase 4
+
+Video isn’t working. The intro video doesn’t play any sound or video just a black box, and the Video Metal Link logo in the top left of the app isn’t playing.
+
+
+This is 100% a graphics/rendering driver issue in your VMware environment. The Avalonia rendering pipeline (which uses Skia) cannot output pixels to your display.
+
+The ONLY solutions are environmental:
+
+Update VMware Tools (most important):
+
+sudo apt update && sudo apt install --only-upgrade open-vm-tools-desktop && sudo reboot
+Enable 3D Graphics in VMware settings (if disabled)
+
+Update VMware Workstation/ESXi version
+
+Try a different display protocol (if using remote)
+
+ATATT3xFfGF0NqJviRWhTU4pCFS0YlQDfcszIV0wewY2X04xYBfbhVqbzC0H18O-izqU5b4qPeZNGcBHMMDR5I5s4KxaDGrjye_Y39yD4T7KYaqGKgVyZQ0aD_LZoSOoWfhkHEA3kta_iHeAtDG_2ZM9lRjT-WwZEvehAqdq_HABWlEGc8WLsTg=23A5C40A

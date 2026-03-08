@@ -20,6 +20,43 @@ public partial class CustomersView : UserControl
         // Do NOT execute commands from PropertyChanged here; it causes recursion.
         DataContextChanged += OnDataContextChanged;
         Loaded += (s, e) => OnLoaded();
+        
+        // Hook up button click debugging
+        Loaded += (s, e) => SetupButtonDebug();
+    }
+    
+    private void SetupButtonDebug()
+    {
+        var clearBtn = this.FindControl<Button>("ClearCustomerButton");
+        var createBtn = this.FindControl<Button>("CreateCustomerButton");
+        var updateBtn = this.FindControl<Button>("UpdateCustomerButton");
+        
+        if (clearBtn != null)
+        {
+            clearBtn.Click += (s, e) => 
+            {
+                System.Console.WriteLine("[CustomersView] Clear button clicked");
+                e.Handled = false; // Allow command to execute
+            };
+        }
+        
+        if (createBtn != null)
+        {
+            createBtn.Click += (s, e) => 
+            {
+                System.Console.WriteLine("[CustomersView] Create button clicked");
+                e.Handled = false; // Allow command to execute
+            };
+        }
+        
+        if (updateBtn != null)
+        {
+            updateBtn.Click += (s, e) => 
+            {
+                System.Console.WriteLine("[CustomersView] Update button clicked");
+                e.Handled = false; // Allow command to execute
+            };
+        }
     }
 
     private void OnLoaded()

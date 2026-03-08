@@ -3,7 +3,7 @@
         xmlns:vm="clr-namespace:MetalLink.Desktop.ViewModels"
         x:Class="MetalLink.Desktop.Views.LoginWindow"
         x:DataType="vm:LoginViewModel"
-        Width="420" Height="300"
+        Width="420" Height="320"
         Title="Metal Link - Login"
         Background="{DynamicResource Brush.MetalBackground}">
 
@@ -46,14 +46,28 @@
              CornerRadius="8" />
 
     <TextBlock Classes="login-label" Text="Password" Foreground="{DynamicResource Brush.TextMuted}" />
-    <TextBox Text="{Binding Password}"
-             PasswordChar="•"
-             Background="#EEF1F5"
-             Foreground="#111827"
-             Padding="10,8"
-             BorderBrush="#9CA3AF"
-             BorderThickness="1"
-             CornerRadius="8" />
+    <Grid ColumnDefinitions="*,Auto">
+        <TextBox x:Name="PasswordBox"
+                 Grid.Column="0"
+                 Padding="10,8"
+                 BorderBrush="#9CA3AF"
+                 BorderThickness="1"
+                 CornerRadius="8"
+                 Background="#EEF1F5"
+                 Foreground="#111827" />
+        <Button Grid.Column="1"
+                x:Name="TogglePasswordButton"
+                Margin="0,0,8,0"
+                Width="32"
+                Height="32"
+                VerticalAlignment="Center"
+                Background="Transparent"
+                BorderThickness="0"
+                Cursor="Hand"
+                Classes="toggle-password-btn">
+            <TextBlock x:Name="EyeIcon" Text="👁️" FontSize="16" />
+        </Button>
+    </Grid>
 
     <Button Content="Login"
             Classes="primary"

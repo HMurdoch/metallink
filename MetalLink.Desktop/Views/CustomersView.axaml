@@ -628,7 +628,7 @@
                 </StackPanel>
 
               <!-- Customer Images Row (Single row of 5 images) -->
-              <StackPanel Grid.Row="3" Grid.ColumnSpan="4" Margin="0,16,0,0" Spacing="8">
+              <StackPanel Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="4" Margin="0,16,0,0" Spacing="8">
                 <TextBlock Text="Customer Images (Optional)" 
                           FontWeight="Bold" 
                           Foreground="{DynamicResource Brush.TextPrimary}"
@@ -638,56 +638,56 @@
                   <!-- ID Card -->
                   <StackPanel Spacing="4" Margin="0,0,8,0">
                     <TextBlock Text="ID Card" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
-                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Height="120" Width="120" Padding="5">
+                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Width="150" Height="150" Padding="5">
                       <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
-                        <Image Source="{Binding IdCardImage}" Width="110" Height="110" Stretch="Uniform"/>
+                        <Image Source="{Binding IdCardImage}" Width="150" Height="150" Stretch="Uniform"/>
                       </Viewbox>
                     </Border>
-                    <Button Content="📄 Scan ID" Command="{Binding CaptureIdCardCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
+                    <Button Content="📄 Scan ID" Command="{Binding CaptureIdCardCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" Height="20" />
                   </StackPanel>
                   
                   <!-- Driver License -->
                   <StackPanel Spacing="4" Margin="0,0,8,0">
                     <TextBlock Text="Driver License" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
-                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Height="120" Width="120" Padding="5">
+                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Width="150" Height="150" Padding="5">
                       <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
-                        <Image Source="{Binding DriverLicenseImage}" Width="110" Height="110" Stretch="Uniform"/>
+                        <Image Source="{Binding DriverLicenseImage}" Width="150" Height="150" Stretch="Uniform"/>
                       </Viewbox>
                     </Border>
-                    <Button Content="📄 License" Command="{Binding CaptureDriverLicenseCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
+                    <Button Content="📄 License" Command="{Binding CaptureDriverLicenseCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" Height="20" />
                   </StackPanel>
                   
                   <!-- Photo -->
                   <StackPanel Spacing="4" Margin="0,0,8,0">
                     <TextBlock Text="Photo" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
-                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Height="120" Width="120" Padding="5">
+                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Width="150" Height="150" Padding="5">
                       <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
-                        <Image Source="{Binding PhotoImage}" Width="110" Height="110" Stretch="Uniform"/>
+                        <Image Source="{Binding PhotoImage}" Width="150" Height="150" Stretch="Uniform"/>
                       </Viewbox>
                     </Border>
-                    <Button Content="📷 Take Photo" Command="{Binding CapturePhotoCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
+                    <Button Content="📷 Take Photo" Command="{Binding CapturePhotoCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" Height="20" />
                   </StackPanel>
 
                   <!-- Signature -->
                   <StackPanel Spacing="4" Margin="0,0,8,0">
                     <TextBlock Text="Signature" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
-                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Height="120" Width="120" Padding="5">
+                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Width="150" Height="150" Padding="5">
                       <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
-                        <Image Source="{Binding SignatureImage}" Width="110" Height="110" Stretch="Uniform"/>
+                        <Image Source="{Binding SignatureImage}" Width="150" Height="150" Stretch="Uniform"/>
                       </Viewbox>
                     </Border>
-                    <Button Content="✍ Signature" Command="{Binding CaptureSignatureCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
+                    <Button Content="✍ Signature" Command="{Binding CaptureSignatureCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" Height="20" />
                   </StackPanel>
 
                   <!-- Fingerprint -->
-                  <StackPanel Spacing="4">
+                  <StackPanel Spacing="4" Margin="0,0,8,0">
                     <TextBlock Text="Fingerprint" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
-                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Height="120" Width="120" Padding="5">
+                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Width="150" Height="150" Padding="5">
                       <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
-                        <Image Source="{Binding FingerprintImage}" Width="110" Height="110" Stretch="Uniform"/>
+                        <Image Source="{Binding FingerprintImage}" Width="150" Height="150" Stretch="Uniform"/>
                       </Viewbox>
                     </Border>
-                    <Button Content="👆 Fingerprint" Command="{Binding CaptureFingerprintCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
+                    <Button Content="👆 Fingerprint" Command="{Binding CaptureFingerprintCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" Height="20"/>
                   </StackPanel>
                 </UniformGrid>
               </StackPanel>
@@ -701,26 +701,33 @@
                   Margin="0,20,0,0">
 
                 <Button
+                    Name="ClearCustomerButton"
                     Width="100"
                     Content="Clear"
                     Command="{Binding ClearNewCustomerCommand}"
-                    IsEnabled="True" />
+                    Classes="primary"
+                    IsEnabled="True"
+                    ToolTip.Tip="Clear form" />
 
                 <Button
+                    Name="CreateCustomerButton"
                     Classes="primary"
                     Width="100"
                     Content="Create"
                     Command="{Binding CreateCustomerCommand}"
                     IsVisible="{Binding IsCreateMode}"
-                    IsEnabled="True" />
+                    IsEnabled="True"
+                    ToolTip.Tip="Create new customer" />
 
                 <Button
+                    Name="UpdateCustomerButton"
                     Classes="primary"
                     Width="100"
                     Content="Update"
                     Command="{Binding UpdateCustomerCommand}"
                     IsVisible="{Binding IsEditMode}"
-                    IsEnabled="True" />
+                    IsEnabled="True"
+                    ToolTip.Tip="Update customer" />
               </StackPanel>
             </Grid>
 
@@ -732,7 +739,7 @@
                 IsVisible="{Binding IsNewCustomerFullNameInvalid}" />
           </StackPanel>
         </Border>
-
     </StackPanel>
+
   </Border>
 </UserControl>

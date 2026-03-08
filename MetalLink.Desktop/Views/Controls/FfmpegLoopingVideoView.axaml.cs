@@ -74,7 +74,18 @@ public partial class FfmpegLoopingVideoView : UserControl
 
     private static async Task EnsureFfmpegAsync()
     {
-        // Downloads FFmpeg binaries on first run into a cache folder.
+        // Try to use system FFmpeg first
+        if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+        {
+            var systemFfmpeg = OperatingSystem.IsLinux() ? "/usr/bin/ffmpeg" : "/usr/local/bin/ffmpeg";
+            if (File.Exists(systemFfmpeg))
+            {
+                FFmpeg.SetExecutablesPath(Path.GetDirectoryName(systemFfmpeg) ?? "/usr/bin");
+                return;
+            }
+        }
+
+        // Fallback: Downloads FFmpeg binaries on first run into a cache folder.
         // Works cross-distro without system ffmpeg.
         var dir = Path.Combine(Path.GetTempPath(), "metallink_ffmpeg");
         Directory.CreateDirectory(dir);
@@ -118,8 +129,10 @@ public partial class FfmpegLoopingVideoView : UserControl
             if (frameCount < 1)
                 frameCount = fps * 7;
 
-            // Cache frames per input file size (cheap fingerprint)
-            var framesDir = Path.Combine(Path.GetTempPath(), $"metallink_logo_frames_{new FileInfo(inputPath).Length}");
+            // Cache frames per input file (use filename + size to avoid collisions)
+            var fileInfo = new FileInfo(inputPath);
+            var fileName = Path.GetFileNameWithoutExtension(inputPath);
+            var framesDir = Path.Combine(Path.GetTempPath(), $"metallink_frames_{fileName}_{fileInfo.Length}");
             Directory.CreateDirectory(framesDir);
 
             var outputPattern = Path.Combine(framesDir, "frame_%05d.png");
@@ -133,12 +146,39 @@ public partial class FfmpegLoopingVideoView : UserControl
                     try { File.Delete(f); } catch { }
                 }
 
-                // Note: parameters are passed as a single raw argument string.
-                // -t ensures we don't cut the clip early; -frames:v is a safety cap.
-                var args = $"-y -i \"{inputPath}\" -t {duration.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)} -vf fps={fps},scale=256:-1:flags=lanczos -frames:v {frameCount} \"{outputPattern}\"";
-                var conversion = FFmpeg.Conversions.New();
-                conversion.AddParameter(args, ParameterPosition.PreInput);
-                await conversion.Start(ct);
+                // Extract frames using raw ffmpeg command via ProcessStartInfo to ensure reliability
+                var exeDir = FFmpeg.ExecutablesPath;
+                var ffmpeg = Path.Combine(exeDir, OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg");
+                
+                var durationSeconds = duration.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var args = $"-y -i \"{inputPath}\" -t {durationSeconds} -vf fps={fps},scale=256:-1:flags=lanczos -frames:v {frameCount} \"{outputPattern}\"";
+                
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = ffmpeg,
+                    Arguments = args,
+                    UseShellExecute = false,
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                };
+                
+                using var process = System.Diagnostics.Process.Start(psi);
+                if (process != null)
+                {
+                    var completed = await Task.WhenAny(process.WaitForExitAsync(), Task.Delay(60000, ct));
+                    if (completed != process.WaitForExitAsync())
+                    {
+                        try { if (!process.HasExited) process.Kill(true); } catch { }
+                        throw new TimeoutException("Frame extraction timed out");
+                    }
+                    
+                    if (process.ExitCode != 0)
+                    {
+                        var err = await process.StandardError.ReadToEndAsync();
+                        throw new InvalidOperationException($"ffmpeg frame extraction failed with code {process.ExitCode}: {err}");
+                    }
+                }
             }
 
             var files = new List<string>(Directory.GetFiles(framesDir, "frame_*.png"));
@@ -147,13 +187,23 @@ public partial class FfmpegLoopingVideoView : UserControl
             if (files.Count == 0)
                 return;
 
-            // Load bitmaps once.
+            // Load bitmaps once - copy to memory stream to keep data alive after file stream closes
             var bitmaps = new List<Bitmap>(files.Count);
             foreach (var f in files)
             {
                 ct.ThrowIfCancellationRequested();
-                await using var fs = File.OpenRead(f);
-                bitmaps.Add(new Bitmap(fs));
+                try
+                {
+                    // Read entire file into memory to keep data alive
+                    var data = await File.ReadAllBytesAsync(f, ct);
+                    var ms = new MemoryStream(data, writable: false);
+                    var bitmap = new Bitmap(ms);
+                    bitmaps.Add(bitmap);
+                }
+                catch (Exception ex)
+                {
+                    System.Console.Error.WriteLine($"[WARN] Failed to load frame {f}: {ex.Message}");
+                }
             }
 
             var delay = TimeSpan.FromMilliseconds(1000.0 / fps);

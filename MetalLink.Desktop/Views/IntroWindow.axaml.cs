@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -79,9 +80,6 @@ public partial class IntroWindow : Window
                 }
             }
 
-            // Start audio (best-effort): play mp4 audio via ffplay.
-            // This is needed because the frame-based renderer has no audio output.
-            _ffplay = await StartAudioAsync(inputPath);
         }
         catch (Exception ex)
         {
@@ -101,6 +99,17 @@ public partial class IntroWindow : Window
             var completed = await Task.WhenAny(tcs.Task, Task.Delay(8000));
             if (completed != tcs.Task)
                 return;
+
+            // Now that first frame is ready, start audio playback
+            try
+            {
+                var inputPath = ResolveInputPath(src);
+                _ffplay = await StartAudioAsync(inputPath);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine("[WARN] Intro audio failed: " + ex.Message);
+            }
 
             await FadeOpacityAsync(_video, from: 0, to: 1, ms: 1000);
             await Task.Delay(4000);
@@ -248,29 +257,93 @@ public partial class IntroWindow : Window
         if (!File.Exists(ffmpeg))
             throw new FileNotFoundException("ffmpeg not found", ffmpeg);
 
-        // Extract audio track to wav
-        var p = StartProcess(ffmpeg, $"-y -i \"{inputPath}\" -vn -acodec pcm_s16le -ar 44100 -ac 2 \"{wavPath}\"");
-        if (p is null)
+        // Extract audio track to wav using ProcessStartInfo
+        // Use -af volume=0.7 to set intro audio to 70%
+        var args = $"-y -i \"{inputPath}\" -vn -acodec pcm_s16le -ar 44100 -ac 2 -af volume=0.7 \"{wavPath}\"";
+        var psi = new ProcessStartInfo
+        {
+            FileName = ffmpeg,
+            Arguments = args,
+            UseShellExecute = false,
+            RedirectStandardError = true,
+            RedirectStandardOutput = true,
+            CreateNoWindow = true
+        };
+
+        using var process = Process.Start(psi);
+        if (process == null)
             throw new InvalidOperationException("Failed to start ffmpeg for audio extraction.");
 
-        // Wait (max 10s; clip is 6s)
-        var finished = await Task.WhenAny(p.WaitForExitAsync(), Task.Delay(10000));
-        if (finished != p.WaitForExitAsync())
+        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        try
         {
-            try { if (!p.HasExited) p.Kill(true); } catch { }
+            await process.WaitForExitAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            try { if (!process.HasExited) process.Kill(true); } catch { }
             throw new TimeoutException("ffmpeg audio extraction timed out.");
         }
 
-        if (p.ExitCode != 0)
+        if (process.ExitCode != 0)
         {
-            var err = await p.StandardError.ReadToEndAsync();
-            throw new InvalidOperationException("ffmpeg audio extraction failed. " + err);
+            var err = await process.StandardError.ReadToEndAsync();
+            throw new InvalidOperationException($"ffmpeg audio extraction failed with code {process.ExitCode}: {err}");
+        }
+        
+        // Ensure file is fully written to disk before returning.
+        // Wait for the file to be accessible and finalized (not being written to).
+        var maxRetries = 50;
+        var retryDelay = TimeSpan.FromMilliseconds(50);
+        
+        for (var i = 0; i < maxRetries; i++)
+        {
+            await Task.Delay(retryDelay);
+            
+            if (!File.Exists(wavPath))
+                continue;
+                
+            try
+            {
+                // Try to open the file to verify it's accessible and fully written
+                using (var fs = new FileStream(wavPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    // File is accessible and fully written
+                    return;
+                }
+            }
+            catch (IOException)
+            {
+                // File still locked by ffmpeg, retry
+                continue;
+            }
+        }
+        
+        // If we get here, the file should exist (ffmpeg succeeded), so just wait a bit more
+        if (File.Exists(wavPath))
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(500));
+        }
+        else
+        {
+            throw new FileNotFoundException("Audio extraction produced no output file", wavPath);
         }
     }
 
     private static async Task EnsureFfmpegReadyAsync()
     {
-        // Same strategy as FfmpegLoopingVideoView: download ffmpeg binaries on first run.
+        // Try to use system FFmpeg first
+        if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+        {
+            var systemFfmpeg = OperatingSystem.IsLinux() ? "/usr/bin/ffmpeg" : "/usr/local/bin/ffmpeg";
+            if (File.Exists(systemFfmpeg))
+            {
+                FFmpeg.SetExecutablesPath(Path.GetDirectoryName(systemFfmpeg) ?? "/usr/bin");
+                return;
+            }
+        }
+
+        // Fallback: Download ffmpeg binaries on first run.
         var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache", "metallink_ffmpeg");
         Directory.CreateDirectory(dir);
         FFmpeg.SetExecutablesPath(dir);
