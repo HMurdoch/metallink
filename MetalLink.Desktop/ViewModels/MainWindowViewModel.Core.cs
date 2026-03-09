@@ -1156,14 +1156,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             PaginationViewModel.SetTotalRecords(CustomerSearchResults.Count);
             PaginationViewModel.PageChanged -= OnPaginationPageChanged;
             PaginationViewModel.PageChanged += OnPaginationPageChanged;
-            UpdatePagedResults();
-            
-            // Also populate paged results for initial display
-            PagedCustomerSearchResults.Clear();
-            foreach (var customer in CustomerSearchResults)
-            {
-                PagedCustomerSearchResults.Add(customer);
-            }
+            PaginationViewModel.CurrentPage = 1;  // Reset to first page
+            UpdatePagedResults();  // This will populate PagedCustomerSearchResults with only the first page (15 records)
 
             if (CustomerSearchResults.Count == 0)
             {
@@ -1756,13 +1750,48 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
                     {
                         if (FoundBuyer == null)
                         {
-                            StatusMessage = "Select a buyer before capturing signature.";
+                            if (FoundBuyer != null && FoundBuyer.BuyerId > 0)
+                            {
+                                await _buyerService.UploadBuyerImageAsync(FoundBuyer.BuyerId, "signature",
+                                    capture.ImageData, "image/png");
+                                SelectedSignatureImage = SignatureImage;
+                                StatusMessage = "✓ Buyer signature captured and uploaded";
+                            }
+                            // For new buyers being created (no ID yet)
+                            else if (IsCreateMode)
+                            {
+                                // Just store in form - will be uploaded when buyer is created
+                                SelectedSignatureImage = SignatureImage;
+                                StatusMessage = "✓ Signature captured (will be uploaded when buyer is created)";
+                            }
+                            else
+                            {
+                                StatusMessage = "Select or create a buyer before capturing signature.";
+                                return;
+                            }
+                        }
+                    }
+                    else if (CurrentSection == EnumMainSection.Customers)
+                    {
+                        // For existing customers (from search results)
+                        if (FoundCustomer != null && FoundCustomer.CustomerId > 0)
+                        {
+                            await _customerService.UploadCustomerImageAsync(FoundCustomer.CustomerId, "signature", capture.ImageData, "image/png");
+                            SelectedSignatureImage = SignatureImage;
+                            StatusMessage = "✓ Customer signature captured and uploaded";
+                        }
+                        // For new customers being created (no ID yet)
+                        else if (IsCreateMode)
+                        {
+                            // Just store in form - will be uploaded when customer is created
+                            SelectedSignatureImage = SignatureImage;
+                            StatusMessage = "✓ Signature captured (will be uploaded when customer is created)";
+                        }
+                        else
+                        {
+                            StatusMessage = "Select or create a customer before capturing signature.";
                             return;
                         }
-
-                        await _buyerService.UploadBuyerImageAsync(FoundBuyer.BuyerId, "signature", capture.ImageData, "image/png");
-                        SelectedSignatureImage = SignatureImage;
-                        StatusMessage = "✓ Buyer signature captured and uploaded";
                     }
                     else
                     {
