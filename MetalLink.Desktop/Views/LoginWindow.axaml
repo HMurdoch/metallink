@@ -64,8 +64,9 @@
                 Background="Transparent"
                 BorderThickness="0"
                 Cursor="Hand"
-                Classes="toggle-password-btn">
-            <TextBlock x:Name="EyeIcon" Text="👁️" FontSize="16" />
+                Classes="toggle-password-btn"
+                Padding="4">
+            <TextBlock x:Name="EyeIcon" Text="👁️" FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Center" />
         </Button>
     </Grid>
 

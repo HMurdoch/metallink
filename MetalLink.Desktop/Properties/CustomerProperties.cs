@@ -207,10 +207,8 @@ public partial class MainWindowViewModel
                 NewTaxable = _foundCustomer.Taxable;
                 NewAccountNumber = _foundCustomer.AccountNumber;
 
-                // Company/site only when IsCompany
-                NewIsCompany = _foundCustomer.IsCompany;
-
-                if (_foundCustomer.CompanyId.HasValue)
+                // Set company/site BEFORE setting NewIsCompany (so selections aren't cleared)
+                if (_foundCustomer.IsCompany && _foundCustomer.CompanyId.HasValue)
                 {
                     var company = _allCompanies.FirstOrDefault(c => c.CompanyId == _foundCustomer.CompanyId.Value);
                     if (company != null && !string.IsNullOrWhiteSpace(company.CompanyName))
@@ -224,6 +222,9 @@ public partial class MainWindowViewModel
 
                     SelectedNewCompany = NewCompanySuggestions.FirstOrDefault(c => c.CompanyId == _foundCustomer.CompanyId.Value);
                 }
+
+                // Set NewIsCompany AFTER company/site selections so they don't get cleared
+                NewIsCompany = _foundCustomer.IsCompany;
 
                 if (!string.IsNullOrWhiteSpace(_foundCustomer.PriceCode))
                     SelectedPriceCodeChar = PriceCodeOptions.FirstOrDefault(p => p.Code == _foundCustomer.PriceCode);

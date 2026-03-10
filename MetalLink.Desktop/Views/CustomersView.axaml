@@ -315,14 +315,19 @@
                     HorizontalAlignment="Stretch"
                     AutoGenerateColumns="False"
                     ItemsSource="{Binding PagedCustomerSearchResults}"
-                    SelectedItem="{Binding FoundCustomer, Mode=TwoWay}">
+                    SelectedItem="{Binding FoundCustomer, Mode=TwoWay}"
+                    CanUserReorderColumns="False"
+                    CanUserResizeColumns="True"
+                    IsReadOnly="True"
+                    Focusable="False">
               <DataGrid.Columns>
-                <DataGridTextColumn Header="Customer ID" Binding="{Binding CustomerId}" IsReadOnly="True" Width="130" />
+                <DataGridTextColumn Header="ID" Binding="{Binding CustomerId}" IsReadOnly="True" Width="40" />
                 <DataGridTextColumn Header="First Name"
                                     Binding="{Binding FirstName}" />
                 <DataGridTextColumn Header="Last Name"
                                     Binding="{Binding LastName}" />
-                <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" IsReadOnly="True" />
+                <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" IsReadOnly="True" Width="140" />
+                <DataGridTextColumn Header="Site" Binding="{Binding SiteName}" IsReadOnly="True" Width="140" />
                 <DataGridTextColumn Header="Account" Binding="{Binding AccountNumberFormatted}" IsReadOnly="True" />
                 <DataGridTextColumn Header="Mobile" Binding="{Binding MobileNumber}" IsReadOnly="True" />
                 <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*" IsReadOnly="True" />

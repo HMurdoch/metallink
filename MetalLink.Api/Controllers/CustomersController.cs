@@ -130,11 +130,21 @@ public sealed class CustomersController : ControllerBase
             return NotFound();
 
         // ---- Update Customer fields
-        if (dto.CompanyId.HasValue)
-            customer.CompanyId = dto.CompanyId.Value;
+        // When IsCompany is false, explicitly clear company and site IDs
+        if (!dto.IsCompany)
+        {
+            customer.CompanyId = null;
+            customer.SiteId = null;
+        }
+        else if (dto.IsCompany)
+        {
+            // When IsCompany is true, update with provided values
+            if (dto.CompanyId.HasValue)
+                customer.CompanyId = dto.CompanyId.Value;
 
-        if (dto.SiteId.HasValue)
-            customer.SiteId = dto.SiteId.Value;
+            if (dto.SiteId.HasValue)
+                customer.SiteId = dto.SiteId.Value;
+        }
 
         customer.FirstName = dto.FirstName;
         customer.LastName = dto.LastName;

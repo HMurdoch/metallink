@@ -99,12 +99,12 @@ public partial class LoginWindow : Window
         if (_isPasswordVisible)
         {
             _passwordBox.Text = _actualPassword;
-            _eyeIcon.Text = "👁️‍🗨️"; // Open eye with slash
+            _eyeIcon.Text = "👁️"; // Open eye
         }
         else
         {
             _passwordBox.Text = new string('•', _actualPassword.Length);
-            _eyeIcon.Text = "👁️"; // Open eye
+            _eyeIcon.Text = "🚫"; // Closed eye (blocked)
         }
     }
 }

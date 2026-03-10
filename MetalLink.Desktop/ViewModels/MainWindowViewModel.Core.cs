@@ -554,6 +554,13 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             try { await Sending.InitializeAsync(); } catch (Exception ex) { Console.Error.WriteLine("[ERROR] Sending.InitializeAsync failed: " + ex); }
         });
 
+        // Customer/Ticket capture commands (initialized outside #if false block)
+        CaptureSignatureCommand = new AsyncCommand(CaptureSignatureAsync);
+        CaptureIdCardCommand = new AsyncCommand(CaptureIdCardAsync);
+        CaptureDriverLicenseCommand = new AsyncCommand(CaptureDriverLicenseAsync);
+        CapturePhotoCommand = new AsyncCommand(CapturePhotoAsync);
+        CaptureFingerprintCommand = new AsyncCommand(CaptureFingerprintAsync);
+
         // Initialize ticket type options for search view
 #if false // Tickets moved to per-system viewmodels
         InitializeTicketTypeOptions();
@@ -691,8 +698,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         PrintSendingTicketCommand = new AsyncCommand(PrintSendingTicketAsync);
         
         // Ticket line commands
-        // Signature
-        CaptureSignatureCommand = new AsyncCommand(CaptureSignatureAsync);
+        // Signature (already initialized above, outside #if false block)
 
         // Ticket commands (explicit per system)
         AddReceivingLineToTicketCommand = new AsyncCommand(AddReceivingLineAsync);
@@ -712,11 +718,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         CreateSendingTicketHeaderCommand = new AsyncCommand(CreateSendingTicketHeaderAsync);
         SaveAndResetReceivingTicketCommand = new AsyncCommand(SaveAndResetReceivingTicketAsync);
 #endif
-        // Customer image capture commands
-        CaptureIdCardCommand = new AsyncCommand(CaptureIdCardAsync);
-        CaptureDriverLicenseCommand = new AsyncCommand(CaptureDriverLicenseAsync);
-        CapturePhotoCommand = new AsyncCommand(CapturePhotoAsync);
-        CaptureFingerprintCommand = new AsyncCommand(CaptureFingerprintAsync);
+        // Customer image capture commands (already initialized above, outside #if false block)
 
         // Optional tab navigation (unused in current XAML but kept for later)
         GoDashboardCommand = new AsyncCommand(() =>
@@ -1148,8 +1150,17 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             CustomerSearchResults.Clear();
             if (results != null)
             {
-                foreach (var c in results)
-                    CustomerSearchResults.Add(c);
+                // If Customer ID filter is specified, ensure results match
+                if (customerId.HasValue)
+                {
+                    foreach (var c in results.Where(r => r.CustomerId == customerId.Value))
+                        CustomerSearchResults.Add(c);
+                }
+                else
+                {
+                    foreach (var c in results)
+                        CustomerSearchResults.Add(c);
+                }
             }
 
             // Update pagination with total records
@@ -1748,27 +1759,25 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
                     if (CurrentSection == EnumMainSection.Buyers)
                     {
-                        if (FoundBuyer == null)
+                        // For existing buyers (from search results)
+                        if (FoundBuyer != null && FoundBuyer.BuyerId > 0)
                         {
-                            if (FoundBuyer != null && FoundBuyer.BuyerId > 0)
-                            {
-                                await _buyerService.UploadBuyerImageAsync(FoundBuyer.BuyerId, "signature",
-                                    capture.ImageData, "image/png");
-                                SelectedSignatureImage = SignatureImage;
-                                StatusMessage = "✓ Buyer signature captured and uploaded";
-                            }
-                            // For new buyers being created (no ID yet)
-                            else if (IsCreateMode)
-                            {
-                                // Just store in form - will be uploaded when buyer is created
-                                SelectedSignatureImage = SignatureImage;
-                                StatusMessage = "✓ Signature captured (will be uploaded when buyer is created)";
-                            }
-                            else
-                            {
-                                StatusMessage = "Select or create a buyer before capturing signature.";
-                                return;
-                            }
+                            await _buyerService.UploadBuyerImageAsync(FoundBuyer.BuyerId, "signature",
+                                capture.ImageData, "image/png");
+                            SelectedSignatureImage = SignatureImage;
+                            StatusMessage = "✓ Buyer signature captured and uploaded";
+                        }
+                        // For new buyers being created (no ID yet)
+                        else if (IsCreateMode)
+                        {
+                            // Just store in form - will be uploaded when buyer is created
+                            SelectedSignatureImage = SignatureImage;
+                            StatusMessage = "✓ Signature captured (will be uploaded when buyer is created)";
+                        }
+                        else
+                        {
+                            StatusMessage = "Select or create a buyer before capturing signature.";
+                            return;
                         }
                     }
                     else if (CurrentSection == EnumMainSection.Customers)
@@ -2353,8 +2362,11 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     private void OnLogTicket(CustomerDto? customer)
     {
         if (customer == null) return;
-        // Placeholder: existing ticket logic lives in other partials.
-        StatusMessage = $"Selected customer {customer.CustomerId} for ticketing.";
+        
+        // Set the customer context and navigate to Receiving Tickets
+        FoundCustomer = customer;
+        CurrentSection = EnumMainSection.TicketsReceiving;
+        StatusMessage = $"Loading tickets for customer {customer.CustomerId}";
     }
 
     private async Task OnUpdateCustomerAsync()
@@ -2362,6 +2374,14 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         if (IsBusy) return;
         if (!EditingCustomerId.HasValue)
             return;
+
+        // Validation: if IsCompany is true, both company and site must be selected
+        if (NewIsCompany && (SelectedNewCompany == null || SelectedNewSite == null))
+        {
+            StatusMessage = "When marking as Company, both Company and Site must be selected.";
+            IsBusy = false;
+            return;
+        }
 
         IsBusy = true;
         StatusMessage = "Updating customer...";
@@ -2382,6 +2402,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
                 Taxable = NewTaxable,
                 AccountNumber = NewAccountNumber,
                 IsCompany = NewIsCompany,
+                // If IsCompany is true, use selected company/site; otherwise explicitly set to null
                 CompanyId = NewIsCompany && SelectedNewCompany != null ? (int?)SelectedNewCompany.CompanyId : null,
                 SiteId = NewIsCompany && SelectedNewSite != null ? (int?)SelectedNewSite.SiteId : null
             };
