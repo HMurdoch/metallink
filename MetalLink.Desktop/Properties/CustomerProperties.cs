@@ -318,6 +318,7 @@ public partial class MainWindowViewModel
             _newIsCompany = value;
             if (!NewIsCompany)
             {
+                SelectedNewCompanyLetter = "ALL"; // Reset company letter filter
                 SelectedNewCompany = null;
                 SelectedNewSite = null;
                 NewSiteSuggestions.Clear();
