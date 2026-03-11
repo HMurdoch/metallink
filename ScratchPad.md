@@ -986,23 +986,35 @@ Please let me know which direction you’d like me to take, or if there’s a sp
 
 
 
-
-Please do 1 and implement Phase 4
-
-Video isn’t working. The intro video doesn’t play any sound or video just a black box, and the Video Metal Link logo in the top left of the app isn’t playing.
-
-
-This is 100% a graphics/rendering driver issue in your VMware environment. The Avalonia rendering pipeline (which uses Skia) cannot output pixels to your display.
-
-The ONLY solutions are environmental:
-
-Update VMware Tools (most important):
-
-sudo apt update && sudo apt install --only-upgrade open-vm-tools-desktop && sudo reboot
-Enable 3D Graphics in VMware settings (if disabled)
-
-Update VMware Workstation/ESXi version
-
-Try a different display protocol (if using remote)
-
 ATATT3xFfGF0NqJviRWhTU4pCFS0YlQDfcszIV0wewY2X04xYBfbhVqbzC0H18O-izqU5b4qPeZNGcBHMMDR5I5s4KxaDGrjye_Y39yD4T7KYaqGKgVyZQ0aD_LZoSOoWfhkHEA3kta_iHeAtDG_2ZM9lRjT-WwZEvehAqdq_HABWlEGc8WLsTg=23A5C40A
+
+Hello, firstly the Customers Heading is on the brushed metal background not in a panel like Buyers.Please add it to a panel. And then please make ALL headings sticky (all: as in Dashboard, Customers, Buyers, Companies & Sites, Products & Prices, Receiving, Sending, Stock Levels, Stock Movement, Reports and Settings) okay now for the big change. Break the requirements below up in to a step by step plan. Document all requirements and changes in PRICE_LISTS.md document so that we can pick up if VSCode crashes or VM restarts.
+
+Currently Customers and Buyers have a price_code value (customers and buyers tables) based on if 'A', 'B', or 'C' for receiving and sending tickets based on the product_id (products table) the amount is looked up from prices table, which has 3 columns price_a, price_b, price_c. This limit's us to 3 product price lists. 
+
+We are changing that to a more semantic approach. Please create a table: product_price_lists with columns: product_price_list_id (int, PK, auto increment), product_price_list_name, product_price_list_description (text) (NULLABLE), entity_flag (char: 'C' - Customer, 'B' - Buyer), [and for ALL new tables]: created_by_operator_id (FK -> PK: operators.operator_id), is_active (bool, default: true [We never delete records from the DB, we soft delete i.e. is_active is set to false]), created_time (datetimeoffset, default: now()), updated_time (datetimeoffset, default: now())
+
+Then please create a table: product_price_list_product_prices with columns: product_price_list_product_price_id (int, PK, auto increment), product_price_list_id (FK -> PK: product_price_lists.product_price_list_id), product_id (FK -> PK: products.product_id), price (double/currency), [and for ALL new tables]: created_by_operator_id (FK -> PK: operators.operator_id), is_active (bool, default: true [We never delete records from the DB, we soft delete i.e. is_active is set to false]), created_time (datetimeoffset, default: now()), updated_time (datetimeoffset, default: now())
+
+Important for product_price_list_product_prices: the combination of product_id and product_price_list_id must be unique WHERE is_active = true;
+
+Then seed data for these 2 new tables, populate product_price_lists with 3 x price lists ('Customer Alpha', 'Customer Beta' and 'Customer Charlie') - all 3 entity_flag = 'C' and another 3 x price lists ('Buyer Alpha', 'Buyer Beta' and 'Buyer Charlie') - all 3 entity_flag = 'B'. Seed product_prices_list_product_prices with random prices, 1 record for each product for each price list.
+
+Change the products table, add a column 'must_declare' (bool, default false). Then update the records in products so that if it is a copper related product, please make must_declare = true in the products table.
+
+Next add a product_price_list_id value to the customers and buyers table (FK -> PK: product_price_lists.product_price_list_id), update all the Customer and Buyer records to have a value from our seed data, based on the entity_flag rule.
+
+ANYWHERE in the system we use products or prices must be updated accordingly. For product price lists (Customers and Buyers) the Product Price Lists dataset must be populated as follows : SELECT all product_price_list_id's FROM product_price_lists WHERE entity_flag = 'C' or 'B' for Customers or Buyers respectively.
+
+ALSO the Products & Prices system needs to be overhauled especially the UI, to cater for the management (CRUD, etc.) of Products, Price Lists and Prices according to the new design.
+
+ALSO anywhere we use products (Receiving and Sending) the list of products in the Products Dataset is derived from : SELECT all product_id's FROM product_price_list_product_prices WHERE product_price_list_id = the value in customers.product_price_list_id OR buyers.product_price_list_id
+
+ALSO anywhere we use prices (Receiving, Sending, Stock Levels and Stock Movements) the price of the product is derived from : SELECT price FROM product_price_list_product_prices WHERE product_price_list_id = the value in customers.product_price_list_id OR buyers.product_price_list_id for that product_id.
+
+AND as always we only GET records or use records WHERE is_active = true; Lets break it up (you can break it up further):
+
+1) Create/Modify tables
+2) Seed data
+3) Make functionality and logic changes
+4) Update UIs (Products & Prices, Customer and Buyers (price_list drop downs) and Receiving and Sending (product drop downs and prices values))

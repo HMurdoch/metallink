@@ -108,7 +108,7 @@ public partial class IntroWindow : Window
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine("[WARN] Intro audio failed: " + ex.Message);
+                Console.Error.WriteLine($"[WARN] Intro audio failed: {ex.Message}");
             }
 
             await FadeOpacityAsync(_video, from: 0, to: 1, ms: 1000);
@@ -240,12 +240,16 @@ public partial class IntroWindow : Window
 
     private static async Task ExtractAudioWavWithFfmpegAsync(string inputPath, string wavPath)
     {
-        // If already extracted recently, reuse.
-        if (File.Exists(wavPath))
+        // Always extract fresh audio for this session to avoid stale cached files
+        // Delete any existing cache file
+        try
         {
-            var age = DateTimeOffset.UtcNow - File.GetLastWriteTimeUtc(wavPath);
-            if (age < TimeSpan.FromHours(1))
-                return;
+            if (File.Exists(wavPath))
+                File.Delete(wavPath);
+        }
+        catch
+        {
+            // If we can't delete it, just continue
         }
 
         var exeDir = FFmpeg.ExecutablesPath;
@@ -291,43 +295,58 @@ public partial class IntroWindow : Window
             throw new InvalidOperationException($"ffmpeg audio extraction failed with code {process.ExitCode}: {err}");
         }
         
-        // Ensure file is fully written to disk before returning.
-        // Wait for the file to be accessible and finalized (not being written to).
-        var maxRetries = 50;
-        var retryDelay = TimeSpan.FromMilliseconds(50);
-        
-        for (var i = 0; i < maxRetries; i++)
+        // Ensure file is fully written to disk and accessible before returning.
+        // This is critical: we must wait for the file to be completely written
+        // and not locked by any processes before attempting playback.
+        await EnsureAudioFileAccessibleAsync(wavPath);
+    }
+
+    private static async Task EnsureAudioFileAccessibleAsync(string wavPath)
+    {
+        const int maxRetries = 100;
+        const int retryDelayMs = 50;
+
+        for (var attempt = 0; attempt < maxRetries; attempt++)
         {
-            await Task.Delay(retryDelay);
-            
             if (!File.Exists(wavPath))
+            {
+                await Task.Delay(retryDelayMs);
                 continue;
-                
+            }
+
             try
             {
                 // Try to open the file to verify it's accessible and fully written
-                using (var fs = new FileStream(wavPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                // We use FileAccess.Read and FileShare.Read to check if the file is unlocked
+                using var fs = new FileStream(wavPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                var fileSize = fs.Length;
+                
+                // Basic sanity check: WAV files should be at least a few KB
+                if (fileSize > 1024)
                 {
-                    // File is accessible and fully written
+                    // File is accessible and has meaningful content
                     return;
                 }
             }
             catch (IOException)
             {
-                // File still locked by ffmpeg, retry
+                // File still locked or inaccessible, retry
+                await Task.Delay(retryDelayMs);
                 continue;
             }
+
+            await Task.Delay(retryDelayMs);
         }
-        
-        // If we get here, the file should exist (ffmpeg succeeded), so just wait a bit more
-        if (File.Exists(wavPath))
-        {
-            await Task.Delay(TimeSpan.FromMilliseconds(500));
-        }
-        else
+
+        // If we get here, check one more time - the file should exist if ffmpeg succeeded
+        if (!File.Exists(wavPath))
         {
             throw new FileNotFoundException("Audio extraction produced no output file", wavPath);
         }
+
+        // File exists but we couldn't verify it's fully written - wait a bit more and proceed
+        // This is a fallback to ensure we don't fail when the file is actually fine
+        await Task.Delay(TimeSpan.FromMilliseconds(200));
     }
 
     private static async Task EnsureFfmpegReadyAsync()

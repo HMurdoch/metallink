@@ -129,7 +129,8 @@ public partial class FfmpegLoopingVideoView : UserControl
             if (frameCount < 1)
                 frameCount = fps * 7;
 
-            // Cache frames per input file (use filename + size to avoid collisions)
+            // Use a stable cache directory based on video file
+            // Reuse frames across restarts - don't extract every time
             var fileInfo = new FileInfo(inputPath);
             var fileName = Path.GetFileNameWithoutExtension(inputPath);
             var framesDir = Path.Combine(Path.GetTempPath(), $"metallink_frames_{fileName}_{fileInfo.Length}");
@@ -137,21 +138,33 @@ public partial class FfmpegLoopingVideoView : UserControl
 
             var outputPattern = Path.Combine(framesDir, "frame_%05d.png");
 
-            // Regenerate frames if missing or if the cached set is clearly shorter than expected.
-            var existingCount = Directory.GetFiles(framesDir, "frame_*.png").Length;
-            if (existingCount < Math.Max(5, (int)(frameCount * 0.9)))
+            // Check if we already have enough frames cached
+            var existingFrames = Directory.GetFiles(framesDir, "frame_*.png");
+            var needsExtraction = existingFrames.Length < frameCount * 0.8;
+
+            if (!needsExtraction)
             {
-                foreach (var f in Directory.GetFiles(framesDir, "frame_*.png"))
+                System.Console.Error.WriteLine($"[INFO] Using {existingFrames.Length} cached frames for {fileName}");
+            }
+            else
+            {
+                System.Console.Error.WriteLine($"[INFO] Extracting frames for {fileName} (need ~{frameCount})");
+                // Delete old/incomplete frames
+                foreach (var f in existingFrames)
                 {
                     try { File.Delete(f); } catch { }
                 }
+            }
 
-                // Extract frames using raw ffmpeg command via ProcessStartInfo to ensure reliability
+            // Extract frames only if needed
+            if (needsExtraction)
+            {
                 var exeDir = FFmpeg.ExecutablesPath;
                 var ffmpeg = Path.Combine(exeDir, OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg");
                 
                 var durationSeconds = duration.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 var args = $"-y -i \"{inputPath}\" -t {durationSeconds} -vf fps={fps},scale=256:-1:flags=lanczos -frames:v {frameCount} \"{outputPattern}\"";
+                
                 
                 var psi = new System.Diagnostics.ProcessStartInfo
                 {
@@ -166,26 +179,36 @@ public partial class FfmpegLoopingVideoView : UserControl
                 using var process = System.Diagnostics.Process.Start(psi);
                 if (process != null)
                 {
-                    var completed = await Task.WhenAny(process.WaitForExitAsync(), Task.Delay(60000, ct));
+                    // Read output streams immediately in background to avoid deadlock
+                    var errorTask = process.StandardError.ReadToEndAsync();
+                    var outputTask = process.StandardOutput.ReadToEndAsync();
+                    
+                    var completed = await Task.WhenAny(process.WaitForExitAsync(), Task.Delay(180000, ct));
                     if (completed != process.WaitForExitAsync())
                     {
                         try { if (!process.HasExited) process.Kill(true); } catch { }
-                        throw new TimeoutException("Frame extraction timed out");
+                        throw new TimeoutException("Frame extraction timed out after 180 seconds");
                     }
                     
                     if (process.ExitCode != 0)
                     {
-                        var err = await process.StandardError.ReadToEndAsync();
-                        throw new InvalidOperationException($"ffmpeg frame extraction failed with code {process.ExitCode}: {err}");
+                        var err = await errorTask;
+                        throw new InvalidOperationException($"ffmpeg failed with code {process.ExitCode}: {err}");
                     }
                 }
             }
+
+            // Wait for all frames to be written and accessible
+            await EnsureFramesAccessibleAsync(framesDir, frameCount);
 
             var files = new List<string>(Directory.GetFiles(framesDir, "frame_*.png"));
             files.Sort(StringComparer.Ordinal);
 
             if (files.Count == 0)
+            {
+                System.Console.Error.WriteLine($"[ERROR] No frames extracted. Expected ~{frameCount} frames in {framesDir}");
                 return;
+            }
 
             // Load bitmaps once - copy to memory stream to keep data alive after file stream closes
             var bitmaps = new List<Bitmap>(files.Count);
@@ -204,6 +227,12 @@ public partial class FfmpegLoopingVideoView : UserControl
                 {
                     System.Console.Error.WriteLine($"[WARN] Failed to load frame {f}: {ex.Message}");
                 }
+            }
+
+            if (bitmaps.Count == 0)
+            {
+                System.Console.Error.WriteLine("[ERROR] Failed to load any frames into memory");
+                return;
             }
 
             var delay = TimeSpan.FromMilliseconds(1000.0 / fps);
@@ -236,8 +265,54 @@ public partial class FfmpegLoopingVideoView : UserControl
         }
         catch (Exception ex)
         {
-            System.Console.Error.WriteLine("[WARN] FFmpeg logo decode failed: " + ex);
+            System.Console.Error.WriteLine($"[WARN] Video playback failed: {ex.Message}");
         }
+    }
+
+    private static async Task EnsureFramesAccessibleAsync(string framesDir, int expectedFrameCount)
+    {
+        // Wait for all frames to be fully written and accessible by the file system
+        const int maxRetries = 100;
+        const int retryDelayMs = 50;
+        var minFrames = Math.Max(5, (int)(expectedFrameCount * 0.9));
+
+        for (var attempt = 0; attempt < maxRetries; attempt++)
+        {
+            try
+            {
+                var files = Directory.GetFiles(framesDir, "frame_*.png");
+                if (files.Length >= minFrames)
+                {
+                    // Try to open each file to verify they're fully written and accessible
+                    var allAccessible = true;
+                    foreach (var f in files)
+                    {
+                        try
+                        {
+                            using var fs = new FileStream(f, FileMode.Open, FileAccess.Read, FileShare.Read);
+                            // Just checking if we can open it is enough
+                        }
+                        catch (IOException)
+                        {
+                            allAccessible = false;
+                            break;
+                        }
+                    }
+
+                    if (allAccessible)
+                        return; // All frames are accessible
+                }
+            }
+            catch
+            {
+                // Retry
+            }
+
+            await Task.Delay(retryDelayMs);
+        }
+
+        // If we get here, log a warning but continue anyway (frames should be accessible soon)
+        System.Console.Error.WriteLine($"[WARN] Timeout waiting for frames to be accessible in {framesDir}");
     }
 
     private static string ResolveInputPath(Uri source)
