@@ -5,13 +5,14 @@
 
   <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
   <Border Background="{DynamicResource Brush.MainBackground}">
-    <DockPanel>
+    <Grid RowDefinitions="Auto,*">
       <!-- Sticky Header Panel -->
-      <Border DockPanel.Dock="Top" 
+      <Border Grid.Row="0" 
               Background="{DynamicResource Brush.PanelBackground}"
               Padding="12,8"
               CornerRadius="4"
-              Margin="16,16,16,8">
+              Margin="16,16,16,8"
+              ZIndex="100">
         <Image Source="avares://MetalLink.Desktop/Assets/stock_movements_heading.png"
                Height="40"
                HorizontalAlignment="Left"
@@ -19,116 +20,146 @@
       </Border>
       
       <!-- Scrollable Content -->
-      <ScrollViewer Padding="16,8,16,16">
+      <ScrollViewer Grid.Row="1" Padding="16,8,16,16">
         <StackPanel Spacing="14">
 
       <!-- Filters -->
       <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
               CornerRadius="10" Padding="12">
         <StackPanel Spacing="10">
+          <Grid PointerPressed="ToggleFilter" Cursor="Hand">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" 
+                       Text="{Binding IsFilterExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                       Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="Stock Movement Filters" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+          </Grid>
+          <StackPanel Spacing="10" IsVisible="{Binding IsFilterExpanded}">
 
-          <!-- Product Filter (same as Stock Levels) -->
-          <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-            <TextBox Grid.Column="0"
-                     Watermark="Product Search"
-                     Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}" />
+            <!-- Product Filter (same as Stock Levels) -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+              <TextBox Grid.Column="0"
+                       Watermark="Product Search"
+                       Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}" />
 
-            <Grid Grid.Column="1" ColumnDefinitions="120,*,Auto" ColumnSpacing="10">
-              <ComboBox Grid.Column="0"
-                        ItemsSource="{Binding ProductLetterFilters}"
-                        SelectedItem="{Binding SelectedProductLetter}" />
+              <Grid Grid.Column="1" ColumnDefinitions="120,*,Auto" ColumnSpacing="10">
+                <ComboBox Grid.Column="0"
+                          ItemsSource="{Binding ProductLetterFilters}"
+                          SelectedItem="{Binding SelectedProductLetter}" />
 
-              <ComboBox Grid.Column="1"
-                        HorizontalAlignment="Stretch"
-                        ItemsSource="{Binding ProductSuggestions}"
-                        SelectedItem="{Binding SelectedProduct}">
+                <ComboBox Grid.Column="1"
+                          HorizontalAlignment="Stretch"
+                          ItemsSource="{Binding ProductSuggestions}"
+                          SelectedItem="{Binding SelectedProduct}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding ProductName}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <Button Grid.Column="2" Content="Clear" Command="{Binding ClearProductCommand}" />
+              </Grid>
+            </Grid>
+
+            <!-- All history toggle -->
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" VerticalAlignment="Center">
+              <TextBlock Grid.Column="0" Text="All History" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding AllHistory}" HorizontalAlignment="Left" />
+            </Grid>
+
+            <!-- Date+time range (hidden when AllHistory) -->
+            <Grid IsVisible="{Binding IsRangeVisible}"
+                  ColumnDefinitions="Auto,Auto,*,Auto,Auto,*"
+                  ColumnSpacing="10"
+                  RowDefinitions="Auto,Auto"
+                  RowSpacing="8">
+
+              <!-- FROM row -->
+              <TextBlock Grid.Row="0" Grid.Column="0" Text="From" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
+              <CheckBox Grid.Row="0" Grid.Column="1" Content="Day 0" IsChecked="{Binding FromDay0}" VerticalAlignment="Center" />
+
+              <DatePicker Grid.Row="0" Grid.Column="2" SelectedDate="{Binding FromDate}" IsEnabled="{Binding IsFromPickerEnabled}" />
+
+              <TextBlock Grid.Row="0" Grid.Column="3" Text="Time" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
+              <ComboBox Grid.Row="0" Grid.Column="4" Width="90"
+                        ItemsSource="{Binding TimeOptions5Min}"
+                        SelectedItem="{Binding FromTime}"
+                        IsEnabled="{Binding IsFromPickerEnabled}">
                 <ComboBox.ItemTemplate>
                   <DataTemplate>
-                    <TextBlock Text="{Binding ProductName}" />
+                    <TextBlock Text="{Binding StringFormat={}{0:hh\\:mm}}" />
                   </DataTemplate>
                 </ComboBox.ItemTemplate>
               </ComboBox>
 
-              <Button Grid.Column="2" Content="Clear" Command="{Binding ClearProductCommand}" />
+              <!-- TO row -->
+              <TextBlock Grid.Row="1" Grid.Column="0" Text="To" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
+              <CheckBox Grid.Row="1" Grid.Column="1" Content="Now" IsChecked="{Binding ToNow}" VerticalAlignment="Center" />
+
+              <DatePicker Grid.Row="1" Grid.Column="2" SelectedDate="{Binding ToDate}" IsEnabled="{Binding IsToPickerEnabled}" />
+
+              <TextBlock Grid.Row="1" Grid.Column="3" Text="Time" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
+              <ComboBox Grid.Row="1" Grid.Column="4" Width="90"
+                        ItemsSource="{Binding TimeOptions5Min}"
+                        SelectedItem="{Binding ToTime}"
+                        IsEnabled="{Binding IsToPickerEnabled}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding StringFormat={}{0:hh\\:mm}}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+
             </Grid>
-          </Grid>
 
-          <!-- All history toggle -->
-          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" VerticalAlignment="Center">
-            <TextBlock Grid.Column="0" Text="All History" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
-            <ToggleSwitch Grid.Column="1" IsChecked="{Binding AllHistory}" HorizontalAlignment="Left" />
-          </Grid>
-
-          <!-- Date+time range (hidden when AllHistory) -->
-          <Grid IsVisible="{Binding IsRangeVisible}"
-                ColumnDefinitions="Auto,Auto,*,Auto,Auto,*"
-                ColumnSpacing="10"
-                RowDefinitions="Auto,Auto"
-                RowSpacing="8">
-
-            <!-- FROM row -->
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="From" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
-            <CheckBox Grid.Row="0" Grid.Column="1" Content="Day 0" IsChecked="{Binding FromDay0}" VerticalAlignment="Center" />
-
-            <DatePicker Grid.Row="0" Grid.Column="2" SelectedDate="{Binding FromDate}" IsEnabled="{Binding IsFromPickerEnabled}" />
-
-            <TextBlock Grid.Row="0" Grid.Column="3" Text="Time" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
-            <ComboBox Grid.Row="0" Grid.Column="4" Width="90"
-                      ItemsSource="{Binding TimeOptions5Min}"
-                      SelectedItem="{Binding FromTime}"
-                      IsEnabled="{Binding IsFromPickerEnabled}">
-              <ComboBox.ItemTemplate>
-                <DataTemplate>
-                  <TextBlock Text="{Binding StringFormat={}{0:hh\\:mm}}" />
-                </DataTemplate>
-              </ComboBox.ItemTemplate>
-            </ComboBox>
-
-            <!-- TO row -->
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="To" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
-            <CheckBox Grid.Row="1" Grid.Column="1" Content="Now" IsChecked="{Binding ToNow}" VerticalAlignment="Center" />
-
-            <DatePicker Grid.Row="1" Grid.Column="2" SelectedDate="{Binding ToDate}" IsEnabled="{Binding IsToPickerEnabled}" />
-
-            <TextBlock Grid.Row="1" Grid.Column="3" Text="Time" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
-            <ComboBox Grid.Row="1" Grid.Column="4" Width="90"
-                      ItemsSource="{Binding TimeOptions5Min}"
-                      SelectedItem="{Binding ToTime}"
-                      IsEnabled="{Binding IsToPickerEnabled}">
-              <ComboBox.ItemTemplate>
-                <DataTemplate>
-                  <TextBlock Text="{Binding StringFormat={}{0:hh\\:mm}}" />
-                </DataTemplate>
-              </ComboBox.ItemTemplate>
-            </ComboBox>
-
-          </Grid>
-
+          </StackPanel>
         </StackPanel>
       </Border>
 
       <!-- Line chart: 20 products on current page -->
       <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
-              CornerRadius="10" Padding="12" Height="360">
-        <Grid RowDefinitions="Auto,*" RowSpacing="8">
-          <TextBlock Text="Stock level over time" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource Brush.TextPrimary}" />
-
+              CornerRadius="10" Padding="12">
+        <StackPanel Spacing="8">
+          <Grid PointerPressed="ToggleChart" Cursor="Hand">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" 
+                       Text="{Binding IsChartExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                       Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="Stock level over time" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource Brush.TextPrimary}" />
+          </Grid>
           <!-- Explicit height so the chart is visible even before it has data -->
-          <lvc:CartesianChart Grid.Row="1"
-                             Height="300"
+          <lvc:CartesianChart Height="300"
                              MinHeight="260"
                              Background="{DynamicResource Brush.SolidPanelBackground}"
                              Series="{Binding Series}"
-                             XAxes="{Binding XAxes}" />
-        </Grid>
+                             XAxes="{Binding XAxes}"
+                             IsVisible="{Binding IsChartExpanded}" />
+        </StackPanel>
       </Border>
 
       <!-- Results grid + paging -->
       <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
               CornerRadius="10" Padding="12">
-
-        <DockPanel LastChildFill="True">
-          <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,10,0,0">
+        <StackPanel Spacing="8">
+          <Grid PointerPressed="ToggleResults" Cursor="Hand">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" 
+                       Text="{Binding IsResultsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                       Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="Movement History" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+          </Grid>
+          <Grid RowDefinitions="*,Auto" IsVisible="{Binding IsResultsExpanded}">
+          <StackPanel Grid.Row="1" Spacing="6" Margin="0,10,0,0">
             <TextBlock Text="{Binding PaginationStatusText}" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.TextMuted}" FontSize="12" />
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
@@ -143,7 +174,7 @@
             </StackPanel>
           </StackPanel>
 
-          <DataGrid x:Name="MovementGrid"
+          <DataGrid Grid.Row="0" x:Name="MovementGrid"
                     ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True"
                     FontSize="11" RowHeight="16">
             <DataGrid.Styles>
@@ -174,11 +205,12 @@
             </DataGrid.Columns>
           </DataGrid>
 
-        </DockPanel>
+        </Grid>
+        </StackPanel>
       </Border>
 
         </StackPanel>
       </ScrollViewer>
-    </DockPanel>
+    </Grid>
   </Border>
 </UserControl>

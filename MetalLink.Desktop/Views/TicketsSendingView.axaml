@@ -208,13 +208,14 @@
 
   <Grid>
     <Border Background="{DynamicResource Brush.MainBackground}">
-      <DockPanel>
+      <Grid RowDefinitions="Auto,*">
         <!-- Sticky Header Panel -->
-        <Border DockPanel.Dock="Top" 
+        <Border Grid.Row="0" 
                 Background="{DynamicResource Brush.PanelBackground}"
                 Padding="12,8"
                 CornerRadius="4"
-                Margin="16,16,16,8">
+                Margin="16,16,16,8"
+                ZIndex="100">
           <Image Source="avares://MetalLink.Desktop/Assets/sending_heading.png"
                  Height="40"
                  HorizontalAlignment="Left"
@@ -222,7 +223,7 @@
         </Border>
         
         <!-- Scrollable Content -->
-        <ScrollViewer x:Name="TicketsScrollViewer" Padding="16,8,16,16">
+        <ScrollViewer Grid.Row="1" x:Name="TicketsScrollViewer" Padding="16,8,16,16">
           <StackPanel Spacing="16">
 
         <!-- SEARCH TICKETS -->
@@ -396,7 +397,7 @@
           <StackPanel Spacing="12">
             
             <!-- Ticket Details Header -->
-            <DockPanel>
+            <Grid RowDefinitions="Auto,*">
               <TextBlock Text="Ticket Details"
                          Foreground="{DynamicResource Brush.TextPrimary}"
                          FontSize="13"
@@ -408,10 +409,10 @@
                       Classes="primary"
                       Width="140"
                       HorizontalAlignment="Right" />
-            </DockPanel>
+            </Grid>
 
             <!-- Ticket Details Grid - Different layouts for Platform vs Weighbridge (match Receiving) -->
-            <Grid IsVisible="{Binding SelectedSendingTicketDetails, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <Grid IsVisible="{Binding SelectedSendingTicketDetails, Converter={x:Static local:ObjectConverters.IsNotNull}}">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
@@ -1048,7 +1049,7 @@
 
           </StackPanel>
         </ScrollViewer>
-      </DockPanel>
+      </Grid>
     </Border>
 
     <!-- Notes Modal (match Receiving) -->

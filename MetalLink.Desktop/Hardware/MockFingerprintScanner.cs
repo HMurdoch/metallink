@@ -75,10 +75,10 @@ public class MockFingerprintScanner : IFingerprintScanner
         using var textPaint = new SKPaint
         {
             Color = SKColors.DarkGray,
-            TextSize = 12,
             IsAntialias = true
         };
-        canvas.DrawText($"Captured: {DateTime.Now:HH:mm:ss}", 10, height - 10, textPaint);
+        using var font = new SKFont(SKTypeface.Default, 12);
+        canvas.DrawText($"Captured: {DateTime.Now:HH:mm:ss}", 10, height - 10, SKTextAlign.Left, font, textPaint);
         
         // Get image data
         using var image = surface.Snapshot();

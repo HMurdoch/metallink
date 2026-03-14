@@ -143,13 +143,14 @@
 
   <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
   <Border Background="{DynamicResource Brush.MainBackground}">
-    <DockPanel>
+    <Grid RowDefinitions="Auto,*">
       <!-- Sticky Header Panel -->
-      <Border DockPanel.Dock="Top" 
+      <Border Grid.Row="0" 
               Background="{DynamicResource Brush.PanelBackground}"
               Padding="12,8"
               CornerRadius="4"
-              Margin="16,16,16,8">
+              Margin="16,16,16,8"
+              ZIndex="100">
         <Image Source="avares://MetalLink.Desktop/Assets/companies_and_sites_heading.png"
                Height="40"
                HorizontalAlignment="Left"
@@ -157,7 +158,7 @@
       </Border>
       
       <!-- Scrollable Content -->
-      <ScrollViewer Padding="16,8,16,16">
+      <ScrollViewer Grid.Row="1" Padding="16,8,16,16">
         <StackPanel Spacing="16">
 
         <!-- Search -->
@@ -168,12 +169,14 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" Text="▼" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip.Tip="Click to collapse/expand" />
+              <TextBlock Grid.Column="0" 
+                         Text="{Binding CompanyIsSearchCriteriaExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
               <TextBlock Grid.Column="1" Text="Search Company" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
             </Grid>
 
             <!-- 2-column layout, left column used -->
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" IsVisible="{Binding CompanyIsSearchCriteriaExpanded}">
               <StackPanel Grid.Column="0" Spacing="6">
                 <TextBlock Text="Company" Foreground="#c0c4cf" />
                 <Grid ColumnDefinitions="70,*,*">
@@ -203,12 +206,14 @@
         <!-- Results -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
     <StackPanel Spacing="8">
-            <Grid>
+            <Grid PointerPressed="ToggleSearchResults" Cursor="Hand">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip.Tip="Click to collapse/expand" />
+              <TextBlock Grid.Column="0" 
+                         Text="{Binding CompanyIsSearchResultsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
               <TextBlock Grid.Column="1" Text="Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
             </Grid>
 
@@ -216,6 +221,7 @@
               AutoGenerateColumns="False"
               ItemsSource="{Binding CompanyResults}"
               SelectedItem="{Binding SelectedCompany, Mode=TwoWay}"
+              IsVisible="{Binding CompanyIsSearchResultsExpanded}"
               Height="220">
               <DataGrid.Columns>
                 <DataGridTextColumn Header="Company ID" Binding="{Binding CompanyId}" IsReadOnly="True" Width="120" />
@@ -251,16 +257,18 @@
         <!-- Create/Edit Company -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
     <StackPanel Spacing="10">
-            <Grid>
+            <Grid PointerPressed="ToggleCreateEdit" Cursor="Hand">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip.Tip="Click to collapse/expand" />
+              <TextBlock Grid.Column="0" 
+                         Text="{Binding CompanyIsCreateEditExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
               <TextBlock Grid.Column="1" Text="Create/Edit Company" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
             </Grid>
 
-            <Border Padding="12" Background="{DynamicResource Brush.PanelBackground}" CornerRadius="8">
+            <Border Padding="12" Background="{DynamicResource Brush.PanelBackground}" CornerRadius="8" IsVisible="{Binding CompanyIsCreateEditExpanded}">
         <StackPanel Spacing="10">
 
                 <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
@@ -325,12 +333,14 @@
         <!-- Sites -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
     <StackPanel Spacing="8">
-            <Grid>
+            <Grid PointerPressed="ToggleSites" Cursor="Hand">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" Text="▼" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip.Tip="Click to collapse/expand" />
+              <TextBlock Grid.Column="0" 
+                         Text="{Binding CompanyIsPanelExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
               <TextBlock Grid.Column="1" Text="Sites" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
             </Grid>
 
@@ -338,6 +348,7 @@
               AutoGenerateColumns="False"
               ItemsSource="{Binding SiteResults}"
               SelectedItem="{Binding SelectedSite, Mode=TwoWay}"
+              IsVisible="{Binding CompanyIsPanelExpanded}"
               Height="220">
               <DataGrid.Columns>
                 <DataGridTextColumn Header="Site ID" Binding="{Binding SiteId}" IsReadOnly="True" Width="90" />
@@ -373,16 +384,18 @@
         <!-- Create/Edit Site -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
     <StackPanel Spacing="10">
-            <Grid>
+            <Grid PointerPressed="ToggleCreateEdit" Cursor="Hand">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip.Tip="Click to collapse/expand" />
+              <TextBlock Grid.Column="0" 
+                         Text="{Binding CompanyIsCreateEditExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
               <TextBlock Grid.Column="1" Text="Create/Edit Site" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
             </Grid>
 
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="10" IsVisible="{Binding CompanyIsCreateEditExpanded}">
 
               <!-- Row 0 -->
               <StackPanel Grid.Row="0" Grid.Column="0" Spacing="6">
@@ -463,7 +476,7 @@
         </Border>
         </StackPanel>
       </ScrollViewer>
-    </DockPanel>
+    </Grid>
   </Border>
 </UserControl>
 

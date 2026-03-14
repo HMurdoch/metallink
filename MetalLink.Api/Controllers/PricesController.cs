@@ -33,9 +33,6 @@ public class PricesController : ControllerBase
         {
             PriceId = price.PriceId,
             ProductId = price.ProductId,
-            PriceA = price.PriceA,
-            PriceB = price.PriceB,
-            PriceC = price.PriceC,
             IsActive = price.IsActive,
             CreatedTime = price.CreatedTime,
             UpdatedTime = price.UpdatedTime
@@ -58,9 +55,6 @@ public class PricesController : ControllerBase
         {
             PriceId = price.PriceId,
             ProductId = price.ProductId,
-            PriceA = price.PriceA,
-            PriceB = price.PriceB,
-            PriceC = price.PriceC,
             IsActive = price.IsActive,
             CreatedTime = price.CreatedTime,
             UpdatedTime = price.UpdatedTime
@@ -78,9 +72,6 @@ public class PricesController : ControllerBase
         var price = new Price
         {
             ProductId = dto.ProductId,
-            PriceA = dto.PriceA,
-            PriceB = dto.PriceB,
-            PriceC = dto.PriceC,
             IsActive = true,
             CreatedByOperatorId = (int)User.GetOperatorId(),
             CreatedTime = DateTimeOffset.UtcNow,
@@ -108,9 +99,6 @@ public class PricesController : ControllerBase
         if (price == null)
             return NotFound();
 
-        price.PriceA = dto.PriceA;
-        price.PriceB = dto.PriceB;
-        price.PriceC = dto.PriceC;
         price.UpdatedTime = DateTimeOffset.UtcNow;
 
         await _db.SaveChangesAsync(ct);

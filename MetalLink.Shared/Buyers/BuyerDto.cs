@@ -39,6 +39,8 @@ public sealed class BuyerDto
         : "";
     
     public string? PriceCode     { get; set; }
+    public int? ProductPriceListId { get; set; }
+    public string? ProductPriceListName { get; set; }
 
     // Contact
     public string? PhoneNumber  { get; set; }

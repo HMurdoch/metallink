@@ -120,6 +120,37 @@ public partial class MainWindowViewModel
         set { _productGrade = value; OnPropertyChanged(); }
     }
 
+    private bool _productMustDeclare;
+    public bool ProductMustDeclare
+    {
+        get => _productMustDeclare;
+        set { _productMustDeclare = value; OnPropertyChanged(); }
+    }
+
+    // =====================================================
+    // PRODUCT PRICE LISTS
+    // =====================================================
+
+    private ObservableCollection<ProductPriceListDto> _productPriceLists = new();
+    public ObservableCollection<ProductPriceListDto> ProductPriceLists
+    {
+        get => _productPriceLists;
+        set { _productPriceLists = value; OnPropertyChanged(); }
+    }
+
+    private ProductPriceListDto? _selectedProductPriceList;
+    public ProductPriceListDto? SelectedProductPriceList
+    {
+        get => _selectedProductPriceList;
+        set 
+        { 
+            _selectedProductPriceList = value; 
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CanUpdatePrice));
+            (UpdatePriceCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+        }
+    }
+
     // =====================================================
     // PRICE CREATE/EDIT FORM
     // =====================================================
@@ -131,24 +162,15 @@ public partial class MainWindowViewModel
         set { _editingPriceId = value; OnPropertyChanged(); }
     }
 
-    private decimal _priceA;
-    public decimal PriceA
+    private decimal _currentPrice;
+    public decimal CurrentPrice
     {
-        get => _priceA;
-        set { _priceA = value; OnPropertyChanged(); }
+        get => _currentPrice;
+        set { _currentPrice = value; OnPropertyChanged(); }
     }
 
-    private decimal _priceB;
-    public decimal PriceB
-    {
-        get => _priceB;
-        set { _priceB = value; OnPropertyChanged(); }
-    }
-
-    private decimal _priceC;
-    public decimal PriceC
-    {
-        get => _priceC;
-        set { _priceC = value; OnPropertyChanged(); }
-    }
+    // Legacy price properties kept for compatibility during migration if needed
+    public decimal PriceA { get; set; }
+    public decimal PriceB { get; set; }
+    public decimal PriceC { get; set; }
 }

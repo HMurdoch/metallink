@@ -19,6 +19,29 @@ public sealed class OperatorSettingsController : ControllerBase
         _db = db;
     }
 
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<OperatorSettingDto>>> GetAll(CancellationToken ct)
+    {
+        var operatorId = (int)User.GetOperatorId();
+        var settings = await _db.OperatorSettings
+            .AsNoTracking()
+            .Include(x => x.Setting)
+            .Include(x => x.SettingOption)
+            .Where(x => x.OperatorId == operatorId && x.IsActive)
+            .Select(x => new OperatorSettingDto
+            {
+                OperatorId = x.OperatorId,
+                SettingId = x.SettingId,
+                SettingName = x.Setting.SettingName,
+                SettingOptionId = x.SettingOptionId,
+                SettingOptionValue = x.SettingOption.SettingOptionValue,
+                IsActive = x.IsActive
+            })
+            .ToListAsync(ct);
+
+        return Ok(settings);
+    }
+
     [HttpGet("theme")]
     [ProducesResponseType(typeof(ThemeSettingDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTheme(CancellationToken ct)
@@ -148,6 +171,85 @@ public sealed class OperatorSettingsController : ControllerBase
         if (option == null)
         {
             // Auto-create missing option if needed
+            option = new MetalLink.Domain.Entities.SettingOption(setting.SettingId, value, operatorId);
+            await _db.SettingOptions.AddAsync(option, ct);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
+        var actives = await _db.OperatorSettings
+            .Where(x => x.OperatorId == operatorId
+                        && x.SettingId == setting.SettingId
+                        && x.IsActive)
+            .ToListAsync(ct);
+
+        foreach (var active in actives)
+        {
+            _db.Entry(active).Property("IsActive").CurrentValue = false;
+        }
+
+        var newRow = new MetalLink.Domain.Entities.OperatorSetting(
+            operatorId: operatorId,
+            settingId: setting.SettingId,
+            settingOptionId: option.SettingOptionId,
+            createdByOperatorId: operatorId);
+
+        await _db.OperatorSettings.AddAsync(newRow, ct);
+        await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+
+        return NoContent();
+    }
+
+    [HttpGet("enforce-buyer-company")]
+    [ProducesResponseType(typeof(EnforceBuyerCompanySettingDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetEnforceBuyerCompany(CancellationToken ct)
+    {
+        var operatorId = (int)User.GetOperatorId();
+
+        var raw = await _db.OperatorSettings
+            .AsNoTracking()
+            .Where(x => x.OperatorId == operatorId
+                        && x.Setting.SettingName.ToLower() == "enforcebuyercompany")
+            .OrderByDescending(x => x.IsActive)
+            .ThenByDescending(x => x.TimeUpdated)
+            .ThenByDescending(x => x.TimeCreated)
+            .Select(x => x.SettingOption.SettingOptionValue)
+            .FirstOrDefaultAsync(ct);
+
+        // Default to true if not set
+        var enabled = string.IsNullOrWhiteSpace(raw) ? true : raw.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
+        return Ok(new EnforceBuyerCompanySettingDto { EnforceBuyerCompany = enabled });
+    }
+
+    [HttpPut("enforce-buyer-company")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateEnforceBuyerCompany([FromBody] UpdateEnforceBuyerCompanySettingDto dto, CancellationToken ct)
+    {
+        var operatorId = (int)User.GetOperatorId();
+
+        var setting = await _db.Settings
+            .FirstOrDefaultAsync(s => s.IsActive && s.SettingName.ToLower() == "enforcebuyercompany", ct);
+
+        if (setting == null)
+        {
+            setting = new MetalLink.Domain.Entities.Setting("enforcebuyercompany", "Enforce buyer as company by default", operatorId);
+            await _db.Settings.AddAsync(setting, ct);
+            await _db.SaveChangesAsync(ct);
+
+            await _db.SettingOptions.AddAsync(new MetalLink.Domain.Entities.SettingOption(setting.SettingId, "true", operatorId), ct);
+            await _db.SettingOptions.AddAsync(new MetalLink.Domain.Entities.SettingOption(setting.SettingId, "false", operatorId), ct);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        var value = dto.EnforceBuyerCompany ? "true" : "false";
+        var option = await _db.SettingOptions
+            .FirstOrDefaultAsync(o => o.IsActive && o.SettingId == setting.SettingId && o.SettingOptionValue.ToLower() == value, ct);
+
+        if (option == null)
+        {
             option = new MetalLink.Domain.Entities.SettingOption(setting.SettingId, value, operatorId);
             await _db.SettingOptions.AddAsync(option, ct);
             await _db.SaveChangesAsync(ct);

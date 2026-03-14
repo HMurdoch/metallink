@@ -12,6 +12,7 @@ using Avalonia.Threading;
 using System.Collections.Generic;
 using System.Net.Http;
 using MetalLink.Desktop.Services;
+using MetalLink.Shared.Buyers;
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -1061,30 +1062,72 @@ public partial class MainWindowViewModel
     private void ApplyCompanyLetterFilter()
     {
         if (!_companyLettersLoaded) return;
-
         var selectedId = SelectedSearchCompany?.CompanyId;
         var letter = (SelectedCompanyLetter ?? "ALL").Trim();
-
         SearchCompanySuggestions.Clear();
-
         IEnumerable<CompanyLookupDto> query = _allCompanies;
-
         if (!letter.Equals("ALL", StringComparison.OrdinalIgnoreCase) && letter.Length > 0)
         {
             var ch = char.ToUpperInvariant(letter[0]);
-            query = query.Where(c =>
-                !string.IsNullOrWhiteSpace(c.CompanyName) &&
-                char.ToUpperInvariant(c.CompanyName![0]) == ch);
+            query = query.Where(c => !string.IsNullOrWhiteSpace(c.CompanyName) && char.ToUpperInvariant(c.CompanyName![0]) == ch);
         }
+        foreach (var c in query.OrderBy(c => c.CompanyName)) SearchCompanySuggestions.Add(c);
+        if (selectedId.HasValue) SelectedSearchCompany = SearchCompanySuggestions.FirstOrDefault(x => x.CompanyId == selectedId.Value);
+    }
 
-        foreach (var c in query.OrderBy(c => c.CompanyName))
-            SearchCompanySuggestions.Add(c);
-
-        if (selectedId.HasValue)
+    private void ApplyCustomerCompanyLetterFilter()
+    {
+        if (!_companyLettersLoaded) return;
+        var selectedId = CustomerSelectedSearchCompany?.CompanyId;
+        var letter = (CustomerSelectedCompanyLetter ?? "ALL").Trim();
+        CustomerSearchCompanySuggestions.Clear();
+        IEnumerable<CompanyLookupDto> query = _allCompanies;
+        if (!letter.Equals("ALL", StringComparison.OrdinalIgnoreCase) && letter.Length > 0)
         {
-            var match = SearchCompanySuggestions.FirstOrDefault(x => x.CompanyId == selectedId.Value);
-            SelectedSearchCompany = match;
+            var ch = char.ToUpperInvariant(letter[0]);
+            query = query.Where(c => !string.IsNullOrWhiteSpace(c.CompanyName) && char.ToUpperInvariant(c.CompanyName![0]) == ch);
         }
+        foreach (var c in query.OrderBy(c => c.CompanyName)) CustomerSearchCompanySuggestions.Add(c);
+        if (selectedId.HasValue) CustomerSelectedSearchCompany = CustomerSearchCompanySuggestions.FirstOrDefault(x => x.CompanyId == selectedId.Value);
+    }
+
+    private void ApplyBuyerCompanyLetterFilter()
+    {
+        if (!_companyLettersLoaded) return;
+        var selectedId = BuyerSelectedSearchCompany?.CompanyId;
+        var letter = (BuyerSelectedCompanyLetter ?? "ALL").Trim();
+        BuyerSearchCompanySuggestions.Clear();
+        IEnumerable<CompanyLookupDto> query = _allCompanies;
+        if (!letter.Equals("ALL", StringComparison.OrdinalIgnoreCase) && letter.Length > 0)
+        {
+            var ch = char.ToUpperInvariant(letter[0]);
+            query = query.Where(c => !string.IsNullOrWhiteSpace(c.CompanyName) && char.ToUpperInvariant(c.CompanyName![0]) == ch);
+        }
+        foreach (var c in query.OrderBy(c => c.CompanyName)) BuyerSearchCompanySuggestions.Add(c);
+        if (selectedId.HasValue) BuyerSelectedSearchCompany = BuyerSearchCompanySuggestions.FirstOrDefault(x => x.CompanyId == selectedId.Value);
+    }
+
+    private Task LoadCustomerCompanySuggestionsAsync() { ApplyCustomerCompanyLetterFilter(); return Task.CompletedTask; }
+    private Task LoadBuyerCompanySuggestionsAsync() { ApplyBuyerCompanyLetterFilter(); return Task.CompletedTask; }
+
+    private async Task LoadCustomerSearchSitesAsync()
+    {
+        if (CustomerSelectedSearchCompany == null) { CustomerSearchSiteSuggestions.Clear(); CustomerSelectedSearchSite = null; IsCustomerSearchSiteEnabled = false; return; }
+        try {
+            var sites = await SiteService.LookupSitesForCompanyAsync(CustomerSelectedSearchCompany.CompanyId, "", CancellationToken.None);
+            CustomerSearchSiteSuggestions.Clear();
+            if (sites != null) foreach (var s in sites.OrderBy(x => x.SiteName)) CustomerSearchSiteSuggestions.Add(s);
+        } catch { }
+    }
+
+    private async Task LoadBuyerSearchSitesAsync()
+    {
+        if (BuyerSelectedSearchCompany == null) { BuyerSearchSiteSuggestions.Clear(); BuyerSelectedSearchSite = null; IsBuyerSearchSiteEnabled = false; return; }
+        try {
+            var sites = await SiteService.LookupSitesForCompanyAsync(BuyerSelectedSearchCompany.CompanyId, "", CancellationToken.None);
+            BuyerSearchSiteSuggestions.Clear();
+            if (sites != null) foreach (var s in sites.OrderBy(x => x.SiteName)) BuyerSearchSiteSuggestions.Add(s);
+        } catch { }
     }
 
 
@@ -1123,6 +1166,44 @@ public partial class MainWindowViewModel
         {
             StatusMessage = $"[STATUS] Failed to load site address: {ex.Message}";
             CustomerSiteAddressSummary = string.Empty;
+        }
+    }
+
+    private async Task LoadSelectedBuyerSiteAddressAsync(BuyerDto? buyer, CancellationToken ct = default)
+    {
+        if (buyer?.CompanyId == null || buyer.SiteId == null)
+        {
+            BuyerSiteAddressSummary = string.Empty;
+            return;
+        }
+
+        try
+        {
+            var sites = await _app.SiteService.LookupSitesForCompanyAsync(
+                buyer.CompanyId.Value,
+                term: string.Empty,
+                ct);
+
+            var site = sites?.FirstOrDefault(s => s.SiteId == buyer.SiteId.Value);
+            if (site == null)
+            {
+                BuyerSiteAddressSummary = string.Empty;
+                return;
+            }
+
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(site.AddressLine1)) parts.Add(site.AddressLine1);
+            if (!string.IsNullOrWhiteSpace(site.AddressLine2)) parts.Add(site.AddressLine2);
+            if (!string.IsNullOrWhiteSpace(site.Suburb))       parts.Add(site.Suburb);
+            if (!string.IsNullOrWhiteSpace(site.City))         parts.Add(site.City);
+            if (!string.IsNullOrWhiteSpace(site.PostalCode))   parts.Add(site.PostalCode);
+
+            BuyerSiteAddressSummary = string.Join(", ", parts);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Failed to load site address: {ex.Message}";
+            BuyerSiteAddressSummary = string.Empty;
         }
     }
 

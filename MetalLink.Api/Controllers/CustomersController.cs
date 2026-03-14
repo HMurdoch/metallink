@@ -53,7 +53,7 @@ public sealed class CustomersController : ControllerBase
             IsCompany = dto.IsCompany,
             IdNumber = dto.IdNumber,
             AccountNumber = dto.AccountNumber,
-            PriceCode = dto.PriceCode,
+            ProductPriceListId = dto.ProductPriceListId,
             PhoneNumber = dto.PhoneNumber,
             MobileNumber = dto.MobileNumber,
             Email = dto.Email,
@@ -151,7 +151,7 @@ public sealed class CustomersController : ControllerBase
         customer.IsCompany = dto.IsCompany;
         customer.IdNumber = dto.IdNumber;
         customer.AccountNumber = dto.AccountNumber;
-        customer.PriceCode = dto.PriceCode;
+        customer.ProductPriceListId = dto.ProductPriceListId;
         customer.PhoneNumber = dto.PhoneNumber;
         customer.MobileNumber = dto.MobileNumber;
         customer.Email = dto.Email;

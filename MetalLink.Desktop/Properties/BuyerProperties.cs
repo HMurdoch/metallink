@@ -1,33 +1,42 @@
 using System.Collections.ObjectModel;
 using System.Linq;
-using CommunityToolkit.Mvvm.Input;
+using System.Threading.Tasks;
 using MetalLink.Shared.Buyers;
+using MetalLink.Shared.Prices;
 
 namespace MetalLink.Desktop.ViewModels;
 
 public partial class MainWindowViewModel
 {
-    public bool IsNewBuyerFullNameInvalid =>
-        string.IsNullOrWhiteSpace(NewFirstName) || string.IsNullOrWhiteSpace(NewLastName);
+    private string _searchBuyerIdText = string.Empty;
+    public string SearchBuyerIdText { get => _searchBuyerIdText; set { _searchBuyerIdText = value; OnPropertyChanged(); } }
 
-    // --- Buyer details bindings used in BuyersView.axaml ---
+    private string _searchBuyerFirstNameText = string.Empty;
+    public string SearchBuyerFirstNameText { get => _searchBuyerFirstNameText; set { _searchBuyerFirstNameText = value; OnPropertyChanged(); } }
 
-    public BuyerDto? SelectedBuyer => FoundBuyer;
+    private string _searchBuyerLastNameText = string.Empty;
+    public string SearchBuyerLastNameText { get => _searchBuyerLastNameText; set { _searchBuyerLastNameText = value; OnPropertyChanged(); } }
 
-    public string SelectedBuyerIdDisplay => FoundBuyer?.BuyerId.ToString() ?? "";
-    public string SelectedBuyerFirstName => FoundBuyer?.FirstName ?? "";
-    public string SelectedBuyerLastName => FoundBuyer?.LastName ?? "";
-    public string SelectedBuyerCompanyName => FoundBuyer?.CompanyName ?? "";
-    public string SelectedBuyerSiteName => FoundBuyer?.SiteName ?? "";
-    public string SelectedBuyerTaxable => (FoundBuyer?.IsTaxable ?? false) ? "Yes" : "No";
-    public string SelectedBuyerIdNumber => FoundBuyer?.IdNumber ?? "";
-    public string SelectedBuyerAccountNumberFormatted => FoundBuyer?.AccountNumberDisplay ?? "";
-    public string SelectedBuyerPriceCode => FoundBuyer?.PriceCode ?? "";
-    public string SelectedBuyerPhoneNumber => FoundBuyer?.PhoneNumber ?? "";
-    public string SelectedBuyerMobileNumber => FoundBuyer?.MobileNumber ?? "";
-    public string SelectedBuyerEmail => FoundBuyer?.Email ?? "";
+    private string _searchBuyerCompanyNameText = string.Empty;
+    public string SearchBuyerCompanyNameText { get => _searchBuyerCompanyNameText; set { _searchBuyerCompanyNameText = value; OnPropertyChanged(); } }
 
-    public string BuyerSiteAddressSummary => string.Empty; // TODO: derive from Site lookup if needed
+    private string _searchBuyerIdNumberText = string.Empty;
+    public string SearchBuyerIdNumberText { get => _searchBuyerIdNumberText; set { _searchBuyerIdNumberText = value; OnPropertyChanged(); } }
+
+    private string _searchBuyerAccountNumberText = string.Empty;
+    public string SearchBuyerAccountNumberText { get => _searchBuyerAccountNumberText; set { _searchBuyerAccountNumberText = value; OnPropertyChanged(); } }
+
+    private string _searchBuyerPhoneNumberText = string.Empty;
+    public string SearchBuyerPhoneNumberText { get => _searchBuyerPhoneNumberText; set { _searchBuyerPhoneNumberText = value; OnPropertyChanged(); } }
+
+    private string _searchBuyerMobileNumberText = string.Empty;
+    public string SearchBuyerMobileNumberText { get => _searchBuyerMobileNumberText; set { _searchBuyerMobileNumberText = value; OnPropertyChanged(); } }
+
+    private string _searchBuyerEmailText = string.Empty;
+    public string SearchBuyerEmailText { get => _searchBuyerEmailText; set { _searchBuyerEmailText = value; OnPropertyChanged(); } }
+
+    private ProductPriceListDto? _searchBuyerPriceList;
+    public ProductPriceListDto? SearchBuyerPriceList { get => _searchBuyerPriceList; set { _searchBuyerPriceList = value; OnPropertyChanged(); } }
 
     private ObservableCollection<BuyerDto> _buyerSearchResults = new();
     public ObservableCollection<BuyerDto> BuyerSearchResults
@@ -36,83 +45,20 @@ public partial class MainWindowViewModel
         set { _buyerSearchResults = value; OnPropertyChanged(); }
     }
 
-    private BuyerDto? _foundBuyer;
-    public BuyerDto? FoundBuyer
+    private ObservableCollection<BuyerDto> _pagedBuyerSearchResults = new();
+    public ObservableCollection<BuyerDto> PagedBuyerSearchResults
     {
-        get => _foundBuyer;
-        set
-        {
-            _foundBuyer = value;
-            OnPropertyChanged();
-
-            // Populate buyer edit form when selecting from results
-            if (_foundBuyer != null)
-            {
-                // Load buyer images for the details panel
-                _ = LoadSelectedBuyerImagesAsync(_foundBuyer);
-
-                IsEditMode = true;
-                EditingBuyerId = _foundBuyer.BuyerId;
-
-                NewFirstName = _foundBuyer.FirstName ?? string.Empty;
-                NewLastName = _foundBuyer.LastName ?? string.Empty;
-                NewIdNumber = _foundBuyer.IdNumber;
-                NewPhoneNumber = _foundBuyer.PhoneNumber ?? string.Empty;
-                NewMobileNumber = _foundBuyer.MobileNumber ?? string.Empty;
-                NewEmail = _foundBuyer.Email ?? string.Empty;
-                NewTaxable = _foundBuyer.IsTaxable || _foundBuyer.Taxable;
-                NewAccountNumber = _foundBuyer.AccountNumber;
-
-                // Preselect company/site.
-                // Important: setting SelectedNewCompany clears sites and loads them async,
-                // so we must load sites and then select the site.
-                if (_foundBuyer.CompanyId.HasValue)
-                {
-                    // Preselect company without changing the letter filter.
-                    // Changing SelectedNewCompanyLetter can cause the company to fall out of suggestions
-                    // and clear selection, which then clears sites.
-                    if (NewCompanySuggestions.All(c => c.CompanyId != _foundBuyer.CompanyId.Value))
-                    {
-                        // Ensure suggestions include all companies temporarily
-                        SelectedNewCompanyLetter = "ALL";
-                    }
-
-                    // Set pending site selection BEFORE selecting company, because selecting the company
-                    // triggers async site loading and clears SelectedNewSite.
-                    _pendingSelectSiteId = _foundBuyer.SiteId;
-
-                    SelectedNewCompany = NewCompanySuggestions.FirstOrDefault(c => c.CompanyId == _foundBuyer.CompanyId.Value);
-                }
-                else
-                {
-                    SelectedNewCompany = null;
-                    SelectedNewSite = null;
-                }
-
-                // Preselect price code option
-                if (!string.IsNullOrWhiteSpace(_foundBuyer.PriceCode))
-                    SelectedPriceCodeChar = PriceCodeOptions.FirstOrDefault(p => p.Code == _foundBuyer.PriceCode);
-
-                OnPropertyChanged(nameof(NewAccountNumberDisplay));
-                OnPropertyChanged(nameof(IsNewBuyerFullNameInvalid));
-                OnPropertyChanged(nameof(CanCreateBuyer));
-                (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
-            }
-
-            OnPropertyChanged(nameof(SelectedBuyer));
-            OnPropertyChanged(nameof(SelectedBuyerIdDisplay));
-            OnPropertyChanged(nameof(SelectedBuyerFirstName));
-            OnPropertyChanged(nameof(SelectedBuyerLastName));
-            OnPropertyChanged(nameof(SelectedBuyerCompanyName));
-            OnPropertyChanged(nameof(SelectedBuyerSiteName));
-            OnPropertyChanged(nameof(SelectedBuyerTaxable));
-            OnPropertyChanged(nameof(SelectedBuyerIdNumber));
-            OnPropertyChanged(nameof(SelectedBuyerAccountNumberFormatted));
-            OnPropertyChanged(nameof(SelectedBuyerPriceCode));
-            OnPropertyChanged(nameof(SelectedBuyerPhoneNumber));
-            OnPropertyChanged(nameof(SelectedBuyerMobileNumber));
-            OnPropertyChanged(nameof(SelectedBuyerEmail));
-            OnPropertyChanged(nameof(BuyerSiteAddressSummary));
-        }
+        get => _pagedBuyerSearchResults;
+        set { _pagedBuyerSearchResults = value; OnPropertyChanged(); }
     }
+
+    private ObservableCollection<ProductPriceListDto> _buyerPriceLists = new();
+    public ObservableCollection<ProductPriceListDto> BuyerPriceLists
+    {
+        get => _buyerPriceLists;
+        set { _buyerPriceLists = value; OnPropertyChanged(); }
+    }
+
+    public string FoundBuyerSummary => FoundBuyer == null ? "No buyer loaded." : $"ID: {FoundBuyer.BuyerId:D8}, Name: {FoundBuyer.FirstName} {FoundBuyer.LastName}";
+    public string SelectedBuyerIdDisplay => FoundBuyer == null ? string.Empty : FoundBuyer.BuyerId.ToString("D8");
 }

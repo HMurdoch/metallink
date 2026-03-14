@@ -13,13 +13,16 @@ public sealed class CreateCustomerCommandHandler
 {
     private readonly ICustomerRepository _customerRepository;
     private readonly IAccountNumberGenerator _accountNumberGenerator;
+    private readonly IProductPriceListRepository _priceListRepository;
 
     public CreateCustomerCommandHandler(
         ICustomerRepository customerRepository,
-        IAccountNumberGenerator accountNumberGenerator)
+        IAccountNumberGenerator accountNumberGenerator,
+        IProductPriceListRepository priceListRepository)
     {
         _customerRepository = customerRepository;
         _accountNumberGenerator = accountNumberGenerator;
+        _priceListRepository = priceListRepository;
     }
 
     public async Task<CustomerDto?> Handle(
@@ -37,6 +40,8 @@ public sealed class CreateCustomerCommandHandler
 
         var accountNumber = request.AccountNumber ?? await _accountNumberGenerator.GetNextAsync(cancellationToken);
 
+        var priceListId = request.ProductPriceListId;
+
         var customer = new Customer
         {
             CompanyId     = request.CompanyId,
@@ -46,7 +51,7 @@ public sealed class CreateCustomerCommandHandler
             IsCompany     = request.IsCompany,
             IdNumber      = request.IdNumber,
             AccountNumber = accountNumber,
-            PriceCode     = request.PriceCode,
+            ProductPriceListId = priceListId,
             PhoneNumber   = request.PhoneNumber,
             MobileNumber  = request.MobileNumber,
             Email         = request.Email,
@@ -79,7 +84,7 @@ public sealed class CreateCustomerCommandHandler
 
             IdNumber      = customer.IdNumber,
             AccountNumber = customer.AccountNumber,
-            PriceCode     = customer.PriceCode,
+            ProductPriceListId = customer.ProductPriceListId,
             PhoneNumber   = customer.PhoneNumber,
             MobileNumber  = customer.MobileNumber,
             Email         = customer.Email,

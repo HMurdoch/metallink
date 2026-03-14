@@ -484,8 +484,6 @@ public partial class MainWindowViewModel
         }
     }
 
-    private string? _selectedCompanyLetter = "ALL";
-
     private string? _selectedNewCompanyLetter = "ALL";
 
     public string? SelectedNewCompanyLetter
@@ -500,6 +498,8 @@ public partial class MainWindowViewModel
         }
     }
 
+    // --- Company Management Search ---
+    private string? _selectedCompanyLetter = "ALL";
     public string? SelectedCompanyLetter
     {
         get => _selectedCompanyLetter;
@@ -508,30 +508,21 @@ public partial class MainWindowViewModel
             if (_selectedCompanyLetter == value) return;
             _selectedCompanyLetter = value;
             OnPropertyChanged();
-
-            // ✅ user changed letter -> clear selection and sites
             SelectedSearchCompany = null;
             SearchSiteSuggestions.Clear();
             SelectedSearchSite = null;
-
             ApplyCompanyLetterFilter();
         }
     }
 
     private ObservableCollection<CompanyLookupDto> _searchCompanySuggestions = new();
-
     public ObservableCollection<CompanyLookupDto> SearchCompanySuggestions
     {
         get => _searchCompanySuggestions;
-        set
-        {
-            _searchCompanySuggestions = value;
-            OnPropertyChanged();
-        }
+        set { _searchCompanySuggestions = value; OnPropertyChanged(); }
     }
 
     private CompanyLookupDto? _selectedSearchCompany;
-
     public CompanyLookupDto? SelectedSearchCompany
     {
         get => _selectedSearchCompany;
@@ -540,65 +531,186 @@ public partial class MainWindowViewModel
             if (_selectedSearchCompany == value) return;
             _selectedSearchCompany = value;
             OnPropertyChanged();
-
-            // ✅ enable/disable Search Site dropdown
             IsSearchSiteEnabled = value != null;
-            OnPropertyChanged(nameof(IsSearchSiteEnabled));
-
-            // reset sites whenever company changes
             SearchSiteSuggestions.Clear();
             SelectedSearchSite = null;
-
-            if (value != null)
-                _ = LoadSitesForSelectedCompanyAsync();
+            if (value != null) _ = LoadSitesForSelectedCompanyAsync();
         }
     }
 
     private bool _isSearchSiteEnabled;
-
     public bool IsSearchSiteEnabled
     {
         get => _isSearchSiteEnabled;
-        set
-        {
-            if (_isSearchSiteEnabled == value) return;
-            _isSearchSiteEnabled = value;
-            OnPropertyChanged();
-        }
+        set { if (_isSearchSiteEnabled == value) return; _isSearchSiteEnabled = value; OnPropertyChanged(); }
     }
 
     private ObservableCollection<SiteLookupDto> _searchSiteSuggestions = new();
-
     public ObservableCollection<SiteLookupDto> SearchSiteSuggestions
     {
         get => _searchSiteSuggestions;
-        set
-        {
-            _searchSiteSuggestions = value;
-            OnPropertyChanged();
-        }
+        set { _searchSiteSuggestions = value; OnPropertyChanged(); }
     }
 
     private SiteLookupDto? _selectedSearchSite;
-
     public SiteLookupDto? SelectedSearchSite
     {
         get => _selectedSearchSite;
         set
         {
             if (_selectedSearchSite == value) return;
-
             _selectedSearchSite = value;
             OnPropertyChanged();
+        }
+    }
 
-            if (value != null)
-            {
-                SearchSiteIdText = value.SiteId.ToString();
-            }
-            else
-            {
-                SearchSiteIdText = string.Empty;
-            }
+    // --- Customer Search Selections ---
+    private string? _customerSelectedCompanyLetter = "ALL";
+    public string? CustomerSelectedCompanyLetter
+    {
+        get => _customerSelectedCompanyLetter;
+        set
+        {
+            if (_customerSelectedCompanyLetter == value) return;
+            _customerSelectedCompanyLetter = value;
+            OnPropertyChanged();
+            CustomerSelectedSearchCompany = null;
+            CustomerSearchSiteSuggestions.Clear();
+            CustomerSelectedSearchSite = null;
+            ApplyCustomerCompanyLetterFilter();
+        }
+    }
+
+    // --- Buyer Search Selections ---
+    private string? _buyerSelectedCompanyLetter = "ALL";
+    public string? BuyerSelectedCompanyLetter
+    {
+        get => _buyerSelectedCompanyLetter;
+        set
+        {
+            if (_buyerSelectedCompanyLetter == value) return;
+            _buyerSelectedCompanyLetter = value;
+            OnPropertyChanged();
+            BuyerSelectedSearchCompany = null;
+            BuyerSearchSiteSuggestions.Clear();
+            BuyerSelectedSearchSite = null;
+            ApplyBuyerCompanyLetterFilter();
+        }
+    }
+
+    // --- Customer Search Selections ---
+    private ObservableCollection<CompanyLookupDto> _customerSearchCompanySuggestions = new();
+    public ObservableCollection<CompanyLookupDto> CustomerSearchCompanySuggestions
+    {
+        get => _customerSearchCompanySuggestions;
+        set { _customerSearchCompanySuggestions = value; OnPropertyChanged(); }
+    }
+
+    private CompanyLookupDto? _customerSelectedSearchCompany;
+    public CompanyLookupDto? CustomerSelectedSearchCompany
+    {
+        get => _customerSelectedSearchCompany;
+        set
+        {
+            if (_customerSelectedSearchCompany == value) return;
+            _customerSelectedSearchCompany = value;
+            OnPropertyChanged();
+            IsCustomerSearchSiteEnabled = value != null;
+            CustomerSearchSiteSuggestions.Clear();
+            CustomerSelectedSearchSite = null;
+            if (value != null) _ = LoadCustomerSearchSitesAsync();
+        }
+    }
+
+    private bool _isCustomerSearchSiteEnabled;
+    public bool IsCustomerSearchSiteEnabled
+    {
+        get => _isCustomerSearchSiteEnabled;
+        set { if (_isCustomerSearchSiteEnabled == value) return; _isCustomerSearchSiteEnabled = value; OnPropertyChanged(); }
+    }
+
+    private ObservableCollection<SiteLookupDto> _customerSearchSiteSuggestions = new();
+    public ObservableCollection<SiteLookupDto> CustomerSearchSiteSuggestions
+    {
+        get => _customerSearchSiteSuggestions;
+        set { _customerSearchSiteSuggestions = value; OnPropertyChanged(); }
+    }
+
+    private string _customerSearchSiteIdText = string.Empty;
+    public string CustomerSearchSiteIdText
+    {
+        get => _customerSearchSiteIdText;
+        set { _customerSearchSiteIdText = value; OnPropertyChanged(); }
+    }
+
+    private SiteLookupDto? _customerSelectedSearchSite;
+    public SiteLookupDto? CustomerSelectedSearchSite
+    {
+        get => _customerSelectedSearchSite;
+        set
+        {
+            if (_customerSelectedSearchSite == value) return;
+            _customerSelectedSearchSite = value;
+            OnPropertyChanged();
+            CustomerSearchSiteIdText = value?.SiteId.ToString() ?? string.Empty;
+        }
+    }
+
+    // --- Buyer Search Selections ---
+    private ObservableCollection<CompanyLookupDto> _buyerSearchCompanySuggestions = new();
+    public ObservableCollection<CompanyLookupDto> BuyerSearchCompanySuggestions
+    {
+        get => _buyerSearchCompanySuggestions;
+        set { _buyerSearchCompanySuggestions = value; OnPropertyChanged(); }
+    }
+
+    private CompanyLookupDto? _buyerSelectedSearchCompany;
+    public CompanyLookupDto? BuyerSelectedSearchCompany
+    {
+        get => _buyerSelectedSearchCompany;
+        set
+        {
+            if (_buyerSelectedSearchCompany == value) return;
+            _buyerSelectedSearchCompany = value;
+            OnPropertyChanged();
+            IsBuyerSearchSiteEnabled = value != null;
+            BuyerSearchSiteSuggestions.Clear();
+            BuyerSelectedSearchSite = null;
+            if (value != null) _ = LoadBuyerSearchSitesAsync();
+        }
+    }
+
+    private bool _isBuyerSearchSiteEnabled;
+    public bool IsBuyerSearchSiteEnabled
+    {
+        get => _isBuyerSearchSiteEnabled;
+        set { if (_isBuyerSearchSiteEnabled == value) return; _isBuyerSearchSiteEnabled = value; OnPropertyChanged(); }
+    }
+
+    private ObservableCollection<SiteLookupDto> _buyerSearchSiteSuggestions = new();
+    public ObservableCollection<SiteLookupDto> BuyerSearchSiteSuggestions
+    {
+        get => _buyerSearchSiteSuggestions;
+        set { _buyerSearchSiteSuggestions = value; OnPropertyChanged(); }
+    }
+
+    private string _buyerSearchSiteIdText = string.Empty;
+    public string BuyerSearchSiteIdText
+    {
+        get => _buyerSearchSiteIdText;
+        set { _buyerSearchSiteIdText = value; OnPropertyChanged(); }
+    }
+
+    private SiteLookupDto? _buyerSelectedSearchSite;
+    public SiteLookupDto? BuyerSelectedSearchSite
+    {
+        get => _buyerSelectedSearchSite;
+        set
+        {
+            if (_buyerSelectedSearchSite == value) return;
+            _buyerSelectedSearchSite = value;
+            OnPropertyChanged();
+            BuyerSearchSiteIdText = value?.SiteId.ToString() ?? string.Empty;
         }
     }
 
@@ -759,16 +871,18 @@ public partial class MainWindowViewModel
         }
     }
 
-    private ProvinceDto? _searchProvince;
-
-    public ProvinceDto? SearchProvince
+    private ProvinceDto? _customerSearchProvince;
+    public ProvinceDto? CustomerSearchProvince
     {
-        get => _searchProvince;
-        set
-        {
-            _searchProvince = value;
-            OnPropertyChanged();
-        }
+        get => _customerSearchProvince;
+        set { _customerSearchProvince = value; OnPropertyChanged(); }
+    }
+
+    private ProvinceDto? _buyerSearchProvince;
+    public ProvinceDto? BuyerSearchProvince
+    {
+        get => _buyerSearchProvince;
+        set { _buyerSearchProvince = value; OnPropertyChanged(); }
     }
 
     // 🔹 NEW: search-only provinces (includes "ALL")
@@ -821,16 +935,18 @@ public partial class MainWindowViewModel
         }
     }
 
-    private CountryDto? _searchCountry;
-
-    public CountryDto? SearchCountry
+    private CountryDto? _customerSearchCountry;
+    public CountryDto? CustomerSearchCountry
     {
-        get => _searchCountry;
-        set
-        {
-            _searchCountry = value;
-            OnPropertyChanged();
-        }
+        get => _customerSearchCountry;
+        set { _customerSearchCountry = value; OnPropertyChanged(); }
+    }
+
+    private CountryDto? _buyerSearchCountry;
+    public CountryDto? BuyerSearchCountry
+    {
+        get => _buyerSearchCountry;
+        set { _buyerSearchCountry = value; OnPropertyChanged(); }
     }
 
     // 🔹 NEW: search-only countries (includes "ALL")
@@ -855,6 +971,18 @@ public partial class MainWindowViewModel
         {
             if (_customerSiteAddressSummary == value) return;
             _customerSiteAddressSummary = value ?? string.Empty;
+            OnPropertyChanged();
+        }
+    }
+
+    private string _buyerSiteAddressSummary = string.Empty;
+    public string BuyerSiteAddressSummary
+    {
+        get => _buyerSiteAddressSummary;
+        private set
+        {
+            if (_buyerSiteAddressSummary == value) return;
+            _buyerSiteAddressSummary = value ?? string.Empty;
             OnPropertyChanged();
         }
     }
@@ -899,8 +1027,10 @@ public partial class MainWindowViewModel
         OnPropertyChanged(nameof(NewCountry));
 
         // Search → ALL (meaning "no country filter")
-        SearchCountry = allCountry;
-        OnPropertyChanged(nameof(SearchCountry));
+        CustomerSearchCountry = allCountry;
+        BuyerSearchCountry = allCountry;
+        OnPropertyChanged(nameof(CustomerSearchCountry));
+        OnPropertyChanged(nameof(BuyerSearchCountry));
     }
 
     public async Task LoadProvincesAsync()
@@ -940,7 +1070,9 @@ public partial class MainWindowViewModel
         }
 
         // 🔹 Default search → ALL (meaning "no province filter")
-        SearchProvince = allProvince;
-        OnPropertyChanged(nameof(SearchProvince));
+        CustomerSearchProvince = allProvince;
+        BuyerSearchProvince = allProvince;
+        OnPropertyChanged(nameof(CustomerSearchProvince));
+        OnPropertyChanged(nameof(BuyerSearchProvince));
     }
 }

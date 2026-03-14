@@ -93,10 +93,9 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("phone_number");
 
-                    b.Property<string>("PriceCode")
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)")
-                        .HasColumnName("price_code");
+                    b.Property<int?>("ProductPriceListId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_price_list_id");
 
                     b.Property<int>("SiteId")
                         .HasColumnType("integer")
@@ -113,6 +112,8 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.HasIndex("CompanyId");
 
                     b.HasIndex("ImagePathId");
+
+                    b.HasIndex("ProductPriceListId");
 
                     b.HasIndex("SiteId");
 
@@ -337,10 +338,9 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("phone_number");
 
-                    b.Property<string>("PriceCode")
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)")
-                        .HasColumnName("price_code");
+                    b.Property<int?>("ProductPriceListId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_price_list_id");
 
                     b.Property<int?>("SiteId")
                         .HasColumnType("integer")
@@ -357,6 +357,8 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.HasIndex("CompanyId");
 
                     b.HasIndex("ImagePathId");
+
+                    b.HasIndex("ProductPriceListId");
 
                     b.HasIndex("SiteId");
 
@@ -562,18 +564,6 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
-                    b.Property<decimal>("PriceA")
-                        .HasColumnType("numeric")
-                        .HasColumnName("price_a");
-
-                    b.Property<decimal>("PriceB")
-                        .HasColumnType("numeric")
-                        .HasColumnName("price_b");
-
-                    b.Property<decimal>("PriceC")
-                        .HasColumnType("numeric")
-                        .HasColumnName("price_c");
-
                     b.Property<int>("ProductId")
                         .HasColumnType("integer")
                         .HasColumnName("product_id");
@@ -621,6 +611,12 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
+                    b.Property<bool>("MustDeclare")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("must_declare");
+
                     b.Property<string>("ProductCode")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -642,6 +638,115 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.HasKey("ProductId");
 
                     b.ToTable("products", "metal_link");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.ProductPriceList", b =>
+                {
+                    b.Property<int>("ProductPriceListId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("product_price_list_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ProductPriceListId"));
+
+                    b.Property<int>("CreatedByOperatorId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_operator_id");
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<char>("EntityFlag")
+                        .HasMaxLength(1)
+                        .HasColumnType("character(1)")
+                        .HasColumnName("entity_flag");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("ProductPriceListDescription")
+                        .HasColumnType("text")
+                        .HasColumnName("product_price_list_description");
+
+                    b.Property<string>("ProductPriceListName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("product_price_list_name");
+
+                    b.Property<DateTimeOffset>("UpdatedTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("ProductPriceListId");
+
+                    b.HasIndex("CreatedByOperatorId");
+
+                    b.ToTable("product_price_lists", "metal_link");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.ProductPriceListProductPrice", b =>
+                {
+                    b.Property<int>("ProductPriceListProductPriceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("product_price_list_product_price_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ProductPriceListProductPriceId"));
+
+                    b.Property<int>("CreatedByOperatorId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_operator_id");
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("price");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
+
+                    b.Property<int>("ProductPriceListId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_price_list_id");
+
+                    b.Property<DateTimeOffset>("UpdatedTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("ProductPriceListProductPriceId");
+
+                    b.HasIndex("CreatedByOperatorId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ProductPriceListId", "ProductId", "IsActive")
+                        .IsUnique()
+                        .HasFilter("is_active = true");
+
+                    b.ToTable("product_price_list_product_prices", "metal_link");
                 });
 
             modelBuilder.Entity("MetalLink.Domain.Entities.Province", b =>
@@ -1658,6 +1763,10 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("ImagePathId");
 
+                    b.HasOne("MetalLink.Domain.Entities.ProductPriceList", "ProductPriceList")
+                        .WithMany()
+                        .HasForeignKey("ProductPriceListId");
+
                     b.HasOne("MetalLink.Domain.Entities.Site", "Site")
                         .WithMany()
                         .HasForeignKey("SiteId")
@@ -1667,6 +1776,8 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("ImagePath");
+
+                    b.Navigation("ProductPriceList");
 
                     b.Navigation("Site");
                 });
@@ -1681,6 +1792,10 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("ImagePathId");
 
+                    b.HasOne("MetalLink.Domain.Entities.ProductPriceList", "ProductPriceList")
+                        .WithMany()
+                        .HasForeignKey("ProductPriceListId");
+
                     b.HasOne("MetalLink.Domain.Entities.Site", "Site")
                         .WithMany("Customers")
                         .HasForeignKey("SiteId");
@@ -1688,6 +1803,8 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("ImagePath");
+
+                    b.Navigation("ProductPriceList");
 
                     b.Navigation("Site");
                 });
@@ -1736,6 +1853,44 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.ProductPriceList", b =>
+                {
+                    b.HasOne("MetalLink.Domain.Entities.Operator", "CreatedByOperator")
+                        .WithMany()
+                        .HasForeignKey("CreatedByOperatorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByOperator");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.ProductPriceListProductPrice", b =>
+                {
+                    b.HasOne("MetalLink.Domain.Entities.Operator", "CreatedByOperator")
+                        .WithMany()
+                        .HasForeignKey("CreatedByOperatorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MetalLink.Domain.Entities.ProductPriceList", "ProductPriceList")
+                        .WithMany("ProductPrices")
+                        .HasForeignKey("ProductPriceListId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByOperator");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ProductPriceList");
                 });
 
             modelBuilder.Entity("MetalLink.Domain.Entities.Setting", b =>
@@ -2041,6 +2196,11 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("MetalLink.Domain.Entities.Customer", b =>
                 {
                     b.Navigation("Tickets");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.ProductPriceList", b =>
+                {
+                    b.Navigation("ProductPrices");
                 });
 
             modelBuilder.Entity("MetalLink.Domain.Entities.Province", b =>

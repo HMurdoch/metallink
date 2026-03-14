@@ -1,18 +1,17 @@
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
-using Avalonia.Threading;
+using MetalLink.Desktop.ViewModels;
+using MetalLink.Desktop.ViewModels.Sending;
 
 namespace MetalLink.Desktop.Views;
 
 public partial class TicketsSendingView : UserControl
 {
-    private ScrollViewer? _scrollViewer;
-    private Border? _addProductLinesSection;
-
     public TicketsSendingView()
     {
         InitializeComponent();
-        this.AttachedToVisualTree += OnAttachedToVisualTree;
     }
 
     private void InitializeComponent()
@@ -20,52 +19,39 @@ public partial class TicketsSendingView : UserControl
         AvaloniaXamlLoader.Load(this);
     }
 
-    private void OnAttachedToVisualTree(object? sender, Avalonia.VisualTreeAttachmentEventArgs e)
+    private void ToggleSearchCriteria(object? sender, PointerPressedEventArgs e)
     {
-        _scrollViewer = this.FindControl<ScrollViewer>("TicketsScrollViewer");
-        _addProductLinesSection = this.FindControl<Border>("AddProductLinesSection");
+        if (DataContext is MainWindowViewModel vm)
+            vm.Sending.SendingIsSearchCriteriaExpanded = !vm.Sending.SendingIsSearchCriteriaExpanded;
     }
 
-    public void ScrollToAddProductLines()
+    private void ToggleSearchResults(object? sender, PointerPressedEventArgs e)
     {
-        if (_scrollViewer != null && _addProductLinesSection != null)
-        {
-            Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                // Calculate the offset to scroll to the Add Product Lines section
-                var offset = _addProductLinesSection.Bounds.Y;
-                _scrollViewer.Offset = new Avalonia.Vector(0, offset);
-            });
-        }
+        if (DataContext is MainWindowViewModel vm)
+            vm.Sending.SendingIsSearchResultsExpanded = !vm.Sending.SendingIsSearchResultsExpanded;
     }
 
-    private async void TareTextBox_LostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private void ToggleDetails(object? sender, PointerPressedEventArgs e)
     {
-        if (DataContext is not MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel vm) return;
-        if (sender is not TextBox tb) return;
-        if (tb.DataContext is not MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel.SendingLineRow row) return;
-
-        if (!decimal.TryParse(tb.Text?.Replace(',', '.').Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var tare))
-            return;
-
-        if (!row.IsEditable) return;
-        await vm.UpdateLastLineTareAsync(row.TicketSendingLineId, tare);
+        if (DataContext is MainWindowViewModel vm)
+            vm.Sending.SendingIsDetailsExpanded = !vm.Sending.SendingIsDetailsExpanded;
     }
 
-    private void TareTextBox_GotFocus(object? sender, Avalonia.Input.GotFocusEventArgs e)
+    private void ToggleCreateEdit(object? sender, PointerPressedEventArgs e)
     {
-        if (sender is TextBox textBox)
-        {
-            // DataGrid cell editors can steal selection on focus.
-            // Defer selection to ensure the caret/selection is applied after the template finishes focusing.
-            Dispatcher.UIThread.Post(textBox.SelectAll);
-        }
+        if (DataContext is MainWindowViewModel vm)
+            vm.Sending.SendingIsCreateEditExpanded = !vm.Sending.SendingIsCreateEditExpanded;
     }
 
-    private void SendingTicketsGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private void TogglePanel(object? sender, PointerPressedEventArgs e)
     {
-        // Prevent automatic scrolling when selecting different rows
-        // This avoids the annoying "jump" behavior when clicking on different tickets
-        e.Handled = true;
+        if (DataContext is MainWindowViewModel vm)
+            vm.Sending.SendingIsPanelExpanded = !vm.Sending.SendingIsPanelExpanded;
     }
+
+    private void SendingTicketsGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e) { }
+    public void UpdateLastLineTare() { }
+
+    private void TareTextBox_GotFocus(object? sender, GotFocusEventArgs e) { }
+    private void TareTextBox_LostFocus(object? sender, RoutedEventArgs e) { }
 }

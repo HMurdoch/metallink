@@ -31,6 +31,10 @@ public partial class MainWindowViewModel
     private int _animatedTotalSitesInDb;
     private int _animatedTotalProductsInDb;
 
+    // Actual DB counts (not animated)
+    private int _totalCustomersInDb;
+    private int _totalTicketsInDb;
+
     // Charts
     public ISeries[] TicketsByTypeSeries { get; set; } = System.Array.Empty<ISeries>();
     public ISeries[] TicketsPerDaySeries { get; set; } = System.Array.Empty<ISeries>();
@@ -124,6 +128,23 @@ public partial class MainWindowViewModel
     public bool IsReportsSectionVisible => CurrentSection == EnumMainSection.Reports;
     public bool IsSettingsSectionVisible => CurrentSection == EnumMainSection.Settings;
 
+    private bool _isNavCollapsed;
+    public bool IsNavCollapsed
+    {
+        get => _isNavCollapsed;
+        set
+        {
+            if (_isNavCollapsed == value) return;
+            _isNavCollapsed = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(NavColumnWidth));
+            OnPropertyChanged(nameof(NavLabelOpacity));
+        }
+    }
+
+    public double NavColumnWidth => IsNavCollapsed ? 64 : 260;
+    public double NavLabelOpacity => IsNavCollapsed ? 0 : 1;
+
     public bool IsDocumentSectionVisible  => CurrentSection == EnumMainSection.Documents;
     public bool IsCameraSectionVisible    => CurrentSection == EnumMainSection.Camera;
 
@@ -177,5 +198,39 @@ public partial class MainWindowViewModel
         set { _animatedTotalProductsInDb = value; OnPropertyChanged(); }
     }
 
-    public bool HasUnsavedChanges => HasUnsavedNewCustomer;
+    public int TotalCustomersInDb
+    {
+        get => _totalCustomersInDb;
+        set { _totalCustomersInDb = value; OnPropertyChanged(); }
+    }
+
+    public int TotalTicketsInDb
+    {
+        get => _totalTicketsInDb;
+        set { _totalTicketsInDb = value; OnPropertyChanged(); }
+    }
+
+    private int _pageSize = 20;
+    public int PageSize
+    {
+        get => _pageSize;
+        set { _pageSize = value; OnPropertyChanged(); }
+    }
+
+    private bool _enforceBuyerCompany = true;
+    public bool EnforceBuyerCompany
+    {
+        get => _enforceBuyerCompany;
+        set 
+        { 
+            _enforceBuyerCompany = value; 
+            OnPropertyChanged(); 
+            if (value && CurrentSection == EnumMainSection.Buyers)
+            {
+                NewIsCompany = true;
+            }
+        }
+    }
+
+
 }

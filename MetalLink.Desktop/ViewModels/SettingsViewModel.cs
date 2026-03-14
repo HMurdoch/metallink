@@ -9,6 +9,9 @@ namespace MetalLink.Desktop.ViewModels;
 
 public sealed class SettingsViewModel : INotifyPropertyChanged
 {
+    private bool _isAppearanceExpanded = true;
+    public bool IsAppearanceExpanded { get => _isAppearanceExpanded; set { _isAppearanceExpanded = value; OnPropertyChanged(); } }
+
     private readonly ThemeService _themeService;
     private readonly AppearanceService _appearanceService;
 
@@ -53,6 +56,36 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         {
             if (value == IsCrystaline) return;
             _ = SetCrystalineAsync(value);
+        }
+    }
+
+    private MainWindowViewModel? _mainVm;
+    private MainWindowViewModel? MainVm
+    {
+        get
+        {
+            if (_mainVm != null) return _mainVm;
+            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                if (desktop.MainWindow?.DataContext is MainWindowViewModel vm)
+                {
+                    _mainVm = vm;
+                }
+            }
+            return _mainVm;
+        }
+    }
+
+    public bool EnforceBuyerCompany
+    {
+        get => MainVm?.EnforceBuyerCompany ?? true;
+        set
+        {
+            if (MainVm != null && value != MainVm.EnforceBuyerCompany)
+            {
+                _ = MainVm.SetEnforceBuyerCompanyAsync(value);
+                OnPropertyChanged();
+            }
         }
     }
 

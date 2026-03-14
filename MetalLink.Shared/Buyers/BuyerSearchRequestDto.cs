@@ -11,7 +11,7 @@ public sealed class BuyerSearchRequestDto
     public string? CompanyName   { get; set; }
     public string? IdNumber      { get; set; }
     public long? AccountNumber { get; set; }
-    public string? PriceCode     { get; set; }
+    public int? ProductPriceListId { get; set; }
 
     public string? AddressLine1 { get; set; }
     public string? AddressLine2 { get; set; }

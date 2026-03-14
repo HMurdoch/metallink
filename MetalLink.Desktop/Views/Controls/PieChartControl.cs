@@ -85,15 +85,17 @@ public sealed class PieChartControl : Control
 
         var isLarge = (endDeg - startDeg) > 180;
 
-        var fig = new PathFigure { StartPoint = center, IsClosed = true };
-        fig.Segments.Add(new LineSegment { Point = p1 });
-        fig.Segments.Add(new ArcSegment
+        var segments = new PathSegments();
+        segments.Add(new LineSegment { Point = p1 });
+        segments.Add(new ArcSegment
         {
             Point = p2,
             Size = new Size(radius, radius * yScale),
             IsLargeArc = isLarge,
             SweepDirection = SweepDirection.Clockwise
         });
+
+        var fig = new PathFigure { StartPoint = center, IsClosed = true, Segments = segments };
 
         return new PathGeometry { Figures = new PathFigures { fig } };
     }

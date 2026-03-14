@@ -110,4 +110,36 @@ public sealed class ProductsAndPricesService
     /// </summary>
     public Task DeletePriceAsync(long priceId, CancellationToken ct = default)
         => _apiClient.DeleteAsync($"api/prices/{priceId}", ct);
+
+    // ============================================================
+    // PRODUCT PRICE LISTS
+    // ============================================================
+
+    public async Task<IReadOnlyList<ProductPriceListDto>> GetPriceListsAsync(CancellationToken ct = default)
+    {
+        var result = await _apiClient.GetAsync<ProductPriceListDto[]>("api/product-price-lists", ct);
+        return result ?? Array.Empty<ProductPriceListDto>();
+    }
+
+    public Task<ProductPriceListDto?> CreatePriceListAsync(ProductPriceListDto dto, CancellationToken ct = default)
+        => _apiClient.PostAsync<ProductPriceListDto, ProductPriceListDto>("api/product-price-lists", dto, ct);
+
+    public async Task UpdatePriceListAsync(int id, ProductPriceListDto dto, CancellationToken ct = default)
+    {
+        await _apiClient.PutAsJsonAsync($"api/product-price-lists/{id}", dto, ct);
+    }
+
+    public Task DeletePriceListAsync(int id, CancellationToken ct = default)
+        => _apiClient.DeleteAsync($"api/product-price-lists/{id}", ct);
+
+    public async Task<decimal> GetProductPriceAsync(int productId, int priceListId, CancellationToken ct = default)
+    {
+        var result = await _apiClient.GetAsync<decimal>($"api/product-price-lists/{priceListId}/products/{productId}/price", ct);
+        return result;
+    }
+
+    public async Task SetProductPriceAsync(int productId, int priceListId, decimal price, CancellationToken ct = default)
+    {
+        await _apiClient.PostAsJsonAsync($"api/product-price-lists/{priceListId}/products/{productId}/price", price, ct);
+    }
 }

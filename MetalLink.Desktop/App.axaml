@@ -586,7 +586,8 @@
           </LinearGradientBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
-
+      <views:SectionToViewConverter x:Key="SectionToViewConverter" />
+      <views:ObjectConverters x:Key="ObjectConverters" />
     </ResourceDictionary>
   </Application.Resources>
 

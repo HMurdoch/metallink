@@ -315,19 +315,12 @@
               Opacity="0.12"
               IsHitTestVisible="False" />
 
-      <!-- Single-view host with scrolling -->
-      <ScrollViewer x:Name="MainContentScroll"
-                    Grid.Row="0" Grid.Column="0"
-                    VerticalAlignment="Stretch"
-                    HorizontalAlignment="Stretch"
-                    VerticalScrollBarVisibility="Auto"
-                    HorizontalScrollBarVisibility="Disabled"
-                    >
-        <ContentControl x:Name="MainContentHost"
-                        Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}}"
-                        HorizontalContentAlignment="Stretch"
-                        VerticalContentAlignment="Top" />
-      </ScrollViewer>
+      <!-- Single-view host (Each view handles its own internal scrolling for sticky headers) -->
+      <ContentControl x:Name="MainContentHost"
+                      Grid.Row="0" Grid.Column="0"
+                      Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}}"
+                      HorizontalContentAlignment="Stretch"
+                      VerticalContentAlignment="Stretch" />
     </Grid>
 
     <!-- Bottom status bar -->

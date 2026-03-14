@@ -61,6 +61,25 @@ public partial class MainWindowViewModel
 
         // Load product letters on initialization
         _ = LoadProductsAndLettersAsync();
+        _ = LoadProductPriceListsAsync();
+    }
+
+    private async Task LoadProductPriceListsAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var lists = await _app.ProductsAndPricesService.GetPriceListsAsync(ct);
+            ProductPriceLists.Clear();
+            foreach (var list in lists)
+                ProductPriceLists.Add(list);
+
+            if (SelectedProductPriceList == null && ProductPriceLists.Count > 0)
+                SelectedProductPriceList = ProductPriceLists[0];
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Failed to load price lists: {ex.Message}";
+        }
     }
 
     // =====================================================
@@ -142,6 +161,7 @@ public partial class MainWindowViewModel
                     ProductCode = string.IsNullOrWhiteSpace(ProductCode) ? null! : ProductCode.Trim(),
                     ProductName = ProductName.Trim(),
                     Grade = ProductGrade > 0 ? ProductGrade.ToString() : null,
+                    MustDeclare = ProductMustDeclare,
                     IsActive = true
                 },
                 ct);
@@ -191,6 +211,7 @@ public partial class MainWindowViewModel
         ProductCode = product.ProductCode ?? "";
         ProductName = product.ProductName ?? "";
         ProductGrade = string.IsNullOrEmpty(product.Grade) ? 0 : decimal.Parse(product.Grade);
+        ProductMustDeclare = product.MustDeclare; // Note: Ensure ProductLookupDto has MustDeclare
 
         OnPropertyChanged(nameof(IsProductEditMode));
         OnPropertyChanged(nameof(IsProductCreateMode));
@@ -220,6 +241,7 @@ public partial class MainWindowViewModel
                 ProductCode = string.IsNullOrWhiteSpace(ProductCode) ? null! : ProductCode.Trim(),
                 ProductName = ProductName.Trim(),
                 Grade = ProductGrade > 0 ? ProductGrade.ToString() : null,
+                MustDeclare = ProductMustDeclare,
                 IsActive = true
             };
 
@@ -481,7 +503,7 @@ public partial class MainWindowViewModel
 
     private async Task LoadPricesForSelectedProductAsync(CancellationToken ct = default)
     {
-        if (SelectedProduct == null)
+        if (SelectedProduct == null || SelectedProductPriceList == null)
         {
             ClearPriceForm();
             return;
@@ -490,89 +512,38 @@ public partial class MainWindowViewModel
         try
         {
             StatusMessage = "Loading price...";
-
-            var price = await _app.ProductsAndPricesService.GetPriceForProductAsync(
-                SelectedProduct.ProductId,
+            CurrentPrice = await _app.ProductsAndPricesService.GetProductPriceAsync(
+                (int)SelectedProduct.ProductId, 
+                SelectedProductPriceList.ProductPriceListId, 
                 ct);
-
-            if (price != null)
-            {
-                EditingPriceId = price.PriceId;
-                PriceA = price.PriceA;
-                PriceB = price.PriceB;
-                PriceC = price.PriceC;
-                StatusMessage = "Price loaded.";
-            }
-            else
-            {
-                ClearPriceForm();
-                StatusMessage = "No price found for product.";
-            }
-        }
-        catch (HttpRequestException ex) when (ex.Message.Contains("404"))
-        {
-            // Product has no price record - create a default one
-            ClearPriceForm();
-            StatusMessage = $"No price record found for '{SelectedProduct.ProductName}'. You can create one by updating prices.";
+            StatusMessage = "Price loaded.";
         }
         catch (Exception ex)
         {
             StatusMessage = $"Load price failed: {ex.Message}";
-            ClearPriceForm();
+            CurrentPrice = 0;
         }
     }
 
     private async Task UpdatePriceAsync(CancellationToken ct = default)
     {
         if (IsBusy) return;
-        if (SelectedProduct == null)
+        if (SelectedProduct == null || SelectedProductPriceList == null)
         {
-            StatusMessage = "[STATUS] Select a product first.";
+            StatusMessage = "[STATUS] Select a product and price list first.";
             return;
         }
 
         IsBusy = true;
         try
         {
-            // If no price record exists, create one first
-            if (!EditingPriceId.HasValue)
-            {
-                StatusMessage = "[STATUS] Creating price record...";
-                
-                var newPrice = await _app.ProductsAndPricesService.CreatePriceAsync(
-                    new PriceDto
-                    {
-                        ProductId = SelectedProduct.ProductId,
-                        PriceA = PriceA,
-                        PriceB = PriceB,
-                        PriceC = PriceC,
-                        IsActive = true
-                    }, ct);
-
-                if (newPrice != null)
-                {
-                    EditingPriceId = newPrice.PriceId;
-                    StatusMessage = "[STATUS] Price created successfully.";
-                }
-            }
-            else
-            {
-                StatusMessage = "[STATUS] Updating price...";
-
-                await _app.ProductsAndPricesService.UpdatePriceAsync(
-                    EditingPriceId.Value,
-                    new PriceDto
-                    {
-                        PriceId = (int)EditingPriceId.Value,
-                        ProductId = (int)SelectedProduct.ProductId,
-                        PriceA = PriceA,
-                        PriceB = PriceB,
-                        PriceC = PriceC,
-                        IsActive = true
-                    }, ct);
-
-                StatusMessage = "[STATUS] Price updated.";
-            }
+            StatusMessage = "[STATUS] Updating price...";
+            await _app.ProductsAndPricesService.SetProductPriceAsync(
+                (int)SelectedProduct.ProductId, 
+                SelectedProductPriceList.ProductPriceListId, 
+                CurrentPrice, 
+                ct);
+            StatusMessage = "[STATUS] Price updated successfully.";
         }
         catch (Exception ex)
         {
@@ -588,9 +559,7 @@ public partial class MainWindowViewModel
     private void ClearPriceForm()
     {
         EditingPriceId = null;
-        PriceA = 0;
-        PriceB = 0;
-        PriceC = 0;
+        CurrentPrice = 0;
         OnPropertyChanged(nameof(CanUpdatePrice));
         (UpdatePriceCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
     }

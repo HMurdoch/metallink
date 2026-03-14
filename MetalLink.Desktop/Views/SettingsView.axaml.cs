@@ -1,5 +1,7 @@
-using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Markup.Xaml;
+using MetalLink.Desktop.ViewModels;
 
 namespace MetalLink.Desktop.Views;
 
@@ -8,11 +10,11 @@ public partial class SettingsView : UserControl
     public SettingsView()
     {
         InitializeComponent();
+    }
 
-        // Wire up VM here because views are created via SectionToViewConverter.
-        if (Application.Current is App app)
-        {
-            DataContext = new MetalLink.Desktop.ViewModels.SettingsViewModel(app.ThemeService, app.AppearanceService);
-        }
+    private void ToggleAppearance(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is SettingsViewModel vm)
+            vm.IsAppearanceExpanded = !vm.IsAppearanceExpanded;
     }
 }

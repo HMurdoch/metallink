@@ -129,6 +129,22 @@ public sealed class ApiClient
         return await _httpClient.SendAsync(request, cancellationToken);
     }
 
+    public async Task<HttpResponseMessage> PostAsJsonAsync<T>(
+        string uri,
+        T body,
+        CancellationToken cancellationToken = default)
+    {
+        ApplyAuthHeader();
+        Console.WriteLine($"POST: {_httpClient.BaseAddress}{uri}");
+        
+        var request = new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Content = JsonContent.Create(body)
+        };
+
+        return await _httpClient.SendAsync(request, cancellationToken);
+    }
+
     public async Task DeleteAsync(string relativeUrl, CancellationToken ct = default)
     {
         ApplyAuthHeader();

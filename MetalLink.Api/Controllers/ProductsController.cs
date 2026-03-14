@@ -94,20 +94,7 @@ public class ProductsController : ControllerBase
         _db.Products.Add(product);
         await _db.SaveChangesAsync(ct);
 
-        // Automatically create a price record with default values
-        var price = new Price
-        {
-            ProductId = product.ProductId,
-            PriceA = 0,
-            PriceB = 0,
-            PriceC = 0,
-            IsActive = true,
-            CreatedTime = DateTimeOffset.UtcNow,
-            UpdatedTime = DateTimeOffset.UtcNow
-        };
-
-        _db.Prices.Add(price);
-        await _db.SaveChangesAsync(ct);
+        // Legacy price record creation removed - prices are now in product_price_list_product_prices table
 
         dto.ProductId = product.ProductId;
         dto.CreatedTime = product.CreatedTime;

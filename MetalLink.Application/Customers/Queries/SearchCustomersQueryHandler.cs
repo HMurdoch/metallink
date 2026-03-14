@@ -58,7 +58,8 @@ public sealed class SearchCustomersQueryHandler
 
                     IdNumber      = c.IdNumber,
                     AccountNumber = c.AccountNumber,
-                    PriceCode     = c.PriceCode,
+                    ProductPriceListId = c.ProductPriceListId,
+                    ProductPriceListName = c.ProductPriceList?.ProductPriceListName,
 
                     PhoneNumber   = c.PhoneNumber,
                     MobileNumber  = c.MobileNumber,

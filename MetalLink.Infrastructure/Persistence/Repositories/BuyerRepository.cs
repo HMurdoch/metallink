@@ -38,6 +38,7 @@ public class BuyerRepository : IBuyerRepository
             .Include(c => c.Site!)
                 .ThenInclude(s => s!.Country!)
             .Include(c => c.ImagePath!)
+            .Include(c => c.ProductPriceList)
             .FirstOrDefaultAsync(c => c.BuyerId == buyerId, cancellationToken);
     }
 
@@ -46,11 +47,12 @@ public class BuyerRepository : IBuyerRepository
         CancellationToken cancellationToken = default)
     {
         return await _db.Buyers
-            .Include(c => c.Company!)
-            .Include(c => c.Site!)
+            .Include(b => b.Company!)
+            .Include(b => b.Site!)
                 .ThenInclude(s => s!.Province!)
+            .Include(b => b.ProductPriceList)
             .FirstOrDefaultAsync(
-                c => c.AccountNumber == accountNumber,
+                b => b.AccountNumber == accountNumber,
                 cancellationToken);
     }
 
@@ -109,6 +111,7 @@ public class BuyerRepository : IBuyerRepository
             .Include(c => c.Site!)
                 .ThenInclude(s => s!.Country!)
             .Include(c => c.ImagePath!)
+            .Include(c => c.ProductPriceList)
             .Where(c => c.IsActive)
             .AsQueryable();
 
@@ -165,15 +168,13 @@ public class BuyerRepository : IBuyerRepository
         if (request.AccountNumber.HasValue)
         {
             var acc = request.AccountNumber.Value;
-            query = query.Where(c => c.AccountNumber == acc);
+            query = query.Where(b => b.AccountNumber == acc);
         }
 
-        if (!string.IsNullOrWhiteSpace(request.PriceCode))
+        if (request.ProductPriceListId.HasValue)
         {
-            var term = request.PriceCode.ToLower();
-            query = query.Where(c =>
-                c.PriceCode != null &&
-                c.PriceCode.ToLower().Contains(term));
+            var priceListId = request.ProductPriceListId.Value;
+            query = query.Where(b => b.ProductPriceListId == priceListId);
         }
 
         // Province filter (site)
@@ -309,7 +310,6 @@ public class BuyerRepository : IBuyerRepository
             CompanyName   = companyName,
             IdNumber      = idNumber,
             AccountNumber = accountNumber,
-            PriceCode     = priceCode,
             AddressLine1  = addressLine1,
             AddressLine2  = addressLine2,
             Suburb        = suburb,
@@ -345,6 +345,7 @@ public class BuyerRepository : IBuyerRepository
         var query = _db.Buyers
             .Include(b => b.Company!)
             .Include(b => b.Site!)
+            .Include(b => b.ProductPriceList)
             .Where(b => b.IsActive)
             .Where(b => !_db.SendingTickets.Any(t => t.BuyerId == b.BuyerId))
             .AsQueryable();

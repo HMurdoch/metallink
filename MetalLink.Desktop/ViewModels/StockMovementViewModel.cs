@@ -16,7 +16,16 @@ using MetalLink.Shared.Stock;
 namespace MetalLink.Desktop.ViewModels;
 
 public sealed class StockMovementViewModel : ViewModelBase
-{
+    {
+    private bool _isFilterExpanded = true;
+    public bool IsFilterExpanded { get => _isFilterExpanded; set => SetProperty(ref _isFilterExpanded, value); }
+
+    private bool _isChartExpanded = true;
+    public bool IsChartExpanded { get => _isChartExpanded; set => SetProperty(ref _isChartExpanded, value); }
+
+    private bool _isResultsExpanded = true;
+    public bool IsResultsExpanded { get => _isResultsExpanded; set => SetProperty(ref _isResultsExpanded, value); }
+
     private bool _suppressFilterSync;
     private readonly ApiClient _api;
 
@@ -494,6 +503,6 @@ public sealed class StockMovementViewModel : ViewModelBase
         public RelayCommand(Action execute) => _execute = execute;
         public bool CanExecute(object? parameter) => true;
         public void Execute(object? parameter) => _execute();
-        public event EventHandler? CanExecuteChanged;
+        public event EventHandler? CanExecuteChanged { add { } remove { } }
     }
 }

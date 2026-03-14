@@ -44,13 +44,14 @@
 
   <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
   <Border Background="{DynamicResource Brush.MainBackground}">
-    <DockPanel>
+    <Grid RowDefinitions="Auto,*">
       <!-- Sticky Header Panel -->
-      <Border DockPanel.Dock="Top" 
+      <Border Grid.Row="0" 
               Background="{DynamicResource Brush.PanelBackground}"
               Padding="12,8"
               CornerRadius="4"
-              Margin="16,16,16,8">
+              Margin="16,16,16,8"
+              ZIndex="100">
         <Image Source="avares://MetalLink.Desktop/Assets/products_and_prices_heading.png"
                Height="40"
                HorizontalAlignment="Left"
@@ -58,15 +59,24 @@
       </Border>
       
       <!-- Scrollable Content -->
-      <ScrollViewer Padding="16,8,16,16">
+      <ScrollViewer Grid.Row="1" Padding="16,8,16,16">
         <StackPanel Spacing="16">
 
         <!-- Search Products -->
         <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
     <StackPanel Spacing="10">
-            <TextBlock Text="Search product" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            <Grid PointerPressed="ToggleSearchCriteria" Cursor="Hand">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" 
+                         Text="{Binding ProductsIsSearchCriteriaExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Search product" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
 
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" IsVisible="{Binding ProductsIsSearchCriteriaExpanded}">
               <StackPanel Grid.Column="0" Spacing="6">
                 <TextBlock Text="Product" Foreground="{DynamicResource Brush.TextMuted}" />
                 <Grid ColumnDefinitions="70,*,*">
@@ -97,12 +107,22 @@
         <!-- Product Results -->
         <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
     <StackPanel Spacing="8">
-            <TextBlock Text="Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            <Grid PointerPressed="ToggleSearchResults" Cursor="Hand">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" 
+                         Text="{Binding ProductsIsSearchResultsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
 
             <DataGrid
               AutoGenerateColumns="False"
               ItemsSource="{Binding ProductResults}"
               SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+              IsVisible="{Binding ProductsIsSearchResultsExpanded}"
               Height="220">
               <DataGrid.Columns>
                 <DataGridTextColumn Header="Product ID" Binding="{Binding ProductId}" IsReadOnly="True" Width="100" />
@@ -138,9 +158,18 @@
         <!-- Create/Edit Product -->
         <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
     <StackPanel Spacing="10">
-            <TextBlock Text="Create/Edit Product" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            <Grid PointerPressed="ToggleCreateEdit" Cursor="Hand">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" 
+                         Text="{Binding ProductsIsCreateEditExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Create/Edit Product" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
 
-            <Border Padding="12" Background="{DynamicResource Brush.PanelBackground}" CornerRadius="8">
+            <Border Padding="12" Background="{DynamicResource Brush.PanelBackground}" CornerRadius="8" IsVisible="{Binding ProductsIsCreateEditExpanded}">
         <StackPanel Spacing="10">
 
                 <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
@@ -164,6 +193,12 @@
                     <TextBox
                       Watermark="Gradient"
                       Text="{Binding ProductGrade, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                  </StackPanel>
+
+                  <StackPanel Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="0,20,0,0">
+                    <CheckBox Content="Must Declare" 
+                              IsChecked="{Binding ProductMustDeclare, Mode=TwoWay}"
+                              Foreground="{DynamicResource Brush.TextPrimary}" />
                   </StackPanel>
 
                 </Grid>
@@ -194,25 +229,38 @@
 
         <!-- Edit Price -->
         <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
-    <StackPanel Spacing="10">
-            <TextBlock Text="Edit Price" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+          <StackPanel Spacing="10">
+            <Grid PointerPressed="ToggleEditPrice" Cursor="Hand">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" 
+                         Text="{Binding ProductsIsDetailsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Edit Price" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
 
-            <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto" ColumnSpacing="10" RowSpacing="10">
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto" ColumnSpacing="10" RowSpacing="10" IsVisible="{Binding ProductsIsDetailsExpanded}">
 
-              <!-- Row 0 -->
-              <StackPanel Grid.Row="0" Grid.Column="0" Spacing="6">
-                <TextBlock Text="Price A" Foreground="{DynamicResource Brush.TextMuted}" />
-                <TextBox Text="{Binding PriceA, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              <!-- Price List Selection -->
+              <StackPanel Grid.Column="0" Spacing="6">
+                <TextBlock Text="Price List" Foreground="{DynamicResource Brush.TextMuted}" />
+                <ComboBox ItemsSource="{Binding ProductPriceLists}"
+                          SelectedItem="{Binding SelectedProductPriceList}"
+                          HorizontalAlignment="Stretch">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding ProductPriceListName}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
               </StackPanel>
 
-              <StackPanel Grid.Row="0" Grid.Column="1" Spacing="6">
-                <TextBlock Text="Price B" Foreground="{DynamicResource Brush.TextMuted}" />
-                <TextBox Text="{Binding PriceB, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-              </StackPanel>
-
-              <StackPanel Grid.Row="0" Grid.Column="2" Spacing="6">
-                <TextBlock Text="Price C" Foreground="{DynamicResource Brush.TextMuted}" />
-                <TextBox Text="{Binding PriceC, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              <!-- Price Input -->
+              <StackPanel Grid.Column="1" Spacing="6">
+                <TextBlock Text="Current Price" Foreground="{DynamicResource Brush.TextMuted}" />
+                <TextBox Text="{Binding CurrentPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
               </StackPanel>
 
             </Grid>
@@ -228,6 +276,6 @@
         </Border>
         </StackPanel>
       </ScrollViewer>
-    </DockPanel>
+    </Grid>
   </Border>
 </UserControl>

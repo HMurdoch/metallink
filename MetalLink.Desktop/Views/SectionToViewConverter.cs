@@ -9,6 +9,11 @@ public class SectionToViewConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
     {
+        if (parameter?.ToString() == "arrow" && value is bool isExpanded)
+        {
+            return isExpanded ? "▼" : "▶";
+        }
+
         if (value is not EnumMainSection section)
             return null;
 
@@ -29,8 +34,6 @@ public class SectionToViewConverter : IValueConverter
             EnumMainSection.Settings => new SettingsView(),
             _ => null
         };
-
-        Console.WriteLine($"[NAV] Converter: {section} -> {(view == null ? "<null>" : view.GetType().Name)}");
 
         return view ?? new Border
         {

@@ -31,7 +31,8 @@ public class Customer
 
     public bool IsTaxable { get; set; }
 
-    public string? PriceCode { get; set; }
+    public int? ProductPriceListId { get; set; }
+    public ProductPriceList? ProductPriceList { get; set; }
 
     public string? PhoneNumber { get; set; }
     public string? MobileNumber { get; set; }

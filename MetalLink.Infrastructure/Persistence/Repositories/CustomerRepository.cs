@@ -33,6 +33,7 @@ public class CustomerRepository : ICustomerRepository
             .Include(c => c.Site!)
                 .ThenInclude(s => s!.Country!)
             .Include(c => c.ImagePath!)
+            .Include(c => c.ProductPriceList)
             .FirstOrDefaultAsync(c => c.CustomerId == customerId, cancellationToken);
     }
 
@@ -44,6 +45,7 @@ public class CustomerRepository : ICustomerRepository
             .Include(c => c.Company!)
             .Include(c => c.Site!)
                 .ThenInclude(s => s!.Province!)
+            .Include(c => c.ProductPriceList)
             .FirstOrDefaultAsync(
                 c => c.AccountNumber == accountNumber,
                 cancellationToken);
@@ -107,6 +109,7 @@ public class CustomerRepository : ICustomerRepository
             .Include(c => c.Site!)
                 .ThenInclude(s => s!.Country!)
             .Include(c => c.ImagePath!)
+            .Include(c => c.ProductPriceList)
             .Where(c => c.IsActive)
             .AsQueryable();
 
@@ -166,12 +169,10 @@ public class CustomerRepository : ICustomerRepository
             query = query.Where(c => c.AccountNumber == acc);
         }
 
-        if (!string.IsNullOrWhiteSpace(request.PriceCode))
+        if (request.ProductPriceListId.HasValue)
         {
-            var term = request.PriceCode.ToLower();
-            query = query.Where(c =>
-                c.PriceCode != null &&
-                c.PriceCode.ToLower().Contains(term));
+            var priceListId = request.ProductPriceListId.Value;
+            query = query.Where(c => c.ProductPriceListId == priceListId);
         }
 
         // Province filter (site)
@@ -307,7 +308,6 @@ public class CustomerRepository : ICustomerRepository
             CompanyName   = companyName,
             IdNumber      = idNumber,
             AccountNumber = accountNumber,
-            PriceCode     = priceCode,
             AddressLine1  = addressLine1,
             AddressLine2  = addressLine2,
             Suburb        = suburb,
@@ -343,6 +343,7 @@ public class CustomerRepository : ICustomerRepository
         var query = _db.Customers
             .Include(c => c.Company!)
             .Include(c => c.Site!)
+            .Include(c => c.ProductPriceList)
             .Where(c => c.IsActive)
             .Where(c => !_db.ReceivingTickets.Any(t => t.CustomerId == c.CustomerId))
             .AsQueryable();

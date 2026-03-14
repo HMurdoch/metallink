@@ -35,6 +35,8 @@ public class MetalLinkDbContext : DbContext
 
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Price> Prices => Set<Price>();
+    public DbSet<ProductPriceList> ProductPriceLists => Set<ProductPriceList>();
+    public DbSet<ProductPriceListProductPrice> ProductPriceListProductPrices => Set<ProductPriceListProductPrice>();
 
     public DbSet<TicketType> TicketTypes => Set<TicketType>();
 
@@ -64,6 +66,8 @@ public class MetalLinkDbContext : DbContext
 
         ConfigureProducts(modelBuilder);
         ConfigurePrices(modelBuilder);
+        ConfigureProductPriceLists(modelBuilder);
+        ConfigureProductPriceListProductPrices(modelBuilder);
 
         ConfigureTicketTypes(modelBuilder);
         ConfigureReceivingTickets(modelBuilder);
@@ -190,7 +194,7 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.CompanyId).HasColumnName("company_id");
         e.Property(x => x.SiteId).HasColumnName("site_id");
         e.Property(x => x.IsTaxable).HasColumnName("is_taxable");
-        e.Property(x => x.PriceCode).HasColumnName("price_code").HasMaxLength(10);
+        e.Property(x => x.ProductPriceListId).HasColumnName("product_price_list_id");
         e.Property(x => x.PhoneNumber).HasColumnName("phone_number").HasMaxLength(20);
         e.Property(x => x.MobileNumber).HasColumnName("mobile_number").HasMaxLength(20);
         e.Property(x => x.Email).HasColumnName("email").HasMaxLength(255);
@@ -203,6 +207,7 @@ public class MetalLinkDbContext : DbContext
         e.HasOne(x => x.Company).WithMany(x => x.Customers).HasForeignKey(x => x.CompanyId);
         e.HasOne(x => x.Site).WithMany(x => x.Customers).HasForeignKey(x => x.SiteId);
         e.HasOne(x => x.ImagePath).WithMany().HasForeignKey(x => x.ImagePathId);
+        e.HasOne(x => x.ProductPriceList).WithMany().HasForeignKey(x => x.ProductPriceListId);
     }
 
     private static void ConfigureBuyers(ModelBuilder modelBuilder)
@@ -218,7 +223,7 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.CompanyId).HasColumnName("company_id").IsRequired();
         e.Property(x => x.SiteId).HasColumnName("site_id").IsRequired();
         e.Property(x => x.IsTaxable).HasColumnName("is_taxable");
-        e.Property(x => x.PriceCode).HasColumnName("price_code").HasMaxLength(10);
+        e.Property(x => x.ProductPriceListId).HasColumnName("product_price_list_id");
         e.Property(x => x.PhoneNumber).HasColumnName("phone_number").HasMaxLength(20);
         e.Property(x => x.MobileNumber).HasColumnName("mobile_number").HasMaxLength(20);
         e.Property(x => x.Email).HasColumnName("email").HasMaxLength(255);
@@ -231,6 +236,7 @@ public class MetalLinkDbContext : DbContext
         e.HasOne(x => x.Company).WithMany().HasForeignKey(x => x.CompanyId);
         e.HasOne(x => x.Site).WithMany().HasForeignKey(x => x.SiteId);
         e.HasOne(x => x.ImagePath).WithMany().HasForeignKey(x => x.ImagePathId);
+        e.HasOne(x => x.ProductPriceList).WithMany().HasForeignKey(x => x.ProductPriceListId);
     }
 
     private static void ConfigureOperators(ModelBuilder modelBuilder)
@@ -325,6 +331,7 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.ProductCode).HasColumnName("product_code").HasMaxLength(50).IsRequired();
         e.Property(x => x.ProductName).HasColumnName("product_name").HasMaxLength(255).IsRequired();
         e.Property(x => x.Grade).HasColumnName("grade").HasMaxLength(50);
+        e.Property(x => x.MustDeclare).HasColumnName("must_declare").HasDefaultValue(false);
         e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
@@ -338,15 +345,55 @@ public class MetalLinkDbContext : DbContext
         e.HasKey(x => x.PriceId);
         e.Property(x => x.PriceId).HasColumnName("price_id").ValueGeneratedOnAdd();
         e.Property(x => x.ProductId).HasColumnName("product_id").IsRequired();
-        e.Property(x => x.PriceA).HasColumnName("price_a");
-        e.Property(x => x.PriceB).HasColumnName("price_b");
-        e.Property(x => x.PriceC).HasColumnName("price_c");
+        // Legacy price_a, price_b, price_c columns removed
         e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
         e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
 
         e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+    }
+
+    private static void ConfigureProductPriceLists(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<ProductPriceList>();
+        e.ToTable("product_price_lists", "metal_link");
+        e.HasKey(x => x.ProductPriceListId);
+        e.Property(x => x.ProductPriceListId).HasColumnName("product_price_list_id").ValueGeneratedOnAdd();
+        e.Property(x => x.ProductPriceListName).HasColumnName("product_price_list_name").HasMaxLength(255).IsRequired();
+        e.Property(x => x.ProductPriceListDescription).HasColumnName("product_price_list_description").HasColumnType("text");
+        e.Property(x => x.EntityFlag).HasColumnName("entity_flag").HasMaxLength(1).IsRequired();
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+
+        e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
+    }
+
+    private static void ConfigureProductPriceListProductPrices(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<ProductPriceListProductPrice>();
+        e.ToTable("product_price_list_product_prices", "metal_link");
+        e.HasKey(x => x.ProductPriceListProductPriceId);
+        e.Property(x => x.ProductPriceListProductPriceId).HasColumnName("product_price_list_product_price_id").ValueGeneratedOnAdd();
+        e.Property(x => x.ProductPriceListId).HasColumnName("product_price_list_id").IsRequired();
+        e.Property(x => x.ProductId).HasColumnName("product_id").IsRequired();
+        e.Property(x => x.Price).HasColumnName("price").HasColumnType("numeric(10,2)").IsRequired();
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+
+        // Foreign keys
+        e.HasOne(x => x.ProductPriceList).WithMany(x => x.ProductPrices).HasForeignKey(x => x.ProductPriceListId);
+        e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+        e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
+
+        // Unique constraint: product_id + product_price_list_id combination must be unique WHERE is_active = true
+        e.HasIndex(x => new { x.ProductPriceListId, x.ProductId, x.IsActive })
+            .IsUnique()
+            .HasFilter("is_active = true");
     }
 
     private static void ConfigureTicketTypes(ModelBuilder modelBuilder)

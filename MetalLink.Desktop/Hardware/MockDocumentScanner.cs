@@ -37,9 +37,9 @@ public class MockDocumentScanner : IDocumentScanner
         using var textPaint = new SKPaint
         {
             Color = SKColors.Black,
-            TextSize = 24,
             IsAntialias = true
         };
+        using var font = new SKFont(SKTypeface.Default, 24);
         
         var title = documentType switch
         {
@@ -48,9 +48,9 @@ public class MockDocumentScanner : IDocumentScanner
             _ => "MOCK DOCUMENT"
         };
         
-        canvas.DrawText(title, 30, 50, textPaint);
-        canvas.DrawText($"Document #: {Random.Shared.Next(100000, 999999)}", 30, 90, textPaint);
-        canvas.DrawText($"Scanned: {DateTime.Now:yyyy-MM-dd HH:mm:ss}", 30, 130, textPaint);
+        canvas.DrawText(title, 30, 50, SKTextAlign.Left, font, textPaint);
+        canvas.DrawText($"Document #: {Random.Shared.Next(100000, 999999)}", 30, 90, SKTextAlign.Left, font, textPaint);
+        canvas.DrawText($"Scanned: {DateTime.Now:yyyy-MM-dd HH:mm:ss}", 30, 130, SKTextAlign.Left, font, textPaint);
         
         // Add mock photo area
         using var photoPaint = new SKPaint
@@ -58,7 +58,7 @@ public class MockDocumentScanner : IDocumentScanner
             Color = SKColors.LightGray
         };
         canvas.DrawRect(400, 50, 150, 200, photoPaint);
-        canvas.DrawText("PHOTO", 440, 160, textPaint);
+        canvas.DrawText("PHOTO", 440, 160, SKTextAlign.Left, font, textPaint);
         
         // Get image data
         using var image = surface.Snapshot();

@@ -136,15 +136,24 @@
   </UserControl.Styles>
 
   <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
-  <Border Background="{DynamicResource Brush.MainBackground}" Padding="16">
-    <StackPanel Spacing="16">
-
-        <!-- Header -->
+  <Border Background="{DynamicResource Brush.MainBackground}">
+    <Grid RowDefinitions="Auto,*">
+      <!-- Sticky Header Panel -->
+      <Border Grid.Row="0"
+              Background="{DynamicResource Brush.PanelBackground}"
+              Padding="12,8"
+              CornerRadius="4"
+              Margin="16,16,16,8"
+              ZIndex="100">
         <Image Source="avares://MetalLink.Desktop/Assets/customers_heading.png"
                Height="40"
                HorizontalAlignment="Left"
-               Margin="0,0,0,4"
                Stretch="Uniform" />
+      </Border>
+      
+      <!-- Scrollable Content -->
+      <ScrollViewer Grid.Row="1" Padding="16,8,16,16">
+        <StackPanel Spacing="16">
 
         <!-- BLOCK 1: SEARCH CRITERIA -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
@@ -154,12 +163,14 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" x:Name="SearchCriteriaArrow" Text="▼" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="0" x:Name="SearchCriteriaArrow" 
+                         Text="{Binding CustomerIsSearchCriteriaExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
               <TextBlock Grid.Column="1" Text="Search Existing Customer" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
             </Grid>
 
             <!-- 4-column search grid (250px each = 1000px total) -->
-            <Grid x:Name="SearchCriteriaContent" Margin="0,8,0,0" Width="1000" HorizontalAlignment="Left">
+            <Grid x:Name="SearchCriteriaContent" Margin="0,8,0,0" Width="1000" HorizontalAlignment="Left" IsVisible="{Binding CustomerIsSearchCriteriaExpanded}">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="300" />
                 <ColumnDefinition Width="300" />
@@ -177,19 +188,19 @@
               <!-- Row 0: Customer ID / ID Number / First Name / Last Name -->
               <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Customer ID" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchCustomerIdText}" />
+                <TextBox Text="{Binding CustomerSearchSiteIdText}" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="ID Number" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchIdNumberText}" />
+                <TextBox Text="{Binding CustomerSearchIdNumberText}" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="First Name" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchFirstNameText}" />
+                <TextBox Text="{Binding CustomerSearchFirstNameText}" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="3" Spacing="2">
                 <TextBlock Text="Last Name" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchLastNameText}" />
+                <TextBox Text="{Binding CustomerSearchLastNameText}" />
               </StackPanel>
 
               <!-- Row 1: Company / Site / Account Number / Price Code -->
@@ -206,15 +217,15 @@
                       Grid.Column="0"
                       Width="70"
                       ItemsSource="{Binding CompanyLetterFilters}"
-                      SelectedItem="{Binding SelectedCompanyLetter}"
+                      SelectedItem="{Binding CustomerSelectedCompanyLetter}"
                       HorizontalAlignment="Stretch" />
 
                   <!-- Companies for selected letter -->
                   <ComboBox
                       Grid.Column="1"
                       Margin="4,0,0,0"
-                      ItemsSource="{Binding SearchCompanySuggestions}"
-                      SelectedItem="{Binding SelectedSearchCompany}"
+                      ItemsSource="{Binding CustomerSearchCompanySuggestions}"
+                      SelectedItem="{Binding CustomerSelectedSearchCompany}"
                       HorizontalContentAlignment="Stretch"
                       ItemTemplate="{StaticResource CompanyLookupTemplate}" />
                 </Grid>
@@ -224,9 +235,9 @@
               <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Site" Foreground="#c0c4cf" />
                 <ComboBox
-                    ItemsSource="{Binding SearchSiteSuggestions}"
-                    SelectedItem="{Binding SelectedSearchSite}"
-                    IsEnabled="{Binding IsSearchSiteEnabled}"
+                    ItemsSource="{Binding CustomerSearchSiteSuggestions}"
+                    SelectedItem="{Binding CustomerSelectedSearchSite}"
+                    IsEnabled="{Binding IsCustomerSearchSiteEnabled}"
                     HorizontalContentAlignment="Stretch"
                     ItemTemplate="{StaticResource SiteLookupTemplate}" />
               </StackPanel>
@@ -234,19 +245,19 @@
               <!-- Account Number -->
               <StackPanel Grid.Row="1" Grid.Column="2" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Account Number" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchAccountNumberText, Mode=TwoWay}" />
+                <TextBox Text="{Binding CustomerSearchAccountNumberText, Mode=TwoWay}" />
               </StackPanel>
 
-              <!-- Price Code -->
+              <!-- Price List -->
               <StackPanel Grid.Row="1" Grid.Column="3" Spacing="2">
-                <TextBlock Text="Price Code" Foreground="#c0c4cf" />
+                <TextBlock Text="Price List" Foreground="#c0c4cf" />
                 <ComboBox
-                  ItemsSource="{Binding PriceCodeOptions}"
-                  SelectedItem="{Binding SearchPriceCode, Mode=TwoWay}"
+                  ItemsSource="{Binding CustomerPriceLists}"
+                  SelectedItem="{Binding SearchCustomerPriceList, Mode=TwoWay}"
                   HorizontalAlignment="Stretch">
                   <ComboBox.ItemTemplate>
                     <DataTemplate>
-                      <TextBlock Text="{Binding Label}" />
+                      <TextBlock Text="{Binding ProductPriceListName}" />
                     </DataTemplate>
                   </ComboBox.ItemTemplate>
                 </ComboBox>
@@ -255,15 +266,15 @@
               <!-- Row 2: Phone / Mobile / Email / (empty) -->
               <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Phone" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchPhoneNumberText}" />
+                <TextBox Text="{Binding CustomerSearchPhoneNumberText}" />
               </StackPanel>
               <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Mobile" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchMobileNumberText}" />
+                <TextBox Text="{Binding CustomerSearchMobileNumberText}" />
               </StackPanel>
               <StackPanel Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Spacing="2">
                 <TextBlock Text="Email" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchEmailText}" />
+                <TextBox Text="{Binding CustomerSearchEmailText}" />
               </StackPanel>
 
               <!-- Row 4: Search button -->
@@ -300,10 +311,12 @@
                   <ColumnDefinition Width="Auto" />
                   <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" x:Name="SearchResultsArrow" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" /><!-- Collapsed on load -->
+                <TextBlock Grid.Column="0" x:Name="SearchResultsArrow" 
+                           Text="{Binding CustomerIsSearchResultsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                           Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="Customer Search Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
               </Grid>
-                <Grid x:Name="SearchResultsContent" IsVisible="False">
+                <Grid x:Name="SearchResultsContent" IsVisible="{Binding CustomerIsSearchResultsExpanded}">
                   <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -363,17 +376,19 @@
           </Border>
 
           <!-- BLOCK 3: CUSTOMER DETAILS (Right Column) -->
-          <Border Grid.Column="1" Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
+          <Border Grid.Column="1" Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4" MinWidth="470" Width="470" HorizontalAlignment="Left">
             <StackPanel Spacing="8">
-              <Grid PointerPressed="ToggleCustomerDetails" Cursor="Hand">
+              <Grid PointerPressed="ToggleDetails" Cursor="Hand">
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="Auto" />
                   <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" x:Name="CustomerDetailsArrow" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" /><!-- Collapsed on load -->
+                <TextBlock Grid.Column="0" x:Name="CustomerDetailsArrow" 
+                           Text="{Binding CustomerIsDetailsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                           Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="Customer Details" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
               </Grid>
-            <StackPanel x:Name="CustomerDetailsContent" IsVisible="False"><!-- Collapsed on load -->
+            <StackPanel x:Name="CustomerDetailsContent" IsVisible="{Binding CustomerIsDetailsExpanded}">
               <Border Margin="0,8,0,0" Padding="8" Background="{DynamicResource Brush.PanelBackground}" CornerRadius="4">
               <Grid>
                 <Grid.ColumnDefinitions>
@@ -423,8 +438,8 @@
                 <TextBlock Grid.Row="7" Grid.Column="0" Text="Account Number" Foreground="#c0c4cf" Margin="0,4,8,2" />
                 <TextBlock Grid.Row="7" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedAccountNumberFormatted}" Foreground="#f5f5f5" FontSize="11" />
 
-                <TextBlock Grid.Row="8" Grid.Column="0" Text="Price Code" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="8" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedPriceCode}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Grid.Row="8" Grid.Column="0" Text="Price List" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="8" Grid.Column="1" VerticalAlignment="Center" Text="{Binding FoundCustomer.ProductPriceListName}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="9" Grid.Column="0" Text="Phone" Foreground="#c0c4cf" Margin="0,4,8,2" />
                 <TextBlock Grid.Row="9" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedPhoneNumber}" Foreground="#f5f5f5" FontSize="11" />
@@ -437,7 +452,7 @@
 
                 <!-- Site address (read-only, from Site/CAS) -->
                 <TextBlock Grid.Row="12" Grid.Column="0" Text="Site Address" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="12" Grid.Column="1" VerticalAlignment="Center" Text="{Binding CustomerSiteAddressSummary}" Foreground="#f5f5f5" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="12" Grid.Column="1" VerticalAlignment="Center" Text="{Binding CustomerSiteAddressSummary}" Foreground="#f5f5f5" FontSize="10" TextWrapping="Wrap" />
               </Grid>
             </Border>
 
@@ -448,20 +463,21 @@
                     CornerRadius="4"
                     BorderBrush="{DynamicResource Brush.GlassBorder}"
                     BorderThickness="1"
-                    IsVisible="{Binding SelectedCustomer, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    IsVisible="{Binding FoundCustomer, Converter={x:Static local:ObjectConverters.IsNotNull}}"
+                    Width="430">
               <StackPanel Spacing="8">
                 <TextBlock Text="Customer Images" 
                            FontWeight="Bold" 
                            Foreground="{DynamicResource Brush.TextPrimary}"
                            FontSize="13"/>
                 
-                <UniformGrid Rows="2" Columns="3">
+                <UniformGrid Columns="2">
                   <!-- ID Card -->
                   <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}" Padding="5">
                     <StackPanel>
                       <TextBlock Text="ID Card" FontSize="11" Foreground="#c0c4cf" Margin="0,0,0,4" FontWeight="SemiBold"/>
                       <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
-                        <Image Source="{Binding SelectedIdCardImage}" Width="120" Height="120" Stretch="Uniform"/>
+                        <Image Source="{Binding SelectedIdCardImage}" Width="130" Height="130" Stretch="Uniform"/>
                       </Viewbox>
                     </StackPanel>
                   </Border>
@@ -471,7 +487,7 @@
                     <StackPanel>
                       <TextBlock Text="Driver License" FontSize="11" Foreground="#c0c4cf" Margin="0,0,0,4" FontWeight="SemiBold"/>
                       <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
-                        <Image Source="{Binding SelectedDriverLicenseImage}" Width="120" Height="120" Stretch="Uniform"/>
+                        <Image Source="{Binding SelectedDriverLicenseImage}" Width="130" Height="130" Stretch="Uniform"/>
                       </Viewbox>
                     </StackPanel>
                   </Border>
@@ -481,7 +497,7 @@
                     <StackPanel>
                       <TextBlock Text="Photo" FontSize="11" Foreground="#c0c4cf" Margin="0,0,0,4" FontWeight="SemiBold"/>
                       <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
-                        <Image Source="{Binding SelectedPhotoImage}" Width="120" Height="120" Stretch="Uniform"/>
+                        <Image Source="{Binding SelectedPhotoImage}" Width="130" Height="130" Stretch="Uniform"/>
                       </Viewbox>
                     </StackPanel>
                   </Border>
@@ -491,7 +507,7 @@
                     <StackPanel>
                       <TextBlock Text="Signature" FontSize="11" Foreground="#c0c4cf" Margin="0,0,0,4" FontWeight="SemiBold"/>
                       <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
-                        <Image Source="{Binding SelectedSignatureImage}" Width="120" Height="120" Stretch="Uniform"/>
+                        <Image Source="{Binding SelectedSignatureImage}" Width="130" Height="130" Stretch="Uniform"/>
                       </Viewbox>
                     </StackPanel>
                   </Border>
@@ -501,7 +517,7 @@
                     <StackPanel>
                       <TextBlock Text="Fingerprint" FontSize="11" Foreground="#c0c4cf" Margin="0,0,0,4" FontWeight="SemiBold"/>
                       <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
-                        <Image Source="{Binding SelectedFingerprintImage}" Width="120" Height="120" Stretch="Uniform"/>
+                        <Image Source="{Binding SelectedFingerprintImage}" Width="130" Height="130" Stretch="Uniform"/>
                       </Viewbox>
                     </StackPanel>
                   </Border>
@@ -521,12 +537,14 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" x:Name="CreateEditArrow" Text="▶" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" /><!-- Collapsed on load -->
+              <TextBlock Grid.Column="0" x:Name="CreateEditArrow" 
+                         Text="{Binding CustomerIsCreateEditExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
               <TextBlock Grid.Column="1" Text="Create/Edit Customer" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
             </Grid>
 
             <!-- 4-column form grid -->
-            <Grid x:Name="CreateEditContent" IsVisible="False" Margin="0,8,0,0"><!-- Collapsed on load -->
+            <Grid x:Name="CreateEditContent" IsVisible="{Binding CustomerIsCreateEditExpanded}" Margin="0,8,0,0">
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="275" />
                   <ColumnDefinition Width="275" />
@@ -601,14 +619,14 @@
                     IsTabStop="False"/>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="3" Spacing="2">
-                  <TextBlock Text="Price Code" Foreground="#c0c4cf" />
+                  <TextBlock Text="Price List" Foreground="#c0c4cf" />
                   <ComboBox
-                    ItemsSource="{Binding PriceCodeOptions}"
-                    SelectedItem="{Binding SelectedPriceCodeChar, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    ItemsSource="{Binding CustomerPriceLists}"
+                    SelectedItem="{Binding SelectedNewProductPriceList, Mode=TwoWay}"
                     HorizontalAlignment="Stretch">
                     <ComboBox.ItemTemplate>
                       <DataTemplate>
-                        <TextBlock Text="{Binding Label}" />
+                        <TextBlock Text="{Binding ProductPriceListName}" />
                       </DataTemplate>
                     </ComboBox.ItemTemplate>
                   </ComboBox>
@@ -744,7 +762,8 @@
                 IsVisible="{Binding IsNewCustomerFullNameInvalid}" />
           </StackPanel>
         </Border>
-    </StackPanel>
-
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
   </Border>
 </UserControl>

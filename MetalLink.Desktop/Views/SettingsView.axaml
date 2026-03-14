@@ -2,13 +2,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MetalLink.Desktop.Views.SettingsView">
   <Border Background="{DynamicResource Brush.MainBackground}">
-    <DockPanel>
+    <Grid RowDefinitions="Auto,*">
       <!-- Sticky Header Panel -->
-      <Border DockPanel.Dock="Top" 
+      <Border Grid.Row="0" 
               Background="{DynamicResource Brush.PanelBackground}"
               Padding="12,8"
               CornerRadius="4"
-              Margin="16,16,16,8">
+              Margin="16,16,16,8"
+              ZIndex="100">
         <Image Source="avares://MetalLink.Desktop/Assets/settings_heading.png"
                Height="40"
                HorizontalAlignment="Left"
@@ -16,13 +17,23 @@
       </Border>
       
       <!-- Scrollable Content -->
-      <ScrollViewer Padding="16,8,16,16">
+      <ScrollViewer Grid.Row="1" Padding="16,8,16,16">
         <StackPanel Spacing="16">
 
     <Border Background="{DynamicResource Brush.PanelBackground}" CornerRadius="8" Padding="16">
       <StackPanel Spacing="10">
-        <TextBlock Text="Appearance" FontSize="16" FontWeight="SemiBold"/>
+        <Grid PointerPressed="ToggleAppearance" Cursor="Hand">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <TextBlock Grid.Column="0" 
+                     Text="{Binding IsAppearanceExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                     Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" Text="Appearance" FontSize="16" FontWeight="SemiBold"/>
+        </Grid>
 
+        <StackPanel Spacing="10" IsVisible="{Binding IsAppearanceExpanded}">
         <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
           <TextBlock Text="Theme" VerticalAlignment="Center"/>
 
@@ -35,11 +46,17 @@
           <ToggleSwitch IsChecked="{Binding IsCrystaline}" />
         </StackPanel>
 
-        <TextBlock Text="Theme/Appearance are stored per operator in the database." Opacity="0.7" FontSize="12"/>
+        <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+          <TextBlock Text="Enforce Buyer Company" VerticalAlignment="Center"/>
+          <ToggleSwitch IsChecked="{Binding EnforceBuyerCompany}" />
+        </StackPanel>
+
+        <TextBlock Text="Theme/Appearance/Settings are stored per operator in the database." Opacity="0.7" FontSize="12"/>
+        </StackPanel>
         </StackPanel>
       </Border>
         </StackPanel>
       </ScrollViewer>
-    </DockPanel>
+    </Grid>
   </Border>
 </UserControl>

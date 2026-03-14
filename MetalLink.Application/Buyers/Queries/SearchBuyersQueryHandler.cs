@@ -50,7 +50,8 @@ public sealed class SearchBuyersQueryHandler
 
                     IdNumber      = b.IdNumber,
                     AccountNumber = b.AccountNumber,
-                    PriceCode     = b.PriceCode,
+                    ProductPriceListId = b.ProductPriceListId,
+                    ProductPriceListName = b.ProductPriceList?.ProductPriceListName,
 
                     PhoneNumber   = b.PhoneNumber,
                     MobileNumber  = b.MobileNumber,

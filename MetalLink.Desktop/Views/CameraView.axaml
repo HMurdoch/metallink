@@ -1,17 +1,24 @@
 <UserControl
     x:Class="MetalLink.Desktop.Views.CameraView"
     xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:icons="https://github.com/projektanker/icons.avalonia">
 
-  <Border Background="{DynamicResource Brush.PanelBackground}" Padding="16">
-    
-<StackPanel Spacing="16">
+  <Border Background="{DynamicResource Brush.MainBackground}">
+    <Grid RowDefinitions="Auto,*">
+      <!-- Sticky Header Panel -->
+      <Border Grid.Row="0"
+              Background="{DynamicResource Brush.PanelBackground}"
+              Padding="12,8"
+              CornerRadius="4"
+              Margin="16,16,16,8"
+              ZIndex="100">
+        <icons:Icon Value="fa-solid fa-camera" Width="24" Height="24" Foreground="{DynamicResource Brush.TextPrimary}" HorizontalAlignment="Left" Margin="8,0,0,0"/>
+      </Border>
 
-        <TextBlock
-            Text="Cameras"
-            FontSize="22"
-            FontWeight="Bold"
-            Foreground="#f5f5f5" />
+      <!-- Scrollable Content -->
+      <ScrollViewer Grid.Row="1" Padding="16,8,16,16">
+        <StackPanel Spacing="16">
 
         <TextBlock
             Text="Captures will upload and attach as customer documents. Make sure a Customer ID is set in the Documents section."
@@ -82,6 +89,8 @@
           </StackPanel>
         </Border>
 
-      </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
   </Border>
 </UserControl>

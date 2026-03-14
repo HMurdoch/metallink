@@ -14,6 +14,7 @@ public sealed record CreateBuyerCommand : IRequest<BuyerDto?>
 
     public string? IdNumber      { get; init; }
     public long? AccountNumber { get; init; }
+    public int? ProductPriceListId { get; init; }
     public string? PriceCode     { get; init; }
 
     public string? PhoneNumber   { get; init; }

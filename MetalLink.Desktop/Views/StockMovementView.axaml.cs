@@ -1,4 +1,7 @@
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Markup.Xaml;
+using MetalLink.Desktop.ViewModels;
 
 namespace MetalLink.Desktop.Views;
 
@@ -7,11 +10,23 @@ public partial class StockMovementView : UserControl
     public StockMovementView()
     {
         InitializeComponent();
+    }
 
-        // Bind VM if not already provided
-        if (DataContext == null && Avalonia.Application.Current is MetalLink.Desktop.App app)
-        {
-            DataContext = new MetalLink.Desktop.ViewModels.StockMovementViewModel(app.ApiClient);
-        }
+    private void ToggleFilter(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is StockMovementViewModel vm)
+            vm.IsFilterExpanded = !vm.IsFilterExpanded;
+    }
+
+    private void ToggleChart(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is StockMovementViewModel vm)
+            vm.IsChartExpanded = !vm.IsChartExpanded;
+    }
+
+    private void ToggleResults(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is StockMovementViewModel vm)
+            vm.IsResultsExpanded = !vm.IsResultsExpanded;
     }
 }
