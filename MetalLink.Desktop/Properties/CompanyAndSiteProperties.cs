@@ -14,27 +14,29 @@ namespace MetalLink.Desktop.ViewModels;
 public partial class MainWindowViewModel
 {
     // Company search inputs
-    private string? _companySearchLetter = "ALL";
-
-    public string? CompanySearchLetter
+    private string _companySearchText = string.Empty;
+    public string CompanySearchText
     {
-        get => _companySearchLetter;
+        get => _companySearchText;
         set
         {
-            _companySearchLetter = value;
+            if (_companySearchText == value) return;
+            _companySearchText = value ?? string.Empty;
             OnPropertyChanged();
-        }
-    }
-
-    private string _companySearchName = string.Empty;
-
-    public string CompanySearchName
-    {
-        get => _companySearchName;
-        set
-        {
-            _companySearchName = value ?? string.Empty;
-            OnPropertyChanged();
+            
+            if (!string.IsNullOrWhiteSpace(_companySearchText))
+            {
+                // If text is entered, explicitly clear the letter dropdown
+                if (_selectedCompanyLetter != null)
+                {
+                    _selectedCompanyLetter = null;
+                    OnPropertyChanged(nameof(SelectedCompanyLetter));
+                }
+            }
+            
+            ApplyCompanyLetterFilter();
+            PaginationViewModel.Reset(); 
+            UpdatePagedCompanyResults();
         }
     }
 
@@ -85,10 +87,14 @@ public partial class MainWindowViewModel
             SiteResults.Clear();
             SelectedSite = null;
 
-            //CompanyEditName = value?.CompanyName ?? string.Empty;
-
             if (value != null)
+            {
                 _ = LoadSitesForSelectedCompanyResultsAsync();
+                
+                // User requirement: expand Sites Results and Create/Edit Site
+                CompanyIsPanelExpanded = true;
+                IsSiteCreateEditExpanded = true;
+            }
         }
     }
 
@@ -170,6 +176,16 @@ public partial class MainWindowViewModel
             (CreateCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
+
+    private bool _isCompanyInitialSiteVisible = true;
+    public bool IsCompanyInitialSiteVisible
+    {
+        get => _isCompanyInitialSiteVisible;
+        set { _isCompanyInitialSiteVisible = value; OnPropertyChanged(); }
+    }
+
+    public PaginationViewModel SitePaginationViewModel { get; } = new() { PageSize = 15 };
+    public ObservableCollection<SiteLookupDto> PagedSiteResults { get; } = new();
 
     // Create/Edit fields
     private string _companyEditVatNumber = string.Empty;
@@ -499,7 +515,7 @@ public partial class MainWindowViewModel
     }
 
     // --- Company Management Search ---
-    private string? _selectedCompanyLetter = "ALL";
+    private string? _selectedCompanyLetter = null;
     public string? SelectedCompanyLetter
     {
         get => _selectedCompanyLetter;
@@ -508,12 +524,24 @@ public partial class MainWindowViewModel
             if (_selectedCompanyLetter == value) return;
             _selectedCompanyLetter = value;
             OnPropertyChanged();
+            
+            // If any letter or ALL is picked, clear the name search textbox
+            if (value != null)
+            {
+                _companySearchText = string.Empty;
+                OnPropertyChanged(nameof(CompanySearchText));
+            }
+            
             SelectedSearchCompany = null;
             SearchSiteSuggestions.Clear();
             SelectedSearchSite = null;
             ApplyCompanyLetterFilter();
+            PaginationViewModel.Reset();
+            UpdatePagedCompanyResults();
         }
     }
+
+    public ObservableCollection<CompanyLookupDto> PagedCompanyResults { get; } = new();
 
     private ObservableCollection<CompanyLookupDto> _searchCompanySuggestions = new();
     public ObservableCollection<CompanyLookupDto> SearchCompanySuggestions
@@ -753,8 +781,7 @@ public partial class MainWindowViewModel
 
                 SelectedNewSite = null;
                 NewSiteSuggestions.Clear();
-                OnPropertyChanged(nameof(CanCreateBuyer));
-                (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+                NotifyFormStateChanged();
 
                 // Load sites for the selected company
                 _ = LoadNewSitesForSelectedCompanyAsync();
@@ -764,14 +791,7 @@ public partial class MainWindowViewModel
                 NewCompanyName = null;
                 NewSiteSuggestions.Clear();
                 SelectedNewSite = null;
-
-                OnPropertyChanged(nameof(CanCreateCustomer));
-                OnPropertyChanged(nameof(CanUpdateCustomer));
-                OnPropertyChanged(nameof(CanCreateBuyer));
-                OnPropertyChanged(nameof(CanUpdateBuyer));
-
-                (UpdateCustomerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
-                (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+                NotifyFormStateChanged();
             }
         }
     }
@@ -799,12 +819,7 @@ public partial class MainWindowViewModel
 
             _selectedNewSite = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(CanCreateCustomer));
-            OnPropertyChanged(nameof(CanUpdateCustomer));
-            OnPropertyChanged(nameof(CanCreateBuyer));
-            OnPropertyChanged(nameof(CanUpdateBuyer));
-            (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
-
+            NotifyFormStateChanged();
             UpdateNewLocationFromSelectedSite();
         }
     }

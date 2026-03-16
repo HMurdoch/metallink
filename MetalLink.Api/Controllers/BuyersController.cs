@@ -37,7 +37,7 @@ public sealed class BuyersController : ControllerBase
         CancellationToken cancellationToken)
     {
         // If client didn't send account number, generate it
-        if (!dto.AccountNumber.HasValue || dto.AccountNumber.Value <= 0)
+        if (!dto.AccountNumber.HasValue || dto.AccountNumber.Value == 0)
         {
             dto.AccountNumber = await _buyerRepository.GetNextAccountNumberAsync(cancellationToken);
         }
@@ -58,7 +58,7 @@ public sealed class BuyersController : ControllerBase
             PhoneNumber = dto.PhoneNumber,
             MobileNumber = dto.MobileNumber,
             Email = dto.Email,
-            IsTaxable = dto.Taxable,
+            IsTaxable = dto.IsTaxable,
             CreatedByOperatorId = (int)User.GetOperatorId()
         };
 
@@ -149,7 +149,7 @@ public sealed class BuyersController : ControllerBase
         buyer.PhoneNumber = dto.PhoneNumber;
         buyer.MobileNumber = dto.MobileNumber;
         buyer.Email = dto.Email;
-        buyer.IsTaxable = dto.Taxable;
+        buyer.IsTaxable = dto.IsTaxable;
 
         buyer.UpdatedTime = DateTimeOffset.UtcNow;
 

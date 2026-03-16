@@ -135,25 +135,23 @@
     </Style>
   </UserControl.Styles>
 
-  <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
-  <Border Background="{DynamicResource Brush.MainBackground}">
-    <Grid RowDefinitions="Auto,*">
-      <!-- Sticky Header Panel -->
-      <Border Grid.Row="0"
-              Background="{DynamicResource Brush.PanelBackground}"
-              Padding="12,8"
-              CornerRadius="4"
-              Margin="16,16,16,8"
-              ZIndex="100">
-        <Image Source="avares://MetalLink.Desktop/Assets/customers_heading.png"
-               Height="40"
-               HorizontalAlignment="Left"
-               Stretch="Uniform" />
-      </Border>
-      
-      <!-- Scrollable Content -->
-      <ScrollViewer Grid.Row="1" Padding="16,8,16,16">
-        <StackPanel Spacing="16">
+  <Grid RowDefinitions="Auto,*">
+    <!-- Sticky Header Panel -->
+    <Border Grid.Row="0"
+            Background="{DynamicResource Brush.PanelBackground}"
+            Padding="12,8"
+            CornerRadius="4"
+            Margin="16,16,16,8"
+            ZIndex="100">
+      <Image Source="avares://MetalLink.Desktop/Assets/customers_heading.png"
+             Height="40"
+             HorizontalAlignment="Left"
+             Stretch="Uniform" />
+    </Border>
+    
+    <!-- Scrollable Content -->
+    <ScrollViewer Grid.Row="1" Padding="16,8,16,10" VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="16" Margin="0,0,0,100">
 
         <!-- BLOCK 1: SEARCH CRITERIA -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
@@ -188,19 +186,19 @@
               <!-- Row 0: Customer ID / ID Number / First Name / Last Name -->
               <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Customer ID" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding CustomerSearchSiteIdText}" />
+                <TextBox Text="{Binding SearchCustomerIdText, Mode=TwoWay}" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="ID Number" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding CustomerSearchIdNumberText}" />
+                <TextBox Text="{Binding SearchCustomerIdNumberText, Mode=TwoWay}" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="First Name" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding CustomerSearchFirstNameText}" />
+                <TextBox Text="{Binding SearchCustomerFirstNameText, Mode=TwoWay}" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="3" Spacing="2">
                 <TextBlock Text="Last Name" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding CustomerSearchLastNameText}" />
+                <TextBox Text="{Binding SearchCustomerLastNameText, Mode=TwoWay}" />
               </StackPanel>
 
               <!-- Row 1: Company / Site / Account Number / Price Code -->
@@ -245,7 +243,7 @@
               <!-- Account Number -->
               <StackPanel Grid.Row="1" Grid.Column="2" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Account Number" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding CustomerSearchAccountNumberText, Mode=TwoWay}" />
+                <TextBox Text="{Binding SearchCustomerAccountNumberText, Mode=TwoWay}" />
               </StackPanel>
 
               <!-- Price List -->
@@ -266,15 +264,15 @@
               <!-- Row 2: Phone / Mobile / Email / (empty) -->
               <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Phone" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding CustomerSearchPhoneNumberText}" />
+                <TextBox Text="{Binding SearchCustomerPhoneNumberText, Mode=TwoWay}" />
               </StackPanel>
               <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Mobile" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding CustomerSearchMobileNumberText}" />
+                <TextBox Text="{Binding SearchCustomerMobileNumberText, Mode=TwoWay}" />
               </StackPanel>
               <StackPanel Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Spacing="2">
                 <TextBlock Text="Email" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding CustomerSearchEmailText}" />
+                <TextBox Text="{Binding SearchCustomerEmailText, Mode=TwoWay}" />
               </StackPanel>
 
               <!-- Row 4: Search button -->
@@ -341,7 +339,7 @@
                                     Binding="{Binding LastName}" />
                 <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" IsReadOnly="True" Width="140" />
                 <DataGridTextColumn Header="Site" Binding="{Binding SiteName}" IsReadOnly="True" Width="140" />
-                <DataGridTextColumn Header="Account" Binding="{Binding AccountNumberFormatted}" IsReadOnly="True" />
+                <DataGridTextColumn Header="Account" Binding="{Binding AccountNumberDisplay}" SortMemberPath="AccountNumber" IsReadOnly="True" />
                 <DataGridTextColumn Header="Mobile" Binding="{Binding MobileNumber}" IsReadOnly="True" />
                 <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*" IsReadOnly="True" />
 
@@ -562,15 +560,15 @@
                 <!-- Row 0: First Name / Last Name / ID Number / (empty) -->
                 <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2" Margin="0,0,12,0">
                   <TextBlock Text="First Name" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding NewFirstName}" />
+                  <TextBox Text="{Binding NewFirstName, Mode=TwoWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2" Margin="0,0,12,0">
                   <TextBlock Text="Last Name" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding NewLastName}" />
+                  <TextBox Text="{Binding NewLastName, Mode=TwoWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2" Margin="0,0,12,0">
                   <TextBlock Text="ID Number" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding NewIdNumber}" />
+                  <TextBox Text="{Binding NewIdNumber, Mode=TwoWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="3" Spacing="2">
                   <!-- Empty column -->
@@ -666,7 +664,7 @@
                         <Image Source="{Binding IdCardImage}" Width="150" Height="150" Stretch="Uniform"/>
                       </Viewbox>
                     </Border>
-                    <Button Content="📄 Scan ID" Command="{Binding CaptureIdCardCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" Height="20" />
+                    <Button Content="📄 Scan ID" Command="{Binding CaptureIdCardCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" />
                   </StackPanel>
                   
                   <!-- Driver License -->
@@ -677,7 +675,7 @@
                         <Image Source="{Binding DriverLicenseImage}" Width="150" Height="150" Stretch="Uniform"/>
                       </Viewbox>
                     </Border>
-                    <Button Content="📄 License" Command="{Binding CaptureDriverLicenseCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" Height="20" />
+                    <Button Content="📄 License" Command="{Binding CaptureDriverLicenseCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" />
                   </StackPanel>
                   
                   <!-- Photo -->
@@ -688,7 +686,7 @@
                         <Image Source="{Binding PhotoImage}" Width="150" Height="150" Stretch="Uniform"/>
                       </Viewbox>
                     </Border>
-                    <Button Content="📷 Take Photo" Command="{Binding CapturePhotoCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" Height="20" />
+                    <Button Content="📷 Take Photo" Command="{Binding CapturePhotoCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" />
                   </StackPanel>
 
                   <!-- Signature -->
@@ -699,7 +697,7 @@
                         <Image Source="{Binding SignatureImage}" Width="150" Height="150" Stretch="Uniform"/>
                       </Viewbox>
                     </Border>
-                    <Button Content="✍ Signature" Command="{Binding CaptureSignatureCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" Height="20" />
+                    <Button Content="✍ Signature" Command="{Binding CaptureSignatureCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" />
                   </StackPanel>
 
                   <!-- Fingerprint -->
@@ -710,7 +708,7 @@
                         <Image Source="{Binding FingerprintImage}" Width="150" Height="150" Stretch="Uniform"/>
                       </Viewbox>
                     </Border>
-                    <Button Content="👆 Fingerprint" Command="{Binding CaptureFingerprintCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" Height="20"/>
+                    <Button Content="👆 Fingerprint" Command="{Binding CaptureFingerprintCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" />
                   </StackPanel>
                 </UniformGrid>
               </StackPanel>
@@ -738,7 +736,7 @@
                     Width="100"
                     Content="Create"
                     Command="{Binding CreateCustomerCommand}"
-                    IsVisible="{Binding IsCreateMode}"
+                    IsVisible="{Binding IsEditMode, Converter={StaticResource BoolInvertConverter}}"
                     IsEnabled="True"
                     ToolTip.Tip="Create new customer" />
 
@@ -763,7 +761,6 @@
           </StackPanel>
         </Border>
         </StackPanel>
-      </ScrollViewer>
-    </Grid>
-  </Border>
+    </ScrollViewer>
+  </Grid>
 </UserControl>

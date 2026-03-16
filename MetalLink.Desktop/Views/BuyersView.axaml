@@ -135,25 +135,23 @@
     </Style>
   </UserControl.Styles>
 
-  <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
-  <Border Background="{DynamicResource Brush.MainBackground}">
-    <Grid RowDefinitions="Auto,*">
-      <!-- Sticky Header Panel -->
-      <Border Grid.Row="0"
-              Background="{DynamicResource Brush.PanelBackground}"
-              Padding="12,8"
-              CornerRadius="4"
-              Margin="16,16,16,8"
-              ZIndex="100">
-        <Image Source="avares://MetalLink.Desktop/Assets/buyers_heading.png"
-               Height="40"
-               HorizontalAlignment="Left"
-               Stretch="Uniform" />
-      </Border>
+  <Grid RowDefinitions="Auto,*">
+    <!-- Sticky Header Panel -->
+    <Border Grid.Row="0"
+            Background="{DynamicResource Brush.PanelBackground}"
+            Padding="12,8"
+            CornerRadius="4"
+            Margin="16,16,16,8"
+            ZIndex="100">
+      <Image Source="avares://MetalLink.Desktop/Assets/buyers_heading.png"
+             Height="40"
+             HorizontalAlignment="Left"
+             Stretch="Uniform" />
+    </Border>
 
-      <!-- Scrollable Content -->
-      <ScrollViewer Grid.Row="1" Padding="16,8,16,16">
-        <StackPanel Spacing="16">
+    <!-- Scrollable Content -->
+    <ScrollViewer Grid.Row="1" Padding="16,8,16,10" VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="16" Margin="0,0,0,100">
 
           <!-- BLOCK 1: SEARCH CRITERIA -->
           <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
@@ -190,19 +188,19 @@
                 <!-- Row 0: Buyer ID / ID Number / First Name / Last Name -->
                 <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2" Margin="0,0,8,0">
                   <TextBlock Text="Buyer ID" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding BuyerSearchSiteIdText}" />
+                  <TextBox Text="{Binding SearchBuyerIdText, Mode=TwoWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2" Margin="0,0,8,0">
                   <TextBlock Text="ID Number" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding BuyerSearchIdNumberText}" />
+                  <TextBox Text="{Binding SearchBuyerIdNumberText, Mode=TwoWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2" Margin="0,0,8,0">
                   <TextBlock Text="First Name" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding BuyerSearchFirstNameText}" />
+                  <TextBox Text="{Binding SearchBuyerFirstNameText, Mode=TwoWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="3" Spacing="2">
                   <TextBlock Text="Last Name" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding BuyerSearchLastNameText}" />
+                  <TextBox Text="{Binding SearchBuyerLastNameText, Mode=TwoWay}" />
                 </StackPanel>
 
                 <!-- Row 1: Company / Site / Account Number / Price Code -->
@@ -247,7 +245,7 @@
                 <!-- Account Number -->
                 <StackPanel Grid.Row="1" Grid.Column="2" Spacing="2" Margin="0,0,8,0">
                   <TextBlock Text="Account Number" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding BuyerSearchAccountNumberText, Mode=TwoWay}" />
+                  <TextBox Text="{Binding SearchBuyerAccountNumberText, Mode=TwoWay}" />
                 </StackPanel>
 
                 <!-- Price List -->
@@ -268,15 +266,15 @@
                 <!-- Row 2: Phone / Mobile / Email / (empty) -->
                 <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2" Margin="0,0,8,0">
                   <TextBlock Text="Phone" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding BuyerSearchPhoneNumberText}" />
+                  <TextBox Text="{Binding SearchBuyerPhoneNumberText, Mode=TwoWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2" Margin="0,0,8,0">
                   <TextBlock Text="Mobile" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding BuyerSearchMobileNumberText}" />
+                  <TextBox Text="{Binding SearchBuyerMobileNumberText, Mode=TwoWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Spacing="2">
                   <TextBlock Text="Email" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding BuyerSearchEmailText}" />
+                  <TextBox Text="{Binding SearchBuyerEmailText, Mode=TwoWay}" />
                 </StackPanel>
 
                 <!-- Row 4: Search button -->
@@ -346,7 +344,7 @@
                       <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" IsReadOnly="True"
                                           Width="140" />
                       <DataGridTextColumn Header="Site" Binding="{Binding SiteName}" IsReadOnly="True" Width="140" />
-                      <DataGridTextColumn Header="Account" Binding="{Binding AccountNumberFormatted}" IsReadOnly="True" />
+                      <DataGridTextColumn Header="Account" Binding="{Binding AccountNumberDisplay}" SortMemberPath="AccountNumber" IsReadOnly="True" />
                       <DataGridTextColumn Header="Mobile" Binding="{Binding MobileNumber}" IsReadOnly="True" />
                       <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*" IsReadOnly="True" />
 
@@ -358,7 +356,7 @@
                               <Button
                                 Classes="row-action"
                                 Content="Log Ticket"
-                                Command="{Binding DataContext.LogTicketCommand,
+                                Command="{Binding DataContext.LogBuyerTicketCommand,
                                               RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}" />
                               <Button
@@ -597,15 +595,15 @@
                 <!-- Row 0: First Name / Last Name / ID Number / (empty) -->
                 <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2" Margin="0,0,12,0">
                   <TextBlock Text="First Name" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding NewFirstName}" />
+                  <TextBox Text="{Binding NewFirstName, Mode=TwoWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2" Margin="0,0,12,0">
                   <TextBlock Text="Last Name" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding NewLastName}" />
+                  <TextBox Text="{Binding NewLastName, Mode=TwoWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2" Margin="0,0,12,0">
                   <TextBlock Text="ID Number" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding NewIdNumber}" />
+                  <TextBox Text="{Binding NewIdNumber, Mode=TwoWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="3" Spacing="2">
                   <!-- Empty column -->
@@ -669,7 +667,7 @@
 
                 <!-- Row 2: Is Company / Taxable / Phone / Mobile / Email -->
                 <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Spacing="8" Margin="0,0,12,0">
-                  <CheckBox Content="Is Company" IsChecked="{Binding NewIsCompany}" />
+                  <CheckBox Content="Is Company" IsChecked="{Binding NewIsCompany}" IsEnabled="{Binding IsNewBuyerOnlyEnabled}" />
                   <CheckBox Content="Taxable" IsChecked="{Binding NewTaxable}" Margin="12,0,0,0" />
                 </StackPanel>
                 <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2" Margin="0,0,12,0">
@@ -764,8 +762,7 @@
                         </Viewbox>
                       </Border>
                       <Button Content="👆 Fingerprint" Command="{Binding CaptureFingerprintCommand}"
-                              HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180"
-                              Height="20" />
+                              HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" />
                     </StackPanel>
                   </UniformGrid>
                 </StackPanel>
@@ -793,7 +790,7 @@
                     Width="100"
                     Content="Create"
                     Command="{Binding CreateBuyerCommand}"
-                    IsVisible="{Binding IsCreateMode}"
+                    IsVisible="{Binding IsEditMode, Converter={StaticResource BoolInvertConverter}}"
                     IsEnabled="True"
                     ToolTip.Tip="Create new buyer" />
 
@@ -818,8 +815,7 @@
             </StackPanel>
           </Border>
         </StackPanel>
-      </ScrollViewer>
-    </Grid>
-  </Border>
+    </ScrollViewer>
+  </Grid>
 </UserControl>
 

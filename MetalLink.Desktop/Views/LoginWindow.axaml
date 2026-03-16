@@ -70,10 +70,12 @@
         </Button>
     </Grid>
 
-    <Button Content="Login"
+    <Button x:Name="LoginButton"
+            Content="Login"
             Classes="primary"
             HorizontalAlignment="Right"
             Width="100"
+            IsDefault="True"
             Command="{Binding LoginCommand}" />
 
     <TextBlock Text="{Binding StatusMessage}"

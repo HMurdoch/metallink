@@ -60,4 +60,10 @@ public sealed class BuyerDto
     public string? PhotoImagePath { get; set; }
     public string? SignatureImagePath { get; set; }
     public string? FingerprintImagePath { get; set; }
+
+    public byte[]? IdCardImage { get; set; }
+    public byte[]? DriverLicenseImage { get; set; }
+    public byte[]? PhotoImage { get; set; }
+    public byte[]? SignatureImage { get; set; }
+    public byte[]? FingerprintImage { get; set; }
 }

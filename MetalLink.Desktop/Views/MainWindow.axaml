@@ -132,7 +132,7 @@
     </Grid.ColumnDefinitions>
     <Grid.RowDefinitions>
       <RowDefinition Height="*"/>
-      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="32"/>
     </Grid.RowDefinitions>
 
     <!-- Left navigation with glass effect border -->
@@ -319,6 +319,7 @@
       <ContentControl x:Name="MainContentHost"
                       Grid.Row="0" Grid.Column="0"
                       Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}}"
+                      DataContext="{Binding}"
                       HorizontalContentAlignment="Stretch"
                       VerticalContentAlignment="Stretch" />
     </Grid>

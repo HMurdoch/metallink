@@ -66,6 +66,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     // Logic ViewModels
     public MetalLink.Desktop.ViewModels.Receiving.TicketsReceivingViewModel Receiving { get; }
     public MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel Sending { get; }
+    public PaginationViewModel PaginationViewModel { get; } = new();
 
     // Core Commands
     public ICommand LogoutCommand { get; }
@@ -155,6 +156,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             CustomerIsSearchResultsExpanded = false;
             CustomerIsDetailsExpanded = false;
             await LoadAllPriceListsAsync();
+            NewAccountNumber = await _customerService.GetNextAccountNumberAsync();
         });
         ShowBuyersCommand = new AsyncRelayCommand(async () => {
             CurrentSection = EnumMainSection.Buyers;
@@ -167,8 +169,14 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             await LoadOperatorSettingsAsync();
             if (EnforceBuyerCompany) NewIsCompany = true;
             await LoadAllPriceListsAsync();
+            NewAccountNumber = await _buyerService.GetNextAccountNumberAsync();
         });
-        ShowCompanyAndSitesCommand = new RelayCommand(() => CurrentSection = EnumMainSection.CompanyAndSites);
+        ShowCompanyAndSitesCommand = new RelayCommand(async () => {
+            CurrentSection = EnumMainSection.CompanyAndSites;
+            PaginationViewModel.Reset();
+            PaginationViewModel.PageSize = 15;
+            await SearchCompaniesAsync();
+        });
         ShowProductsAndPricesCommand = new RelayCommand(() => CurrentSection = EnumMainSection.ProductsAndPrices);
         ShowTicketsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.TicketsReceiving);
         ShowTicketsReceivingCommand = new RelayCommand(() => CurrentSection = EnumMainSection.TicketsReceiving);
@@ -186,7 +194,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         LogoutCommand = new AsyncRelayCommand(LogoutAsync);
         CheckDbCommand = new AsyncRelayCommand(CheckDbAsync);
         SearchCustomerCommand = new AsyncRelayCommand(SearchCustomerAsync);
-        CreateCustomerCommand = new AsyncRelayCommand(CreateCustomerAsync);
+        CreateCustomerCommand = new AsyncRelayCommand(CreateCustomerAsync, () => CanCreateCustomer);
         ClearNewCustomerCommand = new RelayCommand(ClearNewCustomerForm);
         ClearCustomerSearchCommand = new RelayCommand(ClearCustomerSearch);
         UpdateCustomerCommand = new AsyncRelayCommand(OnUpdateCustomerAsync, () => CanUpdateCustomer);
@@ -195,7 +203,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         LogTicketCommand = new RelayCommand<CustomerDto?>(OnLogTicket);
 
         SearchBuyerCommand = new AsyncRelayCommand(SearchBuyerAsync);
-        CreateBuyerCommand = new AsyncRelayCommand(CreateBuyerAsync);
+        CreateBuyerCommand = new AsyncRelayCommand(CreateBuyerAsync, () => CanCreateBuyer);
         ClearNewBuyerCommand = new AsyncRelayCommand(ClearNewBuyerFormAsync);
         ClearBuyerSearchCommand = new AsyncRelayCommand(ClearBuyerSearchAsync);
         UpdateBuyerCommand = new AsyncRelayCommand(OnUpdateBuyerAsync, () => CanUpdateBuyer);
@@ -265,6 +273,13 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         CapturePhotoCommand = new AsyncRelayCommand(CapturePhotoAsync);
         CaptureFingerprintCommand = new AsyncRelayCommand(CaptureFingerprintAsync);
 
+        PaginationViewModel.PageChanged += async (s, e) => {
+            if (CurrentSection == EnumMainSection.Customers) await SearchCustomerAsync();
+            else if (CurrentSection == EnumMainSection.Buyers) await SearchBuyerAsync();
+            else if (CurrentSection == EnumMainSection.CompanyAndSites) UpdatePagedCompanyResults();
+        };
+
+        InitializeCompanyAndSiteCommands();
         BuildNavItems();
     }
 
@@ -288,7 +303,25 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
     private async Task LogoutAsync() { await Task.CompletedTask; }
     private async Task CheckDbAsync() { await Task.CompletedTask; }
-    private async Task LoadAllPriceListsAsync() { await Task.CompletedTask; }
+    private async Task LoadAllPriceListsAsync()
+    {
+        try
+        {
+            var lists = await _app.ProductsAndPricesService.GetPriceListsAsync();
+            CustomerPriceLists.Clear();
+            BuyerPriceLists.Clear();
+            foreach (var list in lists)
+            {
+                if (list.EntityFlag == 'C') CustomerPriceLists.Add(list);
+                else if (list.EntityFlag == 'B') BuyerPriceLists.Add(list);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] LoadAllPriceListsAsync: {ex.Message}");
+        }
+    }
+
     private async Task LoadOperatorSettingsAsync() { await Task.CompletedTask; }
     private async Task SearchCustomerAsync()
     {
@@ -300,6 +333,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             var request = new CustomerSearchRequestDto
             {
                 CustomerId = customerId,
+                SiteId = CustomerSelectedSearchSite?.SiteId,
+                ProductPriceListId = SearchCustomerPriceList?.ProductPriceListId,
                 FirstName = string.IsNullOrWhiteSpace(SearchCustomerFirstNameText) ? null : SearchCustomerFirstNameText.Trim(),
                 LastName = string.IsNullOrWhiteSpace(SearchCustomerLastNameText) ? null : SearchCustomerLastNameText.Trim(),
                 CompanyName = string.IsNullOrWhiteSpace(SearchCustomerCompanyNameText) ? null : SearchCustomerCompanyNameText.Trim(),
@@ -312,15 +347,13 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
             var results = await _customerService.SearchCustomersAsync(request);
             CustomerSearchResults.Clear();
-            PagedCustomerSearchResults.Clear();
             if (results != null)
             {
-                foreach (var c in results) 
-                {
-                    CustomerSearchResults.Add(c);
-                    PagedCustomerSearchResults.Add(c);
-                }
+                foreach (var c in results.OrderByDescending(x => x.CustomerId)) CustomerSearchResults.Add(c);
             }
+
+            PaginationViewModel.SetTotalRecords(CustomerSearchResults.Count);
+            UpdatePagedCustomerResults();
 
             CustomerIsSearchResultsExpanded = true;
             CustomerIsDetailsExpanded = true;
@@ -341,6 +374,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             var request = new BuyerSearchRequestDto
             {
                 BuyerId = buyerId,
+                SiteId = BuyerSelectedSearchSite?.SiteId,
+                ProductPriceListId = SearchBuyerPriceList?.ProductPriceListId,
                 FirstName = string.IsNullOrWhiteSpace(SearchBuyerFirstNameText) ? null : SearchBuyerFirstNameText.Trim(),
                 LastName = string.IsNullOrWhiteSpace(SearchBuyerLastNameText) ? null : SearchBuyerLastNameText.Trim(),
                 CompanyName = string.IsNullOrWhiteSpace(SearchBuyerCompanyNameText) ? null : SearchBuyerCompanyNameText.Trim(),
@@ -353,15 +388,13 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
             var results = await _buyerService.SearchBuyersAsync(request);
             BuyerSearchResults.Clear();
-            PagedBuyerSearchResults.Clear();
             if (results != null)
             {
-                foreach (var b in results)
-                {
-                    BuyerSearchResults.Add(b);
-                    PagedBuyerSearchResults.Add(b);
-                }
+                foreach (var b in results.OrderByDescending(x => x.BuyerId)) BuyerSearchResults.Add(b);
             }
+
+            PaginationViewModel.SetTotalRecords(BuyerSearchResults.Count);
+            UpdatePagedBuyerResults();
 
             BuyerIsSearchResultsExpanded = true;
             BuyerIsDetailsExpanded = true;
@@ -388,6 +421,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         FoundCustomer = null;
         CustomerIsSearchResultsExpanded = false;
         CustomerIsDetailsExpanded = false;
+        PaginationViewModel.Reset();
     }
 
     private async Task ClearBuyerSearchAsync()
@@ -406,6 +440,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         FoundBuyer = null;
         BuyerIsSearchResultsExpanded = false;
         BuyerIsDetailsExpanded = false;
+        PaginationViewModel.Reset();
         await Task.CompletedTask;
     }
 
@@ -422,6 +457,18 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         NewAccountNumber = null;
         IsEditMode = false;
         EditingCustomerId = null;
+        
+        SelectedNewCompany = null;
+        SelectedNewSite = null;
+        SelectedNewProductPriceList = null;
+
+        IdCardImage = null;
+        DriverLicenseImage = null;
+        PhotoImage = null;
+        SignatureImage = null;
+        FingerprintImage = null;
+
+        NotifyFormProperties();
     }
 
     private async Task ClearNewBuyerFormAsync()
@@ -437,26 +484,347 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         NewAccountNumber = null;
         IsEditMode = false;
         EditingBuyerId = null;
+
+        SelectedNewCompany = null;
+        SelectedNewSite = null;
+        SelectedNewProductPriceList = null;
+
+        IdCardImage = null;
+        DriverLicenseImage = null;
+        PhotoImage = null;
+        SignatureImage = null;
+        FingerprintImage = null;
+
+        NotifyFormProperties();
         await Task.CompletedTask;
     }
 
-    private async Task CreateCustomerAsync() { await Task.CompletedTask; }
-    private async Task CreateBuyerAsync() { await Task.CompletedTask; }
-    private async Task OnUpdateCustomerAsync() { await Task.CompletedTask; }
-    private async Task OnUpdateBuyerAsync() { await Task.CompletedTask; }
+    private async Task CreateCustomerAsync()
+    {
+        try
+        {
+            Console.WriteLine($"[DEBUG] CreateCustomerAsync started. Name: {NewFirstName} {NewLastName}, Company: {NewCompanyName}");
+            var dto = new CustomerDto
+            {
+                FirstName = NewFirstName,
+                LastName = NewLastName,
+                IdNumber = NewIdNumber,
+                AccountNumber = NewAccountNumber,
+                Email = NewEmail,
+                PhoneNumber = NewPhoneNumber,
+                MobileNumber = NewMobileNumber,
+                Taxable = NewTaxable,
+                IsCompany = NewIsCompany,
+                CompanyId = (int?)(SelectedNewCompany?.CompanyId),
+                SiteId = (int?)(SelectedNewSite?.SiteId),
+                ProductPriceListId = SelectedNewProductPriceList?.ProductPriceListId
+            };
+
+            var result = await _customerService.CreateCustomerAsync(dto);
+            if (result != null)
+            {
+                Console.WriteLine($"[DEBUG] CreateCustomerAsync successful. New ID: {result.CustomerId}");
+                
+                // Upload any images captured during creation
+                var idCardData = GetBytesFromBitmap(IdCardImage);
+                if (idCardData != null) await _customerService.UploadCustomerImageAsync(result.CustomerId, "idcard", idCardData);
+                
+                var licenseData = GetBytesFromBitmap(DriverLicenseImage);
+                if (licenseData != null) await _customerService.UploadCustomerImageAsync(result.CustomerId, "driverlicense", licenseData);
+                
+                var photoData = GetBytesFromBitmap(PhotoImage);
+                if (photoData != null) await _customerService.UploadCustomerImageAsync(result.CustomerId, "photo", photoData);
+                
+                var sigData = GetBytesFromBitmap(SignatureImage);
+                if (sigData != null) await _customerService.UploadCustomerImageAsync(result.CustomerId, "signature", sigData);
+                
+                var fpData = GetBytesFromBitmap(FingerprintImage);
+                if (fpData != null) await _customerService.UploadCustomerImageAsync(result.CustomerId, "fingerprint", fpData);
+
+                // Refresh search results
+                await SearchCustomerAsync();
+                
+                // Re-select the record to show details
+                var updated = CustomerSearchResults.FirstOrDefault(x => x.CustomerId == result.CustomerId);
+                if (updated != null) 
+                {
+                    FoundCustomer = updated;
+                    _ = LoadSelectedCustomerImagesAsync(updated);
+                }
+                
+                CustomerIsDetailsExpanded = true;
+                CustomerIsSearchResultsExpanded = true;
+                CustomerIsCreateEditExpanded = false;
+            }
+
+            ClearNewCustomerForm();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] CreateCustomerAsync: {ex.Message}");
+        }
+    }
+
+    private async Task CreateBuyerAsync()
+    {
+        try
+        {
+            Console.WriteLine($"[DEBUG] CreateBuyerAsync started. Name: {NewFirstName} {NewLastName}, Company: {NewCompanyName}");
+            var dto = new BuyerDto
+            {
+                FirstName = NewFirstName,
+                LastName = NewLastName,
+                IdNumber = NewIdNumber,
+                AccountNumber = NewAccountNumber,
+                Email = NewEmail,
+                PhoneNumber = NewPhoneNumber,
+                MobileNumber = NewMobileNumber,
+                Taxable = NewTaxable,
+                IsCompany = NewIsCompany,
+                CompanyId = (int?)(SelectedNewCompany?.CompanyId),
+                SiteId = (int?)(SelectedNewSite?.SiteId),
+                ProductPriceListId = SelectedNewProductPriceList?.ProductPriceListId
+            };
+
+            var result = await _buyerService.CreateBuyerAsync(dto);
+            if (result != null)
+            {
+                Console.WriteLine($"[DEBUG] CreateBuyerAsync successful. New ID: {result.BuyerId}");
+                
+                // Upload any images captured during creation
+                var idCardData = GetBytesFromBitmap(IdCardImage);
+                if (idCardData != null) await _buyerService.UploadBuyerImageAsync(result.BuyerId, "idcard", idCardData);
+                
+                var licenseData = GetBytesFromBitmap(DriverLicenseImage);
+                if (licenseData != null) await _buyerService.UploadBuyerImageAsync(result.BuyerId, "driverlicense", licenseData);
+                
+                var photoData = GetBytesFromBitmap(PhotoImage);
+                if (photoData != null) await _buyerService.UploadBuyerImageAsync(result.BuyerId, "photo", photoData);
+                
+                var sigData = GetBytesFromBitmap(SignatureImage);
+                if (sigData != null) await _buyerService.UploadBuyerImageAsync(result.BuyerId, "signature", sigData);
+                
+                var fpData = GetBytesFromBitmap(FingerprintImage);
+                if (fpData != null) await _buyerService.UploadBuyerImageAsync(result.BuyerId, "fingerprint", fpData);
+
+                // Refresh search results
+                await SearchBuyerAsync();
+
+                // Re-select the record to show details
+                var updated = BuyerSearchResults.FirstOrDefault(x => x.BuyerId == result.BuyerId);
+                if (updated != null) 
+                {
+                    FoundBuyer = updated;
+                    _ = LoadSelectedBuyerImagesAsync(updated);
+                }
+
+                BuyerIsDetailsExpanded = true;
+                BuyerIsSearchResultsExpanded = true;
+                BuyerIsCreateEditExpanded = false;
+            }
+
+            await ClearNewBuyerFormAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] CreateBuyerAsync: {ex.Message}");
+        }
+    }
+
+    private async Task OnUpdateCustomerAsync()
+    {
+        if (EditingCustomerId == null) return;
+        try
+        {
+            var dto = new CustomerDto
+            {
+                CustomerId = EditingCustomerId.Value,
+                FirstName = NewFirstName,
+                LastName = NewLastName,
+                IdNumber = NewIdNumber,
+                AccountNumber = NewAccountNumber,
+                Email = NewEmail,
+                PhoneNumber = NewPhoneNumber,
+                MobileNumber = NewMobileNumber,
+                Taxable = NewTaxable,
+                IsCompany = NewIsCompany,
+                CompanyId = (int?)(SelectedNewCompany?.CompanyId),
+                SiteId = (int?)(SelectedNewSite?.SiteId),
+                ProductPriceListId = SelectedNewProductPriceList?.ProductPriceListId
+            };
+
+            await _customerService.UpdateCustomerAsync(dto);
+
+            // Upload any new images captured
+            var idCardData = GetBytesFromBitmap(IdCardImage);
+            if (idCardData != null) await _customerService.UploadCustomerImageAsync(dto.CustomerId, "idcard", idCardData);
+            
+            var licenseData = GetBytesFromBitmap(DriverLicenseImage);
+            if (licenseData != null) await _customerService.UploadCustomerImageAsync(dto.CustomerId, "driverlicense", licenseData);
+            
+            var photoData = GetBytesFromBitmap(PhotoImage);
+            if (photoData != null) await _customerService.UploadCustomerImageAsync(dto.CustomerId, "photo", photoData);
+            
+            var sigData = GetBytesFromBitmap(SignatureImage);
+            if (sigData != null) await _customerService.UploadCustomerImageAsync(dto.CustomerId, "signature", sigData);
+            
+            var fpData = GetBytesFromBitmap(FingerprintImage);
+            if (fpData != null) await _customerService.UploadCustomerImageAsync(dto.CustomerId, "fingerprint", fpData);
+            
+            // Refresh results
+            await SearchCustomerAsync();
+            
+            // Re-select the record to show updated details
+            var updated = CustomerSearchResults.FirstOrDefault(x => x.CustomerId == dto.CustomerId);
+            if (updated != null) 
+            {
+                FoundCustomer = updated;
+                // Specifically trigger image reload for details view
+                _ = LoadSelectedCustomerImagesAsync(updated);
+            }
+            
+            CustomerIsDetailsExpanded = true;
+            ClearNewCustomerForm();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] OnUpdateCustomerAsync: {ex.Message}");
+        }
+    }
+
+    private async Task OnUpdateBuyerAsync()
+    {
+        if (EditingBuyerId == null) return;
+        try
+        {
+            var dto = new BuyerDto
+            {
+                BuyerId = EditingBuyerId.Value,
+                FirstName = NewFirstName,
+                LastName = NewLastName,
+                IdNumber = NewIdNumber,
+                AccountNumber = NewAccountNumber,
+                Email = NewEmail,
+                PhoneNumber = NewPhoneNumber,
+                MobileNumber = NewMobileNumber,
+                Taxable = NewTaxable,
+                IsCompany = NewIsCompany,
+                CompanyId = (int?)(SelectedNewCompany?.CompanyId),
+                SiteId = (int?)(SelectedNewSite?.SiteId),
+                ProductPriceListId = SelectedNewProductPriceList?.ProductPriceListId
+            };
+
+            await _buyerService.UpdateBuyerAsync(dto);
+
+            // Upload any new images captured
+            var idCardData = GetBytesFromBitmap(IdCardImage);
+            if (idCardData != null) await _buyerService.UploadBuyerImageAsync(dto.BuyerId, "idcard", idCardData);
+            
+            var licenseData = GetBytesFromBitmap(DriverLicenseImage);
+            if (licenseData != null) await _buyerService.UploadBuyerImageAsync(dto.BuyerId, "driverlicense", licenseData);
+            
+            var photoData = GetBytesFromBitmap(PhotoImage);
+            if (photoData != null) await _buyerService.UploadBuyerImageAsync(dto.BuyerId, "photo", photoData);
+            
+            var sigData = GetBytesFromBitmap(SignatureImage);
+            if (sigData != null) await _buyerService.UploadBuyerImageAsync(dto.BuyerId, "signature", sigData);
+            
+            var fpData = GetBytesFromBitmap(FingerprintImage);
+            if (fpData != null) await _buyerService.UploadBuyerImageAsync(dto.BuyerId, "fingerprint", fpData);
+            
+            // Refresh results
+            await SearchBuyerAsync();
+            
+            // Re-select the record to show updated details
+            var updated = BuyerSearchResults.FirstOrDefault(x => x.BuyerId == dto.BuyerId);
+            if (updated != null) 
+            {
+                FoundBuyer = updated;
+                // Specifically trigger image reload for details view
+                _ = LoadSelectedBuyerImagesAsync(updated);
+            }
+            
+            BuyerIsDetailsExpanded = true;
+            await ClearNewBuyerFormAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] OnUpdateBuyerAsync: {ex.Message}");
+        }
+    }
+
     private void OnEditCustomer(CustomerDto? c) { FoundCustomer = c; }
-    private async Task OnDeleteCustomerAsync(CustomerDto? c) { await Task.CompletedTask; }
+    private async Task OnDeleteCustomerAsync(CustomerDto? c) 
+    { 
+        if (c == null) return;
+        if (await ConfirmAsync($"Are you sure you want to delete customer {c.FirstName} {c.LastName}?"))
+        {
+            await _customerService.DeleteCustomerAsync(c.CustomerId);
+            await SearchCustomerAsync();
+        }
+    }
     private void OnLogTicket(CustomerDto? c) { }
     private void OnEditBuyer(BuyerDto? b) { FoundBuyer = b; }
-    private async Task OnDeleteBuyerAsync(BuyerDto? b) { await Task.CompletedTask; }
+    private async Task OnDeleteBuyerAsync(BuyerDto? b) 
+    { 
+        if (b == null) return;
+        if (await ConfirmAsync($"Are you sure you want to delete buyer {b.FirstName} {b.LastName}?"))
+        {
+            await _buyerService.DeleteBuyerAsync(b.BuyerId);
+            await SearchBuyerAsync();
+        }
+    }
     private void OnLogBuyerTicket(BuyerDto? b) { }
     private async Task LoadCustomerDocumentsAsync() { await Task.CompletedTask; }
     private async Task UploadCustomerDocumentAsync() { await Task.CompletedTask; }
-    private async Task CaptureSignatureAsync() { await Task.CompletedTask; }
-    private async Task CaptureIdCardAsync() { await Task.CompletedTask; }
-    private async Task CaptureDriverLicenseAsync() { await Task.CompletedTask; }
-    private async Task CapturePhotoAsync() { await Task.CompletedTask; }
-    private async Task CaptureFingerprintAsync() { await Task.CompletedTask; }
+    
+    private async Task CaptureSignatureAsync() 
+    { 
+        Console.WriteLine("[DEBUG] CaptureSignatureAsync triggered");
+        var result = await _signaturePadService.CaptureAsync("Signature");
+        if (result.ImageData != null) SignatureImage = LoadBitmapFromBytes(result.ImageData);
+        Console.WriteLine($"[DEBUG] CaptureSignatureAsync finished. Success: {result.ImageData != null}");
+    }
+    
+    private async Task CaptureIdCardAsync() 
+    { 
+        Console.WriteLine("[DEBUG] CaptureIdCardAsync triggered");
+        var result = await _cameraService.CaptureAsync(CameraDeviceType.Document, "IdCard");
+        if (result.ImageData != null) IdCardImage = LoadBitmapFromBytes(result.ImageData);
+        Console.WriteLine($"[DEBUG] CaptureIdCardAsync finished. Success: {result.ImageData != null}");
+    }
+    
+    private async Task CaptureDriverLicenseAsync() 
+    { 
+        Console.WriteLine("[DEBUG] CaptureDriverLicenseAsync triggered");
+        var result = await _cameraService.CaptureAsync(CameraDeviceType.Document, "DriverLicense");
+        if (result.ImageData != null) DriverLicenseImage = LoadBitmapFromBytes(result.ImageData);
+        Console.WriteLine($"[DEBUG] CaptureDriverLicenseAsync finished. Success: {result.ImageData != null}");
+    }
+    
+    private async Task CapturePhotoAsync() 
+    { 
+        Console.WriteLine("[DEBUG] CapturePhotoAsync triggered");
+        var result = await _cameraService.CaptureAsync(CameraDeviceType.Face, "Photo");
+        if (result.ImageData != null) PhotoImage = LoadBitmapFromBytes(result.ImageData);
+        Console.WriteLine($"[DEBUG] CapturePhotoAsync finished. Success: {result.ImageData != null}");
+    }
+    
+    private async Task CaptureFingerprintAsync() 
+    { 
+        Console.WriteLine("[DEBUG] CaptureFingerprintAsync triggered");
+        var result = await _app.FingerprintScanner.CaptureAsync();
+        if (result.ImageData != null) FingerprintImage = LoadBitmapFromBytes(result.ImageData);
+        Console.WriteLine($"[DEBUG] CaptureFingerprintAsync finished. Success: {result.ImageData != null}");
+    }
+
+    private byte[]? GetBytesFromBitmap(Bitmap? bitmap)
+    {
+        if (bitmap == null) return null;
+        using var ms = new MemoryStream();
+        bitmap.Save(ms);
+        return ms.ToArray();
+    }
     public async Task InitializeLookupsAsync() { await Task.CompletedTask; }
     public Bitmap? LoadBitmapFromBytes(byte[]? data)
     {
@@ -472,11 +840,42 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             return null;
         }
     }
-    public async Task<bool> ConfirmAsync(string message) => await Task.FromResult(true);
+    public async Task<bool> ConfirmAsync(string message)
+    {
+        var dialog = new MetalLink.Desktop.Views.ConfirmDialog(message);
+        var lifetime = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+        if (lifetime?.MainWindow != null)
+        {
+            var result = await dialog.ShowDialog<bool>(lifetime.MainWindow);
+            return result;
+        }
+        return false;
+    }
 
     public async Task SetEnforceBuyerCompanyAsync(bool enabled)
     {
         EnforceBuyerCompany = enabled;
+        OnPropertyChanged(nameof(EnforceBuyerCompany));
+        OnPropertyChanged(nameof(IsNewBuyerOnlyEnabled));
+        OnPropertyChanged(nameof(NewIsCompany)); // Trigger getter update
         await Task.CompletedTask;
+    }
+
+    private void UpdatePagedCustomerResults()
+    {
+        PagedCustomerSearchResults.Clear();
+        var paged = CustomerSearchResults
+            .Skip(PaginationViewModel.GetSkip())
+            .Take(PaginationViewModel.GetTake());
+        foreach (var c in paged) PagedCustomerSearchResults.Add(c);
+    }
+
+    private void UpdatePagedBuyerResults()
+    {
+        PagedBuyerSearchResults.Clear();
+        var paged = BuyerSearchResults
+            .Skip(PaginationViewModel.GetSkip())
+            .Take(PaginationViewModel.GetTake());
+        foreach (var b in paged) PagedBuyerSearchResults.Add(b);
     }
 }

@@ -5,9 +5,9 @@ using MetalLink.Desktop.ViewModels;
 
 namespace MetalLink.Desktop.Views;
 
-public partial class CompanyAndSiteView : UserControl
+public partial class CompanyAndSitesView : UserControl
 {
-    public CompanyAndSiteView()
+    public CompanyAndSitesView()
     {
         InitializeComponent();
     }
@@ -17,33 +17,39 @@ public partial class CompanyAndSiteView : UserControl
         AvaloniaXamlLoader.Load(this);
     }
 
-    private void ToggleSearchCriteria(object? sender, PointerPressedEventArgs e)
+    public void ToggleSearchCriteria(object? sender, PointerPressedEventArgs e)
     {
         if (DataContext is MainWindowViewModel vm)
             vm.CompanyIsSearchCriteriaExpanded = !vm.CompanyIsSearchCriteriaExpanded;
     }
 
-    private void ToggleSearchResults(object? sender, PointerPressedEventArgs e)
+    public void ToggleSearchResults(object? sender, PointerPressedEventArgs e)
     {
         if (DataContext is MainWindowViewModel vm)
             vm.CompanyIsSearchResultsExpanded = !vm.CompanyIsSearchResultsExpanded;
     }
 
-    private void ToggleDetails(object? sender, PointerPressedEventArgs e)
+    public void ToggleDetails(object? sender, PointerPressedEventArgs e)
     {
         if (DataContext is MainWindowViewModel vm)
             vm.CompanyIsDetailsExpanded = !vm.CompanyIsDetailsExpanded;
     }
 
-    private void ToggleCreateEdit(object? sender, PointerPressedEventArgs e)
+    public void ToggleCreateEdit(object? sender, PointerPressedEventArgs e)
     {
         if (DataContext is MainWindowViewModel vm)
             vm.CompanyIsCreateEditExpanded = !vm.CompanyIsCreateEditExpanded;
     }
 
-    private void ToggleSites(object? sender, PointerPressedEventArgs e)
+    public void ToggleSites(object? sender, PointerPressedEventArgs e)
     {
         if (DataContext is MainWindowViewModel vm)
             vm.CompanyIsPanelExpanded = !vm.CompanyIsPanelExpanded;
+    }
+
+    public void ToggleSiteCreateEdit(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+            vm.IsSiteCreateEditExpanded = !vm.IsSiteCreateEditExpanded;
     }
 }

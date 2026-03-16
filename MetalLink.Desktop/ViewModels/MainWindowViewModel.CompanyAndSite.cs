@@ -333,50 +333,59 @@ public partial class MainWindowViewModel
             ClearCompanyFormCommand = new AsyncRelayCommand(ct => ClearCompanyFormAsync(ct));
             UpdateCompany2Command = new AsyncRelayCommand(ct => UpdateCompanyAsync(ct), () => CanUpdateCompany);
             ClearSiteFormCommand = new RelayCommand(ClearSiteForm);
+
+            SitePaginationViewModel.PageChanged += (s, e) => UpdatePagedSiteResults();
     }
 
     // =====================================================
     // IMPLEMENTATION (TODO hooks – wire to your services)
     // =====================================================
 
-    private Task SearchCompaniesAsync(CancellationToken ct = default)
+    private async Task SearchCompaniesAsync(CancellationToken ct = default)
     {
-        if (IsBusy) return Task.CompletedTask;
+        if (IsBusy) return;
         IsBusy = true;
 
         try
         {
             StatusMessage = "Searching companies...";
 
-            // Ensure lookup cache is loaded (CompanyLetterFilters triggers lazy load)
-            _ = CompanyLetterFilters;
-
-            // If still loading, you can optionally wait a tiny bit, but usually it's ready quickly.
-            // (If you want to be strict, add a flag in Lookup.cs to expose loading state.)
+            // Wait a frame to ensure UI responsiveness and keep method async
+            await Task.Delay(1, ct);
 
             // Start from cached master list
             var query = _allCompanies.AsEnumerable();
 
-            // Apply letter filter (ALL = no filter)
-            var letter = (SelectedCompanyLetter ?? "ALL").Trim();
-
-            if (!letter.Equals("ALL", StringComparison.OrdinalIgnoreCase) &&
-                !string.IsNullOrWhiteSpace(letter))
+            if (!string.IsNullOrWhiteSpace(CompanySearchText))
             {
-                var ch = char.ToUpperInvariant(letter[0]);
-
-                query = query.Where(c =>
-                    !string.IsNullOrWhiteSpace(c.CompanyName) &&
-                    char.ToUpperInvariant(c.CompanyName![0]) == ch);
+                // Explicitly filter by name if text is provided
+                query = query.Where(c => 
+                    !string.IsNullOrWhiteSpace(c.CompanyName) && 
+                    c.CompanyName.Contains(CompanySearchText, StringComparison.OrdinalIgnoreCase));
+            }
+            else
+            {
+                var letter = (SelectedCompanyLetter ?? "ALL").Trim();
+                if (!letter.Equals("ALL", StringComparison.OrdinalIgnoreCase) && letter.Length > 0)
+                {
+                    var ch = char.ToUpperInvariant(letter[0]);
+                    query = query.Where(c =>
+                        !string.IsNullOrWhiteSpace(c.CompanyName) &&
+                        char.ToUpperInvariant(c.CompanyName![0]) == ch);
+                }
             }
 
             // Populate results grid
             CompanyResults.Clear();
-            foreach (var c in query.OrderBy(c => c.CompanyName))
+            foreach (var c in query.OrderByDescending(c => c.CompanyId))
                 CompanyResults.Add(c);
 
-            // Optional: auto-select first row (or set null)
-            SelectedCompany = CompanyResults.FirstOrDefault();
+            PaginationViewModel.SetTotalRecords(CompanyResults.Count);
+            UpdatePagedCompanyResults();
+
+            // Auto-expand next panels as per requirements
+            CompanyIsSearchResultsExpanded = true;
+            CompanyIsCreateEditExpanded = true;
 
             StatusMessage = $"[STATUS] Found {CompanyResults.Count} company(s).";
         }
@@ -388,8 +397,15 @@ public partial class MainWindowViewModel
         {
             IsBusy = false;
         }
-        
-        return Task.CompletedTask;
+    }
+
+    private void UpdatePagedCompanyResults()
+    {
+        PagedCompanyResults.Clear();
+        var paged = CompanyResults
+            .Skip(PaginationViewModel.GetSkip())
+            .Take(PaginationViewModel.GetTake());
+        foreach (var c in paged) PagedCompanyResults.Add(c);
     }
 
     private void ClearSiteForm()
@@ -409,6 +425,7 @@ public partial class MainWindowViewModel
         SetDefaultProvinceAndCountryForSite();
 
         OnPropertyChanged(nameof(SiteSaveButtonText));
+        OnPropertyChanged(nameof(IsSiteEditMode));
         (CreateOrUpdateSiteCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
     }
 
@@ -466,7 +483,7 @@ public partial class MainWindowViewModel
                     SiteName = CompanyFormInitialSiteName.Trim(),
                     SiteCode = "SITE-1",
                     IsActive = true,
-                    CountryId = NewCountry?.CountryId ?? SelectedCountry?.CountryId ?? 1
+                    CountryId = 1 // Default South Africa
                 }, ct);
 
             if (site == null)
@@ -477,15 +494,9 @@ public partial class MainWindowViewModel
             CompanyVatNumber = string.Empty;
             CompanyFormInitialSiteName = string.Empty;
 
-            // Refresh your caches/results
-            // If you already have a lookup cache loader, call it.
-            // Otherwise, simplest: re-run company search / reload letters.
             StatusMessage = $"[STATUS] Created company {company.CompanyName} and site {site.SiteName}.";
 
-            // Optional: reload companies list if your UI needs it
-            // await SearchCompaniesAsync(); // if you have it
-
-            // Convert to lookup dto if your API returns CompanyDto
+            // Convert to lookup dto
             var lookup = new CompanyLookupDto
             {
                 CompanyId = company.CompanyId,
@@ -494,45 +505,19 @@ public partial class MainWindowViewModel
                 IsActive = company.IsActive
             };
 
-            // Run UI updates on UI thread (Avalonia-safe)
-            Dispatcher.UIThread.Post(() =>
-            {
-                AddCompanyToCachesAndSelect(lookup);
-            }, DispatcherPriority.Background);
-
-            var createdId = lookup.CompanyId;
-
-            Dispatcher.UIThread.Post(() =>
-            {
-                AddCompanyToCachesAndSelect(lookup);
-
-                // Ensure the grid selection is the created company (in case anything refreshed)
-                SelectedCompany = CompanyResults.FirstOrDefault(c => c.CompanyId == createdId)
-                                ?? SelectedCompany;
-            }, DispatcherPriority.Background);
-
-            // optional: load sites for the selected company (only if endpoint exists)
-            // Populate results grid
-            var keepId = SelectedCompany?.CompanyId; // preserve current selection if possible
-
-            //CompanyResults.Clear();
-            foreach (var c in CompanyResults.OrderBy(c => c.CompanyName))
-                CompanyResults.Add(c);
-
-            // Re-select previous (or keep current), otherwise pick first
-            if (keepId.HasValue)
-                SelectedCompany = CompanyResults.FirstOrDefault(x => x.CompanyId == keepId.Value) 
-                                ?? CompanyResults.FirstOrDefault();
-            else
-                SelectedCompany = CompanyResults.FirstOrDefault();
+            AddCompanyToCachesAndSelect(lookup);
+            
+            // Ensure the grid selection is the created company
+            SelectedCompany = lookup;
             
             await LoadSitesForSelectedCompanyResultsAsync(ct);
             
             // Auto-select the newly created initial site and enter edit mode
-            SelectedSearchSite = SiteResults.FirstOrDefault(s => s.SiteId == site.SiteId);
-            if (SelectedSearchSite != null)
+            var siteLookup = SiteResults.FirstOrDefault(s => s.SiteId == site.SiteId);
+            if (siteLookup != null)
             {
-                OnEditSite(SelectedSearchSite);
+                SelectedSite = siteLookup;
+                // details are populated by SelectedSite setter -> LoadSelectedSiteIntoEditFields
             }
         }
         catch (Exception ex)
@@ -557,6 +542,8 @@ public partial class MainWindowViewModel
 
         CompanyEditName = company.CompanyName ?? "";
         CompanyVatNumber = company.VatNumber ?? "";
+
+        IsCompanyInitialSiteVisible = false;
 
         OnPropertyChanged(nameof(CanUpdateCompany));
         (UpdateCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
@@ -748,6 +735,13 @@ public partial class MainWindowViewModel
             StatusMessage = "[STATUS] Select a company first.";
             return;
         }
+
+        if (SelectedProvince == null || SelectedCountry == null)
+        {
+            StatusMessage = "[STATUS] Please select both Province and Country.";
+            return;
+        }
+
         if (!CanCreateOrUpdateSite) return;
 
         IsBusy = true;
@@ -916,6 +910,7 @@ public partial class MainWindowViewModel
         if (SelectedCompany == null)
         {
             SiteResults.Clear();
+            PagedSiteResults.Clear();
             SelectedSite = null;
             return;
         }
@@ -933,13 +928,26 @@ public partial class MainWindowViewModel
             foreach (var s in items.OrderBy(x => x.SiteName))
                 SiteResults.Add(s);
 
+            SitePaginationViewModel.SetTotalRecords(SiteResults.Count);
+            UpdatePagedSiteResults();
+
             StatusMessage = $"Loaded {SiteResults.Count} site(s).";
         }
         catch (Exception ex)
         {
             StatusMessage = $"Load sites failed: {ex.Message}";
             SiteResults.Clear();
+            PagedSiteResults.Clear();
         }
+    }
+
+    private void UpdatePagedSiteResults()
+    {
+        PagedSiteResults.Clear();
+        var paged = SiteResults
+            .Skip(SitePaginationViewModel.GetSkip())
+            .Take(SitePaginationViewModel.GetTake());
+        foreach (var s in paged) PagedSiteResults.Add(s);
     }
 
 
@@ -1065,14 +1073,29 @@ public partial class MainWindowViewModel
         var selectedId = SelectedSearchCompany?.CompanyId;
         var letter = (SelectedCompanyLetter ?? "ALL").Trim();
         SearchCompanySuggestions.Clear();
+        
         IEnumerable<CompanyLookupDto> query = _allCompanies;
-        if (!letter.Equals("ALL", StringComparison.OrdinalIgnoreCase) && letter.Length > 0)
+
+        // If search text is provided, filter by name (ignoring letter)
+        if (!string.IsNullOrWhiteSpace(CompanySearchText))
+        {
+            query = query.Where(c => 
+                !string.IsNullOrWhiteSpace(c.CompanyName) && 
+                c.CompanyName.Contains(CompanySearchText, StringComparison.OrdinalIgnoreCase));
+        }
+        else if (!letter.Equals("ALL", StringComparison.OrdinalIgnoreCase) && letter.Length > 0)
         {
             var ch = char.ToUpperInvariant(letter[0]);
-            query = query.Where(c => !string.IsNullOrWhiteSpace(c.CompanyName) && char.ToUpperInvariant(c.CompanyName![0]) == ch);
+            query = query.Where(c => 
+                !string.IsNullOrWhiteSpace(c.CompanyName) && 
+                char.ToUpperInvariant(c.CompanyName![0]) == ch);
         }
-        foreach (var c in query.OrderBy(c => c.CompanyName)) SearchCompanySuggestions.Add(c);
-        if (selectedId.HasValue) SelectedSearchCompany = SearchCompanySuggestions.FirstOrDefault(x => x.CompanyId == selectedId.Value);
+
+        foreach (var c in query.OrderBy(c => c.CompanyName)) 
+            SearchCompanySuggestions.Add(c);
+
+        if (selectedId.HasValue) 
+            SelectedSearchCompany = SearchCompanySuggestions.FirstOrDefault(x => x.CompanyId == selectedId.Value);
     }
 
     private void ApplyCustomerCompanyLetterFilter()

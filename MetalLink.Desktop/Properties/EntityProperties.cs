@@ -4,6 +4,7 @@ using MetalLink.Shared.Prices;
 using MetalLink.Shared.Customers;
 using MetalLink.Shared.Buyers;
 using Avalonia.Media.Imaging;
+using CommunityToolkit.Mvvm.Input;
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -55,6 +56,9 @@ public partial class MainWindowViewModel
     private bool _companyIsPanelExpanded = true;
     public bool CompanyIsPanelExpanded { get => _companyIsPanelExpanded; set { _companyIsPanelExpanded = value; OnPropertyChanged(); } }
 
+    private bool _isSiteCreateEditExpanded = true;
+    public bool IsSiteCreateEditExpanded { get => _isSiteCreateEditExpanded; set { _isSiteCreateEditExpanded = value; OnPropertyChanged(); } }
+
     private bool _productsIsSearchCriteriaExpanded = true;
     public bool ProductsIsSearchCriteriaExpanded { get => _productsIsSearchCriteriaExpanded; set { _productsIsSearchCriteriaExpanded = value; OnPropertyChanged(); } }
     
@@ -103,6 +107,7 @@ public partial class MainWindowViewModel
                 PopulateCustomerCreateEdit(value);
                 _ = LoadSelectedCustomerImagesAsync(value);
             }
+            NotifyFormProperties();
         } 
     }
 
@@ -120,6 +125,7 @@ public partial class MainWindowViewModel
                 PopulateBuyerCreateEdit(value);
                 _ = LoadSelectedBuyerImagesAsync(value);
             }
+            NotifyFormProperties();
         } 
     }
 
@@ -191,7 +197,16 @@ public partial class MainWindowViewModel
     }
 
     private bool _isEditMode;
-    public bool IsEditMode { get => _isEditMode; set { _isEditMode = value; OnPropertyChanged(); } }
+    public bool IsEditMode 
+    { 
+        get => _isEditMode; 
+        set 
+        { 
+            _isEditMode = value; 
+            OnPropertyChanged(); 
+            OnPropertyChanged(nameof(IsCreateMode)); 
+        } 
+    }
 
     private int? _editingCustomerId;
     public int? EditingCustomerId { get => _editingCustomerId; set { _editingCustomerId = value; OnPropertyChanged(); } }
@@ -201,28 +216,45 @@ public partial class MainWindowViewModel
 
     // --- Form Fields ---
     private string _newFirstName = string.Empty;
-    public string NewFirstName { get => _newFirstName; set { _newFirstName = value; OnPropertyChanged(); OnPropertyChanged("IsNewCustomerFullNameInvalid"); OnPropertyChanged("IsNewBuyerFullNameInvalid"); OnPropertyChanged("CanCreateCustomer"); OnPropertyChanged("CanCreateBuyer"); OnPropertyChanged("CanUpdateCustomer"); OnPropertyChanged("CanUpdateBuyer"); OnPropertyChanged("HasUnsavedNewCustomer"); OnPropertyChanged("HasUnsavedChanges"); } }
+    public string NewFirstName { get => _newFirstName; set { _newFirstName = value; OnPropertyChanged(); NotifyFormStateChanged(); } }
 
     private string _newLastName = string.Empty;
-    public string NewLastName { get => _newLastName; set { _newLastName = value; OnPropertyChanged(); OnPropertyChanged("IsNewCustomerFullNameInvalid"); OnPropertyChanged("IsNewBuyerFullNameInvalid"); OnPropertyChanged("CanCreateCustomer"); OnPropertyChanged("CanCreateBuyer"); OnPropertyChanged("CanUpdateCustomer"); OnPropertyChanged("CanUpdateBuyer"); OnPropertyChanged("HasUnsavedNewCustomer"); OnPropertyChanged("HasUnsavedChanges"); } }
+    public string NewLastName { get => _newLastName; set { _newLastName = value; OnPropertyChanged(); NotifyFormStateChanged(); } }
 
     private string? _newCompanyName;
-    public string? NewCompanyName { get => _newCompanyName; set { _newCompanyName = value; OnPropertyChanged(); OnPropertyChanged("IsNewCustomerFullNameInvalid"); OnPropertyChanged("IsNewBuyerFullNameInvalid"); OnPropertyChanged("CanCreateCustomer"); OnPropertyChanged("CanCreateBuyer"); OnPropertyChanged("CanUpdateCustomer"); OnPropertyChanged("CanUpdateBuyer"); OnPropertyChanged("HasUnsavedNewCustomer"); OnPropertyChanged("HasUnsavedChanges"); } }
+    public string? NewCompanyName { get => _newCompanyName; set { _newCompanyName = value; OnPropertyChanged(); NotifyFormStateChanged(); } }
+
+    private void NotifyFormStateChanged()
+    {
+        OnPropertyChanged(nameof(IsNewCustomerFullNameInvalid));
+        OnPropertyChanged(nameof(IsNewBuyerFullNameInvalid));
+        OnPropertyChanged(nameof(CanCreateCustomer));
+        OnPropertyChanged(nameof(CanCreateBuyer));
+        OnPropertyChanged(nameof(CanUpdateCustomer));
+        OnPropertyChanged(nameof(CanUpdateBuyer));
+        OnPropertyChanged(nameof(HasUnsavedNewCustomer));
+        OnPropertyChanged(nameof(HasUnsavedChanges));
+        
+        (CreateCustomerCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+        (CreateBuyerCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+        (UpdateCustomerCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+        (UpdateBuyerCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+    }
 
     private string? _newIdNumber;
-    public string? NewIdNumber { get => _newIdNumber; set { _newIdNumber = value; OnPropertyChanged(); } }
+    public string? NewIdNumber { get => _newIdNumber; set { _newIdNumber = value; OnPropertyChanged(); NotifyFormStateChanged(); } }
 
     private string? _newEmail;
-    public string? NewEmail { get => _newEmail; set { _newEmail = value; OnPropertyChanged(); } }
+    public string? NewEmail { get => _newEmail; set { _newEmail = value; OnPropertyChanged(); NotifyFormStateChanged(); } }
 
     private string? _newPhoneNumber;
-    public string? NewPhoneNumber { get => _newPhoneNumber; set { _newPhoneNumber = value; OnPropertyChanged(); } }
+    public string? NewPhoneNumber { get => _newPhoneNumber; set { _newPhoneNumber = value; OnPropertyChanged(); NotifyFormStateChanged(); } }
 
     private string? _newMobileNumber;
-    public string? NewMobileNumber { get => _newMobileNumber; set { _newMobileNumber = value; OnPropertyChanged(); } }
+    public string? NewMobileNumber { get => _newMobileNumber; set { _newMobileNumber = value; OnPropertyChanged(); NotifyFormStateChanged(); } }
 
     private bool _newTaxable = true;
-    public bool NewTaxable { get => _newTaxable; set { _newTaxable = value; OnPropertyChanged(); } }
+    public bool NewTaxable { get => _newTaxable; set { _newTaxable = value; OnPropertyChanged(); NotifyFormStateChanged(); } }
 
     private long? _newAccountNumber;
     public long? NewAccountNumber { get => _newAccountNumber; set { _newAccountNumber = value; OnPropertyChanged(); OnPropertyChanged("NewAccountNumberDisplay"); } }
@@ -232,12 +264,26 @@ public partial class MainWindowViewModel
     private bool _newIsCompany;
     public bool NewIsCompany 
     { 
-        get => EnforceBuyerCompany ? true : _newIsCompany; 
+        get 
+        {
+            if (CurrentSection == EnumMainSection.Buyers && EnforceBuyerCompany) return true;
+            return _newIsCompany;
+        }
         set { _newIsCompany = value; OnPropertyChanged(); } 
     }
 
     private ProductPriceListDto? _selectedNewProductPriceList;
-    public ProductPriceListDto? SelectedNewProductPriceList { get => _selectedNewProductPriceList; set { _selectedNewProductPriceList = value; OnPropertyChanged(); } }
+    public ProductPriceListDto? SelectedNewProductPriceList 
+    { 
+        get => _selectedNewProductPriceList; 
+        set 
+        { 
+            _selectedNewProductPriceList = value; 
+            OnPropertyChanged(); 
+            OnPropertyChanged(nameof(SearchCustomerPriceList));
+            OnPropertyChanged(nameof(SearchBuyerPriceList));
+        } 
+    }
 
     // --- Computed Selection Properties for Details View ---
     public string SelectedFirstName => FoundCustomer?.FirstName ?? FoundBuyer?.FirstName ?? "";
@@ -250,7 +296,7 @@ public partial class MainWindowViewModel
     public string SelectedPhoneNumber => FoundCustomer?.PhoneNumber ?? FoundBuyer?.PhoneNumber ?? "";
     public string SelectedMobileNumber => FoundCustomer?.MobileNumber ?? FoundBuyer?.MobileNumber ?? "";
     public string SelectedEmail => FoundCustomer?.Email ?? FoundBuyer?.Email ?? "";
-    public bool SelectedTaxable => FoundCustomer?.Taxable ?? FoundBuyer?.Taxable ?? false;
+    public bool SelectedTaxable => (FoundCustomer?.IsTaxable ?? FoundCustomer?.Taxable ?? FoundBuyer?.IsTaxable ?? FoundBuyer?.Taxable) ?? false;
 
     // --- Validation Logic ---
     public bool IsNewCustomerFullNameInvalid => string.IsNullOrWhiteSpace(NewFirstName) && string.IsNullOrWhiteSpace(NewLastName) && string.IsNullOrWhiteSpace(NewCompanyName);
@@ -259,9 +305,31 @@ public partial class MainWindowViewModel
     public bool HasUnsavedChanges => HasUnsavedNewCustomer;
     public bool CanCreateCustomer => !IsNewCustomerFullNameInvalid;
     public bool CanCreateBuyer => !IsNewBuyerFullNameInvalid;
-    public bool CanUpdateCustomer => !IsNewCustomerFullNameInvalid;
-    public bool CanUpdateBuyer => !IsNewBuyerFullNameInvalid;
+    public bool CanUpdateCustomer => !IsNewCustomerFullNameInvalid && EditingCustomerId.HasValue;
+    public bool CanUpdateBuyer => !IsNewBuyerFullNameInvalid && EditingBuyerId.HasValue;
     public bool IsNewBuyerOnlyEnabled => !EnforceBuyerCompany;
+
+    public bool IsCreateMode => !IsEditMode;
+
+    private void NotifyFormProperties()
+    {
+        OnPropertyChanged(nameof(IsEditMode));
+        OnPropertyChanged(nameof(IsCreateMode));
+        OnPropertyChanged(nameof(NewFirstName));
+        OnPropertyChanged(nameof(NewLastName));
+        OnPropertyChanged(nameof(NewCompanyName));
+        OnPropertyChanged(nameof(NewIdNumber));
+        OnPropertyChanged(nameof(NewEmail));
+        OnPropertyChanged(nameof(NewPhoneNumber));
+        OnPropertyChanged(nameof(NewMobileNumber));
+        OnPropertyChanged(nameof(NewTaxable));
+        OnPropertyChanged(nameof(NewAccountNumber));
+        OnPropertyChanged(nameof(NewAccountNumberDisplay));
+        OnPropertyChanged(nameof(NewIsCompany));
+        OnPropertyChanged(nameof(SelectedNewProductPriceList));
+        OnPropertyChanged(nameof(SelectedNewCompany));
+        OnPropertyChanged(nameof(SelectedNewSite));
+    }
 
     private void NotifySelectedEntityProperties()
     {
@@ -300,20 +368,27 @@ public partial class MainWindowViewModel
         OnPropertyChanged(nameof(PhotoImage));
         OnPropertyChanged(nameof(SignatureImage));
         OnPropertyChanged(nameof(FingerprintImage));
+
+        OnPropertyChanged(nameof(SelectedIdCardImage));
+        OnPropertyChanged(nameof(SelectedDriverLicenseImage));
+        OnPropertyChanged(nameof(SelectedPhotoImage));
+        OnPropertyChanged(nameof(SelectedSignatureImage));
+        OnPropertyChanged(nameof(SelectedFingerprintImage));
     }
 
-    // --- Image Preview Properties ---
+    // --- Form Image Properties (Create/Edit) ---
     private Bitmap? _idCardImage;
-    public Bitmap? IdCardImage { get => _idCardImage; set { _idCardImage = value; OnPropertyChanged(); } }
+    public Bitmap? IdCardImage { get => _idCardImage; set { _idCardImage = value; OnPropertyChanged(); NotifyFormStateChanged(); } }
     private Bitmap? _driverLicenseImage;
-    public Bitmap? DriverLicenseImage { get => _driverLicenseImage; set { _driverLicenseImage = value; OnPropertyChanged(); } }
+    public Bitmap? DriverLicenseImage { get => _driverLicenseImage; set { _driverLicenseImage = value; OnPropertyChanged(); NotifyFormStateChanged(); } }
     private Bitmap? _photoImage;
-    public Bitmap? PhotoImage { get => _photoImage; set { _photoImage = value; OnPropertyChanged(); } }
+    public Bitmap? PhotoImage { get => _photoImage; set { _photoImage = value; OnPropertyChanged(); NotifyFormStateChanged(); } }
     private Bitmap? _signatureImage;
-    public Bitmap? SignatureImage { get => _signatureImage; set { _signatureImage = value; OnPropertyChanged(); } }
+    public Bitmap? SignatureImage { get => _signatureImage; set { _signatureImage = value; OnPropertyChanged(); NotifyFormStateChanged(); } }
     private Bitmap? _fingerprintImage;
-    public Bitmap? FingerprintImage { get => _fingerprintImage; set { _fingerprintImage = value; OnPropertyChanged(); } }
+    public Bitmap? FingerprintImage { get => _fingerprintImage; set { _fingerprintImage = value; OnPropertyChanged(); NotifyFormStateChanged(); } }
 
+    // --- Details Image Properties (View Only) ---
     private Bitmap? _selectedIdCardImage;
     public Bitmap? SelectedIdCardImage { get => _selectedIdCardImage; set { _selectedIdCardImage = value; OnPropertyChanged(); } }
     private Bitmap? _selectedDriverLicenseImage;

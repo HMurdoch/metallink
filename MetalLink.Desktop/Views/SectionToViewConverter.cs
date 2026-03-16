@@ -22,7 +22,7 @@ public class SectionToViewConverter : IValueConverter
             EnumMainSection.Dashboard => new DashboardView(),
             EnumMainSection.Customers => new CustomersView(),
             EnumMainSection.Buyers => new BuyersView(),
-            EnumMainSection.CompanyAndSites => new CompanyAndSiteView(),
+            EnumMainSection.CompanyAndSites => new CompanyAndSitesView(),
             EnumMainSection.ProductsAndPrices => new ProductsAndPricesView(),
             EnumMainSection.TicketsReceiving => new TicketsReceivingView(),
             EnumMainSection.TicketsSending => new TicketsSendingView(),

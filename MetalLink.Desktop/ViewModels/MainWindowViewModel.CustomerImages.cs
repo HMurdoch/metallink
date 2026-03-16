@@ -17,11 +17,11 @@ public partial class MainWindowViewModel
         SelectedFingerprintImage = null;
 
         // Also clear Create/Edit image previews by default
-        IdCardImage = null;
-        DriverLicenseImage = null;
-        PhotoImage = null;
-        SignatureImage = null;
-        FingerprintImage = null;
+        SelectedIdCardImage = null;
+        SelectedDriverLicenseImage = null;
+        SelectedPhotoImage = null;
+        SelectedSignatureImage = null;
+        SelectedFingerprintImage = null;
 
         if (customer == null)
             return;

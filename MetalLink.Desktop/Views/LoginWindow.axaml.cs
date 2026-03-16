@@ -10,6 +10,7 @@ public partial class LoginWindow : Window
 {
     private TextBox? _passwordBox;
     private Button? _toggleButton;
+    private Button? _loginButton;
     private TextBlock? _eyeIcon;
     private LoginViewModel? _viewModel;
     private bool _isPasswordVisible;
@@ -26,7 +27,13 @@ public partial class LoginWindow : Window
         
         _passwordBox = this.FindControl<TextBox>("PasswordBox");
         _toggleButton = this.FindControl<Button>("TogglePasswordButton");
+        _loginButton = this.FindControl<Button>("LoginButton");
         _eyeIcon = this.FindControl<TextBlock>("EyeIcon");
+
+        if (_loginButton != null)
+        {
+            _loginButton.Focus();
+        }
 
         if (_toggleButton != null)
         {

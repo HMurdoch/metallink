@@ -3,16 +3,15 @@
              xmlns:local="using:MetalLink.Desktop.Views"
              x:Class="MetalLink.Desktop.Views.TicketsReceivingView">
 
-  <Border Background="{DynamicResource Brush.MainBackground}">
-    <Grid RowDefinitions="Auto,*">
-      <!-- Sticky Header -->
-      <Border Grid.Row="0" Background="{DynamicResource Brush.PanelBackground}" Padding="12,8" CornerRadius="4" Margin="16,16,16,8" ZIndex="100">
-        <Image Source="avares://MetalLink.Desktop/Assets/receiving_heading.png" Height="40" HorizontalAlignment="Left" Stretch="Uniform" />
-      </Border>
-      
-      <!-- Scrollable Content -->
-      <ScrollViewer Grid.Row="1" x:Name="TicketsScrollViewer" Padding="16,8,16,16">
-        <StackPanel Spacing="16">
+  <Grid RowDefinitions="Auto,*">
+    <!-- Sticky Header -->
+    <Border Grid.Row="0" Background="{DynamicResource Brush.PanelBackground}" Padding="12,8" CornerRadius="4" Margin="16,16,16,8" ZIndex="100">
+      <Image Source="avares://MetalLink.Desktop/Assets/receiving_heading.png" Height="40" HorizontalAlignment="Left" Stretch="Uniform" />
+    </Border>
+    
+    <!-- Scrollable Content -->
+    <ScrollViewer Grid.Row="1" x:Name="TicketsScrollViewer" Padding="16,8,16,10">
+      <StackPanel Spacing="16" Margin="0,0,0,100">
 
           <!-- SEARCH TICKETS -->
           <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
@@ -121,7 +120,6 @@
           </Border>
 
         </StackPanel>
-      </ScrollViewer>
-    </Grid>
-  </Border>
+    </ScrollViewer>
+  </Grid>
 </UserControl>

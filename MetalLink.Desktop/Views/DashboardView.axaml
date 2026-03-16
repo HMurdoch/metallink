@@ -4,25 +4,23 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia">
 
-  <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
-  <Border Background="{DynamicResource Brush.MainBackground}">
-    <Grid RowDefinitions="Auto,*">
-      <!-- Sticky Header Panel -->
-      <Border Grid.Row="0"
-              Background="{DynamicResource Brush.PanelBackground}"
-              Padding="12,8"
-              CornerRadius="4"
-              Margin="16,16,16,8"
-              ZIndex="100">
-        <Image Source="avares://MetalLink.Desktop/Assets/dashboard_heading.png"
-               Height="40"
-               HorizontalAlignment="Left"
-               Stretch="Uniform" />
-      </Border>
-      
-      <!-- Scrollable Content -->
-      <ScrollViewer Grid.Row="1" Padding="16,8,16,16">
-        <StackPanel Spacing="12">
+  <Grid RowDefinitions="Auto,*">
+    <!-- Sticky Header Panel -->
+    <Border Grid.Row="0"
+            Background="{DynamicResource Brush.PanelBackground}"
+            Padding="12,8"
+            CornerRadius="4"
+            Margin="16,16,16,8"
+            ZIndex="100">
+      <Image Source="avares://MetalLink.Desktop/Assets/dashboard_heading.png"
+             Height="40"
+             HorizontalAlignment="Left"
+             Stretch="Uniform" />
+    </Border>
+    
+    <!-- Scrollable Content -->
+    <ScrollViewer Grid.Row="1" Padding="16,8,16,10" VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="12" Margin="0,0,0,100">
 
         <TextBlock
             Text="Quick overview"
@@ -208,7 +206,6 @@
         </StackPanel>
 
         </StackPanel>
-      </ScrollViewer>
-    </Grid>
-  </Border>
+    </ScrollViewer>
+  </Grid>
 </UserControl>

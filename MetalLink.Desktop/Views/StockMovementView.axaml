@@ -3,25 +3,23 @@
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
              x:Class="MetalLink.Desktop.Views.StockMovementView">
 
-  <!-- Keep brushed aluminium visible behind; section blocks use Brush.PanelBackground -->
-  <Border Background="{DynamicResource Brush.MainBackground}">
-    <Grid RowDefinitions="Auto,*">
-      <!-- Sticky Header Panel -->
-      <Border Grid.Row="0" 
-              Background="{DynamicResource Brush.PanelBackground}"
-              Padding="12,8"
-              CornerRadius="4"
-              Margin="16,16,16,8"
-              ZIndex="100">
-        <Image Source="avares://MetalLink.Desktop/Assets/stock_movements_heading.png"
-               Height="40"
-               HorizontalAlignment="Left"
-               Stretch="Uniform" />
-      </Border>
-      
-      <!-- Scrollable Content -->
-      <ScrollViewer Grid.Row="1" Padding="16,8,16,16">
-        <StackPanel Spacing="14">
+  <Grid RowDefinitions="Auto,*">
+    <!-- Sticky Header Panel -->
+    <Border Grid.Row="0" 
+            Background="{DynamicResource Brush.PanelBackground}"
+            Padding="12,8"
+            CornerRadius="4"
+            Margin="16,16,16,8"
+            ZIndex="100">
+      <Image Source="avares://MetalLink.Desktop/Assets/stock_movements_heading.png"
+             Height="40"
+             HorizontalAlignment="Left"
+             Stretch="Uniform" />
+    </Border>
+    
+    <!-- Scrollable Content -->
+    <ScrollViewer Grid.Row="1" Padding="16,8,16,10">
+      <StackPanel Spacing="14" Margin="0,0,0,80">
 
       <!-- Filters -->
       <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
@@ -210,7 +208,6 @@
       </Border>
 
         </StackPanel>
-      </ScrollViewer>
-    </Grid>
-  </Border>
+    </ScrollViewer>
+  </Grid>
 </UserControl>

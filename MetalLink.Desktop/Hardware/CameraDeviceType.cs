@@ -8,5 +8,7 @@ public enum CameraDeviceType
     PlatformTop,
 
     // Customer capture
-    CustomerPhoto
+    CustomerPhoto,
+    Document,
+    Face
 }

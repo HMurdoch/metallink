@@ -223,8 +223,8 @@
         </Border>
         
         <!-- Scrollable Content -->
-        <ScrollViewer Grid.Row="1" x:Name="TicketsScrollViewer" Padding="16,8,16,16">
-          <StackPanel Spacing="16">
+        <ScrollViewer Grid.Row="1" x:Name="TicketsScrollViewer" Padding="16,8,16,10">
+          <StackPanel Spacing="16" Margin="0,0,0,100">
 
         <!-- SEARCH TICKETS -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
