@@ -17,7 +17,7 @@ public partial class PaginationViewModel : ObservableObject
     private int totalRecords = 0;
 
     [ObservableProperty]
-    private ObservableCollection<int> pageSizeOptions = new ObservableCollection<int> { 20, 40, 60, 80, 100 };
+    private ObservableCollection<int> pageSizeOptions = new ObservableCollection<int> { 10, 15, 20, 40, 60, 80, 100 };
 
     public int TotalPages => TotalRecords > 0 ? (TotalRecords + PageSize - 1) / PageSize : 1;
 
@@ -66,7 +66,7 @@ public partial class PaginationViewModel : ObservableObject
     {
         CurrentPage = 1;
         TotalRecords = 0;
-        PageSize = 20;
+        // Keep current PageSize
         OnPropertyChanged(nameof(TotalPages));
         OnPropertyChanged(nameof(CanGoPrevious));
         OnPropertyChanged(nameof(CanGoNext));

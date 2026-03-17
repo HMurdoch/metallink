@@ -26,7 +26,7 @@ public partial class MainWindowViewModel
             
             if (!string.IsNullOrWhiteSpace(_companySearchText))
             {
-                // If text is entered, explicitly clear the letter dropdown
+                // Requirement: explicitly clear the letter dropdown if text search is used
                 if (_selectedCompanyLetter != null)
                 {
                     _selectedCompanyLetter = null;
@@ -34,9 +34,9 @@ public partial class MainWindowViewModel
                 }
             }
             
+            // We do NOT clear results here; Search button triggers the actual search.
+            // But we can refresh suggestions dropdown if it existed.
             ApplyCompanyLetterFilter();
-            PaginationViewModel.Reset(); 
-            UpdatePagedCompanyResults();
         }
     }
 
@@ -79,22 +79,48 @@ public partial class MainWindowViewModel
             _selectedCompany = value;
             OnPropertyChanged();
 
-            ClearCompanyEditor();
-
-            (CreateSiteForSelectedCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
-            OnPropertyChanged(nameof(CanCreateSite));
-
-            SiteResults.Clear();
-            SelectedSite = null;
-
             if (value != null)
             {
-                _ = LoadSitesForSelectedCompanyResultsAsync();
+                // User requirement: Population like "Edit" clicked
+                EditingCompanyId = value.CompanyId;
+                _originalCompanyName = value.CompanyName?.Trim() ?? "";
+                _originalVatNumber = value.VatNumber?.Trim();
+                CompanyEditName = value.CompanyName ?? "";
+                CompanyVatNumber = value.VatNumber ?? "";
                 
-                // User requirement: expand Sites Results and Create/Edit Site
+                // Requirement: Initial Site Name must be hidden on Edit
+                IsCompanyInitialSiteVisible = false;
+
+                // Sync call to ensure sites are loaded before form resets/increments
+                Dispatcher.UIThread.Post(async () => await LoadSitesForSelectedCompanyResultsAsync(), DispatcherPriority.Background);
+                
+                // User requirement: expand next panels
+                CompanyIsSearchResultsExpanded = true;
+                CompanyIsCreateEditExpanded = true;
                 CompanyIsPanelExpanded = true;
                 IsSiteCreateEditExpanded = true;
             }
+            else
+            {
+                // Clear for Create mode
+                EditingCompanyId = null;
+                CompanyEditName = string.Empty;
+                CompanyVatNumber = string.Empty;
+                CompanyFormInitialSiteName = string.Empty;
+                
+                // Requirement: Initial Site Name must be displayed on Create/Clear
+                IsCompanyInitialSiteVisible = true;
+                
+                SiteResults.Clear();
+                PagedSiteResults.Clear();
+                SelectedSite = null;
+            }
+
+            (UpdateCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            (CreateCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            (CreateOrUpdateSiteCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            OnPropertyChanged(nameof(CanCreateSite));
+            OnPropertyChanged(nameof(IsCompanyInitialSiteVisible));
         }
     }
 

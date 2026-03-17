@@ -109,8 +109,8 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.Suburb).HasColumnName("suburb").HasMaxLength(255);
         e.Property(x => x.City).HasColumnName("city").HasMaxLength(255);
         e.Property(x => x.PostalCode).HasColumnName("postal_code").HasMaxLength(20);
-        e.Property(x => x.ProvinceId).HasColumnName("province_id").IsRequired();
-        e.Property(x => x.CountryId).HasColumnName("country_id").IsRequired();
+        e.Property(x => x.ProvinceId).HasColumnName("province_id");
+        e.Property(x => x.CountryId).HasColumnName("country_id");
         e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");

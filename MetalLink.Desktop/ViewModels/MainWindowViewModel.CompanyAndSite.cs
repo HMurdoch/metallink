@@ -350,9 +350,6 @@ public partial class MainWindowViewModel
         {
             StatusMessage = "Searching companies...";
 
-            // Wait a frame to ensure UI responsiveness and keep method async
-            await Task.Delay(1, ct);
-
             // Start from cached master list
             var query = _allCompanies.AsEnumerable();
 
@@ -375,15 +372,15 @@ public partial class MainWindowViewModel
                 }
             }
 
-            // Populate results grid
+            // Populate results grid (Alphabetical)
             CompanyResults.Clear();
-            foreach (var c in query.OrderByDescending(c => c.CompanyId))
+            foreach (var c in query.OrderBy(c => c.CompanyName))
                 CompanyResults.Add(c);
 
             PaginationViewModel.SetTotalRecords(CompanyResults.Count);
             UpdatePagedCompanyResults();
 
-            // Auto-expand next panels as per requirements
+            // Auto-expand next panels
             CompanyIsSearchResultsExpanded = true;
             CompanyIsCreateEditExpanded = true;
 
@@ -414,16 +411,41 @@ public partial class MainWindowViewModel
         SelectedSite = null;
 
         SiteName = "";
-        SiteCode = "";
+        
+        // Requirement: SITE-XX + 1 auto-generation
+        int nextNum = 1;
+        if (SiteResults != null && SiteResults.Count > 0)
+        {
+            // Extract numbers from SITE-N pattern
+            var nums = SiteResults
+                .Select(s => s.SiteCode)
+                .Where(c => !string.IsNullOrEmpty(c) && c.StartsWith("SITE-", StringComparison.OrdinalIgnoreCase))
+                .Select(c => int.TryParse(c.Substring(5), out var n) ? n : 0)
+                .ToList();
+
+            if (nums.Any())
+            {
+                nextNum = nums.Max() + 1;
+            }
+            else
+            {
+                // Fallback: if no SITE-N exists, use count + 1
+                nextNum = SiteResults.Count + 1;
+            }
+        }
+        
+        SiteCode = $"SITE-{nextNum}";
+
         AddressLine1 = "";
         AddressLine2 = "";
         Suburb = "";
         City = "";
         PostalCode = "";
 
-        // defaults
+        // Default Province and Country
         SetDefaultProvinceAndCountryForSite();
 
+        OnPropertyChanged(nameof(SiteCode));
         OnPropertyChanged(nameof(SiteSaveButtonText));
         OnPropertyChanged(nameof(IsSiteEditMode));
         (CreateOrUpdateSiteCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
@@ -570,7 +592,7 @@ public partial class MainWindowViewModel
 
             var dto = new CompanyDto
             {
-                CompanyId = SelectedCompany.CompanyId,                 // harmless
+                CompanyId = SelectedCompany.CompanyId,
                 CompanyName = CompanyEditName.Trim(),
                 VatNumber = string.IsNullOrWhiteSpace(CompanyVatNumber) ? null : CompanyVatNumber.Trim(),
                 IsActive = true
@@ -578,22 +600,7 @@ public partial class MainWindowViewModel
 
             await _app.CompanyAndSiteService.UpdateCompanyAsync(SelectedCompany.CompanyId, dto, ct);
 
-            var idx = CompanyResults.IndexOf(SelectedCompany);
-            if (idx >= 0)
-            {
-                var updatedLookup = new CompanyLookupDto
-                {
-                    CompanyId = SelectedCompany.CompanyId,
-                    CompanyName = dto.CompanyName,
-                    VatNumber = dto.VatNumber,
-                    IsActive = true
-                };
-
-                CompanyResults[idx] = updatedLookup;
-                SelectedCompany = updatedLookup; // keep selection + triggers site load
-            }
-
-            // ✅ Keep lookup cache in sync if you have it
+            // Update master cache
             var cache = _allCompanies?.FirstOrDefault(x => x.CompanyId == dto.CompanyId);
             if (cache != null)
             {
@@ -601,14 +608,21 @@ public partial class MainWindowViewModel
                 cache.VatNumber = dto.VatNumber;
             }
 
-            // re-render grid
-            OnPropertyChanged(nameof(CompanyResults));
-            OnPropertyChanged(nameof(SelectedCompany));
+            // Update Results list
+            var resultRow = CompanyResults.FirstOrDefault(x => x.CompanyId == dto.CompanyId);
+            if (resultRow != null)
+            {
+                resultRow.CompanyName = dto.CompanyName;
+                resultRow.VatNumber = dto.VatNumber;
+            }
 
+            // re-render grid
+            UpdatePagedCompanyResults();
+            
             StatusMessage = $"[STATUS] Company updated: {dto.CompanyName}";
 
-            // refresh sites list (optional but nice)
-            await LoadSitesForSelectedCompanyResultsAsync(ct);
+            // User requirement: after update, return to Create mode (show Create button and Initial Site Name)
+            SelectedCompany = null;
         }
         catch (Exception ex)
         {
@@ -623,15 +637,8 @@ public partial class MainWindowViewModel
 
     private Task ClearCompanyFormAsync(CancellationToken ct = default)
     {
-        EditingCompanyId = null;
-
-        CompanyFormName = "";
-        CompanyFormVatNumber = "";
-
-        CompanyEditName = string.Empty;
-        CompanyVatNumber = string.Empty;
-        CompanyFormInitialSiteName = string.Empty;
-
+        SelectedCompany = null; // This will trigger the setter logic to reset fields and show Initial Site Name
+        
         StatusMessage = "[STATUS] Company form cleared.";
         return Task.CompletedTask;
     }
@@ -704,6 +711,10 @@ public partial class MainWindowViewModel
         City = site.City ?? "";
         PostalCode = site.PostalCode ?? "";
 
+        // Explicitly load provinces/countries if empty
+        if (Provinces.Count == 0) _ = LoadProvincesAsync();
+        if (Countries.Count == 0) InitializeCountries();
+
         if (site.ProvinceId > 0)
             SelectedProvince = Provinces.FirstOrDefault(p => p.ProvinceId == site.ProvinceId);
 
@@ -715,6 +726,7 @@ public partial class MainWindowViewModel
             SetDefaultProvinceAndCountryForSite();
 
         OnPropertyChanged(nameof(SiteSaveButtonText));
+        OnPropertyChanged(nameof(IsSiteEditMode));
         (CreateOrUpdateSiteCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
     }
 
@@ -925,11 +937,18 @@ public partial class MainWindowViewModel
                 ct) ?? new List<SiteLookupDto>();
 
             SiteResults.Clear();
-            foreach (var s in items.OrderBy(x => x.SiteName))
-                SiteResults.Add(s);
+            if (items != null)
+            {
+                foreach (var s in items.OrderBy(x => x.SiteName))
+                    SiteResults.Add(s);
+            }
 
             SitePaginationViewModel.SetTotalRecords(SiteResults.Count);
+            SitePaginationViewModel.PageSize = 10;
             UpdatePagedSiteResults();
+
+            // Auto-generate next SITE-XX now that we have the full list
+            ClearSiteForm();
 
             StatusMessage = $"Loaded {SiteResults.Count} site(s).";
         }
@@ -945,9 +964,16 @@ public partial class MainWindowViewModel
     {
         PagedSiteResults.Clear();
         var paged = SiteResults
+            .OrderBy(x => x.SiteName)
             .Skip(SitePaginationViewModel.GetSkip())
             .Take(SitePaginationViewModel.GetTake());
-        foreach (var s in paged) PagedSiteResults.Add(s);
+        
+        foreach (var s in paged) 
+        {
+            // Requirement: hide delete if only 1 site
+            s.IsDeleteVisible = SiteResults.Count > 1;
+            PagedSiteResults.Add(s);
+        }
     }
 
 

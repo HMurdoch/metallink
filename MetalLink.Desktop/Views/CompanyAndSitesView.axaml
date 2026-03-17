@@ -111,18 +111,15 @@
               <TextBlock Grid.Column="1" Text="Company Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
             </Grid>
             <StackPanel IsVisible="{Binding CompanyIsSearchResultsExpanded}" Spacing="8">
-              <DataGrid ItemsSource="{Binding PagedCompanyResults}" SelectedItem="{Binding SelectedCompany, Mode=TwoWay}" Height="550" AutoGenerateColumns="False">
+              <DataGrid ItemsSource="{Binding PagedCompanyResults}" SelectedItem="{Binding SelectedCompany, Mode=TwoWay}" Height="620" AutoGenerateColumns="False" IsReadOnly="True">
                 <DataGrid.Columns>
                   <DataGridTextColumn Header="ID" Binding="{Binding CompanyId}" Width="60" />
                   <DataGridTextColumn Header="Company Name" Binding="{Binding CompanyName}" Width="*" />
                   <DataGridTextColumn Header="VAT Number" Binding="{Binding VatNumber}" Width="200" />
-                  <DataGridTemplateColumn Header="" Width="120">
+                  <DataGridTemplateColumn Header="" Width="80">
                     <DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                          <Button Classes="row-action" Content="Edit" Command="{Binding $parent[UserControl].DataContext.EditCompanyCommand}" CommandParameter="{Binding}" />
-                          <Button Classes="row-action" Content="Delete" Command="{Binding $parent[UserControl].DataContext.DeleteCompanyCommand}" CommandParameter="{Binding}" />
-                        </StackPanel>
+                        <Button Classes="row-action" Content="Delete" Command="{Binding $parent[UserControl].DataContext.DeleteCompanyCommand}" CommandParameter="{Binding}" />
                       </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                   </DataGridTemplateColumn>
@@ -180,15 +177,15 @@
               <TextBlock Grid.Column="1" Text="Site Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
             </Grid>
             <StackPanel IsVisible="{Binding CompanyIsPanelExpanded}" Spacing="8">
-              <DataGrid ItemsSource="{Binding PagedSiteResults}" SelectedItem="{Binding SelectedSite, Mode=TwoWay}" Height="450" AutoGenerateColumns="False">
+              <DataGrid ItemsSource="{Binding PagedSiteResults}" SelectedItem="{Binding SelectedSite, Mode=TwoWay}" Height="300" AutoGenerateColumns="False" IsReadOnly="True">
                 <DataGrid.Columns>
                   <DataGridTextColumn Header="ID" Binding="{Binding SiteId}" Width="60" />
                   <DataGridTextColumn Header="Site Name" Binding="{Binding SiteName}" Width="*" />
-                  <DataGridTextColumn Header="Site Code" Binding="{Binding SiteCode}" Width="100" />
+                  <DataGridTextColumn Header="Site Code" Binding="{Binding SiteCode}" Width="250" />
                   <DataGridTemplateColumn Header="" Width="80">
                     <DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
-                        <Button Classes="row-action" Content="Delete" Command="{Binding $parent[UserControl].DataContext.DeleteSiteCommand}" CommandParameter="{Binding}" />
+                        <Button Classes="row-action" Content="Delete" Command="{Binding $parent[UserControl].DataContext.DeleteSiteCommand}" CommandParameter="{Binding}" IsVisible="{Binding IsDeleteVisible}" />
                       </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                   </DataGridTemplateColumn>

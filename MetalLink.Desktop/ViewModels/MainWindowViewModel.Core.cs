@@ -173,8 +173,17 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         });
         ShowCompanyAndSitesCommand = new RelayCommand(async () => {
             CurrentSection = EnumMainSection.CompanyAndSites;
+            
+            // Populate provinces/countries for site forms
+            if (Provinces.Count == 0) await LoadProvincesAsync();
+            InitializeCountries();
+
             PaginationViewModel.Reset();
             PaginationViewModel.PageSize = 15;
+            
+            SitePaginationViewModel.Reset();
+            SitePaginationViewModel.PageSize = 10;
+
             await SearchCompaniesAsync();
         });
         ShowProductsAndPricesCommand = new RelayCommand(() => CurrentSection = EnumMainSection.ProductsAndPrices);

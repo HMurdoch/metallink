@@ -79,7 +79,7 @@ public sealed class SitesController : ControllerBase
 
         // Generate site code if not provided
         var siteCode = dto.SiteCode;
-        if (string.IsNullOrWhiteSpace(siteCode))
+        if (string.IsNullOrWhiteSpace(siteCode) || siteCode == "SITE-0")
         {
             siteCode = SiteCodeGeneratorService.GenerateNextSiteCode(company.Sites);
         }
