@@ -1052,3 +1052,53 @@ Fix these errors: ~/Projects/MetalLink$ dotnet run --project MetalLink.Desktop/
 /home/quadravex/Projects/MetalLink/MetalLink.Desktop/ViewModels/StockMovementViewModel.cs(506,36): warning CS0067: The event ‘StockMovementViewModel.RelayCommand.CanExecuteChanged’ is never used [/home/quadravex/Projects/MetalLink/MetalLink.Desktop/MetalLink.Desktop.csproj]
 
 The build failed. Fix the build errors and run again.
+
+
+
+---------------------------------------------------
+
+
+Number 2. you didn’t do (Fixed Site Results Visibility) - Fucking AGAIN -> I created a company (Best Alloy company_id=32) and initial site of Commodity Hub (site_id = 90)
+
+But when I select Best Alloy from Companies, there is no Commodity Hub listed under Site Results. Check the DB and see why it isn’t displaying companies.company_id = 32 and the site exists: sites.site_id = 90 do the query and find why site_id = 90 is not being displayed for company_id = 32.
+
+You also DIDN’T fix 3. (Auto-Incremental Site Codes) -> The default for site_code under Create/Edit Sites should be the last SITE-XX plus 1. So if there are 3 sites the last site_code is SITE-3, so for Create Site it should be populated with SITE-4. Under Create Site -> Site Code is blank.
+
+Please remove the Edit button from Company Results. As soon as a Company is selected Create/Edit is populated as if Edit had been clicked (Initial Site Name must be hidden, once a record is Updated or the Clear button is clicked) The Create button is displayed and the Initial Site Name must be displayed (it’s not at the moment) - The Edit button is STILL displayed, so you lied and didn’t do what you were told.
+
+This error could be related to sites not being displayed (500 error):
+
+Loading sites…
+GET: http://localhost:5066/api/sites/lookup?companyId=2&term=
+Loaded 1 site(s).
+Loading sites…
+GET: http://localhost:5066/api/sites/lookup?companyId=32&term=
+Load sites failed: API 500 Internal Server Error. Body: System.InvalidCastException: Column ‘ProvinceId’ is null.
+at Npgsql.ThrowHelper.ThrowInvalidCastException_NoValue(FieldDescription field)
+at Npgsql.NpgsqlDataReader.DbNullValueOrThrow[T](Int32 ordinal)
+at Npgsql.NpgsqlDataReader.GetFieldValueCore[T](Int32 ordinal)
+at lambda_method210(Closure, QueryContext, DbDataReader, ResultContext, SingleQueryResultCoordinator)
+at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable1.AsyncEnumerator.MoveNextAsync() at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable1 source, CancellationToken cancellationToken)
+at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable1 source, CancellationToken cancellationToken) at MetalLink.Api.Controllers.SitesController.Lookup(Int32 companyId, String term, CancellationToken ct) in /home/quadravex/Projects/MetalLink/MetalLink.Api/Controllers/SitesController.cs:line 40 at lambda_method205(Closure, Object) at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.AwaitableObjectResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments) at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Awaited|12_0(ControllerActionInvoker invoker, ValueTask1 actionResultValueTask)
+at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+at Swashbuckle.AspNetCore.SwaggerUI.SwaggerUIMiddleware.Invoke(HttpContext httpContext)
+at Swashbuckle.AspNetCore.Swagger.SwaggerMiddleware.Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider)
+at Program.<>c.<<<Main>$>b__0_4>d.MoveNext() in /home/quadravex/Projects/MetalLink/MetalLink.Api/Program.cs:line 111
+— End of stack trace from previous location —
+at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+
+HEADERS
+Host: localhost:5066
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiIsImRpc3BsYXlfbmFtZSI6IlN5c3RlbSBBZG1pbmlzdHJhdG9yIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiQWRtaW4iLCJuYmYiOjE3NzM3MjM3ODksImV4cCI6MTc3Mzc1MjU4OSwiaXNzIjoiTWV0YWxMaW5rIiwiYXVkIjoiTWV0YWxMaW5rQ2xpZW50cyJ9.OqkzZpFEWHKWv_UyWiuRq4r8yke0FZsmQw9N7MU_6v8
+
+Loading sites…
+GET: http://localhost:5066/api/sites/lookup?companyId=4&term=
+Loaded 1 site(s).

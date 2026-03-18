@@ -52,4 +52,10 @@ public partial class CompanyAndSitesView : UserControl
         if (DataContext is MainWindowViewModel vm)
             vm.IsSiteCreateEditExpanded = !vm.IsSiteCreateEditExpanded;
     }
+
+    public void ToggleSiteDocumentation(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+            vm.IsSiteDocumentationExpanded = !vm.IsSiteDocumentationExpanded;
+    }
 }

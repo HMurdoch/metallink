@@ -13,6 +13,8 @@ using System.Collections.Generic;
 using System.Net.Http;
 using MetalLink.Desktop.Services;
 using MetalLink.Shared.Buyers;
+using System.IO;
+using Avalonia.Media.Imaging;
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -334,6 +336,8 @@ public partial class MainWindowViewModel
             UpdateCompany2Command = new AsyncRelayCommand(ct => UpdateCompanyAsync(ct), () => CanUpdateCompany);
             ClearSiteFormCommand = new RelayCommand(ClearSiteForm);
 
+            InitializeSiteDocumentCommands();
+
             SitePaginationViewModel.PageChanged += (s, e) => UpdatePagedSiteResults();
     }
 
@@ -343,6 +347,7 @@ public partial class MainWindowViewModel
 
     private async Task SearchCompaniesAsync(CancellationToken ct = default)
     {
+        await Task.Yield(); // Avoid CS1998
         if (IsBusy) return;
         IsBusy = true;
 
@@ -728,6 +733,205 @@ public partial class MainWindowViewModel
         OnPropertyChanged(nameof(SiteSaveButtonText));
         OnPropertyChanged(nameof(IsSiteEditMode));
         (CreateOrUpdateSiteCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+
+        // Load Site Documents
+        _ = LoadSelectedSiteDocumentsAsync(site);
+    }
+
+    private async Task LoadSelectedSiteDocumentsAsync(SiteLookupDto site)
+    {
+        // Clear existing
+        CipcDocument = null;
+        TradingLicense = null;
+        CiproDocument = null;
+        
+        SelectedCipcDocument = null;
+        SelectedTradingLicense = null;
+        SelectedCiproDocument = null;
+
+        try
+        {
+            var cipc = await SiteService.DownloadSiteDocumentAsync(site.SiteId, "cipc");
+            var trading = await SiteService.DownloadSiteDocumentAsync(site.SiteId, "trading");
+            var cipro = await SiteService.DownloadSiteDocumentAsync(site.SiteId, "cipro");
+
+            CipcDocument = LoadBitmapFromBytes(cipc);
+            TradingLicense = LoadBitmapFromBytes(trading);
+            CiproDocument = LoadBitmapFromBytes(cipro);
+
+            // Mirror to edit panel
+            SelectedCipcDocument = CipcDocument;
+            SelectedTradingLicense = TradingLicense;
+            SelectedCiproDocument = CiproDocument;
+        }
+        catch { /* ignore missing */ }
+    }
+
+    public IAsyncRelayCommand UploadCipcDocumentCommand { get; private set; } = null!;
+    public IAsyncRelayCommand UploadTradingLicenseCommand { get; private set; } = null!;
+    public IAsyncRelayCommand UploadCiproDocumentCommand { get; private set; } = null!;
+    public IAsyncRelayCommand CommitSiteDocumentsCommand { get; private set; } = null!;
+
+    private void InitializeSiteDocumentCommands()
+    {
+        UploadCipcDocumentCommand = new AsyncRelayCommand(() => GenerateMockSiteDocAsync("cipc"));
+        UploadTradingLicenseCommand = new AsyncRelayCommand(() => GenerateMockSiteDocAsync("trading"));
+        UploadCiproDocumentCommand = new AsyncRelayCommand(() => GenerateMockSiteDocAsync("cipro"));
+        CommitSiteDocumentsCommand = new AsyncRelayCommand(CommitSiteDocumentsAsync);
+    }
+
+    private byte[]? _pendingCipcData;
+    private byte[]? _pendingTradingData;
+    private byte[]? _pendingCiproData;
+
+    private async Task GenerateMockSiteDocAsync(string type)
+    {
+        await Task.Yield();
+        
+        // Mock generation logic with distinct details
+        string text = "";
+        uint color = 0xFFFFFFFF;
+
+        switch (type.ToLower())
+        {
+            case "cipc":
+                text = "OFFICIAL CIPC DOCUMENT\nRegistered Company Details\nSite ID: " + (SelectedSite?.SiteId ?? 0);
+                color = 0xFFE3F2FD; // Light Blue
+                break;
+            case "trading":
+                text = "TRADING LICENSE\nValid for Metal Link Operations\nSite Code: " + (SiteCode ?? "N/A");
+                color = 0xFFF1F8E9; // Light Green
+                break;
+            case "cipro":
+                text = "CIPRO CERTIFICATE\nCompliance Verification\nTimestamp: " + DateTime.Now.ToString("G");
+                color = 0xFFFFF3E0; // Light Orange
+                break;
+        }
+
+        // Use the helper to generate a bitmap with distinct patterns
+        var bytes = GenerateMockImageWithText(type, color);
+        
+        switch (type.ToLower())
+        {
+            case "cipc":
+                _pendingCipcData = bytes;
+                SelectedCipcDocument = LoadBitmapFromBytes(bytes);
+                break;
+            case "trading":
+                _pendingTradingData = bytes;
+                SelectedTradingLicense = LoadBitmapFromBytes(bytes);
+                break;
+            case "cipro":
+                _pendingCiproData = bytes;
+                SelectedCiproDocument = LoadBitmapFromBytes(bytes);
+                break;
+        }
+
+        StatusMessage = $"[STATUS] Generated mock {type.ToUpper()} document.";
+    }
+
+    private async Task CommitSiteDocumentsAsync()
+    {
+        if (SelectedSite == null)
+        {
+            StatusMessage = "[STATUS] Error: No site selected.";
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            if (_pendingCipcData != null)
+            {
+                await SiteService.UploadSiteDocumentAsync(SelectedSite.SiteId, "cipc", _pendingCipcData);
+                _pendingCipcData = null;
+            }
+            if (_pendingTradingData != null)
+            {
+                await SiteService.UploadSiteDocumentAsync(SelectedSite.SiteId, "trading", _pendingTradingData);
+                _pendingTradingData = null;
+            }
+            if (_pendingCiproData != null)
+            {
+                await SiteService.UploadSiteDocumentAsync(SelectedSite.SiteId, "cipro", _pendingCiproData);
+                _pendingCiproData = null;
+            }
+
+            // Reload to show confirmed from server
+            await LoadSelectedSiteDocumentsAsync(SelectedSite);
+            StatusMessage = "[STATUS] Site documents committed successfully.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Commit failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private byte[] GenerateMockImageWithText(string type, uint backgroundColor)
+    {
+        // Simple mock image generation (600x400)
+        int width = 600;
+        int height = 400;
+        var pixels = new uint[width * height];
+        for (int i = 0; i < pixels.Length; i++) pixels[i] = backgroundColor;
+
+        // Add some distinct patterns so we can tell them apart visually
+        // 1. A thick border
+        uint borderColor = 0xFF444444;
+        int borderThickness = 20;
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                if (x < borderThickness || x >= width - borderThickness || y < borderThickness || y >= height - borderThickness)
+                {
+                    pixels[y * width + x] = borderColor;
+                }
+            }
+        }
+
+        // 2. Type-specific patterns
+        uint patternColor = 0xFF888888;
+        if (type == "cipc")
+        {
+            // Vertical stripes
+            for (int x = 100; x < width; x += 100)
+                for (int y = 0; y < height; y++) pixels[y * width + x] = patternColor;
+        }
+        else if (type == "trading")
+        {
+            // Horizontal stripes
+            for (int y = 100; y < height; y += 100)
+                for (int x = 0; x < width; x++) pixels[y * width + x] = patternColor;
+        }
+        else if (type == "cipro")
+        {
+            // Diagonal line
+            for (int i = 0; i < Math.Min(width, height); i++)
+                pixels[i * width + i] = patternColor;
+        }
+
+        using (var bitmap = new WriteableBitmap(new Avalonia.PixelSize(width, height), new Avalonia.Vector(96, 96), Avalonia.Platform.PixelFormat.Bgra8888, Avalonia.Platform.AlphaFormat.Premul))
+        {
+            using (var locked = bitmap.Lock())
+            {
+                unsafe
+                {
+                    uint* ptr = (uint*)locked.Address;
+                    for (int i = 0; i < pixels.Length; i++) ptr[i] = pixels[i];
+                }
+            }
+
+            using (var ms = new MemoryStream())
+            {
+                bitmap.Save(ms);
+                return ms.ToArray();
+            }
+        }
     }
 
     private void OnEditSite(SiteLookupDto? site)

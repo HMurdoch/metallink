@@ -59,6 +59,9 @@ public partial class MainWindowViewModel
     private bool _isSiteCreateEditExpanded = true;
     public bool IsSiteCreateEditExpanded { get => _isSiteCreateEditExpanded; set { _isSiteCreateEditExpanded = value; OnPropertyChanged(); } }
 
+    private bool _isSiteDocumentationExpanded = true;
+    public bool IsSiteDocumentationExpanded { get => _isSiteDocumentationExpanded; set { _isSiteDocumentationExpanded = value; OnPropertyChanged(); } }
+
     private bool _productsIsSearchCriteriaExpanded = true;
     public bool ProductsIsSearchCriteriaExpanded { get => _productsIsSearchCriteriaExpanded; set { _productsIsSearchCriteriaExpanded = value; OnPropertyChanged(); } }
     

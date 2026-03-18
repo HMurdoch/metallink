@@ -208,14 +208,13 @@
 
   <Grid>
     <Border Background="{DynamicResource Brush.MainBackground}">
-      <Grid RowDefinitions="Auto,*">
+      <DockPanel>
         <!-- Sticky Header Panel -->
-        <Border Grid.Row="0" 
+        <Border DockPanel.Dock="Top" 
                 Background="{DynamicResource Brush.PanelBackground}"
                 Padding="12,8"
                 CornerRadius="4"
-                Margin="16,16,16,8"
-                ZIndex="100">
+                Margin="16,16,16,8">
           <Image Source="avares://MetalLink.Desktop/Assets/sending_heading.png"
                  Height="40"
                  HorizontalAlignment="Left"
@@ -223,8 +222,8 @@
         </Border>
         
         <!-- Scrollable Content -->
-        <ScrollViewer Grid.Row="1" x:Name="TicketsScrollViewer" Padding="16,8,16,10">
-          <StackPanel Spacing="16" Margin="0,0,0,100">
+        <ScrollViewer x:Name="TicketsScrollViewer" Padding="16,8,16,16">
+          <StackPanel Spacing="16">
 
         <!-- SEARCH TICKETS -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
@@ -364,8 +363,8 @@
                 <DataGridTextColumn Header="First Name" Binding="{Binding FirstName}" Width="120" IsReadOnly="True" />
                 <DataGridTextColumn Header="Last Name" Binding="{Binding LastName}" Width="120" IsReadOnly="True" />
                 <DataGridTextColumn Header="Account #" Binding="{Binding AccountNumber}" Width="100" IsReadOnly="True" />
-                <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" Width="*" IsReadOnly="True" />
-                <DataGridTextColumn Header="Site" Binding="{Binding SiteName}" Width="160" IsReadOnly="True" />
+                <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" Width="180" IsReadOnly="True" />
+                <DataGridTextColumn Header="Site" Binding="{Binding SiteName}" Width="180" IsReadOnly="True" />
                 <DataGridTextColumn Header="Net KG" Binding="{Binding NetWeightKg, StringFormat='{}{0:N2}'}" Width="100" IsReadOnly="True" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                 <DataGridTextColumn Header="Created" Binding="{Binding CreatedTime, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" IsReadOnly="True" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                 <DataGridTemplateColumn Header="Status" Width="100" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}">
@@ -397,7 +396,7 @@
           <StackPanel Spacing="12">
             
             <!-- Ticket Details Header -->
-            <Grid RowDefinitions="Auto,*">
+            <DockPanel>
               <TextBlock Text="Ticket Details"
                          Foreground="{DynamicResource Brush.TextPrimary}"
                          FontSize="13"
@@ -409,10 +408,10 @@
                       Classes="primary"
                       Width="140"
                       HorizontalAlignment="Right" />
-            </Grid>
+            </DockPanel>
 
             <!-- Ticket Details Grid - Different layouts for Platform vs Weighbridge (match Receiving) -->
-            <Grid IsVisible="{Binding SelectedSendingTicketDetails, Converter={x:Static local:ObjectConverters.IsNotNull}}">
+            <Grid IsVisible="{Binding SelectedSendingTicketDetails, Converter={x:Static ObjectConverters.IsNotNull}}">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
@@ -511,7 +510,7 @@
                 HeadersVisibility="Column"
                 MaxHeight="250">
                 <DataGrid.Columns>
-                  <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="*" />
+                  <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="300" />
                   <DataGridTextColumn Header="Weight (kg)" Binding="{Binding NetWeightKg, StringFormat='{}{0:N2}'}"
                                       Width="140" />
                   <DataGridTextColumn Header="Tare (kg)" Binding="{Binding Tare, StringFormat='{}{0:N2}'}" Width="100" IsReadOnly="True" />
@@ -906,7 +905,7 @@
               <DataGrid.Columns>
                 <DataGridTextColumn Header="Product"
                                     Binding="{Binding ProductName}"
-                                    Width="*" />
+                                    Width="300" />
                 <!-- First Weight (FW) - Weighbridge only -->
                 <DataGridTextColumn Header="First Weight (kg)"
                                     Binding="{Binding FirstWeightKg, StringFormat='{}{0:N2}'}"
@@ -1049,7 +1048,7 @@
 
           </StackPanel>
         </ScrollViewer>
-      </Grid>
+      </DockPanel>
     </Border>
 
     <!-- Notes Modal (match Receiving) -->

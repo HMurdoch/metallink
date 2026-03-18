@@ -75,7 +75,7 @@
     </Border>
     
     <ScrollViewer Grid.Row="1" Grid.ColumnSpan="2" Padding="16,8,16,10">
-      <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="16" RowSpacing="16" Margin="0,0,0,80">
+      <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="16" RowSpacing="16" Margin="0,0,0,80">
         
         <!-- ROW 1, COL 1: Search Company (Expanded on load) -->
         <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4" VerticalAlignment="Bottom">
@@ -251,6 +251,62 @@
                 <Button Width="100" Content="Create" Command="{Binding CreateOrUpdateSiteCommand}" IsVisible="{Binding !IsSiteEditMode}" />
                 <Button Width="100" Content="Update" Command="{Binding CreateOrUpdateSiteCommand}" IsVisible="{Binding IsSiteEditMode}" />
               </StackPanel>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- ROW 4, COL 1-2: Site Documentation -->
+        <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="10">
+            <Grid PointerPressed="ToggleSiteDocumentation" Background="Transparent" Cursor="Hand">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="{Binding IsSiteDocumentationExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Site Documentation" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
+            
+            <StackPanel IsVisible="{Binding IsSiteDocumentationExpanded}" Spacing="16">
+              <StackPanel Orientation="Horizontal" Spacing="20" HorizontalAlignment="Center">
+                <!-- CIPC Document -->
+                <StackPanel Spacing="8" Width="200">
+                  <TextBlock Text="CIPC Document" HorizontalAlignment="Center" Foreground="#c0c4cf" />
+                  <Border Width="180" Height="140" BorderBrush="#444a55" BorderThickness="1" Background="#1a1c1e">
+                    <Panel>
+                      <Image Source="{Binding SelectedCipcDocument}" Stretch="Uniform" />
+                      <TextBlock Text="No Document" IsVisible="{Binding SelectedCipcDocument, Converter={x:Static ObjectConverters.IsNull}}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#666" />
+                    </Panel>
+                  </Border>
+                  <Button Width="180" Height="30" Content="Generate CIPC" HorizontalAlignment="Center" Command="{Binding UploadCipcDocumentCommand}" IsEnabled="{Binding IsSiteEditMode}" Background="#30333A" Foreground="White" BorderBrush="#444a55" BorderThickness="1" CornerRadius="3" />
+                </StackPanel>
+
+                <!-- Trading License -->
+                <StackPanel Spacing="8" Width="200">
+                  <TextBlock Text="Trading License" HorizontalAlignment="Center" Foreground="#c0c4cf" />
+                  <Border Width="180" Height="140" BorderBrush="#444a55" BorderThickness="1" Background="#1a1c1e">
+                    <Panel>
+                      <Image Source="{Binding SelectedTradingLicense}" Stretch="Uniform" />
+                      <TextBlock Text="No Document" IsVisible="{Binding SelectedTradingLicense, Converter={x:Static ObjectConverters.IsNull}}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#666" />
+                    </Panel>
+                  </Border>
+                  <Button Width="180" Height="30" Content="Generate License" HorizontalAlignment="Center" Command="{Binding UploadTradingLicenseCommand}" IsEnabled="{Binding IsSiteEditMode}" Background="#30333A" Foreground="White" BorderBrush="#444a55" BorderThickness="1" CornerRadius="3" />
+                </StackPanel>
+
+                <!-- CIPRO Document -->
+                <StackPanel Spacing="8" Width="200">
+                  <TextBlock Text="CIPRO Document" HorizontalAlignment="Center" Foreground="#c0c4cf" />
+                  <Border Width="180" Height="140" BorderBrush="#444a55" BorderThickness="1" Background="#1a1c1e">
+                    <Panel>
+                      <Image Source="{Binding SelectedCiproDocument}" Stretch="Uniform" />
+                      <TextBlock Text="No Document" IsVisible="{Binding SelectedCiproDocument, Converter={x:Static ObjectConverters.IsNull}}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#666" />
+                    </Panel>
+                  </Border>
+                  <Button Width="180" Height="30" Content="Generate CIPRO" HorizontalAlignment="Center" Command="{Binding UploadCiproDocumentCommand}" IsEnabled="{Binding IsSiteEditMode}" Background="#30333A" Foreground="White" BorderBrush="#444a55" BorderThickness="1" CornerRadius="3" />
+                </StackPanel>
+              </StackPanel>
+              
+              <Button Content="Commit Site Documents" Command="{Binding CommitSiteDocumentsCommand}" HorizontalAlignment="Right" Width="200" Classes="primary" IsEnabled="{Binding IsSiteEditMode}" />
             </StackPanel>
           </StackPanel>
         </Border>

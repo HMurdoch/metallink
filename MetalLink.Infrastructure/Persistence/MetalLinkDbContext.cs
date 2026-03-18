@@ -25,6 +25,7 @@ public class MetalLinkDbContext : DbContext
     public DbSet<Currency> Currencies => Set<Currency>();
 
     public DbSet<ImagePath> ImagePaths => Set<ImagePath>();
+    public DbSet<DocumentPath> DocumentPaths => Set<DocumentPath>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Buyer> Buyers => Set<Buyer>();
     public DbSet<Operator> Operators => Set<Operator>();
@@ -57,6 +58,7 @@ public class MetalLinkDbContext : DbContext
         ConfigureCurrencies(modelBuilder);
 
         ConfigureImagePaths(modelBuilder);
+        ConfigureDocumentPaths(modelBuilder);
         ConfigureCustomers(modelBuilder);
         ConfigureBuyers(modelBuilder);
         ConfigureOperators(modelBuilder);
@@ -111,6 +113,7 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.PostalCode).HasColumnName("postal_code").HasMaxLength(20);
         e.Property(x => x.ProvinceId).HasColumnName("province_id");
         e.Property(x => x.CountryId).HasColumnName("country_id");
+        e.Property(x => x.DocumentPathId).HasColumnName("document_path_id");
         e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
@@ -119,6 +122,22 @@ public class MetalLinkDbContext : DbContext
         e.HasOne(x => x.Company).WithMany(x => x.Sites).HasForeignKey(x => x.CompanyId);
         e.HasOne(x => x.Province).WithMany(x => x.Sites).HasForeignKey(x => x.ProvinceId);
         e.HasOne(x => x.Country).WithMany(x => x.Sites).HasForeignKey(x => x.CountryId);
+        e.HasOne(x => x.DocumentPath).WithMany().HasForeignKey(x => x.DocumentPathId);
+    }
+
+    private static void ConfigureDocumentPaths(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<DocumentPath>();
+        e.ToTable("document_paths", "metal_link");
+        e.HasKey(x => x.DocumentPathId);
+        e.Property(x => x.DocumentPathId).HasColumnName("document_path_id").ValueGeneratedOnAdd();
+        e.Property(x => x.CipcDocumentPath).HasColumnName("cipc_document_path");
+        e.Property(x => x.TradingLicense).HasColumnName("trading_license");
+        e.Property(x => x.CiproDocumentPath).HasColumnName("cipro_document_path");
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
     }
 
     private static void ConfigureProvinces(ModelBuilder modelBuilder)

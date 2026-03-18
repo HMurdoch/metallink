@@ -397,13 +397,13 @@ public class TicketsSendingController : ControllerBase
         if (product == null)
             return BadRequest($"Product with ID {dto.ProductId} not found.");
 
-        // Get unit price from buyer's price list if not provided
+        // Get unit price from buyer's price code if not provided
         var unitPrice = dto.UnitPricePerKg;
         if (unitPrice == 0 && ticket.Buyer?.ProductPriceListId != null)
         {
             unitPrice = await _priceLookupService.GetUnitPriceAsync(dto.ProductId, ticket.Buyer.ProductPriceListId, null, ct);
             if (unitPrice == 0)
-                return BadRequest($"Price not found for product {dto.ProductId} with selected price list.");
+                return BadRequest($"Price not found for product {dto.ProductId} in Buyer's Price List.");
         }
 
         // Get operator ID from authenticated user

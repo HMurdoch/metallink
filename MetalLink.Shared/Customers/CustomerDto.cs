@@ -43,7 +43,6 @@ public sealed class CustomerDto
     public string AccountNumberDisplay => AccountNumber.HasValue
     ? AccountNumber.Value.ToString("D8")
     : string.Empty;
-    public string? PriceCode     { get; set; }
     public int? ProductPriceListId { get; set; }
     public string? ProductPriceListName { get; set; }
 

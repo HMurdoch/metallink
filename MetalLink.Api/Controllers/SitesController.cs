@@ -5,6 +5,7 @@ using MetalLink.Application.Services;
 using MetalLink.Domain.Entities;
 using MetalLink.Shared.Sites;
 using MetalLink.Api.Extensions;
+using MetalLink.Application.Interfaces;
 
 namespace MetalLink.Api.Controllers;
 
@@ -13,10 +14,12 @@ namespace MetalLink.Api.Controllers;
 public sealed class SitesController : ControllerBase
 {
     private readonly MetalLinkDbContext _db;
+    private readonly IFileStorage _fileStorage;
 
-    public SitesController(MetalLinkDbContext db)
+    public SitesController(MetalLinkDbContext db, IFileStorage fileStorage)
     {
         _db = db;
+        _fileStorage = fileStorage;
     }
 
     // GET /api/sites/lookup?companyId=8&term=
@@ -53,7 +56,11 @@ public sealed class SitesController : ControllerBase
                 AddressLine2 = s.AddressLine2,
                 Suburb = s.Suburb,
                 City = s.City,
-                PostalCode = s.PostalCode
+                PostalCode = s.PostalCode,
+
+                CipcDocumentPath = s.DocumentPath != null ? s.DocumentPath.CipcDocumentPath : null,
+                TradingLicense = s.DocumentPath != null ? s.DocumentPath.TradingLicense : null,
+                CiproDocumentPath = s.DocumentPath != null ? s.DocumentPath.CiproDocumentPath : null
             })
             .ToListAsync(ct);
 
@@ -84,12 +91,14 @@ public sealed class SitesController : ControllerBase
             siteCode = SiteCodeGeneratorService.GenerateNextSiteCode(company.Sites);
         }
 
+        var operatorId = (int)User.GetOperatorId();
+
         var entity = new Site
         {
             CompanyId = dto.CompanyId,
             SiteName = name,
             IsActive = dto.IsActive,
-            CreatedByOperatorId = (int)User.GetOperatorId(),
+            CreatedByOperatorId = operatorId,
 
             SiteCode = siteCode,
             AddressLine1 = dto.AddressLine1,
@@ -100,6 +109,20 @@ public sealed class SitesController : ControllerBase
             ProvinceId = dto.ProvinceId,
             CountryId = dto.CountryId
         };
+
+        // Handle initial document paths if provided (though usually uploaded later)
+        if (!string.IsNullOrWhiteSpace(dto.CipcDocumentPath) || 
+            !string.IsNullOrWhiteSpace(dto.TradingLicense) || 
+            !string.IsNullOrWhiteSpace(dto.CiproDocumentPath))
+        {
+            entity.DocumentPath = new DocumentPath
+            {
+                CipcDocumentPath = dto.CipcDocumentPath,
+                TradingLicense = dto.TradingLicense,
+                CiproDocumentPath = dto.CiproDocumentPath,
+                CreatedByOperatorId = operatorId
+            };
+        }
 
         _db.Sites.Add(entity);
         await _db.SaveChangesAsync(ct);
@@ -117,7 +140,10 @@ public sealed class SitesController : ControllerBase
             PostalCode = entity.PostalCode,
             ProvinceId = entity.ProvinceId,
             CountryId = entity.CountryId,
-            IsActive = entity.IsActive
+            IsActive = entity.IsActive,
+            CipcDocumentPath = entity.DocumentPath?.CipcDocumentPath,
+            TradingLicense = entity.DocumentPath?.TradingLicense,
+            CiproDocumentPath = entity.DocumentPath?.CiproDocumentPath
         };
 
         return Created($"api/sites/{entity.SiteId}", result);
@@ -127,7 +153,9 @@ public sealed class SitesController : ControllerBase
     [HttpPut("{siteId:int}")]
     public async Task<IActionResult> Update(int siteId, [FromBody] SiteLookupDto dto, CancellationToken ct)
     {
-        var site = await _db.Sites.FirstOrDefaultAsync(s => s.SiteId == siteId, ct);
+        var site = await _db.Sites
+            .Include(s => s.DocumentPath)
+            .FirstOrDefaultAsync(s => s.SiteId == siteId, ct);
         if (site == null) return NotFound();
 
         site.SiteName = dto.SiteName ?? site.SiteName;
@@ -141,8 +169,115 @@ public sealed class SitesController : ControllerBase
         site.CountryId = dto.CountryId ?? site.CountryId;
         site.IsActive = dto.IsActive;
 
+        // Update document paths if provided
+        if (site.DocumentPath == null && (!string.IsNullOrWhiteSpace(dto.CipcDocumentPath) || !string.IsNullOrWhiteSpace(dto.TradingLicense) || !string.IsNullOrWhiteSpace(dto.CiproDocumentPath)))
+        {
+            site.DocumentPath = new DocumentPath { CreatedByOperatorId = (int)User.GetOperatorId() };
+        }
+
+        if (site.DocumentPath != null)
+        {
+            site.DocumentPath.CipcDocumentPath = dto.CipcDocumentPath;
+            site.DocumentPath.TradingLicense = dto.TradingLicense;
+            site.DocumentPath.CiproDocumentPath = dto.CiproDocumentPath;
+            site.DocumentPath.UpdatedTime = DateTimeOffset.UtcNow;
+        }
+
         await _db.SaveChangesAsync(ct);
         return NoContent();
+    }
+
+    // -----------------------------
+    // UPLOAD SITE DOCUMENT
+    // -----------------------------
+    [HttpPost("{siteId:int}/documents/{docType}")]
+    public async Task<IActionResult> UploadDocument(
+        int siteId,
+        string docType,
+        [FromBody] SiteUploadDocumentRequest request,
+        CancellationToken ct)
+    {
+        if (request.ImageData == null || request.ImageData.Length == 0)
+            return BadRequest("Document data is required");
+
+        var validTypes = new[] { "cipc", "trading", "cipro" };
+        if (!validTypes.Contains(docType.ToLower()))
+            return BadRequest($"Invalid document type. Valid types: {string.Join(", ", validTypes)}");
+
+        var extension = request.ContentType switch
+        {
+            "image/jpeg" => "jpg",
+            "image/png" => "png",
+            "application/pdf" => "pdf",
+            _ => "jpg"
+        };
+        
+        var key = $"sites/{siteId}/{docType}_{DateTimeOffset.UtcNow:yyyyMMdd_HHmmss}.{extension}";
+
+        await _fileStorage.UploadAsync(
+            request.ImageData,
+            request.ContentType ?? "image/jpeg",
+            key,
+            ct);
+
+        var site = await _db.Sites.Include(s => s.DocumentPath).FirstOrDefaultAsync(s => s.SiteId == siteId, ct);
+        if (site != null)
+        {
+            if (site.DocumentPath == null)
+            {
+                site.DocumentPath = new DocumentPath
+                {
+                    CreatedByOperatorId = (int)User.GetOperatorId()
+                };
+                _db.DocumentPaths.Add(site.DocumentPath);
+            }
+
+            switch (docType.ToLower())
+            {
+                case "cipc": site.DocumentPath.CipcDocumentPath = key; break;
+                case "trading": site.DocumentPath.TradingLicense = key; break;
+                case "cipro": site.DocumentPath.CiproDocumentPath = key; break;
+            }
+            
+            site.UpdatedTime = DateTimeOffset.UtcNow;
+            await _db.SaveChangesAsync(ct);
+        }
+
+        return Ok(new { DocumentPath = key });
+    }
+
+    // -----------------------------
+    // DOWNLOAD SITE DOCUMENT
+    // -----------------------------
+    [HttpGet("{siteId:int}/documents/{docType}")]
+    public async Task<IActionResult> DownloadDocument(
+        int siteId,
+        string docType,
+        CancellationToken ct)
+    {
+        var site = await _db.Sites.Include(s => s.DocumentPath).FirstOrDefaultAsync(s => s.SiteId == siteId, ct);
+        if (site?.DocumentPath == null) return NotFound();
+
+        string? path = docType.ToLower() switch
+        {
+            "cipc" => site.DocumentPath.CipcDocumentPath,
+            "trading" => site.DocumentPath.TradingLicense,
+            "cipro" => site.DocumentPath.CiproDocumentPath,
+            _ => null
+        };
+
+        if (string.IsNullOrWhiteSpace(path)) return NotFound();
+
+        try
+        {
+            var url = _fileStorage.GetFileUrl(path, TimeSpan.FromMinutes(5));
+            using var httpClient = new HttpClient();
+            var data = await httpClient.GetByteArrayAsync(url, ct);
+            
+            var contentType = path.EndsWith(".pdf") ? "application/pdf" : "image/png";
+            return File(data, contentType);
+        }
+        catch { return NotFound(); }
     }
 
     // DELETE /api/sites/{siteId} (soft delete)
@@ -173,4 +308,10 @@ public sealed class SitesController : ControllerBase
         await _db.SaveChangesAsync(ct);
         return NoContent();
     }
+}
+
+public sealed class SiteUploadDocumentRequest
+{
+    public byte[] ImageData { get; set; } = Array.Empty<byte>();
+    public string? ContentType { get; set; }
 }

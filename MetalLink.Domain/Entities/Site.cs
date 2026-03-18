@@ -25,6 +25,9 @@ public class Site
     public string? City        { get; set; }
     public string? PostalCode  { get; set; }
 
+    public int? DocumentPathId { get; set; }
+    public DocumentPath? DocumentPath { get; set; }
+
     public int CreatedByOperatorId { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTimeOffset CreatedTime { get; set; }

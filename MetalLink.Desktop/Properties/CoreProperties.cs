@@ -70,6 +70,7 @@ public partial class MainWindowViewModel
         get => _currentSection;
         set
         {
+            Console.WriteLine($"[DEBUG] CoreProperties: CurrentSection changing from '{_currentSection}' to '{value}'");
             if (_currentSection == value) return;
 
             _previousSection = _currentSection;
@@ -95,6 +96,7 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(IsDocumentSectionVisible));
             OnPropertyChanged(nameof(IsCameraSectionVisible));
             OnPropertyChanged(nameof(TicketsPageHeading));
+            Console.WriteLine("[DEBUG] CoreProperties: PropertyChanged events fired for CurrentSection.");
         }
     }
 

@@ -15,4 +15,9 @@ public sealed class SiteCreateDto
     public string? PostalCode { get; set; }
     public int? ProvinceId { get; set; }
     public int? CountryId { get; set; }
+
+    // Document Paths
+    public string? CipcDocumentPath { get; set; }
+    public string? TradingLicense { get; set; }
+    public string? CiproDocumentPath { get; set; }
 }

@@ -38,7 +38,6 @@ public sealed class BuyerDto
         ? AccountNumber.Value.ToString("D8")
         : "";
     
-    public string? PriceCode     { get; set; }
     public int? ProductPriceListId { get; set; }
     public string? ProductPriceListName { get; set; }
 

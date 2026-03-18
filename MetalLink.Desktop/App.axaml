@@ -388,7 +388,8 @@
   <Application.Resources>
     <ResourceDictionary>
       <!-- Root-level switchable background for section containers (AppearanceService swaps at runtime). -->
-      <SolidColorBrush x:Key="Brush.PanelBackground" Color="Transparent" />
+      <SolidColorBrush x:Key="Brush.PanelBackground" Color="#E6252932" />
+      <SolidColorBrush x:Key="Brush.EffectivePanelBackground" Color="#E6252932" />
 
       <ResourceDictionary.MergedDictionaries>
         <!-- SukiUI base resources (Light/Dark) -->
@@ -589,6 +590,9 @@
       </ResourceDictionary.ThemeDictionaries>
       <views:SectionToViewConverter x:Key="SectionToViewConverter" />
       <views:ObjectConverters x:Key="ObjectConverters" />
+      <views:TicketStatusColorConverter x:Key="TicketStatusColorConverter" />
+      <views:NumberEqualsConverter x:Key="NumberEqualsConverter" />
+      <views:HasNotesConverter x:Key="HasNotesConverter" />
       <converters:BoolInvertConverter x:Key="BoolInvertConverter" />
     </ResourceDictionary>
   </Application.Resources>

@@ -68,26 +68,7 @@ public sealed class TicketSendingService
     /// </summary>
     public async Task<TicketSendingDto?> UpdateTicketSendingAsync(
         long ticketSendingId,
-        UpdateTicketSendingDto updateDto,
-        CancellationToken cancellationToken = default)
-    {
-        var response = await _apiClient.PutAsJsonAsync(
-            $"api/tickets-sending/{ticketSendingId}",
-            updateDto,
-            cancellationToken
-        );
-
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadFromJsonAsync<TicketSendingDto>(cancellationToken: cancellationToken);
-        }
-
-        return null;
-    }
-
-    public async Task<TicketSendingDto?> UpdateTicketSendingLegacyAsync(
-        long ticketSendingId,
-        UpdateTicketSendingDto updateDto,
+        CreateTicketSendingDto updateDto,
         CancellationToken cancellationToken = default)
     {
         var response = await _apiClient.PutAsJsonAsync(

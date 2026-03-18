@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using Avalonia.Media.Imaging;
 
 namespace MetalLink.Desktop.ViewModels;
 
@@ -212,6 +213,50 @@ public partial class MainWindowViewModel
 
     public PaginationViewModel SitePaginationViewModel { get; } = new() { PageSize = 15 };
     public ObservableCollection<SiteLookupDto> PagedSiteResults { get; } = new();
+
+    // Site Documents (for preview/display)
+    private Bitmap? _cipcDocument;
+    public Bitmap? CipcDocument
+    {
+        get => _cipcDocument;
+        set => SetProperty(ref _cipcDocument, value);
+    }
+
+    private Bitmap? _tradingLicense;
+    public Bitmap? TradingLicense
+    {
+        get => _tradingLicense;
+        set => SetProperty(ref _tradingLicense, value);
+    }
+
+    private Bitmap? _ciproDocument;
+    public Bitmap? CiproDocument
+    {
+        get => _ciproDocument;
+        set => SetProperty(ref _ciproDocument, value);
+    }
+
+    // Site Documents (for Edit/Create panel)
+    private Bitmap? _selectedCipcDocument;
+    public Bitmap? SelectedCipcDocument
+    {
+        get => _selectedCipcDocument;
+        set => SetProperty(ref _selectedCipcDocument, value);
+    }
+
+    private Bitmap? _selectedTradingLicense;
+    public Bitmap? SelectedTradingLicense
+    {
+        get => _selectedTradingLicense;
+        set => SetProperty(ref _selectedTradingLicense, value);
+    }
+
+    private Bitmap? _selectedCiproDocument;
+    public Bitmap? SelectedCiproDocument
+    {
+        get => _selectedCiproDocument;
+        set => SetProperty(ref _selectedCiproDocument, value);
+    }
 
     // Create/Edit fields
     private string _companyEditVatNumber = string.Empty;

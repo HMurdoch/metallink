@@ -20,4 +20,9 @@ public class SiteLookupDto
     public bool IsActive { get; set; } = true;
 
     public bool IsDeleteVisible { get; set; } = true;
+
+    // Document Paths
+    public string? CipcDocumentPath { get; set; }
+    public string? TradingLicense { get; set; }
+    public string? CiproDocumentPath { get; set; }
 }

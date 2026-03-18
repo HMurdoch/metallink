@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MetalLink.Desktop.Auth;
@@ -143,7 +144,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         _appearanceService = app.AppearanceService;
 
         Receiving = new MetalLink.Desktop.ViewModels.Receiving.TicketsReceivingViewModel(_ticketReceivingService, new CompanyAndSiteService(_apiClient, _authState), _scaleService, new ProductsAndPricesService(_apiClient, _authState));
-        Sending = new MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel(_ticketSendingService, new CompanyAndSiteService(_apiClient, _authState), new ProductsAndPricesService(_apiClient, _authState));
+        Sending = new MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel(_ticketSendingService, new CompanyAndSiteService(_apiClient, _authState), _scaleService, new ProductsAndPricesService(_apiClient, _authState));
 
         ToggleNavCommand = new RelayCommand(() => IsNavCollapsed = !IsNavCollapsed);
         ShowDashboardCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Dashboard);
@@ -188,8 +189,13 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         });
         ShowProductsAndPricesCommand = new RelayCommand(() => CurrentSection = EnumMainSection.ProductsAndPrices);
         ShowTicketsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.TicketsReceiving);
-        ShowTicketsReceivingCommand = new RelayCommand(() => CurrentSection = EnumMainSection.TicketsReceiving);
+        ShowTicketsReceivingCommand = new RelayCommand(() =>
+        {
+            Console.WriteLine("[DEBUG] MainWindowViewModel: ShowTicketsReceivingCommand triggered");
+            CurrentSection = EnumMainSection.TicketsReceiving;
+        });
         ShowTicketsSendingCommand = new AsyncRelayCommand(async () => {
+            Console.WriteLine("[DEBUG] MainWindowViewModel: ShowTicketsSendingCommand triggered");
             CurrentSection = EnumMainSection.TicketsSending;
             await Sending.OnEnterTicketsSendingAsync();
         });
@@ -267,8 +273,15 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         });
         PrintReceivingTicketCommand = new AsyncRelayCommand(() => Receiving.PrintReceivingTicketAsync());
         PrintSendingTicketCommand = new AsyncRelayCommand(() => Sending.PrintSendingTicketAsync());
-        ShowLineNotesCommand = new RelayCommand<string?>(n => { if (n != null) Receiving.ShowLineNotes(n); });
-        CloseLineNotesCommand = new RelayCommand(() => Receiving.CloseLineNotes());
+        ShowLineNotesCommand = new RelayCommand<string?>(n => { 
+            if (n == null) return;
+            if (CurrentSection == EnumMainSection.TicketsReceiving) Receiving.ShowLineNotes(n);
+            else if (CurrentSection == EnumMainSection.TicketsSending) Sending.ShowLineNotes(n);
+        });
+        CloseLineNotesCommand = new RelayCommand(() => {
+            if (CurrentSection == EnumMainSection.TicketsReceiving) Receiving.CloseLineNotes();
+            else if (CurrentSection == EnumMainSection.TicketsSending) Sending.CloseLineNotes();
+        });
         ScrollToAddLinesCommand = new RelayCommand(() => Receiving.ScrollToAddLines());
         CreateReceivingTicketHeaderCommand = new AsyncRelayCommand(() => Receiving.CreateTicketHeaderAsync());
         CreateSendingTicketHeaderCommand = new AsyncRelayCommand(() => Sending.CreateSendingTicketHeaderAsync());
@@ -859,6 +872,31 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             return result;
         }
         return false;
+    }
+
+    public async Task<string?> DoFilePickerAsync(string title, string[] filterNames, string[] filterExtensions)
+    {
+        var lifetime = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+        if (lifetime?.MainWindow == null) return null;
+
+        var filters = new List<FilePickerFileType>();
+        for (int i = 0; i < filterNames.Length; i++)
+        {
+            filters.Add(new FilePickerFileType(filterNames[i])
+            {
+                Patterns = new List<string> { filterExtensions[i] }
+            });
+        }
+
+        var options = new FilePickerOpenOptions
+        {
+            Title = title,
+            AllowMultiple = false,
+            FileTypeFilter = filters
+        };
+
+        var results = await lifetime.MainWindow.StorageProvider.OpenFilePickerAsync(options);
+        return results.FirstOrDefault()?.Path.LocalPath;
     }
 
     public async Task SetEnforceBuyerCompanyAsync(bool enabled)
