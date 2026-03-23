@@ -98,6 +98,27 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
         set { _isBusy = value; OnPropertyChanged(); }
     }
 
+    private bool _isSearchExpanded = true;
+    public bool IsSearchExpanded { get => _isSearchExpanded; set { _isSearchExpanded = value; OnPropertyChanged(); } }
+
+    private bool _isResultsExpanded = true;
+    public bool IsResultsExpanded { get => _isResultsExpanded; set { _isResultsExpanded = value; OnPropertyChanged(); } }
+
+    private bool _isCreateExpanded = true;
+    public bool IsCreateExpanded { get => _isCreateExpanded; set { _isCreateExpanded = value; OnPropertyChanged(); } }
+
+    private bool _isScaleExpanded = true;
+    public bool IsScaleExpanded { get => _isScaleExpanded; set { _isScaleExpanded = value; OnPropertyChanged(); } }
+
+    private bool _isLinesExpanded = true;
+    public bool IsLinesExpanded { get => _isLinesExpanded; set { _isLinesExpanded = value; OnPropertyChanged(); } }
+
+    private bool _isAddLinesExpanded = true;
+    public bool IsAddLinesExpanded { get => _isAddLinesExpanded; set { _isAddLinesExpanded = value; OnPropertyChanged(); } }
+
+    private bool _isReportExpanded = true;
+    public bool IsReportExpanded { get => _isReportExpanded; set { _isReportExpanded = value; OnPropertyChanged(); } }
+
     private string _statusMessage = string.Empty;
     public string StatusMessage
     {
@@ -379,6 +400,14 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
             SelectedReceivingTicketLines.Clear();
             OnPropertyChanged(nameof(ShouldShowTicketDetails));
             StatusMessage = $"Loaded {ReceivingTicketSearchResults.Count} receiving ticket(s).";
+
+            // Auto expand result panels and collapse search
+            IsSearchExpanded = true;
+            IsResultsExpanded = true;
+            IsCreateExpanded = true;
+            IsScaleExpanded = true;
+            IsLinesExpanded = true;
+            IsReportExpanded = true;
         }
         finally
         {

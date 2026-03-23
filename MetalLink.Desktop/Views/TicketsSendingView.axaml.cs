@@ -1,6 +1,9 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
+using MetalLink.Desktop.ViewModels.Sending;
+using System;
 
 namespace MetalLink.Desktop.Views;
 
@@ -67,5 +70,61 @@ public partial class TicketsSendingView : UserControl
         // Prevent automatic scrolling when selecting different rows
         // This avoids the annoying "jump" behavior when clicking on different tickets
         e.Handled = true;
+    }
+
+    private void ToggleSearchTickets(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is TicketsSendingViewModel vm) {
+            vm.IsSearchExpanded = !vm.IsSearchExpanded;
+            Console.WriteLine($"[DEBUG] TicketsSendingView: Toggled SearchTickets to {vm.IsSearchExpanded}");
+        }
+    }
+
+    private void ToggleTicketResults(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is TicketsSendingViewModel vm) {
+            vm.IsResultsExpanded = !vm.IsResultsExpanded;
+            Console.WriteLine($"[DEBUG] TicketsSendingView: Toggled TicketResults to {vm.IsResultsExpanded}");
+        }
+    }
+
+    private void ToggleTicketLines(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is TicketsSendingViewModel vm) {
+            vm.IsLinesExpanded = !vm.IsLinesExpanded;
+            Console.WriteLine($"[DEBUG] TicketsSendingView: Toggled TicketLines to {vm.IsLinesExpanded}");
+        }
+    }
+
+    private void ToggleCreateTicket(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is TicketsSendingViewModel vm) {
+            vm.IsCreateExpanded = !vm.IsCreateExpanded;
+            Console.WriteLine($"[DEBUG] TicketsSendingView: Toggled CreateTicket to {vm.IsCreateExpanded}");
+        }
+    }
+
+    private void ToggleScaleMeasurement(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is TicketsSendingViewModel vm) {
+            vm.IsScaleExpanded = !vm.IsScaleExpanded;
+            Console.WriteLine($"[DEBUG] TicketsSendingView: Toggled ScaleMeasurement to {vm.IsScaleExpanded}");
+        }
+    }
+
+    private void ToggleAddProductLines(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is TicketsSendingViewModel vm) {
+            vm.IsAddLinesExpanded = !vm.IsAddLinesExpanded;
+            Console.WriteLine($"[DEBUG] TicketsSendingView: Toggled AddProductLines to {vm.IsAddLinesExpanded}");
+        }
+    }
+
+    private void ToggleTicketReport(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is TicketsSendingViewModel vm) {
+            vm.IsReportExpanded = !vm.IsReportExpanded;
+            Console.WriteLine($"[DEBUG] TicketsSendingView: Toggled TicketReport to {vm.IsReportExpanded}");
+        }
     }
 }

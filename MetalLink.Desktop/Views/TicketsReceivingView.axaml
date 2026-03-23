@@ -144,16 +144,19 @@
         <!-- SEARCH TICKETS -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
-            <Grid>
+            <Grid x:Name="SearchTicketsHeader" Background="Transparent" PointerPressed="ToggleSearchTickets">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" Text="▼" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip.Tip="Click to collapse/expand" />
+              <TextBlock Grid.Column="0" x:Name="SearchTicketsArrow" 
+                         Text="{Binding IsSearchExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
               <TextBlock Grid.Column="1" Text="Search Tickets" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
             </Grid>
 
-            <CheckBox Content="New Customer?" IsChecked="{Binding IsNewCustomerOnly}" />
+            <StackPanel x:Name="SearchTicketsContent" Spacing="8" IsVisible="{Binding IsSearchExpanded}">
+              <CheckBox Content="New Customer?" IsChecked="{Binding IsNewCustomerOnly}" />
 
             <Grid Margin="0,8,0,0">
               <Grid.ColumnDefinitions>
@@ -266,6 +269,7 @@
                 Command="{Binding SearchReceivingTicketsCommand}" />
             </StackPanel>
           </StackPanel>
+          </StackPanel>
         </Border>
 
         <!-- TICKET RESULTS -->
@@ -277,12 +281,20 @@
 
           <Border Grid.Column="0" Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
             <StackPanel Spacing="8">
-            <TextBlock Text="Ticket Results"
-                       Foreground="{DynamicResource Brush.TextPrimary}"
-                       FontWeight="Bold" />
+              <Grid x:Name="TicketResultsHeader" Background="Transparent" PointerPressed="ToggleTicketResults">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="TicketResultsArrow" 
+                           Text="{Binding IsResultsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                           Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="Ticket Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+              </Grid>
 
-            <DataGrid
-              x:Name="ReceivingTicketsGrid"
+              <StackPanel x:Name="TicketResultsContent" Spacing="8" IsVisible="{Binding IsResultsExpanded}">
+                <DataGrid
+                  x:Name="ReceivingTicketsGrid"
               AutoGenerateColumns="False"
               ItemsSource="{Binding ReceivingTicketSearchResults}"
               SelectedItem="{Binding SelectedReceivingTicket, Mode=TwoWay}"
@@ -315,6 +327,7 @@
               </DataGrid.Columns>
             </DataGrid>
             </StackPanel>
+            </StackPanel>
           </Border>
 
           <!-- Spacer column (used to make results 60% width in New Customer mode) -->
@@ -327,7 +340,19 @@
                 CornerRadius="4"
                 Margin="0,8,0,0"
                 IsVisible="{Binding ShouldShowTicketDetails}">
-          <StackPanel Spacing="12">
+          <StackPanel Spacing="8">
+            <Grid x:Name="TicketLinesHeader" Background="Transparent" PointerPressed="ToggleTicketLines">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" x:Name="TicketLinesArrow" 
+                         Text="{Binding IsLinesExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Ticket Details &amp; Lines" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
+
+            <StackPanel x:Name="TicketLinesContent" Spacing="12" IsVisible="{Binding IsLinesExpanded}">
 
             <!-- Ticket Details Header -->
             <DockPanel>
@@ -531,11 +556,24 @@
 
             </StackPanel>
           </StackPanel>
+          </StackPanel>
         </Border>
 
         <!-- CREATE / EDIT TICKET -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
-          <StackPanel Spacing="12">
+          <StackPanel Spacing="8">
+            <Grid x:Name="CreateTicketHeader" Background="Transparent" PointerPressed="ToggleCreateTicket">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" x:Name="CreateTicketArrow" 
+                         Text="{Binding IsCreateExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Create Ticket" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
+
+            <StackPanel x:Name="CreateTicketContent" Spacing="12" IsVisible="{Binding IsCreateExpanded}">
 
             <!-- Header -->
             <TextBlock Text="Create Ticket"
@@ -637,11 +675,24 @@
             </StackPanel>
 
           </StackPanel>
+          </StackPanel>
         </Border>
 
         <!-- SCALE MEASUREMENT -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
+            <Grid x:Name="ScaleMeasurementHeader" Background="Transparent" PointerPressed="ToggleScaleMeasurement">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" x:Name="ScaleMeasurementArrow" 
+                         Text="{Binding IsScaleExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Scale Measurement" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
+
+            <StackPanel x:Name="ScaleMeasurementContent" Spacing="8" IsVisible="{Binding IsScaleExpanded}">
             <TextBlock Text="Scale Measurement"
                        Foreground="{DynamicResource Brush.TextPrimary}"
                        FontSize="13"
@@ -694,6 +745,7 @@
                 <Button Content="Reset" Command="{Binding ResetPlatformWeightCommand}" />
               </StackPanel>
             </StackPanel>
+            </StackPanel>
           </StackPanel>
         </Border>
 
@@ -701,6 +753,18 @@
         <Border x:Name="AddProductLinesSection" Background="{DynamicResource Brush.PanelBackground}" Padding="12"
                 CornerRadius="4">
           <StackPanel Spacing="8">
+            <Grid x:Name="AddProductLinesHeader" Background="Transparent" PointerPressed="ToggleAddProductLines">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" x:Name="AddProductLinesArrow" 
+                         Text="{Binding IsAddLinesExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Add Product Lines" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
+
+            <StackPanel x:Name="AddProductLinesContent" Spacing="8" IsVisible="{Binding IsAddLinesExpanded}">
             <TextBlock Text="Add Product Lines"
                        Foreground="{DynamicResource Brush.TextPrimary}"
                        FontSize="13"
@@ -897,11 +961,24 @@
                     IsEnabled="{Binding IsFinalizeTicketEnabled}"
                     HorizontalContentAlignment="Center" />
           </StackPanel>
+          </StackPanel>
         </Border>
 
         <!-- TICKET REPORT (PDF) -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
+            <Grid x:Name="TicketReportHeader" Background="Transparent" PointerPressed="ToggleTicketReport">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" x:Name="TicketReportArrow" 
+                         Text="{Binding IsReportExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Ticket Report (PDF)" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
+
+            <StackPanel x:Name="TicketReportContent" Spacing="8" IsVisible="{Binding IsReportExpanded}">
             <TextBlock Text="Ticket Report (PDF)"
                        Foreground="{DynamicResource Brush.TextPrimary}"
                        FontSize="13"
@@ -926,6 +1003,7 @@
             <TextBlock Text="{Binding LastTicketReportPath}"
                        TextWrapping="Wrap"
                        Foreground="#e5e7eb" />
+          </StackPanel>
           </StackPanel>
         </Border>
 

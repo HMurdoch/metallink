@@ -14,20 +14,12 @@ public class SectionToViewConverter : IValueConverter
             return isExpanded ? "▼" : "▶";
         }
 
-        Console.WriteLine($"[DEBUG] SectionToViewConverter: Convert called! Value='{value ?? "NULL"}', Type='{value?.GetType().AssemblyQualifiedName ?? "N/A"}', Parameter='{parameter ?? "NONE"}'");
-
-        if (value is not EnumMainSection section)
-        {
-            Console.WriteLine($"[DEBUG] SectionToViewConverter: Value is NOT EnumMainSection. Actual type: {value?.GetType().FullName ?? "NULL"}. This is likely a namespace or assembly mismatch.");
-            return null;
-        }
-
-        Console.WriteLine($"[DEBUG] SectionToViewConverter: Creating view for section '{section}' (Int value: {(int)section})");
+        if (value is not EnumMainSection section) return null;
 
         Control? view = null;
+        Console.WriteLine($"[DEBUG] SectionToViewConverter: Converting section '{section}'");
         try 
         {
-            Console.WriteLine($"[DEBUG] SectionToViewConverter: Using switch logic for section '{section}'");
             view = section switch
             {
                 EnumMainSection.Dashboard => new DashboardView(),
@@ -45,16 +37,11 @@ public class SectionToViewConverter : IValueConverter
                 EnumMainSection.Settings => new SettingsView(),
                 _ => null
             };
-            
-            if (view == null)
-            {
-                Console.WriteLine($"[DEBUG] SectionToViewConverter: SWITCH RETURNED NULL for section '{section}' (Int: {(int)section})");
-            }
-            Console.WriteLine($"[DEBUG] SectionToViewConverter: Successfully created '{view?.GetType().Name ?? "NULL"}'");
+            Console.WriteLine($"[DEBUG] SectionToViewConverter: Successfully created view of type {(view?.GetType().Name ?? "NULL")}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[DEBUG] SectionToViewConverter: EXCEPTION creating view for {section}: {ex.Message}\n{ex.StackTrace}");
+            Console.WriteLine($"[DEBUG] SectionToViewConverter: EXCEPTION creating view for {section}: {ex}");
             return new Border { Background = Avalonia.Media.Brushes.Red, Child = new TextBlock { Text = $"Error: {ex.Message}" } };
         }
 

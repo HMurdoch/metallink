@@ -81,6 +81,7 @@ public partial class MainWindowViewModel
             // TicketsReceiving/TicketsSending now manage their own state in isolated viewmodels.
             // No shared shell initialization here.
 
+            Console.WriteLine($"[DEBUG] CoreProperties: Raising OnPropertyChanged for CurrentSection (value: {_currentSection})");
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsDashboardSectionVisible));
             OnPropertyChanged(nameof(IsCustomerSectionVisible));

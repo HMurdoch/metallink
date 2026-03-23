@@ -147,7 +147,10 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         Sending = new MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel(_ticketSendingService, new CompanyAndSiteService(_apiClient, _authState), _scaleService, new ProductsAndPricesService(_apiClient, _authState));
 
         ToggleNavCommand = new RelayCommand(() => IsNavCollapsed = !IsNavCollapsed);
-        ShowDashboardCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Dashboard);
+        ShowDashboardCommand = new RelayCommand(() => { 
+            Console.WriteLine("[DEBUG] MainWindowViewModel: ShowDashboardCommand triggered");
+            CurrentSection = EnumMainSection.Dashboard; 
+        });
         ShowCustomersCommand = new AsyncRelayCommand(async () => {
             CurrentSection = EnumMainSection.Customers;
             ClearCustomerSearch();
@@ -193,10 +196,12 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         {
             Console.WriteLine("[DEBUG] MainWindowViewModel: ShowTicketsReceivingCommand triggered");
             CurrentSection = EnumMainSection.TicketsReceiving;
+            Console.WriteLine($"[DEBUG] MainWindowViewModel: CurrentSection is now {CurrentSection}");
         });
         ShowTicketsSendingCommand = new AsyncRelayCommand(async () => {
             Console.WriteLine("[DEBUG] MainWindowViewModel: ShowTicketsSendingCommand triggered");
             CurrentSection = EnumMainSection.TicketsSending;
+            Console.WriteLine($"[DEBUG] MainWindowViewModel: CurrentSection is now {CurrentSection}");
             await Sending.OnEnterTicketsSendingAsync();
         });
         ShowDocumentsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Documents);

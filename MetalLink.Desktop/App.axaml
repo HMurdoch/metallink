@@ -444,7 +444,7 @@
           <SolidColorBrush x:Key="Brush.InputBorder" Color="#C7CDD6" />
 
           <!-- Main content area - very translucent to show brushed metal -->
-          <SolidColorBrush x:Key="Brush.MainBackground" Color="#33F2F4F7" />
+          <SolidColorBrush x:Key="Brush.MainBackground" Color="#80F2F4F7" />
           <SolidColorBrush x:Key="Brush.WindowBackground" Color="#FFF2F4F7" />
 
           <!-- App background gradient (subtle) -->
@@ -534,7 +534,7 @@
           <SolidColorBrush x:Key="Brush.InputBorder" Color="#4B5563" />
 
           <!-- Main content area - very translucent to show brushed metal -->
-          <SolidColorBrush x:Key="Brush.MainBackground" Color="#331F2229" />
+          <SolidColorBrush x:Key="Brush.MainBackground" Color="#801F2229" />
           <SolidColorBrush x:Key="Brush.WindowBackground" Color="#FF1F2229" />
 
           <!-- App background gradient -->
