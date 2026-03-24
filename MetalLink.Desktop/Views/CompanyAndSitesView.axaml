@@ -75,7 +75,7 @@
     </Border>
     
     <ScrollViewer Grid.Row="1" Grid.ColumnSpan="2" Padding="16,8,16,10">
-      <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="16" RowSpacing="16" Margin="0,0,0,80">
+      <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="16" RowSpacing="16" Margin="0,0,0,16">
         
         <!-- ROW 1, COL 1: Search Company (Expanded on load) -->
         <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4" VerticalAlignment="Bottom">
@@ -110,7 +110,7 @@
               <TextBlock Grid.Column="1" Text="Company Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
             </Grid>
             <StackPanel IsVisible="{Binding CompanyIsSearchResultsExpanded}" Spacing="8">
-              <DataGrid ItemsSource="{Binding PagedCompanyResults}" SelectedItem="{Binding SelectedCompany, Mode=TwoWay}" Height="620" AutoGenerateColumns="False" IsReadOnly="True">
+              <DataGrid ItemsSource="{Binding PagedCompanyResults}" SelectedItem="{Binding SelectedCompany, Mode=TwoWay}" Height="620" AutoGenerateColumns="False" IsReadOnly="True" Focusable="False">
                 <DataGrid.Columns>
                   <DataGridTextColumn Header="ID" Binding="{Binding CompanyId}" Width="60" />
                   <DataGridTextColumn Header="Company Name" Binding="{Binding CompanyName}" Width="*" />
@@ -176,7 +176,7 @@
               <TextBlock Grid.Column="1" Text="Site Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
             </Grid>
             <StackPanel IsVisible="{Binding CompanyIsPanelExpanded}" Spacing="8">
-              <DataGrid ItemsSource="{Binding PagedSiteResults}" SelectedItem="{Binding SelectedSite, Mode=TwoWay}" Height="300" AutoGenerateColumns="False" IsReadOnly="True">
+              <DataGrid ItemsSource="{Binding PagedSiteResults}" SelectedItem="{Binding SelectedSite, Mode=TwoWay}" Height="300" AutoGenerateColumns="False" IsReadOnly="True" Focusable="False">
                 <DataGrid.Columns>
                   <DataGridTextColumn Header="ID" Binding="{Binding SiteId}" Width="60" />
                   <DataGridTextColumn Header="Site Name" Binding="{Binding SiteName}" Width="*" />
