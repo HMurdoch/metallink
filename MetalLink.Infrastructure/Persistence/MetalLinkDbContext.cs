@@ -131,9 +131,11 @@ public class MetalLinkDbContext : DbContext
         e.ToTable("document_paths", "metal_link");
         e.HasKey(x => x.DocumentPathId);
         e.Property(x => x.DocumentPathId).HasColumnName("document_path_id").ValueGeneratedOnAdd();
-        e.Property(x => x.CipcDocumentPath).HasColumnName("cipc_document_path");
-        e.Property(x => x.TradingLicense).HasColumnName("trading_license");
-        e.Property(x => x.CiproDocumentPath).HasColumnName("cipro_document_path");
+        e.Property(x => x.CipcDocumentPath).HasColumnName("cipc_document_path").HasMaxLength(1000);
+        e.Property(x => x.TradingLicensePath).HasColumnName("trading_license_path").HasMaxLength(1000);
+        e.Property(x => x.VatRegistrationCertificatePath).HasColumnName("vat_registration_certificate_path").HasMaxLength(1000);
+        e.Property(x => x.TaxClearanceCertificatePath).HasColumnName("tax_clearance_certificate_path").HasMaxLength(1000);
+        e.Property(x => x.BbbeeComplianceCertificatePath).HasColumnName("bbbee_compliance_certificate_path").HasMaxLength(1000);
         e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");

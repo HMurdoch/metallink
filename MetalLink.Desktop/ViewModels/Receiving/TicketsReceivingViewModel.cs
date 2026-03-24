@@ -84,7 +84,6 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
         CloseLineNotesCommand = new RelayCommand(() => { IsNotesModalVisible = false; SelectedLineNotesContent = string.Empty; });
 
         OpenDistributionCommand = new RelayCommand(OpenDistribution);
-        DownloadTicketReportCommand = new AsyncCommand(() => Task.CompletedTask);
     }
 
     // ============================================================
@@ -101,23 +100,20 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
     private bool _isSearchExpanded = true;
     public bool IsSearchExpanded { get => _isSearchExpanded; set { _isSearchExpanded = value; OnPropertyChanged(); } }
 
-    private bool _isResultsExpanded = true;
+    private bool _isResultsExpanded = false;
     public bool IsResultsExpanded { get => _isResultsExpanded; set { _isResultsExpanded = value; OnPropertyChanged(); } }
 
-    private bool _isCreateExpanded = true;
+    private bool _isCreateExpanded = false;
     public bool IsCreateExpanded { get => _isCreateExpanded; set { _isCreateExpanded = value; OnPropertyChanged(); } }
 
-    private bool _isScaleExpanded = true;
+    private bool _isScaleExpanded = false;
     public bool IsScaleExpanded { get => _isScaleExpanded; set { _isScaleExpanded = value; OnPropertyChanged(); } }
 
-    private bool _isLinesExpanded = true;
+    private bool _isLinesExpanded = false;
     public bool IsLinesExpanded { get => _isLinesExpanded; set { _isLinesExpanded = value; OnPropertyChanged(); } }
 
-    private bool _isAddLinesExpanded = true;
+    private bool _isAddLinesExpanded = false;
     public bool IsAddLinesExpanded { get => _isAddLinesExpanded; set { _isAddLinesExpanded = value; OnPropertyChanged(); } }
-
-    private bool _isReportExpanded = true;
-    public bool IsReportExpanded { get => _isReportExpanded; set { _isReportExpanded = value; OnPropertyChanged(); } }
 
     private string _statusMessage = string.Empty;
     public string StatusMessage
@@ -407,7 +403,7 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
             IsCreateExpanded = true;
             IsScaleExpanded = true;
             IsLinesExpanded = true;
-            IsReportExpanded = true;
+            IsAddLinesExpanded = true;
         }
         finally
         {
@@ -1010,17 +1006,30 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
     public ICommand CloseLineNotesCommand { get; }
 
     public ICommand OpenDistributionCommand { get; }
-    public bool IsNotesModalVisible { get; set; }
-    public string SelectedLineNotesContent { get; set; } = string.Empty;
-    public string ReceivingLineNotes { get; set; } = string.Empty;
+    private bool _isNotesModalVisible;
+    public bool IsNotesModalVisible
+    {
+        get => _isNotesModalVisible;
+        set { _isNotesModalVisible = value; OnPropertyChanged(); }
+    }
+
+    private string _selectedLineNotesContent = string.Empty;
+    public string SelectedLineNotesContent
+    {
+        get => _selectedLineNotesContent;
+        set { _selectedLineNotesContent = value; OnPropertyChanged(); }
+    }
+
+    private string _receivingLineNotes = string.Empty;
+    public string ReceivingLineNotes
+    {
+        get => _receivingLineNotes;
+        set { _receivingLineNotes = value; OnPropertyChanged(); }
+    }
 
     public bool IsEditingTicketLine { get; set; }
     public bool IsEditable { get; set; }
     public bool IsTicketTypeEnabled { get; set; } = true;
-
-    public string TicketReportTicketIdText { get; set; } = string.Empty;
-    public string LastTicketReportPath { get; set; } = string.Empty;
-    public ICommand DownloadTicketReportCommand { get; }
 
     // These are referenced in XAML but will be implemented during line editing migration
     public string EditLineProductSearchText { get; set; } = string.Empty;

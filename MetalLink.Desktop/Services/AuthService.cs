@@ -54,6 +54,7 @@ public sealed class AuthService
             role: result.Role,
             siteId: result.SiteId
         );
+        _authState.OperatorSettings = result.OperatorSettings;
 
         return true;
     }

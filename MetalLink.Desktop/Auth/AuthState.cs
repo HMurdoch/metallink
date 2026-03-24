@@ -10,6 +10,8 @@ public sealed class AuthState
     public string Role { get; private set; } = string.Empty;
     public long SiteId { get; private set; }
 
+    public System.Collections.Generic.List<MetalLink.Shared.Settings.OperatorSettingDto> OperatorSettings { get; set; } = new();
+
     public void SetAuth(
         string token,
         string username,

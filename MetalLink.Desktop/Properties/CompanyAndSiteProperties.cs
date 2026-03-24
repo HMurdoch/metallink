@@ -35,9 +35,8 @@ public partial class MainWindowViewModel
                 }
             }
             
-            // We do NOT clear results here; Search button triggers the actual search.
-            // But we can refresh suggestions dropdown if it existed.
             ApplyCompanyLetterFilter();
+            _ = SearchCompaniesAsync();
         }
     }
 
@@ -93,13 +92,17 @@ public partial class MainWindowViewModel
                 IsCompanyInitialSiteVisible = false;
 
                 // Sync call to ensure sites are loaded before form resets/increments
-                Dispatcher.UIThread.Post(async () => await LoadSitesForSelectedCompanyResultsAsync(), DispatcherPriority.Background);
+                _ = LoadSitesForSelectedCompanyResultsAsync();
                 
                 // User requirement: expand next panels
+                // Refinement: Expand Search Results and Sites Panel. 
+                // Don't expand Create/Edit panels automatically to prevent "jumping"
                 CompanyIsSearchResultsExpanded = true;
-                CompanyIsCreateEditExpanded = true;
                 CompanyIsPanelExpanded = true;
-                IsSiteCreateEditExpanded = true;
+                
+                // Ensure pagination is reset for new company
+                SitePaginationViewModel.Reset();
+                SitePaginationViewModel.PageSize = 10;
             }
             else
             {
@@ -115,6 +118,7 @@ public partial class MainWindowViewModel
                 SiteResults.Clear();
                 PagedSiteResults.Clear();
                 SelectedSite = null;
+                SitePaginationViewModel.Reset();
             }
 
             (UpdateCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
@@ -229,11 +233,26 @@ public partial class MainWindowViewModel
         set => SetProperty(ref _tradingLicense, value);
     }
 
-    private Bitmap? _ciproDocument;
-    public Bitmap? CiproDocument
+
+    private Bitmap? _vatDocument;
+    public Bitmap? VatDocument
     {
-        get => _ciproDocument;
-        set => SetProperty(ref _ciproDocument, value);
+        get => _vatDocument;
+        set => SetProperty(ref _vatDocument, value);
+    }
+
+    private Bitmap? _taxDocument;
+    public Bitmap? TaxDocument
+    {
+        get => _taxDocument;
+        set => SetProperty(ref _taxDocument, value);
+    }
+
+    private Bitmap? _bbeeDocument;
+    public Bitmap? BbeeDocument
+    {
+        get => _bbeeDocument;
+        set => SetProperty(ref _bbeeDocument, value);
     }
 
     // Site Documents (for Edit/Create panel)
@@ -251,11 +270,26 @@ public partial class MainWindowViewModel
         set => SetProperty(ref _selectedTradingLicense, value);
     }
 
-    private Bitmap? _selectedCiproDocument;
-    public Bitmap? SelectedCiproDocument
+
+    private Bitmap? _selectedVatDocument;
+    public Bitmap? SelectedVatDocument
     {
-        get => _selectedCiproDocument;
-        set => SetProperty(ref _selectedCiproDocument, value);
+        get => _selectedVatDocument;
+        set => SetProperty(ref _selectedVatDocument, value);
+    }
+
+    private Bitmap? _selectedTaxDocument;
+    public Bitmap? SelectedTaxDocument
+    {
+        get => _selectedTaxDocument;
+        set => SetProperty(ref _selectedTaxDocument, value);
+    }
+
+    private Bitmap? _selectedBbeeDocument;
+    public Bitmap? SelectedBbeeDocument
+    {
+        get => _selectedBbeeDocument;
+        set => SetProperty(ref _selectedBbeeDocument, value);
     }
 
     // Create/Edit fields
@@ -607,8 +641,8 @@ public partial class MainWindowViewModel
             SearchSiteSuggestions.Clear();
             SelectedSearchSite = null;
             ApplyCompanyLetterFilter();
-            PaginationViewModel.Reset();
-            UpdatePagedCompanyResults();
+            
+            _ = SearchCompaniesAsync();
         }
     }
 
@@ -630,10 +664,19 @@ public partial class MainWindowViewModel
             if (_selectedSearchCompany == value) return;
             _selectedSearchCompany = value;
             OnPropertyChanged();
+            
+            // Mirror to SelectedCompany so existing logic works
+            SelectedCompany = value;
+
             IsSearchSiteEnabled = value != null;
             SearchSiteSuggestions.Clear();
             SelectedSearchSite = null;
-            if (value != null) _ = LoadSitesForSelectedCompanyAsync();
+            
+            if (value == null)
+            {
+                SiteResults.Clear();
+                UpdatePagedSiteResults();
+            }
         }
     }
 

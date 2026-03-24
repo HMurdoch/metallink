@@ -31,6 +31,7 @@ public partial class App : Application
     public SiteService SiteService { get; private set; } = null!;
     public ProvinceService ProvinceService { get; private set; } = null!;
 
+    public OperatorSettingsService OperatorSettingsService { get; private set; } = null!;
     public ThemeService ThemeService { get; private set; } = null!;
     public AppearanceService AppearanceService { get; private set; } = null!;
 
@@ -65,6 +66,7 @@ public partial class App : Application
         SiteService = new SiteService(ApiClient);
         ProvinceService = new ProvinceService(ApiClient);
 
+        OperatorSettingsService = new OperatorSettingsService(ApiClient);
         ThemeService = new ThemeService(ApiClient);
         AppearanceService = new AppearanceService(ApiClient);
 

@@ -14,4 +14,10 @@ public sealed class SiteDto
     public int? CountryId      { get; set; }
     public string? ProvinceName { get; set; }
     public bool IsActive { get; set; } = false;
+
+    public string? CipcDocumentPath { get; set; }
+    public string? TradingLicensePath { get; set; }
+    public string? VatRegistrationCertificatePath { get; set; }
+    public string? TaxClearanceCertificatePath { get; set; }
+    public string? BbbeeComplianceCertificatePath { get; set; }
 }

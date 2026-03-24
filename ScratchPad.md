@@ -5,6 +5,8 @@ Under Receiving if I add a line item (it being the last line item) the Delete bu
 
 ATATT3xFfGF0NSa28-3k6wQrE1frrJfi_7EpQqTbsuBctNeG7Q6LqugQlUnX6aTw_XcjftJKCQs9thm_GuTDvyaUxL2QXB3dT9m0I0Gf1zy269DxBhzASKTUEuVfCXFR-buGXh8DIgzqSBPSrU9WSHOWkBJ2IrPhE9I7s71ymi67iErRzE3Du2Y=E256729E
 
+JK - ATATT3xFfGF0HtUc2GMOsGM4pJ0d2KPi7EgfIlDqhtwkcQNL8n82PchOhno2O-ti9bE8nkBzhwf5aqHW_4ejZcXB0VXGOLwMldtG7hUuWrfZUyvn7eM7VapXlKLW05AQY3EpqZWPbeBjfQmR-LoFtbpj5-_2teh85gKf01YRL9TGe8MYXZJuUpc=8991D4E7
+
 Please go through the solution and familiarise yourself with the systems. This is a solution  for a scrap metal company we have a "Customers" system who we buy scrap from in the "Receiving" system. We have a "Buyers" system who we sell scrap to in the "Sending" system. When I refer to [both] I am referring to both Receiving and Sending.
 
 The following gives insights to the system: 
@@ -1102,3 +1104,64 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlc
 Loading sites…
 GET: http://localhost:5066/api/sites/lookup?companyId=4&term=
 Loaded 1 site(s).
+=================================================================
+
+
+cipc_document_path, trading_license_path (change the table column name from trading_license to trading_license_path), vat_registration_certificate_path (change cipro_document_path to vat_registration_certificate_path), add tax_clearance_certificate_path, add bbbee_compliance_certificate_path, 
+
+For Receiving, please remove the Ticket Report (PDF) section from both Receiving and Sending, we will never do it like this so you can remove it from code. For Receiving and Sending under Add Lines and under Details, if you click Notes for a line item it does not show in pop-up. When a line item is added for both systems, the Add Line item notes field must clear. For both systems when the system is loaded, only Search Tickets must be expanded - Results, Details and Lines, Create Ticket, Scale Measurement and Add Product Lines must be collapsed, When you click Search, then Results, Details and Lines, Create Ticket, Scale Measurement and Add Product Lines auto expand.
+
+When you search Customers or Buyers the first record must be selected in Results.
+
+For Companies & Sites The Site Documentation section, change the word “Generate” to “Scan” for all 3 buttons (documents), none of the 3 buttons work (in future they will be wired to scan an image from a scanner. But for now generate mock image for CIPC, License or CIPRO document, please tell me if there are any other regulatory company (site) specific founding or orperating documentation I should include please alert me first. )
+
+I have included a setting in the settings table (Play intro video [if true (default) play the intro video if it is set to false can you export an image of the last frame of the video, and just display the i second and then go in to the main application???):
+
+metal_link_dev=# SELECT * FROM metal_link.settings WHERE setting_id = 3;
+ setting_id | setting_name | setting_description | is_active | created_by_operator_id |         time_created          |         time_updated          
+------------+--------------+---------------------+-----------+------------------------+-------------------------------+-------------------------------
+          3 | intro_video  | Play intro video    | t         |                      1 | 2026-02-24 15:48:02.270055+02 | 2026-02-24 15:48:02.270055+02
+
+
+I have set this new setting for operator_id = 1 to true.
+
+metal_link_dev=# SELECT * FROM metal_link.operator_settings WHERE setting_id = 3;
+ operator_setting_id | operator_id | setting_id | setting_option_id | is_active | created_by_operator_id |         time_created          |         time_updated          
+---------------------+-------------+------------+-------------------+-----------+------------------------+-------------------------------+-------------------------------
+                  14 |           1 |          3 |                 4 | t         |                      1 | 2026-02-24 15:53:21.775154+02 | 2026-02-24 15:53:21.775154+02
+
+
+Please add a Section for: Startup with a setting/toggle for "Play intro video" ["Yes|No"], wich if true plays the intro video if false or no then after login briefly shows an image of the last frame of the intro video for 1 second.
+
+You said the following:
+
+I’ve explored the codebase and have a clear understanding of the requested changes. Here is the implementation plan:
+
+Implementation Plan
+1. Tickets (Receiving & Sending) Refinements
+
+Remove Ticket Report (PDF):
+Delete the section from TicketsReceivingView.axaml and TicketsSendingView.axaml.
+Remove IsReportExpanded, TicketReportTicketIdText, LastTicketReportPath, and DownloadTicketReportCommand from both ViewModels.
+Fix Line Item Notes:
+The ShowLineNotesCommand in both ViewModels is correctly passing the notes string, but the SelectedLineNotesContent property needs to ensure OnPropertyChanged is called (it currently is). I will verify why the modal might not be showing (e.g., ensuring IsNotesModalVisible is properly triggered).
+Clear Add Line Notes:
+Update AddReceivingLineAsync and AddSendingLineAsync to clear ReceivingLineNotes and SendingLineNotes (and corresponding UI weight fields) after a successful add.
+Collapse/Expand Logic:
+Initialize all expansion properties to false except IsSearchExpanded in the ViewModels.
+In SearchReceivingTicketsAsync and SearchSendingTicketsAsync, set all expansion properties (IsResultsExpanded, IsLinesExpanded, etc.) to true.
+2. Search Selection (Customers & Buyers)
+
+Update SearchCustomersAsync and SearchBuyersAsync in MainWindowViewModel (or respective partials) to automatically set SelectedCustomer or SelectedBuyer to the first result in the collection if any are returned.
+3. Companies & Sites Documentation
+
+Rename Buttons: In CompanyAndSitesView.axaml, change “Generate” to “Scan” for CIPC, License, and CIPRO buttons.
+Mock Image Generation: Ensure the GenerateMockSiteDocAsync method in MainWindowViewModel.CompanyAndSite.cs is correctly wired to the buttons.
+Regulatory Documentation Suggestion: Based on your request, common regulatory documents for sites/companies also include VAT Registration Certificate, Tax Clearance Certificate, and B-BBEE Certificate. Would you like me to add placeholders for these as well?
+4. Intro Video Setting
+
+Read Setting: Update IntroWindow.axaml.cs to check setting_id = 3 (intro_video) from the database (or via a shared service).
+Conditional Playback:
+If true: Play video as normal.
+If false: Use ffmpeg to extract the last frame of intro_video_6sec.mp4 to a temporary image, display it for 1 second, and then proceed to the main application.
+I’ll start implementing these changes immediately upon your approval.

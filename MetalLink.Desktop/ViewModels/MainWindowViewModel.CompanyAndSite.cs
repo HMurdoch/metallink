@@ -447,6 +447,26 @@ public partial class MainWindowViewModel
         City = "";
         PostalCode = "";
 
+        // Clear document bitmaps
+        CipcDocument = null;
+        TradingLicense = null;
+        VatDocument = null;
+        TaxDocument = null;
+        BbeeDocument = null;
+
+        SelectedCipcDocument = null;
+        SelectedTradingLicense = null;
+        SelectedVatDocument = null;
+        SelectedTaxDocument = null;
+        SelectedBbeeDocument = null;
+
+        // Clear pending data
+        _pendingCipcData = null;
+        _pendingTradingData = null;
+        _pendingVatData = null;
+        _pendingTaxData = null;
+        _pendingBbeeData = null;
+
         // Default Province and Country
         SetDefaultProvinceAndCountryForSite();
 
@@ -454,6 +474,13 @@ public partial class MainWindowViewModel
         OnPropertyChanged(nameof(SiteSaveButtonText));
         OnPropertyChanged(nameof(IsSiteEditMode));
         (CreateOrUpdateSiteCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+
+        UploadCipcDocumentCommand?.NotifyCanExecuteChanged();
+        UploadTradingLicenseCommand?.NotifyCanExecuteChanged();
+        UploadVatDocumentCommand?.NotifyCanExecuteChanged();
+        UploadTaxDocumentCommand?.NotifyCanExecuteChanged();
+        UploadBbeeDocumentCommand?.NotifyCanExecuteChanged();
+        CommitSiteDocumentsCommand?.NotifyCanExecuteChanged();
     }
 
     private void SetDefaultProvinceAndCountryForSite()
@@ -733,6 +760,13 @@ public partial class MainWindowViewModel
         OnPropertyChanged(nameof(SiteSaveButtonText));
         OnPropertyChanged(nameof(IsSiteEditMode));
         (CreateOrUpdateSiteCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+        
+        UploadCipcDocumentCommand?.NotifyCanExecuteChanged();
+        UploadTradingLicenseCommand?.NotifyCanExecuteChanged();
+        UploadVatDocumentCommand?.NotifyCanExecuteChanged();
+        UploadTaxDocumentCommand?.NotifyCanExecuteChanged();
+        UploadBbeeDocumentCommand?.NotifyCanExecuteChanged();
+        CommitSiteDocumentsCommand?.NotifyCanExecuteChanged();
 
         // Load Site Documents
         _ = LoadSelectedSiteDocumentsAsync(site);
@@ -740,52 +774,77 @@ public partial class MainWindowViewModel
 
     private async Task LoadSelectedSiteDocumentsAsync(SiteLookupDto site)
     {
-        // Clear existing
+        // Clear existing local preview bitmaps
         CipcDocument = null;
         TradingLicense = null;
-        CiproDocument = null;
+        VatDocument = null;
+        TaxDocument = null;
+        BbeeDocument = null;
         
         SelectedCipcDocument = null;
         SelectedTradingLicense = null;
-        SelectedCiproDocument = null;
+        SelectedVatDocument = null;
+        SelectedTaxDocument = null;
+        SelectedBbeeDocument = null;
+
+        // Clear pending upload data as we are loading a fresh site
+        _pendingCipcData = null;
+        _pendingTradingData = null;
+        _pendingVatData = null;
+        _pendingTaxData = null;
+        _pendingBbeeData = null;
 
         try
         {
             var cipc = await SiteService.DownloadSiteDocumentAsync(site.SiteId, "cipc");
             var trading = await SiteService.DownloadSiteDocumentAsync(site.SiteId, "trading");
-            var cipro = await SiteService.DownloadSiteDocumentAsync(site.SiteId, "cipro");
+            // var cipro = await SiteService.DownloadSiteDocumentAsync(site.SiteId, "cipro"); // cipro renamed to vat in DB but let's stick to the 5 reqs
+            var vat = await SiteService.DownloadSiteDocumentAsync(site.SiteId, "vat");
+            var tax = await SiteService.DownloadSiteDocumentAsync(site.SiteId, "tax");
+            var bbee = await SiteService.DownloadSiteDocumentAsync(site.SiteId, "bbee");
 
             CipcDocument = LoadBitmapFromBytes(cipc);
             TradingLicense = LoadBitmapFromBytes(trading);
-            CiproDocument = LoadBitmapFromBytes(cipro);
+            VatDocument = LoadBitmapFromBytes(vat);
+            TaxDocument = LoadBitmapFromBytes(tax);
+            BbeeDocument = LoadBitmapFromBytes(bbee);
 
             // Mirror to edit panel
             SelectedCipcDocument = CipcDocument;
             SelectedTradingLicense = TradingLicense;
-            SelectedCiproDocument = CiproDocument;
+            SelectedVatDocument = VatDocument;
+            SelectedTaxDocument = TaxDocument;
+            SelectedBbeeDocument = BbeeDocument;
         }
         catch { /* ignore missing */ }
     }
 
     public IAsyncRelayCommand UploadCipcDocumentCommand { get; private set; } = null!;
     public IAsyncRelayCommand UploadTradingLicenseCommand { get; private set; } = null!;
-    public IAsyncRelayCommand UploadCiproDocumentCommand { get; private set; } = null!;
+    public IAsyncRelayCommand UploadVatDocumentCommand { get; private set; } = null!;
+    public IAsyncRelayCommand UploadTaxDocumentCommand { get; private set; } = null!;
+    public IAsyncRelayCommand UploadBbeeDocumentCommand { get; private set; } = null!;
     public IAsyncRelayCommand CommitSiteDocumentsCommand { get; private set; } = null!;
 
     private void InitializeSiteDocumentCommands()
     {
-        UploadCipcDocumentCommand = new AsyncRelayCommand(() => GenerateMockSiteDocAsync("cipc"));
-        UploadTradingLicenseCommand = new AsyncRelayCommand(() => GenerateMockSiteDocAsync("trading"));
-        UploadCiproDocumentCommand = new AsyncRelayCommand(() => GenerateMockSiteDocAsync("cipro"));
-        CommitSiteDocumentsCommand = new AsyncRelayCommand(CommitSiteDocumentsAsync);
+        UploadCipcDocumentCommand = new AsyncRelayCommand(() => GenerateMockSiteDocAsync("cipc"), () => IsSiteEditMode);
+        UploadTradingLicenseCommand = new AsyncRelayCommand(() => GenerateMockSiteDocAsync("trading"), () => IsSiteEditMode);
+        UploadVatDocumentCommand = new AsyncRelayCommand(() => GenerateMockSiteDocAsync("vat"), () => IsSiteEditMode);
+        UploadTaxDocumentCommand = new AsyncRelayCommand(() => GenerateMockSiteDocAsync("tax"), () => IsSiteEditMode);
+        UploadBbeeDocumentCommand = new AsyncRelayCommand(() => GenerateMockSiteDocAsync("bbee"), () => IsSiteEditMode);
+        CommitSiteDocumentsCommand = new AsyncRelayCommand(CommitSiteDocumentsAsync, () => IsSiteEditMode);
     }
 
     private byte[]? _pendingCipcData;
     private byte[]? _pendingTradingData;
-    private byte[]? _pendingCiproData;
+    private byte[]? _pendingVatData;
+    private byte[]? _pendingTaxData;
+    private byte[]? _pendingBbeeData;
 
     private async Task GenerateMockSiteDocAsync(string type)
     {
+        Console.WriteLine($"[DEBUG] GenerateMockSiteDocAsync called for type: {type}");
         await Task.Yield();
         
         // Mock generation logic with distinct details
@@ -802,9 +861,17 @@ public partial class MainWindowViewModel
                 text = "TRADING LICENSE\nValid for Metal Link Operations\nSite Code: " + (SiteCode ?? "N/A");
                 color = 0xFFF1F8E9; // Light Green
                 break;
-            case "cipro":
-                text = "CIPRO CERTIFICATE\nCompliance Verification\nTimestamp: " + DateTime.Now.ToString("G");
-                color = 0xFFFFF3E0; // Light Orange
+            case "vat":
+                text = "VAT REGISTRATION\nValue Added Tax Compliance\nTax Office Ref: " + DateTime.Now.Ticks;
+                color = 0xFFF3E5F5; // Light Purple
+                break;
+            case "tax":
+                text = "TAX CLEARANCE\nGood Standing Certificate\nExpiry: " + DateTime.Now.AddYears(1).ToShortDateString();
+                color = 0xFFE8EAF6; // Indigo tint
+                break;
+            case "bbee":
+                text = "B-BBEE CERTIFICATE\nLevel Verification\nVerified On: " + DateTime.Now.ToShortDateString();
+                color = 0xFFFCE4EC; // Pink tint
                 break;
         }
 
@@ -821,9 +888,17 @@ public partial class MainWindowViewModel
                 _pendingTradingData = bytes;
                 SelectedTradingLicense = LoadBitmapFromBytes(bytes);
                 break;
-            case "cipro":
-                _pendingCiproData = bytes;
-                SelectedCiproDocument = LoadBitmapFromBytes(bytes);
+            case "vat":
+                _pendingVatData = bytes;
+                SelectedVatDocument = LoadBitmapFromBytes(bytes);
+                break;
+            case "tax":
+                _pendingTaxData = bytes;
+                SelectedTaxDocument = LoadBitmapFromBytes(bytes);
+                break;
+            case "bbee":
+                _pendingBbeeData = bytes;
+                SelectedBbeeDocument = LoadBitmapFromBytes(bytes);
                 break;
         }
 
@@ -844,18 +919,30 @@ public partial class MainWindowViewModel
             if (_pendingCipcData != null)
             {
                 await SiteService.UploadSiteDocumentAsync(SelectedSite.SiteId, "cipc", _pendingCipcData);
-                _pendingCipcData = null;
             }
             if (_pendingTradingData != null)
             {
                 await SiteService.UploadSiteDocumentAsync(SelectedSite.SiteId, "trading", _pendingTradingData);
-                _pendingTradingData = null;
             }
-            if (_pendingCiproData != null)
+            if (_pendingVatData != null)
             {
-                await SiteService.UploadSiteDocumentAsync(SelectedSite.SiteId, "cipro", _pendingCiproData);
-                _pendingCiproData = null;
+                await SiteService.UploadSiteDocumentAsync(SelectedSite.SiteId, "vat", _pendingVatData);
             }
+            if (_pendingTaxData != null)
+            {
+                await SiteService.UploadSiteDocumentAsync(SelectedSite.SiteId, "tax", _pendingTaxData);
+            }
+            if (_pendingBbeeData != null)
+            {
+                await SiteService.UploadSiteDocumentAsync(SelectedSite.SiteId, "bbee", _pendingBbeeData);
+            }
+
+            // Success: clear pending and reload
+            _pendingCipcData = null;
+            _pendingTradingData = null;
+            _pendingVatData = null;
+            _pendingTaxData = null;
+            _pendingBbeeData = null;
 
             // Reload to show confirmed from server
             await LoadSelectedSiteDocumentsAsync(SelectedSite);
@@ -913,6 +1000,24 @@ public partial class MainWindowViewModel
             // Diagonal line
             for (int i = 0; i < Math.Min(width, height); i++)
                 pixels[i * width + i] = patternColor;
+        }
+        else if (type == "vat")
+        {
+            // Box in middle
+            for (int y = 150; y < 250; y++)
+                for (int x = 250; x < 350; x++) pixels[y * width + x] = patternColor;
+        }
+        else if (type == "tax")
+        {
+            // Cross
+            for (int i = 0; i < width; i++) pixels[200 * width + i] = patternColor;
+            for (int i = 0; i < height; i++) pixels[i * width + 300] = patternColor;
+        }
+        else if (type == "bbee")
+        {
+            // Dots
+            for (int y = 50; y < height; y += 50)
+                for (int x = 50; x < width; x += 50) pixels[y * width + x] = patternColor;
         }
 
         using (var bitmap = new WriteableBitmap(new Avalonia.PixelSize(width, height), new Avalonia.Vector(96, 96), Avalonia.Platform.PixelFormat.Bgra8888, Avalonia.Platform.AlphaFormat.Premul))
@@ -1123,41 +1228,62 @@ public partial class MainWindowViewModel
 
     private async Task LoadSitesForSelectedCompanyResultsAsync(CancellationToken ct = default)
     {
-        if (SelectedCompany == null)
+        var selected = SelectedCompany;
+        if (selected == null)
         {
+            Console.WriteLine("[DEBUG] LoadSitesForSelectedCompanyResultsAsync: No company selected.");
             SiteResults.Clear();
             PagedSiteResults.Clear();
             SelectedSite = null;
             return;
         }
 
+        var companyId = selected.CompanyId;
+        Console.WriteLine($"[DEBUG] LoadSitesForSelectedCompanyResultsAsync: CompanyId={companyId} for {selected.CompanyName}");
+
         try
         {
             StatusMessage = "Loading sites...";
 
+            Console.WriteLine($"[DEBUG] LoadSitesForSelectedCompanyResultsAsync: Fetching sites from service for company {companyId}...");
             var items = await _app.SiteService.LookupSitesForCompanyAsync(
-                SelectedCompany.CompanyId,
+                companyId,
                 term: string.Empty,
                 ct) ?? new List<SiteLookupDto>();
 
-            SiteResults.Clear();
-            if (items != null)
-            {
+            Console.WriteLine($"[DEBUG] LoadSitesForSelectedCompanyResultsAsync: Service returned {items.Count} items.");
+
+            Dispatcher.UIThread.Post(() => {
+                SiteResults.Clear();
                 foreach (var s in items.OrderBy(x => x.SiteName))
+                {
+                    Console.WriteLine($"[DEBUG] LoadSitesForSelectedCompanyResultsAsync (UI): Processing site: {s.SiteName} (ID: {s.SiteId}, Code: {s.SiteCode})");
                     SiteResults.Add(s);
-            }
+                }
 
-            SitePaginationViewModel.SetTotalRecords(SiteResults.Count);
-            SitePaginationViewModel.PageSize = 10;
-            UpdatePagedSiteResults();
+                Console.WriteLine($"[DEBUG] LoadSitesForSelectedCompanyResultsAsync (UI): SiteResults collection now has {SiteResults.Count} items.");
+                
+                Console.WriteLine($"[DEBUG] LoadSitesForSelectedCompanyResultsAsync (UI): Updating Pagination with total records {SiteResults.Count}");
+                
+                // Reset to page 1 for a new company fetch
+                SitePaginationViewModel.Reset();
+                SitePaginationViewModel.SetTotalRecords(SiteResults.Count);
+                
+                // Log pagination state
+                Console.WriteLine($"[DEBUG] LoadSitesForSelectedCompanyResultsAsync (UI): Pagination State -> CurrentPage: {SitePaginationViewModel.CurrentPage}, TotalPages: {SitePaginationViewModel.TotalPages}, TotalRecords: {SitePaginationViewModel.TotalRecords}");
 
-            // Auto-generate next SITE-XX now that we have the full list
-            ClearSiteForm();
+                UpdatePagedSiteResults();
 
-            StatusMessage = $"Loaded {SiteResults.Count} site(s).";
+                // Auto-generate next SITE-XX now that we have the full list
+                ClearSiteForm();
+
+                StatusMessage = $"Loaded {SiteResults.Count} site(s).";
+                Console.WriteLine($"[DEBUG] LoadSitesForSelectedCompanyResultsAsync (UI): Finished loading sites. SiteResults count: {SiteResults.Count}, PagedSiteResults count: {PagedSiteResults.Count}");
+            });
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[ERROR] LoadSitesForSelectedCompanyResultsAsync: {ex}");
             StatusMessage = $"Load sites failed: {ex.Message}";
             SiteResults.Clear();
             PagedSiteResults.Clear();
@@ -1166,18 +1292,34 @@ public partial class MainWindowViewModel
 
     private void UpdatePagedSiteResults()
     {
-        PagedSiteResults.Clear();
+        Console.WriteLine($"[DEBUG] UpdatePagedSiteResults START: SiteResults count={SiteResults.Count}");
+        
+        var skip = SitePaginationViewModel.GetSkip();
+        var take = SitePaginationViewModel.GetTake();
+        Console.WriteLine($"[DEBUG] UpdatePagedSiteResults: Pagination params -> Skip={skip}, Take={take}");
+
         var paged = SiteResults
             .OrderBy(x => x.SiteName)
-            .Skip(SitePaginationViewModel.GetSkip())
-            .Take(SitePaginationViewModel.GetTake());
+            .Skip(skip)
+            .Take(take)
+            .ToList();
         
-        foreach (var s in paged) 
-        {
-            // Requirement: hide delete if only 1 site
-            s.IsDeleteVisible = SiteResults.Count > 1;
-            PagedSiteResults.Add(s);
-        }
+        Console.WriteLine($"[DEBUG] UpdatePagedSiteResults: LINQ query returned {paged.Count} items to display on current page.");
+
+        // Clear and add on the same thread if we are already on UI thread, or Post if not.
+        // However, to be safe and consistent with LoadSitesForSelectedCompanyResultsAsync,
+        // we should ensure the collection modification itself is atomic on UI thread.
+        Dispatcher.UIThread.Post(() => {
+            PagedSiteResults.Clear();
+            foreach (var s in paged) 
+            {
+                // Requirement: hide delete if only 1 site
+                s.IsDeleteVisible = SiteResults.Count > 1;
+                Console.WriteLine($"[DEBUG] UpdatePagedSiteResults (UI): Adding to PagedSiteResults -> {s.SiteName} (ID: {s.SiteId})");
+                PagedSiteResults.Add(s);
+            }
+            Console.WriteLine($"[DEBUG] UpdatePagedSiteResults END: PagedSiteResults collection now has {PagedSiteResults.Count} items.");
+        });
     }
 
 

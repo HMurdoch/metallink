@@ -89,6 +89,19 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         }
     }
 
+    public bool PlayIntroVideo
+    {
+        get => MainVm?.PlayIntroVideo ?? true;
+        set
+        {
+            if (MainVm != null && value != MainVm.PlayIntroVideo)
+            {
+                MainVm.PlayIntroVideo = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     private async Task SetCrystalineAsync(bool enabled)
     {
         try

@@ -7,8 +7,10 @@ public class DocumentPath
     public int DocumentPathId { get; set; }
 
     public string? CipcDocumentPath { get; set; }
-    public string? TradingLicense { get; set; }
-    public string? CiproDocumentPath { get; set; }
+    public string? TradingLicensePath { get; set; }
+    public string? VatRegistrationCertificatePath { get; set; }
+    public string? TaxClearanceCertificatePath { get; set; }
+    public string? BbbeeComplianceCertificatePath { get; set; }
 
     public int CreatedByOperatorId { get; set; }
     public bool IsActive { get; set; } = true;

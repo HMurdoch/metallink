@@ -23,6 +23,8 @@ public class SiteLookupDto
 
     // Document Paths
     public string? CipcDocumentPath { get; set; }
-    public string? TradingLicense { get; set; }
-    public string? CiproDocumentPath { get; set; }
+    public string? TradingLicensePath { get; set; }
+    public string? VatRegistrationCertificatePath { get; set; }
+    public string? TaxClearanceCertificatePath { get; set; }
+    public string? BbbeeComplianceCertificatePath { get; set; }
 }

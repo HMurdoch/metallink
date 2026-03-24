@@ -318,8 +318,7 @@
       <!-- Single-view host (Each view handles its own internal scrolling for sticky headers) -->
       <ContentControl x:Name="MainContentHost"
                       Grid.Row="0" Grid.Column="0"
-                      Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}}"
-                      DataContext="{Binding}"
+                      Content="{Binding CurrentSection, Converter={StaticResource SectionToViewConverter}, ConverterParameter={Binding}}"
                       HorizontalContentAlignment="Stretch"
                       VerticalContentAlignment="Stretch" />
     </Grid>

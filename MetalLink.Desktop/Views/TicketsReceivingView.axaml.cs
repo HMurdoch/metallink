@@ -120,11 +120,4 @@ public partial class TicketsReceivingView : UserControl
         }
     }
 
-    private void ToggleTicketReport(object? sender, PointerPressedEventArgs e)
-    {
-        if (DataContext is TicketsReceivingViewModel vm) {
-            vm.IsReportExpanded = !vm.IsReportExpanded;
-            Console.WriteLine($"[DEBUG] TicketsReceivingView: Toggled TicketReport to {vm.IsReportExpanded}");
-        }
-    }
 }

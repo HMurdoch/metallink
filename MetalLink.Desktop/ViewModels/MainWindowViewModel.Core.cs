@@ -67,6 +67,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     // Logic ViewModels
     public MetalLink.Desktop.ViewModels.Receiving.TicketsReceivingViewModel Receiving { get; }
     public MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel Sending { get; }
+    public StockLevelsViewModel StockLevels { get; }
+    public StockMovementViewModel StockMovement { get; }
     public PaginationViewModel PaginationViewModel { get; } = new();
 
     // Core Commands
@@ -145,6 +147,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
         Receiving = new MetalLink.Desktop.ViewModels.Receiving.TicketsReceivingViewModel(_ticketReceivingService, new CompanyAndSiteService(_apiClient, _authState), _scaleService, new ProductsAndPricesService(_apiClient, _authState));
         Sending = new MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel(_ticketSendingService, new CompanyAndSiteService(_apiClient, _authState), _scaleService, new ProductsAndPricesService(_apiClient, _authState));
+        StockLevels = new StockLevelsViewModel(_apiClient);
+        StockMovement = new StockMovementViewModel(_apiClient);
 
         ToggleNavCommand = new RelayCommand(() => IsNavCollapsed = !IsNavCollapsed);
         ShowDashboardCommand = new RelayCommand(() => { 
@@ -207,8 +211,14 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         ShowDocumentsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Documents);
         ShowCameraCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Camera);
         ShowReportsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Reports);
-        ShowStockLevelsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.StockLevels);
-        ShowStockMovementCommand = new RelayCommand(() => CurrentSection = EnumMainSection.StockMovement);
+        ShowStockLevelsCommand = new AsyncRelayCommand(async () => {
+            CurrentSection = EnumMainSection.StockLevels;
+            await StockLevels.RefreshAsync();
+        });
+        ShowStockMovementCommand = new AsyncRelayCommand(async () => {
+            CurrentSection = EnumMainSection.StockMovement;
+            await StockMovement.RefreshAsync();
+        });
         ShowSettingsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Settings);
 
         LogoutCommand = new AsyncRelayCommand(LogoutAsync);
@@ -382,6 +392,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             PaginationViewModel.SetTotalRecords(CustomerSearchResults.Count);
             UpdatePagedCustomerResults();
 
+            FoundCustomer = PagedCustomerSearchResults.FirstOrDefault();
+
             CustomerIsSearchResultsExpanded = true;
             CustomerIsDetailsExpanded = true;
         }
@@ -422,6 +434,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
             PaginationViewModel.SetTotalRecords(BuyerSearchResults.Count);
             UpdatePagedBuyerResults();
+
+            FoundBuyer = PagedBuyerSearchResults.FirstOrDefault();
 
             BuyerIsSearchResultsExpanded = true;
             BuyerIsDetailsExpanded = true;

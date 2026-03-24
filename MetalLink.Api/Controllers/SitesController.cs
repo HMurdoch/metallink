@@ -59,8 +59,10 @@ public sealed class SitesController : ControllerBase
                 PostalCode = s.PostalCode,
 
                 CipcDocumentPath = s.DocumentPath != null ? s.DocumentPath.CipcDocumentPath : null,
-                TradingLicense = s.DocumentPath != null ? s.DocumentPath.TradingLicense : null,
-                CiproDocumentPath = s.DocumentPath != null ? s.DocumentPath.CiproDocumentPath : null
+                TradingLicensePath = s.DocumentPath != null ? s.DocumentPath.TradingLicensePath : null,
+                VatRegistrationCertificatePath = s.DocumentPath != null ? s.DocumentPath.VatRegistrationCertificatePath : null,
+                TaxClearanceCertificatePath = s.DocumentPath != null ? s.DocumentPath.TaxClearanceCertificatePath : null,
+                BbbeeComplianceCertificatePath = s.DocumentPath != null ? s.DocumentPath.BbbeeComplianceCertificatePath : null
             })
             .ToListAsync(ct);
 
@@ -112,14 +114,18 @@ public sealed class SitesController : ControllerBase
 
         // Handle initial document paths if provided (though usually uploaded later)
         if (!string.IsNullOrWhiteSpace(dto.CipcDocumentPath) || 
-            !string.IsNullOrWhiteSpace(dto.TradingLicense) || 
-            !string.IsNullOrWhiteSpace(dto.CiproDocumentPath))
+            !string.IsNullOrWhiteSpace(dto.TradingLicensePath) || 
+            !string.IsNullOrWhiteSpace(dto.VatRegistrationCertificatePath) ||
+            !string.IsNullOrWhiteSpace(dto.TaxClearanceCertificatePath) ||
+            !string.IsNullOrWhiteSpace(dto.BbbeeComplianceCertificatePath))
         {
             entity.DocumentPath = new DocumentPath
             {
                 CipcDocumentPath = dto.CipcDocumentPath,
-                TradingLicense = dto.TradingLicense,
-                CiproDocumentPath = dto.CiproDocumentPath,
+                TradingLicensePath = dto.TradingLicensePath,
+                VatRegistrationCertificatePath = dto.VatRegistrationCertificatePath,
+                TaxClearanceCertificatePath = dto.TaxClearanceCertificatePath,
+                BbbeeComplianceCertificatePath = dto.BbbeeComplianceCertificatePath,
                 CreatedByOperatorId = operatorId
             };
         }
@@ -142,8 +148,10 @@ public sealed class SitesController : ControllerBase
             CountryId = entity.CountryId,
             IsActive = entity.IsActive,
             CipcDocumentPath = entity.DocumentPath?.CipcDocumentPath,
-            TradingLicense = entity.DocumentPath?.TradingLicense,
-            CiproDocumentPath = entity.DocumentPath?.CiproDocumentPath
+            TradingLicensePath = entity.DocumentPath?.TradingLicensePath,
+            VatRegistrationCertificatePath = entity.DocumentPath?.VatRegistrationCertificatePath,
+            TaxClearanceCertificatePath = entity.DocumentPath?.TaxClearanceCertificatePath,
+            BbbeeComplianceCertificatePath = entity.DocumentPath?.BbbeeComplianceCertificatePath
         };
 
         return Created($"api/sites/{entity.SiteId}", result);
@@ -170,7 +178,11 @@ public sealed class SitesController : ControllerBase
         site.IsActive = dto.IsActive;
 
         // Update document paths if provided
-        if (site.DocumentPath == null && (!string.IsNullOrWhiteSpace(dto.CipcDocumentPath) || !string.IsNullOrWhiteSpace(dto.TradingLicense) || !string.IsNullOrWhiteSpace(dto.CiproDocumentPath)))
+        if (site.DocumentPath == null && (!string.IsNullOrWhiteSpace(dto.CipcDocumentPath) || 
+                                          !string.IsNullOrWhiteSpace(dto.TradingLicensePath) || 
+                                          !string.IsNullOrWhiteSpace(dto.VatRegistrationCertificatePath) ||
+                                          !string.IsNullOrWhiteSpace(dto.TaxClearanceCertificatePath) ||
+                                          !string.IsNullOrWhiteSpace(dto.BbbeeComplianceCertificatePath)))
         {
             site.DocumentPath = new DocumentPath { CreatedByOperatorId = (int)User.GetOperatorId() };
         }
@@ -178,8 +190,10 @@ public sealed class SitesController : ControllerBase
         if (site.DocumentPath != null)
         {
             site.DocumentPath.CipcDocumentPath = dto.CipcDocumentPath;
-            site.DocumentPath.TradingLicense = dto.TradingLicense;
-            site.DocumentPath.CiproDocumentPath = dto.CiproDocumentPath;
+            site.DocumentPath.TradingLicensePath = dto.TradingLicensePath;
+            site.DocumentPath.VatRegistrationCertificatePath = dto.VatRegistrationCertificatePath;
+            site.DocumentPath.TaxClearanceCertificatePath = dto.TaxClearanceCertificatePath;
+            site.DocumentPath.BbbeeComplianceCertificatePath = dto.BbbeeComplianceCertificatePath;
             site.DocumentPath.UpdatedTime = DateTimeOffset.UtcNow;
         }
 
@@ -200,7 +214,7 @@ public sealed class SitesController : ControllerBase
         if (request.ImageData == null || request.ImageData.Length == 0)
             return BadRequest("Document data is required");
 
-        var validTypes = new[] { "cipc", "trading", "cipro" };
+        var validTypes = new[] { "cipc", "trading", "vat", "tax", "bbee" };
         if (!validTypes.Contains(docType.ToLower()))
             return BadRequest($"Invalid document type. Valid types: {string.Join(", ", validTypes)}");
 
@@ -235,8 +249,10 @@ public sealed class SitesController : ControllerBase
             switch (docType.ToLower())
             {
                 case "cipc": site.DocumentPath.CipcDocumentPath = key; break;
-                case "trading": site.DocumentPath.TradingLicense = key; break;
-                case "cipro": site.DocumentPath.CiproDocumentPath = key; break;
+                case "trading": site.DocumentPath.TradingLicensePath = key; break;
+                case "vat": site.DocumentPath.VatRegistrationCertificatePath = key; break;
+                case "tax": site.DocumentPath.TaxClearanceCertificatePath = key; break;
+                case "bbee": site.DocumentPath.BbbeeComplianceCertificatePath = key; break;
             }
             
             site.UpdatedTime = DateTimeOffset.UtcNow;
@@ -261,8 +277,10 @@ public sealed class SitesController : ControllerBase
         string? path = docType.ToLower() switch
         {
             "cipc" => site.DocumentPath.CipcDocumentPath,
-            "trading" => site.DocumentPath.TradingLicense,
-            "cipro" => site.DocumentPath.CiproDocumentPath,
+            "trading" => site.DocumentPath.TradingLicensePath,
+            "vat" => site.DocumentPath.VatRegistrationCertificatePath,
+            "tax" => site.DocumentPath.TaxClearanceCertificatePath,
+            "bbee" => site.DocumentPath.BbbeeComplianceCertificatePath,
             _ => null
         };
 

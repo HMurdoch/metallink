@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using LiveChartsCore;
 using LiveChartsCore.Measure;
@@ -232,6 +233,36 @@ public partial class MainWindowViewModel
             {
                 NewIsCompany = true;
             }
+        }
+    }
+
+    private bool _playIntroVideo = true;
+    public bool PlayIntroVideo
+    {
+        get => _playIntroVideo;
+        set
+        {
+            if (_playIntroVideo == value) return;
+            _playIntroVideo = value;
+            OnPropertyChanged();
+            _ = SetPlayIntroVideoAsync(value);
+        }
+    }
+
+    public async Task SetPlayIntroVideoAsync(bool enabled)
+    {
+        try
+        {
+            // setting_id 3, option 4 = Yes, 5 = No
+            int optionId = enabled ? 4 : 5;
+            if (_app != null)
+            {
+                await _app.OperatorSettingsService.UpdateSettingAsync(3, optionId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] SetPlayIntroVideoAsync: {ex.Message}");
         }
     }
 

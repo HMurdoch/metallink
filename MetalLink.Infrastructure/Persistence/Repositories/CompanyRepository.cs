@@ -38,6 +38,7 @@ public sealed class CompanyRepository : ICompanyRepository
     {
         var query = _dbContext.Sites
             .Include(s => s.Province)
+            .Include(s => s.DocumentPath)
             .Where(s => s.CompanyId == companyId);
 
         if (!string.IsNullOrWhiteSpace(term))

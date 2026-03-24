@@ -225,7 +225,7 @@ public sealed class TicketsSendingViewModel : ViewModelBase
                 IsCreateExpanded = true;
                 IsScaleExpanded = true;
                 IsLinesExpanded = true;
-                IsReportExpanded = true;
+                IsAddLinesExpanded = true;
             });
 
             StatusMessage = $"Loaded {SendingTicketSearchResults.Count} sending ticket(s).";
@@ -651,7 +651,12 @@ public sealed class TicketsSendingViewModel : ViewModelBase
     private string _sendingWeightText = string.Empty;
     public string SendingWeightText { get => _sendingWeightText; set { _sendingWeightText = value; OnPropertyChanged(); } }
 
-    public string SendingLineNotes { get; set; } = string.Empty;
+    private string _sendingLineNotes = string.Empty;
+    public string SendingLineNotes
+    {
+        get => _sendingLineNotes;
+        set { _sendingLineNotes = value; OnPropertyChanged(); }
+    }
 
     public ObservableCollection<ProductLookupDto> SendingProductSuggestions { get; } = new();
 
@@ -779,23 +784,20 @@ public sealed class TicketsSendingViewModel : ViewModelBase
     private bool _isSearchExpanded = true;
     public bool IsSearchExpanded { get => _isSearchExpanded; set { _isSearchExpanded = value; OnPropertyChanged(); } }
 
-    private bool _isResultsExpanded = true;
+    private bool _isResultsExpanded = false;
     public bool IsResultsExpanded { get => _isResultsExpanded; set { _isResultsExpanded = value; OnPropertyChanged(); } }
 
-    private bool _isCreateExpanded = true;
+    private bool _isCreateExpanded = false;
     public bool IsCreateExpanded { get => _isCreateExpanded; set { _isCreateExpanded = value; OnPropertyChanged(); } }
 
-    private bool _isScaleExpanded = true;
+    private bool _isScaleExpanded = false;
     public bool IsScaleExpanded { get => _isScaleExpanded; set { _isScaleExpanded = value; OnPropertyChanged(); } }
 
-    private bool _isLinesExpanded = true;
+    private bool _isLinesExpanded = false;
     public bool IsLinesExpanded { get => _isLinesExpanded; set { _isLinesExpanded = value; OnPropertyChanged(); } }
 
-    private bool _isAddLinesExpanded = true;
+    private bool _isAddLinesExpanded = false;
     public bool IsAddLinesExpanded { get => _isAddLinesExpanded; set { _isAddLinesExpanded = value; OnPropertyChanged(); } }
-
-    private bool _isReportExpanded = true;
-    public bool IsReportExpanded { get => _isReportExpanded; set { _isReportExpanded = value; OnPropertyChanged(); } }
 
     private string _statusMessage = string.Empty;
     public string StatusMessage

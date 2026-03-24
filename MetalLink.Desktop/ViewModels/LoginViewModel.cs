@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -120,8 +121,11 @@ public class LoginViewModel : INotifyPropertyChanged
                 // Close login window immediately after intro shows
                 loginWindow?.Close();
 
-                // Play intro sequence (6 seconds total)
-                await intro.PlayAsync();
+                // Check setting_id 3 (intro_video)
+                bool playVideo = _app.AuthState.OperatorSettings.FirstOrDefault(s => s.SettingId == 3)?.SettingOptionId != 5; // 5 = No
+
+                // Play intro sequence
+                await intro.PlayAsync(playVideo);
 
                 // Now create and show the main window
                 var mainWindow = new MainWindow

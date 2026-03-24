@@ -964,48 +964,6 @@
           </StackPanel>
         </Border>
 
-        <!-- TICKET REPORT (PDF) -->
-        <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
-          <StackPanel Spacing="8">
-            <Grid x:Name="TicketReportHeader" Background="Transparent" PointerPressed="ToggleTicketReport">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-              </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" x:Name="TicketReportArrow" 
-                         Text="{Binding IsReportExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
-                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
-              <TextBlock Grid.Column="1" Text="Ticket Report (PDF)" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
-            </Grid>
-
-            <StackPanel x:Name="TicketReportContent" Spacing="8" IsVisible="{Binding IsReportExpanded}">
-            <TextBlock Text="Ticket Report (PDF)"
-                       Foreground="{DynamicResource Brush.TextPrimary}"
-                       FontSize="13"
-                       FontWeight="Bold" />
-
-            <StackPanel Orientation="Horizontal" Spacing="10">
-              <TextBlock Text="Ticket ID:"
-                         Width="100"
-                         VerticalAlignment="Center"
-                         Foreground="#c0c4cf" />
-              <TextBox Text="{Binding TicketReportTicketIdText}"
-                       Width="120" />
-              <Button Content="Download Ticket PDF"
-                      Width="170"
-                      Command="{Binding DownloadTicketReportCommand}" />
-            </StackPanel>
-
-            <TextBlock Text="Last Ticket PDF Path:"
-                       FontWeight="Bold"
-                       Foreground="#c0c4cf"
-                       Margin="0,10,0,0" />
-            <TextBlock Text="{Binding LastTicketReportPath}"
-                       TextWrapping="Wrap"
-                       Foreground="#e5e7eb" />
-          </StackPanel>
-          </StackPanel>
-        </Border>
 
           </StackPanel>
         </ScrollViewer>

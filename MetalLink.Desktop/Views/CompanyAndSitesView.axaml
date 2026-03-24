@@ -94,7 +94,6 @@
                 <TextBox Grid.Column="0" Text="{Binding CompanySearchText, Mode=TwoWay}" Watermark="Filter by name..." Margin="0,0,4,0"/>
                 <ComboBox Grid.Column="1" ItemsSource="{Binding CompanyLetterFilters}" SelectedItem="{Binding SelectedCompanyLetter}" />
               </Grid>
-              <Button Name="SearchCompaniesButton" Classes="primary" HorizontalAlignment="Left" Width="100" Content="Search" Command="{Binding SearchCompaniesCommand}" />
             </StackPanel>
           </StackPanel>
         </Border>
@@ -268,41 +267,66 @@
             </Grid>
             
             <StackPanel IsVisible="{Binding IsSiteDocumentationExpanded}" Spacing="16">
-              <StackPanel Orientation="Horizontal" Spacing="20" HorizontalAlignment="Center">
+              <!-- Site Documentation Row (All 5 next to each other) -->
+              <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
                 <!-- CIPC Document -->
-                <StackPanel Spacing="8" Width="200">
-                  <TextBlock Text="CIPC Document" HorizontalAlignment="Center" Foreground="#c0c4cf" />
-                  <Border Width="180" Height="140" BorderBrush="#444a55" BorderThickness="1" Background="#1a1c1e">
+                <StackPanel Spacing="8" Width="180">
+                  <TextBlock Text="CIPC Document" HorizontalAlignment="Center" Foreground="#c0c4cf" FontSize="11" />
+                  <Border Width="160" Height="120" BorderBrush="#444a55" BorderThickness="1" Background="#1a1c1e">
                     <Panel>
                       <Image Source="{Binding SelectedCipcDocument}" Stretch="Uniform" />
-                      <TextBlock Text="No Document" IsVisible="{Binding SelectedCipcDocument, Converter={x:Static ObjectConverters.IsNull}}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#666" />
+                      <TextBlock Text="No Document" IsVisible="{Binding SelectedCipcDocument, Converter={x:Static ObjectConverters.IsNull}}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#666" FontSize="11" />
                     </Panel>
                   </Border>
-                  <Button Width="180" Height="30" Content="Generate CIPC" HorizontalAlignment="Center" Command="{Binding UploadCipcDocumentCommand}" IsEnabled="{Binding IsSiteEditMode}" Background="#30333A" Foreground="White" BorderBrush="#444a55" BorderThickness="1" CornerRadius="3" />
+                  <Button Width="160" Height="28" Content="Scan CIPC" HorizontalAlignment="Center" Command="{Binding UploadCipcDocumentCommand}" Background="#30333A" Foreground="White" BorderBrush="#444a55" BorderThickness="1" CornerRadius="3" FontSize="11" />
                 </StackPanel>
 
                 <!-- Trading License -->
-                <StackPanel Spacing="8" Width="200">
-                  <TextBlock Text="Trading License" HorizontalAlignment="Center" Foreground="#c0c4cf" />
-                  <Border Width="180" Height="140" BorderBrush="#444a55" BorderThickness="1" Background="#1a1c1e">
+                <StackPanel Spacing="8" Width="180">
+                  <TextBlock Text="Trading License" HorizontalAlignment="Center" Foreground="#c0c4cf" FontSize="11" />
+                  <Border Width="160" Height="120" BorderBrush="#444a55" BorderThickness="1" Background="#1a1c1e">
                     <Panel>
                       <Image Source="{Binding SelectedTradingLicense}" Stretch="Uniform" />
-                      <TextBlock Text="No Document" IsVisible="{Binding SelectedTradingLicense, Converter={x:Static ObjectConverters.IsNull}}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#666" />
+                      <TextBlock Text="No Document" IsVisible="{Binding SelectedTradingLicense, Converter={x:Static ObjectConverters.IsNull}}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#666" FontSize="11" />
                     </Panel>
                   </Border>
-                  <Button Width="180" Height="30" Content="Generate License" HorizontalAlignment="Center" Command="{Binding UploadTradingLicenseCommand}" IsEnabled="{Binding IsSiteEditMode}" Background="#30333A" Foreground="White" BorderBrush="#444a55" BorderThickness="1" CornerRadius="3" />
+                  <Button Width="160" Height="28" Content="Scan License" HorizontalAlignment="Center" Command="{Binding UploadTradingLicenseCommand}" Background="#30333A" Foreground="White" BorderBrush="#444a55" BorderThickness="1" CornerRadius="3" FontSize="11" />
                 </StackPanel>
 
-                <!-- CIPRO Document -->
-                <StackPanel Spacing="8" Width="200">
-                  <TextBlock Text="CIPRO Document" HorizontalAlignment="Center" Foreground="#c0c4cf" />
-                  <Border Width="180" Height="140" BorderBrush="#444a55" BorderThickness="1" Background="#1a1c1e">
+                <!-- VAT Registration Certificate -->
+                <StackPanel Spacing="8" Width="180">
+                  <TextBlock Text="VAT Registration Cert" HorizontalAlignment="Center" Foreground="#c0c4cf" FontSize="11" />
+                  <Border Width="160" Height="120" BorderBrush="#444a55" BorderThickness="1" Background="#1a1c1e">
                     <Panel>
-                      <Image Source="{Binding SelectedCiproDocument}" Stretch="Uniform" />
-                      <TextBlock Text="No Document" IsVisible="{Binding SelectedCiproDocument, Converter={x:Static ObjectConverters.IsNull}}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#666" />
+                      <Image Source="{Binding SelectedVatDocument}" Stretch="Uniform" />
+                      <TextBlock Text="No Document" IsVisible="{Binding SelectedVatDocument, Converter={x:Static ObjectConverters.IsNull}}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#666" FontSize="11" />
                     </Panel>
                   </Border>
-                  <Button Width="180" Height="30" Content="Generate CIPRO" HorizontalAlignment="Center" Command="{Binding UploadCiproDocumentCommand}" IsEnabled="{Binding IsSiteEditMode}" Background="#30333A" Foreground="White" BorderBrush="#444a55" BorderThickness="1" CornerRadius="3" />
+                  <Button Width="160" Height="28" Content="Scan VAT" HorizontalAlignment="Center" Command="{Binding UploadVatDocumentCommand}" Background="#30333A" Foreground="White" BorderBrush="#444a55" BorderThickness="1" CornerRadius="3" FontSize="11" />
+                </StackPanel>
+
+                <!-- Tax Clearance Certificate -->
+                <StackPanel Spacing="8" Width="180">
+                  <TextBlock Text="Tax Clearance Cert" HorizontalAlignment="Center" Foreground="#c0c4cf" FontSize="11" />
+                  <Border Width="160" Height="120" BorderBrush="#444a55" BorderThickness="1" Background="#1a1c1e">
+                    <Panel>
+                      <Image Source="{Binding SelectedTaxDocument}" Stretch="Uniform" />
+                      <TextBlock Text="No Document" IsVisible="{Binding SelectedTaxDocument, Converter={x:Static ObjectConverters.IsNull}}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#666" FontSize="11" />
+                    </Panel>
+                  </Border>
+                  <Button Width="160" Height="28" Content="Scan Tax" HorizontalAlignment="Center" Command="{Binding UploadTaxDocumentCommand}" Background="#30333A" Foreground="White" BorderBrush="#444a55" BorderThickness="1" CornerRadius="3" FontSize="11" />
+                </StackPanel>
+
+                <!-- B-BBEE Compliance Certificate -->
+                <StackPanel Spacing="8" Width="180">
+                  <TextBlock Text="B-BBEE Compliance Cert" HorizontalAlignment="Center" Foreground="#c0c4cf" FontSize="11" />
+                  <Border Width="160" Height="120" BorderBrush="#444a55" BorderThickness="1" Background="#1a1c1e">
+                    <Panel>
+                      <Image Source="{Binding SelectedBbeeDocument}" Stretch="Uniform" />
+                      <TextBlock Text="No Document" IsVisible="{Binding SelectedBbeeDocument, Converter={x:Static ObjectConverters.IsNull}}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#666" FontSize="11" />
+                    </Panel>
+                  </Border>
+                  <Button Width="160" Height="28" Content="Scan B-BBEE" HorizontalAlignment="Center" Command="{Binding UploadBbeeDocumentCommand}" Background="#30333A" Foreground="White" BorderBrush="#444a55" BorderThickness="1" CornerRadius="3" FontSize="11" />
                 </StackPanel>
               </StackPanel>
               

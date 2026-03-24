@@ -17,10 +17,10 @@ public sealed class StockLevelsViewModel : ViewModelBase
     private bool _isFilterExpanded = true;
     public bool IsFilterExpanded { get => _isFilterExpanded; set => SetProperty(ref _isFilterExpanded, value); }
 
-    private bool _isChartExpanded = true;
+    private bool _isChartExpanded = false;
     public bool IsChartExpanded { get => _isChartExpanded; set => SetProperty(ref _isChartExpanded, value); }
 
-    private bool _isResultsExpanded = true;
+    private bool _isResultsExpanded = false;
     public bool IsResultsExpanded { get => _isResultsExpanded; set => SetProperty(ref _isResultsExpanded, value); }
 
     private bool _suppressFilterSync;
@@ -174,8 +174,6 @@ public sealed class StockLevelsViewModel : ViewModelBase
 
         Pagination.PageChanged += (_, __) => ApplyPaging();
         Pagination.PageSize = 20;
-
-        _ = RefreshAsync();
     }
 
     private void ApplyPaging()
@@ -204,7 +202,7 @@ public sealed class StockLevelsViewModel : ViewModelBase
         ApplyPaging();
     }
 
-    private async Task RefreshAsync()
+    public async Task RefreshAsync()
     {
         _cts?.Cancel();
         _cts = new CancellationTokenSource();
@@ -226,6 +224,13 @@ public sealed class StockLevelsViewModel : ViewModelBase
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
+                // Auto-expand results and chart on refresh IF we have data or filters
+                if (results.Length > 0 || !string.IsNullOrWhiteSpace(term) || (!string.IsNullOrWhiteSpace(letter) && letter != "ALL"))
+                {
+                    IsChartExpanded = true;
+                    IsResultsExpanded = true;
+                }
+
                 ProductSuggestions = new ObservableCollection<StockLevelLookupDto>(results);
 
                 // If a specific product is selected, show only that; otherwise show all.

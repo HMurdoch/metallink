@@ -32,8 +32,8 @@ public class SectionToViewConverter : IValueConverter
                 EnumMainSection.Documents => new DocumentsView(),
                 EnumMainSection.Camera => new CameraView(),
                 EnumMainSection.Reports => new ReportsView(),
-                EnumMainSection.StockLevels => new StockLevelsView(),
-                EnumMainSection.StockMovement => new StockMovementView(),
+                EnumMainSection.StockLevels => new StockLevelsView { DataContext = (parameter as MainWindowViewModel)?.StockLevels },
+                EnumMainSection.StockMovement => new StockMovementView { DataContext = (parameter as MainWindowViewModel)?.StockMovement },
                 EnumMainSection.Settings => new SettingsView(),
                 _ => null
             };

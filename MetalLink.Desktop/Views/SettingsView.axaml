@@ -50,6 +50,11 @@
           <ToggleSwitch IsChecked="{Binding EnforceBuyerCompany}" />
         </StackPanel>
 
+        <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+          <TextBlock Text="Play Intro Video" VerticalAlignment="Center"/>
+          <ToggleSwitch IsChecked="{Binding PlayIntroVideo}" OnContent="Yes" OffContent="No" />
+        </StackPanel>
+
         <TextBlock Text="Theme/Appearance/Settings are stored per operator in the database." Opacity="0.7" FontSize="12"/>
         </StackPanel>
         </StackPanel>
