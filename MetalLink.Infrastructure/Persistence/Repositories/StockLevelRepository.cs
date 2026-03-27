@@ -17,7 +17,7 @@ public sealed class StockLevelRepository : IStockLevelRepository
         _db = db;
     }
 
-    public async Task<decimal> GetOrCreateWeightKgAsync(long productId, int createdByOperatorId, CancellationToken ct = default)
+    public async Task<decimal> GetOrCreateWeightKgAsync(int productId, int createdByOperatorId, CancellationToken ct = default)
     {
         // Create if missing (weight defaults to 0)
         await _db.Database.ExecuteSqlInterpolatedAsync($@"
@@ -40,7 +40,7 @@ public sealed class StockLevelRepository : IStockLevelRepository
         return weight;
     }
 
-    public Task UpdateWeightKgAsync(long productId, decimal newWeightKg, CancellationToken ct = default)
+    public Task UpdateWeightKgAsync(int productId, decimal newWeightKg, CancellationToken ct = default)
     {
         return _db.Database.ExecuteSqlInterpolatedAsync($@"
             UPDATE metal_link.stock_levels

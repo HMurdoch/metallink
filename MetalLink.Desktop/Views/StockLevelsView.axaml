@@ -1,7 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MetalLink.Desktop.Views.StockLevelsView"
-             xmlns:controls="using:MetalLink.Desktop.Views.Controls">
+             xmlns:controls="using:MetalLink.Desktop.Views.Controls"
+             xmlns:stock="using:MetalLink.Shared.Stock">
 
   <Grid RowDefinitions="Auto,*">
     <!-- Sticky Header Panel -->
@@ -35,28 +36,17 @@
                            Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="Product Filters" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
               </Grid>
-              <Grid ColumnDefinitions="*,*" ColumnSpacing="12" IsVisible="{Binding IsFilterExpanded}">
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="12" IsVisible="{Binding StockLevels.IsFilterExpanded}">
                 <TextBox Grid.Column="0"
                          Watermark="Product Search"
-                         Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}" />
+                         Text="{Binding StockLevels.ProductSearchText, UpdateSourceTrigger=PropertyChanged}" />
 
                 <Grid Grid.Column="1" ColumnDefinitions="120,*,Auto" ColumnSpacing="10">
                   <ComboBox Grid.Column="0"
-                            ItemsSource="{Binding ProductLetterFilters}"
-                            SelectedItem="{Binding SelectedProductLetter}" />
+                            ItemsSource="{Binding StockLevels.ProductLetterFilters}"
+                            SelectedItem="{Binding StockLevels.SelectedProductLetter}" />
 
-                  <ComboBox Grid.Column="1"
-                            HorizontalAlignment="Stretch"
-                            ItemsSource="{Binding ProductSuggestions}"
-                            SelectedItem="{Binding SelectedProduct}">
-                    <ComboBox.ItemTemplate>
-                      <DataTemplate>
-                        <TextBlock Text="{Binding ProductName}" />
-                      </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                  </ComboBox>
-
-                  <Button Grid.Column="2" Content="Clear" Command="{Binding ClearProductCommand}" />
+                  <Button Grid.Column="1" Content="Clear" Command="{Binding StockLevels.ClearProductCommand}" />
                 </Grid>
               </Grid>
             </StackPanel>
@@ -72,15 +62,15 @@
                   <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" 
-                           Text="{Binding IsChartExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter=\'arrow\'}" 
+                           Text="{Binding StockLevels.IsChartExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
                            Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="Visual Summary" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
               </Grid>
-              <Border IsVisible="{Binding IsChartExpanded}" Height="340">
+              <Border IsVisible="{Binding StockLevels.IsChartExpanded}" Height="340">
                 <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                   <controls:BarChart3DControl x:Name="StockChart"
-                                              Items="{Binding ChartItems}"
-                                              HoveredProductId="{Binding HoveredProductId, Mode=TwoWay}"
+                                              Items="{Binding StockLevels.ChartItems}"
+                                              HoveredProductId="{Binding StockLevels.HoveredProductId, Mode=TwoWay}"
                                               MinWidth="900" />
                 </ScrollViewer>
               </Border>
@@ -97,38 +87,76 @@
                   <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" 
-                           Text="{Binding IsResultsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter=\'arrow\'}" 
+                           Text="{Binding StockLevels.IsResultsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
                            Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="Stock Levels" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
               </Grid>
-              <Grid RowDefinitions="*,Auto" IsVisible="{Binding IsResultsExpanded}">
+              <Grid RowDefinitions="*,Auto" IsVisible="{Binding StockLevels.IsResultsExpanded}">
                 <DataGrid Grid.Row="0" x:Name="StockGrid"
-                          ItemsSource="{Binding StockRows}" AutoGenerateColumns="False" IsReadOnly="True"
-                          FontSize="11" RowHeight="16">
+                          ItemsSource="{Binding StockLevels.StockRows}" AutoGenerateColumns="False" IsReadOnly="True">
+                  <DataGrid.Styles>
+                    <!-- Match Stock Levels compact rows -->
+                    <Style Selector="#StockGrid DataGridRow">
+                      <Setter Property="Background" Value="Transparent" />
+                      <Setter Property="Height" Value="24" />
+                      <Setter Property="MinHeight" Value="20" />
+                      <Setter Property="Padding" Value="0" />
+                      <Setter Property="Transitions">
+                        <Transitions>
+                          <DoubleTransition Property="FontSize" Duration="0:0:0.1" />
+                          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" />
+                        </Transitions>
+                      </Setter>
+                    </Style>
+                    <!-- Use explicit Pointer events on the DataGrid for row hover tracking if possible, 
+                         or handle in code-behind via Row events. Avalonia 11 doesn't have EventSetter in XAML. -->
+                    <Style Selector="#StockGrid DataGridRow:pointerover">
+                       <Setter Property="Background" Value="{DynamicResource Brush.AccentLow}" />
+                       <Setter Property="RenderTransform" Value="translateX(5px)" />
+                    </Style>
+                    <Style Selector="#StockGrid DataGridRow.is-hovered">
+                      <Setter Property="Background" Value="{DynamicResource Brush.AccentLow}" />
+                      <Setter Property="RenderTransform" Value="translateX(5px)" />
+                      <Setter Property="ZIndex" Value="10" />
+                    </Style>
+
+                    <Style Selector="#StockGrid DataGridRow /template/ Border">
+                      <Setter Property="Margin" Value="0" />
+                      <Setter Property="Padding" Value="0" />
+                    </Style>
+                    <Style Selector="#StockGrid DataGridCell">
+                      <Setter Property="Padding" Value="6,0" />
+                      <Setter Property="VerticalContentAlignment" Value="Center" />
+                    </Style>
+                    <Style Selector="#StockGrid DataGridCell TextBlock">
+                      <Setter Property="FontSize" Value="11" />
+                      <Setter Property="VerticalAlignment" Value="Center" />
+                    </Style>
+                  </DataGrid.Styles>
                   <DataGrid.Columns>
-                    <DataGridTextColumn Header="Code" Binding="{Binding ProductCode}" Width="120" />
-                    <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="*" />
-                    <DataGridTextColumn Header="On Hand (kg)" Binding="{Binding WeightKg}" Width="180" />
+                    <DataGridTextColumn Header="Code" Binding="{Binding ProductCode}" Width="120" FontSize="12" />
+                    <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="400" FontSize="12" />
+                    <DataGridTextColumn Header="On Hand (kg)" Binding="{Binding WeightKg}" Width="180" FontSize="12" />
                     <DataGridTemplateColumn Header="" Width="120">
                       <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                          <Button Content="Movement" Padding="8,2" Click="OnMovementClick" />
+                          <Button Content="Movement" Padding="8,2" Click="OnMovementClick" FontSize="12" />
                         </DataTemplate>
                       </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                   </DataGrid.Columns>
                 </DataGrid>
-                
+
                 <StackPanel Grid.Row="1" Spacing="6" Margin="0,10,0,0">
-                  <TextBlock Text="{Binding PaginationStatusText}" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.TextMuted}" FontSize="12" />
+                  <TextBlock Text="{Binding StockLevels.PaginationStatusText}" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.TextMuted}" FontSize="12" />
                   <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
                     <TextBlock Text="Page size" VerticalAlignment="Center" />
-                    <ComboBox Width="90" ItemsSource="{Binding Pagination.PageSizeOptions}" SelectedItem="{Binding Pagination.PageSize}" />
-                    <Button Content="Prev" Command="{Binding Pagination.PreviousPageCommand}" IsEnabled="{Binding Pagination.CanGoPrevious}" />
-                    <TextBlock Text="{Binding Pagination.CurrentPage}" Foreground="{DynamicResource Brush.TextPrimary}" />
+                    <ComboBox Width="90" ItemsSource="{Binding StockLevels.Pagination.PageSizeOptions}" SelectedItem="{Binding StockLevels.Pagination.PageSize}" />
+                    <Button Content="Prev" Command="{Binding StockLevels.Pagination.PreviousPageCommand}" IsEnabled="{Binding StockLevels.Pagination.CanGoPrevious}" />
+                    <TextBlock Text="{Binding StockLevels.Pagination.CurrentPage}" Foreground="{DynamicResource Brush.TextPrimary}" />
                     <TextBlock Text="/" Foreground="{DynamicResource Brush.TextMuted}" />
-                    <TextBlock Text="{Binding Pagination.TotalPages}" Foreground="{DynamicResource Brush.TextPrimary}" />
-                    <Button Content="Next" Command="{Binding Pagination.NextPageCommand}" IsEnabled="{Binding Pagination.CanGoNext}" />
+                    <TextBlock Text="{Binding StockLevels.Pagination.TotalPages}" Foreground="{DynamicResource Brush.TextPrimary}" />
+                    <Button Content="Next" Command="{Binding StockLevels.Pagination.NextPageCommand}" IsEnabled="{Binding StockLevels.Pagination.CanGoNext}" />
                   </StackPanel>
                 </StackPanel>
               </Grid>

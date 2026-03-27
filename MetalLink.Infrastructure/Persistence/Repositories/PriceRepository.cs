@@ -13,14 +13,14 @@ public class PriceRepository : IPriceRepository
         _context = context;
     }
 
-    public async Task<Price?> GetByIdAsync(long priceId, CancellationToken ct = default)
+    public async Task<Price?> GetByIdAsync(int priceId, CancellationToken ct = default)
     {
         return await _context.Prices
             .Include(p => p.Product)
             .FirstOrDefaultAsync(p => p.PriceId == priceId, ct);
     }
 
-    public async Task<IReadOnlyList<Price>> GetByProductIdAsync(long productId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<Price>> GetByProductIdAsync(int productId, CancellationToken ct = default)
     {
         return await _context.Prices
             .Where(p => p.ProductId == productId && p.IsActive)
@@ -41,7 +41,7 @@ public class PriceRepository : IPriceRepository
         await _context.SaveChangesAsync(ct);
     }
 
-    public async Task DeleteAsync(long priceId, CancellationToken ct = default)
+    public async Task DeleteAsync(int priceId, CancellationToken ct = default)
     {
         var price = await GetByIdAsync(priceId, ct);
         if (price != null)

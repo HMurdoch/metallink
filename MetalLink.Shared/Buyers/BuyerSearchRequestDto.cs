@@ -2,8 +2,8 @@ namespace MetalLink.Shared.Buyers;
 
 public sealed class BuyerSearchRequestDto
 {
-    public long? BuyerId { get; set; }
-    public long? SiteId { get; set; }
+    public int? BuyerId { get; set; }
+    public int? SiteId { get; set; }
 
     public string? FirstName { get; set; }
     public string? LastName  { get; set; }
@@ -24,7 +24,7 @@ public sealed class BuyerSearchRequestDto
     public string? Email        { get; set; }
 
     // Extra filters
-    public long?  ProvinceId { get; set; }
-    public long?  CountryId  { get; set; }
+    public int? ProvinceId { get; set; }
+    public int? CountryId { get; set; }
     public bool? Taxable    { get; set; }
 }

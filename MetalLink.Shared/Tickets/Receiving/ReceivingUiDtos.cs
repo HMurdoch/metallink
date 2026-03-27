@@ -9,8 +9,8 @@ namespace MetalLink.Shared.Tickets.Receiving;
 /// </summary>
 public sealed class ReceivingTicketDto
 {
-    public long TicketId { get; set; }
-    public long CustomerId { get; set; }
+    public int TicketId { get; set; }
+    public int CustomerId { get; set; }
     public string TicketNumber { get; set; } = string.Empty;
     public string TicketType { get; set; } = string.Empty;
     public int TicketTypeId { get; set; }
@@ -35,9 +35,9 @@ public sealed class ReceivingTicketDto
 
 public sealed class ReceivingTicketLineDto
 {
-    public long TicketLineId { get; set; }
-    public long TicketId { get; set; }
-    public long ProductId { get; set; }
+    public int TicketLineId { get; set; }
+    public int TicketId { get; set; }
+    public int ProductId { get; set; }
 
     public string ProductName { get; set; } = string.Empty;
 

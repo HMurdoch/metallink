@@ -18,7 +18,7 @@ public sealed class StockMovementRepository : IStockMovementRepository
     }
 
     public Task AddAsync(
-        long productId,
+        int productId,
         decimal baseWeightKg,
         decimal buyWeightKg,
         decimal sellWeightKg,

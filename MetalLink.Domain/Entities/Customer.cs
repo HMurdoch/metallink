@@ -47,6 +47,6 @@ public class Customer
     public DateTimeOffset CreatedTime { get; set; }
     public DateTimeOffset UpdatedTime { get; set; }
 
-    // Navigation (legacy - kept to avoid breaking compilation where referenced)
-    public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
+    // Navigation to TicketReceiving
+    public ICollection<TicketReceiving> TicketsReceiving { get; set; } = new List<TicketReceiving>();
 }

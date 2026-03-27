@@ -139,14 +139,27 @@ public sealed class StockLevelsViewModel : ViewModelBase
                 CreateBrush(r.ProductId)))
             .ToList();
 
-    private long? _hoveredProductId;
-    public long? HoveredProductId
+    private int? _hoveredProductId;
+    public int? HoveredProductId
     {
         get => _hoveredProductId;
-        set => SetProperty(ref _hoveredProductId, value);
+        set
+        {
+            if (SetProperty(ref _hoveredProductId, value))
+            {
+                UpdateRowsHoverState();
+            }
+        }
     }
 
-    private Avalonia.Media.IBrush CreateBrush(long productId)
+    private void UpdateRowsHoverState()
+    {
+        // This is a bit of a hack to force the DataGrid to re-evaluate styles or to manually set a property.
+        // Better: Use a property on the DTO or a wrapper. Let's add a list of hovered IDs for style binding if needed,
+        // but for now we'll rely on the view code-behind to find the row and add a class.
+    }
+
+    private Avalonia.Media.IBrush CreateBrush(int productId)
     {
         // simple stable palette
         var hue = (int)(Math.Abs(productId) % 360);
@@ -174,6 +187,8 @@ public sealed class StockLevelsViewModel : ViewModelBase
 
         Pagination.PageChanged += (_, __) => ApplyPaging();
         Pagination.PageSize = 20;
+
+        _ = RefreshAsync();
     }
 
     private void ApplyPaging()
@@ -183,6 +198,7 @@ public sealed class StockLevelsViewModel : ViewModelBase
         var page = _allRows.Skip(skip).Take(take).ToList();
 
         StockRows = new ObservableCollection<StockLevelLookupDto>(page);
+        Console.WriteLine($"[DEBUG] StockLevelsViewModel: ApplyPaging updated StockRows with {StockRows.Count} items. skip={skip}, take={take}");
         OnPropertyChanged(nameof(ChartItems));
         OnPropertyChanged(nameof(PaginationStatusText));
     }
@@ -221,17 +237,24 @@ public sealed class StockLevelsViewModel : ViewModelBase
                 url += $"&letter={Uri.EscapeDataString(letter)}";
 
             var results = await _api.GetAsync<StockLevelLookupDto[]>(url, ct) ?? Array.Empty<StockLevelLookupDto>();
+            Console.WriteLine($"[DEBUG] StockLevelsViewModel: RefreshAsync returned {results.Length} products from {url}.");
+            foreach(var r in results.Take(5)) {
+                Console.WriteLine($"  - Product: {r.ProductName}, Code: {r.ProductCode}, Weight: {r.WeightKg}kg");
+            }
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
+                Console.WriteLine($"[DEBUG] StockLevelsViewModel: Dispatching UI update. Results count: {results.Length}");
                 // Auto-expand results and chart on refresh IF we have data or filters
                 if (results.Length > 0 || !string.IsNullOrWhiteSpace(term) || (!string.IsNullOrWhiteSpace(letter) && letter != "ALL"))
                 {
                     IsChartExpanded = true;
                     IsResultsExpanded = true;
+                    Console.WriteLine($"[DEBUG] StockLevelsViewModel: Expanded Chart and Results. IsChartExpanded={IsChartExpanded}, IsResultsExpanded={IsResultsExpanded}");
                 }
 
                 ProductSuggestions = new ObservableCollection<StockLevelLookupDto>(results);
+                Console.WriteLine($"[DEBUG] StockLevelsViewModel: Updated ProductSuggestions with {ProductSuggestions.Count} items.");
 
                 // If a specific product is selected, show only that; otherwise show all.
                 var rows = SelectedProduct is null

@@ -19,6 +19,8 @@ public class Operator
     public DateTimeOffset CreatedTime { get; private set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedTime { get; private set; } = DateTimeOffset.UtcNow;
 
+    public virtual ICollection<OperatorSetting> OperatorSettings { get; set; } = new List<OperatorSetting>();
+
     private Operator() { }
 
     public Operator(string username, string displayName, string passwordHash, string role = "Operator")

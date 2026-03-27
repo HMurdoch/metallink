@@ -9,9 +9,10 @@ public sealed class LoginRequestDto
 public sealed class LoginResponseDto
 {
     public string Token { get; set; } = string.Empty;
+    public int OperatorId { get; set; }
     public string Username { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
-    public long SiteId { get; set; }
+    public int SiteId { get; set; }
     public System.Collections.Generic.List<MetalLink.Shared.Settings.OperatorSettingDto> OperatorSettings { get; set; } = new();
 }

@@ -75,7 +75,7 @@ public class TicketsSendingController : ControllerBase
                 TicketNumber = string.Empty,
                 TicketType = string.Empty,
                 TicketTypeId = 0,
-                BuyerId = (int)b.BuyerId,
+                BuyerId = b.BuyerId,
                 FirstName = b.FirstName,
                 LastName = b.LastName,
                 CompanyName = b.Company?.CompanyName,
@@ -533,7 +533,7 @@ public class TicketsSendingController : ControllerBase
     }
 
     [HttpPut("{id}/state")]
-    public async Task<ActionResult> UpdateTicketStateAsync(long id, [FromBody] UpdateTicketStateRequest request, CancellationToken ct = default)
+    public async Task<ActionResult> UpdateTicketStateAsync(int id, [FromBody] UpdateTicketStateRequest request, CancellationToken ct = default)
     {
         try
         {

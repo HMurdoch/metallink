@@ -62,6 +62,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand ShowReportsCommand { get; }
     public ICommand ShowStockLevelsCommand { get; }
     public ICommand ShowStockMovementCommand { get; }
+    public ICommand ShowStockMovementForProductCommand { get; }
     public ICommand ShowSettingsCommand { get; }
 
     // Logic ViewModels
@@ -133,6 +134,13 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         _authState = app.AuthState;
         _apiClient = app.ApiClient;
         _customerService = app.CustomerService;
+
+        // Initialize "Play Intro Video" from AuthState settings
+        var introSetting = _authState.OperatorSettings.FirstOrDefault(s => s.SettingName.Equals("playintrovideo", StringComparison.OrdinalIgnoreCase));
+        if (introSetting != null)
+        {
+            _playIntroVideo = introSetting.SettingOptionValue.Equals("true", StringComparison.OrdinalIgnoreCase);
+        }
         _buyerService = app.BuyerService;
         _ticketReceivingService = app.TicketReceivingService;
         _ticketSendingService = app.TicketSendingService;
@@ -217,6 +225,15 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         });
         ShowStockMovementCommand = new AsyncRelayCommand(async () => {
             CurrentSection = EnumMainSection.StockMovement;
+            await StockMovement.RefreshAsync();
+        });
+        ShowStockMovementForProductCommand = new AsyncRelayCommand<int?>(async productId => {
+            CurrentSection = EnumMainSection.StockMovement;
+            // Clear filters to ensure only this product shows
+            StockMovement.ProductSearchText = string.Empty;
+            StockMovement.SelectedProductLetter = "ALL";
+            StockMovement.SelectedProduct = null;
+            StockMovement.SetInitialProductId(productId);
             await StockMovement.RefreshAsync();
         });
         ShowSettingsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Settings);
@@ -364,8 +381,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     {
         try
         {
-            long? customerId = null;
-            if (long.TryParse(SearchCustomerIdText, out var cid)) customerId = cid;
+            int? customerId = null;
+            if (int.TryParse(SearchCustomerIdText, out var cid)) customerId = cid;
 
             var request = new CustomerSearchRequestDto
             {
@@ -407,8 +424,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     {
         try
         {
-            long? buyerId = null;
-            if (long.TryParse(SearchBuyerIdText, out var bid)) buyerId = bid;
+            int? buyerId = null;
+            if (int.TryParse(SearchBuyerIdText, out var bid)) buyerId = bid;
 
             var request = new BuyerSearchRequestDto
             {

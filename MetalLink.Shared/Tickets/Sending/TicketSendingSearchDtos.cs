@@ -5,12 +5,12 @@ namespace MetalLink.Shared.Tickets.Sending;
 
 public sealed class TicketSendingSearchResultDto
 {
-    public long TicketId { get; set; }
+    public int TicketId { get; set; }
     public string TicketNumber { get; set; } = string.Empty;
     public string TicketType { get; set; } = string.Empty;
     public int TicketTypeId { get; set; }
 
-    public long BuyerId { get; set; }
+    public int BuyerId { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? CompanyName { get; set; }

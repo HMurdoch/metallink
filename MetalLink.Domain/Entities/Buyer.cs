@@ -39,9 +39,6 @@ public class Buyer
     public DateTimeOffset CreatedTime { get; set; }
     public DateTimeOffset UpdatedTime { get; set; }
 
-    // Navigation (legacy)
-    public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
-    
     // Navigation to TicketSending
     public ICollection<TicketSending> TicketsSending { get; set; } = new List<TicketSending>();
 }

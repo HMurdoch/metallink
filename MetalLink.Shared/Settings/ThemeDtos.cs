@@ -15,3 +15,13 @@ public sealed class UpdateThemeSettingDto
     /// </summary>
     public string Theme { get; set; } = "dark";
 }
+
+public sealed class PlayIntroVideoSettingDto
+{
+    public bool PlayIntroVideo { get; set; }
+}
+
+public sealed class UpdatePlayIntroVideoSettingDto
+{
+    public bool PlayIntroVideo { get; set; }
+}

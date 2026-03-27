@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
+using LiveChartsCore.SkiaSharpView.Painting.Effects;
 using SkiaSharp;
 using MetalLink.Desktop.Services;
 using MetalLink.Shared.Stock;
@@ -172,7 +173,7 @@ public sealed class StockMovementViewModel : ViewModelBase
         set
         {
             if (!SetProperty(ref _fromDate, value)) return;
-            if (IsFromPickerEnabled) _ = RefreshSeriesAsync();
+            if (IsFromPickerEnabled) _ = RefreshAsync();
         }
     }
 
@@ -183,7 +184,7 @@ public sealed class StockMovementViewModel : ViewModelBase
         set
         {
             if (!SetProperty(ref _fromTime, value)) return;
-            if (IsFromPickerEnabled) _ = RefreshSeriesAsync();
+            if (IsFromPickerEnabled) _ = RefreshAsync();
         }
     }
 
@@ -194,7 +195,7 @@ public sealed class StockMovementViewModel : ViewModelBase
         set
         {
             if (!SetProperty(ref _toDate, value)) return;
-            if (IsToPickerEnabled) _ = RefreshSeriesAsync();
+            if (IsToPickerEnabled) _ = RefreshAsync();
         }
     }
 
@@ -205,7 +206,7 @@ public sealed class StockMovementViewModel : ViewModelBase
         set
         {
             if (!SetProperty(ref _toTime, value)) return;
-            if (IsToPickerEnabled) _ = RefreshSeriesAsync();
+            if (IsToPickerEnabled) _ = RefreshAsync();
         }
     }
 
@@ -238,6 +239,48 @@ public sealed class StockMovementViewModel : ViewModelBase
 
     public string FormatTime(TimeSpan t) => $"{t.Hours:D2}:{t.Minutes:D2}";
 
+    public sealed class TransactionViewModel : ViewModelBase
+    {
+        public DateTimeOffset Timestamp { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public decimal Quantity { get; set; }
+        public decimal OnHandAfter { get; set; }
+        public string TypeLabel { get; set; } = string.Empty;
+        public string ChangePrefix => Quantity >= 0 ? "+" : "-";
+        public Avalonia.Media.IBrush ChangeBrush => Quantity >= 0 ? Avalonia.Media.Brushes.LimeGreen : Avalonia.Media.Brushes.Tomato;
+        public int ProductId { get; set; }
+    }
+
+    private ObservableCollection<TransactionViewModel> _transactions = new();
+    public ObservableCollection<TransactionViewModel> Transactions
+    {
+        get => _transactions;
+        set => SetProperty(ref _transactions, value);
+    }
+
+    private StockLevelLookupDto? _selectedProductRow;
+    public StockLevelLookupDto? SelectedProductRow
+    {
+        get => _selectedProductRow;
+        set
+        {
+            // If the same row is clicked again, we want to DESELECT it.
+            // Note: DataGrid might pass null or the same instance. 
+            // In Avalonia, if you use a binding, you might need extra logic to handle 'un-selecting'
+            // but for now let's assume the property setter is called.
+            if (_selectedProductRow == value)
+            {
+                _selectedProductRow = null;
+                OnPropertyChanged();
+                _ = RefreshSeriesAsync();
+            }
+            else if (SetProperty(ref _selectedProductRow, value))
+            {
+                _ = RefreshSeriesAsync();
+            }
+        }
+    }
+
     // Rows (paged products)
     private ObservableCollection<StockLevelLookupDto> _allRows = new();
 
@@ -256,6 +299,43 @@ public sealed class StockMovementViewModel : ViewModelBase
         set => SetProperty(ref _series, value);
     }
 
+    private int? _hoveredProductId;
+    public int? HoveredProductId
+    {
+        get => _hoveredProductId;
+        set
+        {
+            if (SetProperty(ref _hoveredProductId, value))
+            {
+                UpdateSeriesThickness();
+            }
+        }
+    }
+
+    private void UpdateSeriesThickness()
+    {
+        if (Series == null) return;
+        foreach (var s in Series)
+        {
+            if (s is LineSeries<double> ls)
+            {
+                var productName = Rows.FirstOrDefault(r => r.ProductId == HoveredProductId)?.ProductName;
+                var isHovered = HoveredProductId != null && productName != null && ls.Name == productName;
+                
+                if (ls.Stroke is SolidColorPaint scp)
+                {
+                    ls.Stroke = new SolidColorPaint(scp.Color) { StrokeThickness = isHovered ? 10 : 4 };
+                }
+            }
+            else if (s is ScatterSeries<double?> ss)
+            {
+                var productName = Rows.FirstOrDefault(r => r.ProductId == HoveredProductId)?.ProductName;
+                var isHovered = HoveredProductId != null && productName != null && ss.Name != null && ss.Name.StartsWith(productName);
+                ss.GeometrySize = isHovered ? 10 : 6;
+            }
+        }
+    }
+
     private LiveChartsCore.SkiaSharpView.Axis[] _xAxes = Array.Empty<LiveChartsCore.SkiaSharpView.Axis>();
     public LiveChartsCore.SkiaSharpView.Axis[] XAxes
     {
@@ -263,8 +343,8 @@ public sealed class StockMovementViewModel : ViewModelBase
         set => SetProperty(ref _xAxes, value);
     }
 
-    private long? _initialProductId;
-    public void SetInitialProductId(long? productId)
+    private int? _initialProductId;
+    public void SetInitialProductId(int? productId)
     {
         _initialProductId = productId;
     }
@@ -273,6 +353,7 @@ public sealed class StockMovementViewModel : ViewModelBase
     private CancellationTokenSource? _seriesCts;
 
     public ICommand ClearProductCommand { get; }
+    public ICommand ResetViewCommand { get; }
 
     public StockMovementViewModel(ApiClient api)
     {
@@ -302,9 +383,18 @@ public sealed class StockMovementViewModel : ViewModelBase
         ClearProductCommand = new RelayCommand(() =>
         {
             SelectedProduct = null;
+            SelectedProductRow = null;
             ProductSearchText = string.Empty;
             SelectedProductLetter = "ALL";
         });
+
+        ResetViewCommand = new RelayCommand(() =>
+        {
+            SelectedProductRow = null;
+            _ = RefreshSeriesAsync();
+        });
+
+        _ = RefreshAsync();
     }
 
     private void ApplyPaging()
@@ -314,6 +404,7 @@ public sealed class StockMovementViewModel : ViewModelBase
         var page = _allRows.Skip(skip).Take(take).ToList();
 
         Rows = new ObservableCollection<StockLevelLookupDto>(page);
+        Console.WriteLine($"[DEBUG] StockMovementViewModel: ApplyPaging updated Rows with {Rows.Count} items. skip={skip}, take={take}");
         OnPropertyChanged(nameof(PaginationStatusText));
     }
 
@@ -336,17 +427,24 @@ public sealed class StockMovementViewModel : ViewModelBase
                 url += $"&letter={Uri.EscapeDataString(letter)}";
 
             var results = await _api.GetAsync<StockLevelLookupDto[]>(url, ct) ?? Array.Empty<StockLevelLookupDto>();
+            Console.WriteLine($"[DEBUG] StockMovementViewModel: RefreshAsync returned {results.Length} products from {url}.");
+            foreach(var r in results.Take(3)) {
+                Console.WriteLine($"  - Product: {r.ProductName}, Code: {r.ProductCode}");
+            }
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
+                Console.WriteLine($"[DEBUG] StockMovementViewModel: Dispatching UI update. Results count: {results.Length}");
                 // Auto-expand results and chart on refresh IF we have data or filters
                 if (results.Length > 0 || !string.IsNullOrWhiteSpace(term) || (!string.IsNullOrWhiteSpace(letter) && letter != "ALL"))
                 {
                     IsChartExpanded = true;
                     IsResultsExpanded = true;
+                    Console.WriteLine($"[DEBUG] StockMovementViewModel: Expanded Chart and Results. IsChartExpanded={IsChartExpanded}, IsResultsExpanded={IsResultsExpanded}");
                 }
 
                 ProductSuggestions = new ObservableCollection<StockLevelLookupDto>(results);
+                Console.WriteLine($"[DEBUG] StockMovementViewModel: Updated ProductSuggestions with {ProductSuggestions.Count} items.");
 
                 // If we were navigated from Stock Levels, preselect the product once suggestions load.
                 if (_initialProductId is not null && SelectedProduct is null)
@@ -361,7 +459,9 @@ public sealed class StockMovementViewModel : ViewModelBase
 
                 _allRows = new ObservableCollection<StockLevelLookupDto>(rows);
                 Pagination.SetTotalRecords(_allRows.Count);
+                Console.WriteLine($"[DEBUG] StockMovementViewModel: Total records set to {_allRows.Count}.");
                 ApplyPaging();
+                Console.WriteLine($"[DEBUG] StockMovementViewModel: Applied paging. Current rows count: {Rows.Count}.");
             });
 
             await RefreshSeriesAsync();
@@ -388,6 +488,7 @@ public sealed class StockMovementViewModel : ViewModelBase
             if (pageProductIds.Length == 0)
             {
                 Series = Array.Empty<ISeries>();
+                Transactions = new();
                 return;
             }
 
@@ -407,8 +508,36 @@ public sealed class StockMovementViewModel : ViewModelBase
                 req,
                 ct);
 
-            if (resp is null)
-                return;
+            if (resp is null) return;
+
+            // Filter products if one is selected in Movement History
+            var displayProducts = SelectedProductRow == null
+                ? resp.Products
+                : resp.Products.Where(p => p.ProductId == SelectedProductRow.ProductId).ToArray();
+
+            // Build Transactions List
+            var transactions = new List<TransactionViewModel>();
+            foreach (var p in displayProducts)
+            {
+                var productName = Rows.FirstOrDefault(r => r.ProductId == p.ProductId)?.ProductName ?? $"Product {p.ProductId}";
+                for (int i = 1; i < p.Points.Length; i++)
+                {
+                    var prev = p.Points[i - 1];
+                    var curr = p.Points[i];
+                    if (curr.LevelKg != prev.LevelKg)
+                    {
+                        transactions.Add(new TransactionViewModel
+                        {
+                            ProductId = p.ProductId,
+                            Timestamp = curr.Time,
+                            ProductName = productName,
+                            Quantity = curr.LevelKg - prev.LevelKg,
+                            OnHandAfter = curr.LevelKg,
+                            TypeLabel = (curr.LevelKg - prev.LevelKg) >= 0 ? "Buy" : "Sell"
+                        });
+                    }
+                }
+            }
 
             // Build axis labels from bucket ends
             var labels = resp.Products.FirstOrDefault()?.Points
@@ -422,69 +551,92 @@ public sealed class StockMovementViewModel : ViewModelBase
                     Labels = labels,
                     LabelsRotation = 0,
                     TextSize = 10,
-                    // Reduce label clutter by showing a subset; LiveCharts will skip some based on SeparatorsPaint.
-                    // We can tune this later.
                 }
             };
 
             // Build LiveCharts series
             var series = new List<ISeries>();
-
-            var palette = new[]
-            {
-                SKColors.DeepSkyBlue,
-                SKColors.OrangeRed,
-                SKColors.LimeGreen,
-                SKColors.Gold,
-                SKColors.MediumPurple,
-                SKColors.HotPink,
-                SKColors.Cyan,
-                SKColors.Coral,
-                SKColors.Chartreuse,
-                SKColors.SandyBrown,
-                SKColors.SlateBlue,
-                SKColors.Tomato,
-                SKColors.YellowGreen,
-                SKColors.DodgerBlue,
-                SKColors.MediumVioletRed,
-                SKColors.Aquamarine,
-                SKColors.Peru,
-                SKColors.SteelBlue,
-                SKColors.OliveDrab,
-                SKColors.DeepPink
-            };
+            var palette = new[] { SKColors.DeepSkyBlue, SKColors.OrangeRed, SKColors.LimeGreen, SKColors.Gold, SKColors.MediumPurple, SKColors.HotPink, SKColors.Cyan };
 
             var colorIndex = 0;
-            foreach (var p in resp.Products)
+            foreach (var p in displayProducts)
             {
                 var name = Rows.FirstOrDefault(r => r.ProductId == p.ProductId)?.ProductName ?? $"Product {p.ProductId}";
-
-                // X = bucket index (0..N-1), label provided by axis.
                 var values = p.Points.Select(pt => (double)pt.LevelKg).ToArray();
-
                 var color = palette[colorIndex++ % palette.Length];
 
-                series.Add(new LineSeries<double>
+                var lineSeries = new LineSeries<double>
                 {
                     Name = name,
                     Values = values,
                     GeometrySize = 0,
                     LineSmoothness = 0,
                     Fill = null,
-                    Stroke = new SolidColorPaint(color) { StrokeThickness = 2 }
-                });
+                    Stroke = new SolidColorPaint(color) { StrokeThickness = 4 },
+                    Mapping = (val, index) => new LiveChartsCore.Kernel.Coordinate(index, val),
+                    YToolTipLabelFormatter = (point) => {
+                        var pt = p.Points[point.Index];
+                        var prevPt = point.Index > 0 ? p.Points[point.Index - 1] : null;
+                        var change = prevPt != null ? (pt.LevelKg - prevPt.LevelKg) : 0;
+                        var typeLabel = (change >= 0) ? "Buy" : "Sell";
+                        
+                        if (change != 0)
+                        {
+                            return $"{name} On Hand: {pt.LevelKg:N2}\n{new string(' ', name.Length + 10)}{typeLabel}: {Math.Abs(change):N2}";
+                        }
+                        
+                        return $"{name} On Hand: {pt.LevelKg:N2}";
+                    }
+                };
+
+                // Add dots for: Opening Balance (Index 0) and Transactions (Level change)
+                var transactionPoints = new List<double?>();
+                for(int i = 0; i < p.Points.Length; i++)
+                {
+                    var pt = p.Points[i];
+                    var prevPt = i > 0 ? p.Points[i - 1] : null;
+                    
+                    if (i == 0 || (prevPt != null && pt.LevelKg != prevPt.LevelKg))
+                        transactionPoints.Add((double)pt.LevelKg);
+                    else
+                        transactionPoints.Add(null);
+                }
+
+                var scatterSeries = new ScatterSeries<double?>
+                {
+                    Name = $"{name} Transactions",
+                    Values = transactionPoints,
+                    GeometrySize = 6,
+                    Stroke = null,
+                    Fill = new SolidColorPaint(color),
+                    IsVisibleAtLegend = false,
+                    YToolTipLabelFormatter = (point) => {
+                        var pt = p.Points[point.Index];
+                        var prevPt = point.Index > 0 ? p.Points[point.Index - 1] : null;
+                        var change = prevPt != null ? (pt.LevelKg - prevPt.LevelKg) : 0;
+                        var typeLabel = (change >= 0) ? "Buy" : "Sell";
+                        
+                        if (change != 0)
+                        {
+                            return $"{name} On Hand: {pt.LevelKg:N2}\n{new string(' ', name.Length + 10)}{typeLabel}: {Math.Abs(change):N2}";
+                        }
+                        
+                        return $"{name} On Hand: {pt.LevelKg:N2}";
+                    }
+                };
+
+                series.Add(lineSeries);
+                series.Add(scatterSeries);
             }
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 XAxes = xAxes;
                 Series = series.ToArray();
+                Transactions = new ObservableCollection<TransactionViewModel>(transactions.OrderByDescending(t => t.Timestamp));
             });
         }
-        catch (OperationCanceledException)
-        {
-            // ignore
-        }
+        catch (OperationCanceledException) { }
         catch (Exception ex)
         {
             Console.WriteLine($"[StockMovement] Series refresh failed: {ex.Message}");

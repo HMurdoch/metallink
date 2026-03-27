@@ -148,9 +148,9 @@ public partial class MainWindowViewModel
         }
     }
 
-    private long? _editingCompanyId;
+    private int? _editingCompanyId;
 
-    public long? EditingCompanyId
+    public int? EditingCompanyId
     {
         get => _editingCompanyId;
         set
@@ -366,9 +366,9 @@ public partial class MainWindowViewModel
     }
 
     // Site create/edit fields (remember: address belongs to Site)
-    private long? _editingSiteId;
+    private int? _editingSiteId;
 
-    public long? EditingSiteId
+    public int? EditingSiteId
     {
         get => _editingSiteId;
         set

@@ -17,7 +17,7 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         _context = context;
     }
 
-    public async Task<TicketReceiving?> GetByIdAsync(long ticketReceivingId)
+    public async Task<TicketReceiving?> GetByIdAsync(int ticketReceivingId)
     {
         return await _context.Set<TicketReceiving>()
             .Include(t => t.Customer)
@@ -48,14 +48,14 @@ public class TicketReceivingRepository : ITicketReceivingRepository
 
     public async Task<IEnumerable<TicketReceiving>> SearchAsync(
         string? searchTerm = null,
-        long? companyId = null,
-        long? siteId = null,
-        long? customerId = null,
+        int? companyId = null,
+        int? siteId = null,
+        int? customerId = null,
         string? firstName = null,
         string? lastName = null,
         string? idNumber = null,
         long? accountNumber = null,
-        long? productId = null,
+        int? productId = null,
         string? ticketType = null,
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
@@ -121,14 +121,14 @@ public class TicketReceivingRepository : ITicketReceivingRepository
 
     public async Task<long> GetCountAsync(
         string? searchTerm = null,
-        long? companyId = null,
-        long? siteId = null,
-        long? customerId = null,
+        int? companyId = null,
+        int? siteId = null,
+        int? customerId = null,
         string? firstName = null,
         string? lastName = null,
         string? idNumber = null,
         long? accountNumber = null,
-        long? productId = null,
+        int? productId = null,
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
         string? deliveryStatus = null)
@@ -180,7 +180,7 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         return Task.CompletedTask;
     }
 
-    public async Task<string> GenerateTicketNumberAsync(long siteId)
+    public async Task<string> GenerateTicketNumberAsync(int siteId)
     {
         var site = await _context.Set<Site>().FindAsync(siteId);
         var year = DateTime.Now.Year;

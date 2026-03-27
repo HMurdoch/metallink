@@ -238,6 +238,8 @@
               </Grid>
             </Button>
 
+            <TextBlock Text="COMMODITIES" Margin="10,14,0,2" FontSize="11" Opacity="{Binding NavLabelOpacity}" Foreground="{DynamicResource Brush.TextMuted}" LetterSpacing="1" />
+
             <Button Command="{Binding ShowProductsAndPricesCommand}" Classes="NavButton" Padding="12,10">
               <Grid ColumnDefinitions="24,*" ColumnSpacing="12"
                     Margin="{Binding IsNavCollapsed, Converter={StaticResource NavIndentConverter}}">

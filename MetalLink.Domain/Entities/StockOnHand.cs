@@ -9,14 +9,14 @@ namespace MetalLink.Domain.Entities;
 /// </summary>
 public class StockOnHand
 {
-    public long StockOnHandId { get; private set; }
+    public int StockOnHandId { get; private set; }
 
     // Location
-    public long SiteId { get; private set; }
+    public int SiteId { get; private set; }
     public Site Site { get; set; } = null!;
 
     // Product
-    public long ProductId { get; private set; }
+    public int ProductId { get; private set; }
     public Product Product { get; set; } = null!;
 
     // Quantities (in kg)
@@ -38,7 +38,7 @@ public class StockOnHand
 
     private StockOnHand() { }
 
-    public StockOnHand(long siteId, long productId)
+    public StockOnHand(int siteId, int productId)
     {
         SiteId = siteId;
         ProductId = productId;

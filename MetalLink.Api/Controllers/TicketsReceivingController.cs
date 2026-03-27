@@ -417,7 +417,7 @@ public class TicketsReceivingController : ControllerBase
     }
 
     [HttpPut("{id}/create-header")]
-    public async Task<ActionResult> CreateTicketHeaderAsync(long id, [FromBody] CreateHeaderRequest request, CancellationToken ct = default)
+    public async Task<ActionResult> CreateTicketHeaderAsync(int id, [FromBody] CreateHeaderRequest request, CancellationToken ct = default)
     {
         try
         {
@@ -440,7 +440,7 @@ public class TicketsReceivingController : ControllerBase
     }
 
     [HttpPut("{id}/state")]
-    public async Task<ActionResult> UpdateTicketStateAsync(long id, [FromBody] UpdateTicketStateRequest request, CancellationToken ct = default)
+    public async Task<ActionResult> UpdateTicketStateAsync(int id, [FromBody] UpdateTicketStateRequest request, CancellationToken ct = default)
     {
         try
         {

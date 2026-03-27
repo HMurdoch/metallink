@@ -13,7 +13,7 @@ public class ProductRepository : IProductRepository
         _context = context;
     }
 
-    public async Task<Product?> GetByIdAsync(long productId, CancellationToken ct = default)
+    public async Task<Product?> GetByIdAsync(int productId, CancellationToken ct = default)
     {
         return await _context.Products
             .FirstOrDefaultAsync(p => p.ProductId == productId, ct);
@@ -53,7 +53,7 @@ public class ProductRepository : IProductRepository
         await _context.SaveChangesAsync(ct);
     }
 
-    public async Task DeleteAsync(long productId, CancellationToken ct = default)
+    public async Task DeleteAsync(int productId, CancellationToken ct = default)
     {
         var product = await GetByIdAsync(productId, ct);
         if (product != null)

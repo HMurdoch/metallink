@@ -21,8 +21,8 @@ public sealed class StockMovementsController : ControllerBase
 
     internal sealed class MovementRow
     {
-        public long ProductId { get; set; }
-        public DateTimeOffset CreatedTime { get; set; }
+        public int ProductId { get; set; }
+        public DateTimeOffset MovementDate { get; set; }
         public decimal BaseWeightKg { get; set; }
         public decimal BuyWeightKg { get; set; }
         public decimal SellWeightKg { get; set; }
@@ -51,7 +51,6 @@ public sealed class StockMovementsController : ControllerBase
             .Take(200) // UI will send ~20; hard cap to prevent abuse.
             .ToArray();
 
-        // stock_movements.product_id is integer in Postgres. Use int[] for SQL ANY(...) to avoid type mismatch.
         int[] productIdsInt;
         try
         {
@@ -62,21 +61,22 @@ public sealed class StockMovementsController : ControllerBase
             return BadRequest("One or more productIds are out of range.");
         }
 
-        // Determine range.
+        // Determine range using movement_date.
         DateTimeOffset from;
         DateTimeOffset to;
 
-        // We need min/max for AllHistory and also for Day0/Now handling.
-        FormattableString rangeSql = $@"
+        // Use explicit parameter for ANY({productIdsInt}) to ensure correct type mapping
+        var productIdsParam = new Npgsql.NpgsqlParameter("pIds", productIdsInt);
+        var rangeSql = @"
             SELECT
                 MIN(created_time) AS ""Min"",
                 MAX(created_time) AS ""Max""
             FROM metal_link.stock_movements
             WHERE is_active = true
-              AND product_id = ANY({productIdsInt})
+              AND product_id = ANY(@pIds)
         ";
 
-        var range = await _db.Database.SqlQuery<RangeRow>(rangeSql).FirstOrDefaultAsync(ct);
+        var range = await _db.Database.SqlQueryRaw<RangeRow>(rangeSql, productIdsParam).FirstOrDefaultAsync(ct);
         var nowUtc = DateTimeOffset.UtcNow;
         var minTime = range?.Min ?? nowUtc;
         var maxTime = range?.Max ?? nowUtc;
@@ -95,53 +95,62 @@ public sealed class StockMovementsController : ControllerBase
                 return BadRequest("To must be >= From.");
         }
 
-        // Choose bucket count.
+        // PostgreSQL 'timestamp with time zone' requires UTC offset 0 for parameters.
+        from = from.ToUniversalTime();
+        to = to.ToUniversalTime();
+
         var bucketCount = ChooseBucketCount(from, to, req.BucketCount);
-
-        // Avoid divide-by-zero: if range is zero, return single point per product.
-        if (bucketCount <= 0)
-            bucketCount = 1;
-
+        if (bucketCount <= 0) bucketCount = 1;
         var bucketEnds = BuildBucketEnds(from, to, bucketCount);
 
-        // Fetch movements in [from,to] plus the last movement before from (to get starting level).
-        // We pull all relevant rows, then compute levels in memory.
-        FormattableString sql = $@"
+        // Fetch movements using created_time.
+        // PostgreSQL 'timestamp with time zone' parameters MUST be UTC.
+        // Using UtcDateTime + SqlQueryRaw with explicit parameters is the most robust way to avoid offset errors.
+        var toParamObj = new Npgsql.NpgsqlParameter("toParam", to.ToUniversalTime().UtcDateTime);
+        var productIdsParam2 = new Npgsql.NpgsqlParameter("pIds", productIdsInt);
+        
+        var sql = @"
             SELECT
                 product_id    AS ""ProductId"",
-                created_time  AS ""CreatedTime"",
+                created_time  AS ""MovementDate"",
                 base_weight_kg AS ""BaseWeightKg"",
                 buy_weight_kg  AS ""BuyWeightKg"",
                 sell_weight_kg AS ""SellWeightKg""
             FROM metal_link.stock_movements
             WHERE is_active = true
-              AND product_id = ANY({productIdsInt})
-              AND created_time <= {to}
+              AND product_id = ANY(@pIds)
+              AND created_time <= @toParam
             ORDER BY product_id, created_time
         ";
 
         var allRows = await _db.Database
-            .SqlQuery<MovementRow>(sql)
+            .SqlQueryRaw<MovementRow>(sql, productIdsParam2, toParamObj)
             .ToListAsync(ct);
 
-        // Build response per product.
+        Console.WriteLine($"[DEBUG] StockMovementsController.TimeSeries: Found {allRows.Count} total movement rows for {productIdsInt.Length} products in range {from} to {to}.");
+        foreach(var row in allRows.Take(5)) {
+            Console.WriteLine($"  - Row: Product={row.ProductId}, Time={row.MovementDate}, Base={row.BaseWeightKg}, Buy={row.BuyWeightKg}, Sell={row.SellWeightKg}");
+        }
+
         var products = new List<StockMovementTimeSeriesProductDto>(productIds.Length);
 
         foreach (var productId in productIds)
         {
             var rows = allRows.Where(r => r.ProductId == productId).ToList();
 
-            // Starting level at 'from' = last level after movement <= from; otherwise 0.
+            // Calculate starting level at 'from'.
+            // For stock_movements table, base_weight_kg is typically the weight BEFORE this movement.
+            // So Level AFTER movement = base_weight_kg + buy_weight_kg - sell_weight_kg.
             decimal startLevel = 0m;
+            var lastBefore = rows.LastOrDefault(r => r.MovementDate <= from);
+            if (lastBefore != null)
             {
-                var lastBefore = rows.LastOrDefault(r => r.CreatedTime <= from);
-                if (lastBefore is not null)
-                    startLevel = ComputeLevelAfter(lastBefore);
+                startLevel = lastBefore.BaseWeightKg + lastBefore.BuyWeightKg - lastBefore.SellWeightKg;
             }
 
-            // Movements within (from,to] that can change the level.
+            // Movements within (from,to]
             var inRange = rows
-                .Where(r => r.CreatedTime > from && r.CreatedTime <= to)
+                .Where(r => r.MovementDate > from && r.MovementDate <= to)
                 .ToList();
 
             var points = ComputeBucketedSeries(bucketEnds, startLevel, inRange);
@@ -168,8 +177,6 @@ public sealed class StockMovementsController : ControllerBase
         public DateTimeOffset? Max { get; set; }
     }
 
-    private static decimal ComputeLevelAfter(MovementRow r)
-        => r.BaseWeightKg + r.BuyWeightKg - r.SellWeightKg;
 
     internal static int ChooseBucketCount(DateTimeOffset from, DateTimeOffset to, int? requested)
     {
@@ -220,9 +227,10 @@ public sealed class StockMovementsController : ControllerBase
         {
             var end = bucketEnds[i];
 
-            while (idx < inRangeOrdered.Count && inRangeOrdered[idx].CreatedTime <= end)
+            while (idx < inRangeOrdered.Count && inRangeOrdered[idx].MovementDate <= end)
             {
-                level = ComputeLevelAfter(inRangeOrdered[idx]);
+                var row = inRangeOrdered[idx];
+                level = row.BaseWeightKg + row.BuyWeightKg - row.SellWeightKg;
                 idx++;
             }
 

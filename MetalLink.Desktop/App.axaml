@@ -1,9 +1,9 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MetalLink.Desktop.App"
              xmlns:fluent="clr-namespace:Avalonia.Themes.Fluent;assembly=Avalonia.Themes.Fluent"
              xmlns:views="using:MetalLink.Desktop.Views"
              xmlns:converters="using:MetalLink.Desktop.Converters"
-             x:Class="MetalLink.Desktop.App"
              xmlns:local="clr-namespace:MetalLink.Desktop">
 
   <!-- Global styles -->

@@ -36,14 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Take control of Avalonia XAML compilation to avoid duplicate includes -->
-    <AvaloniaXaml Remove="**\\*.axaml" />
-    <AvaloniaXaml Include="App.axaml" />
-    <AvaloniaXaml Include="Views\\**\\*.axaml" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <AvaloniaResource Include="Assets\\**" />
+    <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
   <ItemGroup>

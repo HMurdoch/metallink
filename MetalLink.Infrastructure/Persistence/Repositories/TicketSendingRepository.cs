@@ -17,7 +17,7 @@ public class TicketSendingRepository : ITicketSendingRepository
         _context = context;
     }
 
-    public async Task<TicketSending?> GetByIdAsync(long ticketSendingId)
+    public async Task<TicketSending?> GetByIdAsync(int ticketSendingId)
     {
         return await _context.Set<TicketSending>()
             .Include(t => t.Buyer)
@@ -48,14 +48,14 @@ public class TicketSendingRepository : ITicketSendingRepository
 
     public async Task<IEnumerable<TicketSending>> SearchAsync(
         string? searchTerm = null,
-        long? companyId = null,
-        long? siteId = null,
-        long? buyerId = null,
+        int? companyId = null,
+        int? siteId = null,
+        int? buyerId = null,
         string? firstName = null,
         string? lastName = null,
         string? idNumber = null,
         long? accountNumber = null,
-        long? productId = null,
+        int? productId = null,
         string? ticketType = null,
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
@@ -127,14 +127,14 @@ public class TicketSendingRepository : ITicketSendingRepository
 
     public async Task<long> GetCountAsync(
         string? searchTerm = null,
-        long? companyId = null,
-        long? siteId = null,
-        long? buyerId = null,
+        int? companyId = null,
+        int? siteId = null,
+        int? buyerId = null,
         string? firstName = null,
         string? lastName = null,
         string? idNumber = null,
         long? accountNumber = null,
-        long? productId = null,
+        int? productId = null,
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
         string? deliveryStatus = null)
@@ -190,7 +190,7 @@ public class TicketSendingRepository : ITicketSendingRepository
         return Task.CompletedTask;
     }
 
-    public async Task<string> GenerateTicketNumberAsync(long siteId)
+    public async Task<string> GenerateTicketNumberAsync(int siteId)
     {
         var site = await _context.Set<Site>().FindAsync(siteId);
         var year = DateTime.Now.Year;
@@ -238,7 +238,7 @@ public class TicketSendingRepository : ITicketSendingRepository
         return await _context.Database.SqlQueryRaw<long>(sql).SingleAsync();
     }
 
-    public async Task<HashSet<long>> GetBuyerIdsWithActiveTicketsAsync(long? companyId = null, long? siteId = null, CancellationToken ct = default)
+    public async Task<HashSet<int>> GetBuyerIdsWithActiveTicketsAsync(int? companyId = null, int? siteId = null, CancellationToken ct = default)
     { 
 
         var query = _context.Set<TicketSending>()
@@ -252,7 +252,7 @@ public class TicketSendingRepository : ITicketSendingRepository
             query = query.Where(t => t.Buyer != null && t.Buyer.SiteId == siteId.Value);
 
         var ids = await query
-            .Select(t => (long)t.BuyerId)
+            .Select(t => t.BuyerId)
             .Distinct()
             .ToListAsync(ct);
 

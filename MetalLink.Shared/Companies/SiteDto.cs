@@ -1,7 +1,7 @@
 public sealed class SiteDto
 {
-    public long SiteId { get; set; }
-    public long CompanyId { get; set; }
+    public int SiteId { get; set; }
+    public int CompanyId { get; set; }
     public string SiteName { get; set; } = string.Empty;
     public string SiteCode { get; set; } = string.Empty;
 

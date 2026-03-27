@@ -32,7 +32,7 @@ public sealed class CompanyRepository : ICompanyRepository
     }
 
     public async Task<IReadOnlyList<Site>> LookupSitesForCompanyAsync(
-        long companyId,
+        int companyId,
         string? term,
         CancellationToken cancellationToken = default)
     {

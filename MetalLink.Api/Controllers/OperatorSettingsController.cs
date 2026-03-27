@@ -280,4 +280,83 @@ public sealed class OperatorSettingsController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpGet("play-intro-video")]
+    [ProducesResponseType(typeof(PlayIntroVideoSettingDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPlayIntroVideo(CancellationToken ct)
+    {
+        var operatorId = (int)User.GetOperatorId();
+
+        var raw = await _db.OperatorSettings
+            .AsNoTracking()
+            .Where(x => x.OperatorId == operatorId
+                        && x.Setting.SettingName.ToLower() == "playintrovideo")
+            .OrderByDescending(x => x.IsActive)
+            .ThenByDescending(x => x.TimeUpdated)
+            .ThenByDescending(x => x.TimeCreated)
+            .Select(x => x.SettingOption.SettingOptionValue)
+            .FirstOrDefaultAsync(ct);
+
+        // Default to true if not set
+        var enabled = string.IsNullOrWhiteSpace(raw) ? true : raw.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
+        return Ok(new PlayIntroVideoSettingDto { PlayIntroVideo = enabled });
+    }
+
+    [HttpPut("play-intro-video")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdatePlayIntroVideo([FromBody] UpdatePlayIntroVideoSettingDto dto, CancellationToken ct)
+    {
+        var operatorId = (int)User.GetOperatorId();
+
+        var setting = await _db.Settings
+            .FirstOrDefaultAsync(s => s.IsActive && s.SettingName.ToLower() == "playintrovideo", ct);
+
+        if (setting == null)
+        {
+            setting = new MetalLink.Domain.Entities.Setting("playintrovideo", "Play intro video on startup", operatorId);
+            await _db.Settings.AddAsync(setting, ct);
+            await _db.SaveChangesAsync(ct);
+
+            await _db.SettingOptions.AddAsync(new MetalLink.Domain.Entities.SettingOption(setting.SettingId, "true", operatorId), ct);
+            await _db.SettingOptions.AddAsync(new MetalLink.Domain.Entities.SettingOption(setting.SettingId, "false", operatorId), ct);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        var value = dto.PlayIntroVideo ? "true" : "false";
+        var option = await _db.SettingOptions
+            .FirstOrDefaultAsync(o => o.IsActive && o.SettingId == setting.SettingId && o.SettingOptionValue.ToLower() == value, ct);
+
+        if (option == null)
+        {
+            option = new MetalLink.Domain.Entities.SettingOption(setting.SettingId, value, operatorId);
+            await _db.SettingOptions.AddAsync(option, ct);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
+        var actives = await _db.OperatorSettings
+            .Where(x => x.OperatorId == operatorId
+                        && x.SettingId == setting.SettingId
+                        && x.IsActive)
+            .ToListAsync(ct);
+
+        foreach (var active in actives)
+        {
+            _db.Entry(active).Property("IsActive").CurrentValue = false;
+        }
+
+        var newRow = new MetalLink.Domain.Entities.OperatorSetting(
+            operatorId: operatorId,
+            settingId: setting.SettingId,
+            settingOptionId: option.SettingOptionId,
+            createdByOperatorId: operatorId);
+
+        await _db.OperatorSettings.AddAsync(newRow, ct);
+        await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+
+        return NoContent();
+    }
 }

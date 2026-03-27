@@ -6,13 +6,13 @@ namespace MetalLink.Application.Interfaces;
 
 public interface IStockOnHandRepository
 {
-    Task<StockOnHand?> GetByIdAsync(long stockOnHandId);
-    Task<StockOnHand?> GetBySiteAndProductAsync(long siteId, long productId);
-    Task<IEnumerable<StockOnHand>> GetAllBySiteAsync(long siteId);
-    Task<IEnumerable<StockOnHand>> GetAllByProductAsync(long productId);
+    Task<StockOnHand?> GetByIdAsync(int stockOnHandId);
+    Task<StockOnHand?> GetBySiteAndProductAsync(int siteId, int productId);
+    Task<IEnumerable<StockOnHand>> GetAllBySiteAsync(int siteId);
+    Task<IEnumerable<StockOnHand>> GetAllByProductAsync(int productId);
     Task<IEnumerable<StockOnHand>> GetAllAsync();
     Task<StockOnHand> AddAsync(StockOnHand stockOnHand);
     Task UpdateAsync(StockOnHand stockOnHand);
-    Task RecalculateStockAsync(long siteId, long productId);
+    Task RecalculateStockAsync(int siteId, int productId);
     Task RecalculateAllStockAsync();
 }

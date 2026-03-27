@@ -253,11 +253,10 @@ public partial class MainWindowViewModel
     {
         try
         {
-            // setting_id 3, option 4 = Yes, 5 = No
-            int optionId = enabled ? 4 : 5;
             if (_app != null)
             {
-                await _app.OperatorSettingsService.UpdateSettingAsync(3, optionId);
+                var payload = new MetalLink.Shared.Settings.UpdatePlayIntroVideoSettingDto { PlayIntroVideo = enabled };
+                await _app.ApiClient.PutAsJsonAsync("api/operator-settings/play-intro-video", payload);
             }
         }
         catch (Exception ex)

@@ -7,7 +7,7 @@ public sealed class StockMovementTimeSeriesRequestDto
     /// <summary>
     /// Product IDs to include. The UI will typically send the 20 products on the current page.
     /// </summary>
-    public long[] ProductIds { get; set; } = Array.Empty<long>();
+    public int[] ProductIds { get; set; } = Array.Empty<int>();
 
     /// <summary>
     /// When true, the API uses all available history.
@@ -52,7 +52,7 @@ public sealed class StockMovementTimeSeriesResponseDto
 
 public sealed class StockMovementTimeSeriesProductDto
 {
-    public long ProductId { get; set; }
+    public int ProductId { get; set; }
     public StockMovementTimeSeriesPointDto[] Points { get; set; } = Array.Empty<StockMovementTimeSeriesPointDto>();
 }
 

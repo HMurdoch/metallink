@@ -8,22 +8,22 @@ namespace MetalLink.Domain.Entities;
 /// </summary>
 public class StockMovementReceiving
 {
-    public long StockMovementReceivingId { get; private set; }
+    public int StockMovementReceivingId { get; private set; }
 
     // Site where the movement occurred
-    public long SiteId { get; private set; }
+    public int SiteId { get; private set; }
     public Site Site { get; set; } = null!;
 
     // Product being moved
-    public long ProductId { get; private set; }
+    public int ProductId { get; private set; }
     public Product Product { get; set; } = null!;
 
     // Link to the receiving ticket that caused this movement
-    public long TicketReceivingId { get; private set; }
+    public int TicketReceivingId { get; private set; }
     public TicketReceiving TicketReceiving { get; set; } = null!;
 
     // Link to the specific ticket line (if applicable - for platform tickets)
-    public long? TicketReceivingLineId { get; private set; }
+    public int? TicketReceivingLineId { get; private set; }
     public TicketReceivingLine? TicketReceivingLine { get; set; }
 
     // Movement details
@@ -37,7 +37,7 @@ public class StockMovementReceiving
     public string? Notes { get; private set; }
 
     // Customer reference (denormalized for reporting)
-    public long CustomerId { get; private set; }
+    public int CustomerId { get; private set; }
     public string CustomerName { get; private set; } = string.Empty;
 
     // Audit
@@ -49,15 +49,15 @@ public class StockMovementReceiving
     private StockMovementReceiving() { }
 
     public StockMovementReceiving(
-        long siteId,
-        long productId,
-        long ticketReceivingId,
-        long? ticketReceivingLineId,
+        int siteId,
+        int productId,
+        int ticketReceivingId,
+        int? ticketReceivingLineId,
         decimal quantityKg,
         decimal unitPricePerKg,
         string currencyCode,
         string ticketNumber,
-        long customerId,
+        int customerId,
         string customerName,
         string? notes = null)
     {

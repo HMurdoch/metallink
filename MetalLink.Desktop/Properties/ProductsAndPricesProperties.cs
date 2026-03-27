@@ -76,8 +76,8 @@ public partial class MainWindowViewModel
     // PRODUCT CREATE/EDIT FORM
     // =====================================================
 
-    private long? _editingProductId;
-    public long? EditingProductId
+    private int? _editingProductId;
+    public int? EditingProductId
     {
         get => _editingProductId;
         set { _editingProductId = value; OnPropertyChanged(); }
@@ -155,8 +155,8 @@ public partial class MainWindowViewModel
     // PRICE CREATE/EDIT FORM
     // =====================================================
 
-    private long? _editingPriceId;
-    public long? EditingPriceId
+    private int? _editingPriceId;
+    public int? EditingPriceId
     {
         get => _editingPriceId;
         set { _editingPriceId = value; OnPropertyChanged(); }

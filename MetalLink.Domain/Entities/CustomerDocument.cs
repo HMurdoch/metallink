@@ -2,8 +2,8 @@ namespace MetalLink.Domain.Entities;
 
 public class CustomerDocument
 {
-    public long CustomerDocumentId { get; private set; }
-    public long CustomerId { get; private set; }
+    public int CustomerDocumentId { get; private set; }
+    public int CustomerId { get; private set; }
 
     // e.g. "id_front", "id_back", "signature", "fingerprint", "load_photo_top"
     public string DocumentType { get; private set; } = string.Empty;
@@ -18,7 +18,7 @@ public class CustomerDocument
     private CustomerDocument() { } // EF
 
     public CustomerDocument(
-        long customerId,
+        int customerId,
         string documentType,
         string fileName,
         string contentType,

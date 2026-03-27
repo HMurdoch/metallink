@@ -59,6 +59,10 @@ public sealed class StockLevelsController : ControllerBase
             .SqlQuery<StockLevelLookupDto>(sql)
             .ToArrayAsync(ct);
 
+        Console.WriteLine($"[DEBUG] StockLevelsController.Lookup: Found {result.Length} products for term='{term}', letter='{letter}'.");
+        foreach(var r in result.Take(5)) {
+            Console.WriteLine($"  - Product: {r.ProductName} ({r.ProductCode}), Stock: {r.WeightKg}kg");
+        }
         return Ok(result);
     }
 }

@@ -121,8 +121,9 @@ public class LoginViewModel : INotifyPropertyChanged
                 // Close login window immediately after intro shows
                 loginWindow?.Close();
 
-                // Check setting_id 3 (intro_video)
-                bool playVideo = _app.AuthState.OperatorSettings.FirstOrDefault(s => s.SettingId == 3)?.SettingOptionId != 5; // 5 = No
+                // Check "playintrovideo" setting (case-insensitive)
+                var introSetting = _app.AuthState.OperatorSettings.FirstOrDefault(s => s.SettingName.Equals("playintrovideo", StringComparison.OrdinalIgnoreCase));
+                bool playVideo = introSetting == null || introSetting.SettingOptionValue.Equals("true", StringComparison.OrdinalIgnoreCase);
 
                 // Play intro sequence
                 await intro.PlayAsync(playVideo);

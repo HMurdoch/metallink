@@ -9,10 +9,10 @@ namespace MetalLink.Desktop.Views.Controls;
 
 public sealed class BarChart3DControl : Control
 {
-    public static readonly StyledProperty<long?> HoveredProductIdProperty =
-        AvaloniaProperty.Register<BarChart3DControl, long?>(nameof(HoveredProductId));
+    public static readonly StyledProperty<int?> HoveredProductIdProperty =
+        AvaloniaProperty.Register<BarChart3DControl, int?>(nameof(HoveredProductId));
 
-    public long? HoveredProductId
+    public int? HoveredProductId
     {
         get => GetValue(HoveredProductIdProperty);
         set => SetValue(HoveredProductIdProperty, value);
@@ -53,7 +53,7 @@ public sealed class BarChart3DControl : Control
         InvalidateVisual();
     }
 
-    public sealed record BarItem(long ProductId, string ProductName, double ValueKg, IBrush Brush);
+    public sealed record BarItem(int ProductId, string ProductName, double ValueKg, IBrush Brush);
 
     public static readonly StyledProperty<IReadOnlyList<BarItem>?> ItemsProperty =
         AvaloniaProperty.Register<BarChart3DControl, IReadOnlyList<BarItem>?>(nameof(Items));

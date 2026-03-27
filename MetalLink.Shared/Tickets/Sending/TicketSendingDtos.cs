@@ -111,8 +111,8 @@ public class TicketSendingSearchRequestDto
     public bool NewBuyerOnly { get; set; }
 
     public string? SearchTerm { get; set; }
-    public long? CompanyId { get; set; }
-    public long? SiteId { get; set; }
+    public int? CompanyId { get; set; }
+    public int? SiteId { get; set; }
     public int? BuyerId { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }

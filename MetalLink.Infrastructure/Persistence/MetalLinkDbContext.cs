@@ -45,6 +45,8 @@ public class MetalLinkDbContext : DbContext
     public DbSet<TicketReceivingLine> ReceivingTicketLines => Set<TicketReceivingLine>();
     public DbSet<TicketSending> SendingTickets => Set<TicketSending>();
     public DbSet<TicketSendingLine> SendingTicketLines => Set<TicketSendingLine>();
+    public DbSet<StockMovementReceiving> StockMovementReceiving => Set<StockMovementReceiving>();
+    public DbSet<StockMovementSending> StockMovementSending => Set<StockMovementSending>();
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -76,6 +78,8 @@ public class MetalLinkDbContext : DbContext
         ConfigureReceivingTicketLines(modelBuilder);
         ConfigureSendingTickets(modelBuilder);
         ConfigureSendingTicketLines(modelBuilder);
+        ConfigureStockMovementReceiving(modelBuilder);
+        ConfigureStockMovementSending(modelBuilder);
 
         // Global soft-delete filter: automatically apply WHERE is_active = true
         // for all entities that have an IsActive boolean property.
@@ -337,10 +341,74 @@ public class MetalLinkDbContext : DbContext
             .IsUnique()
             .HasFilter("is_active = true");
 
-        e.HasOne(x => x.Operator).WithMany().HasForeignKey(x => x.OperatorId);
+        e.HasOne(x => x.Operator)
+            .WithMany(o => o.OperatorSettings)
+            .HasForeignKey(x => x.OperatorId);
+
         e.HasOne(x => x.Setting).WithMany().HasForeignKey(x => x.SettingId);
         e.HasOne(x => x.SettingOption).WithMany().HasForeignKey(x => x.SettingOptionId);
-        e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
+        
+        e.HasOne(x => x.CreatedByOperator)
+            .WithMany()
+            .HasForeignKey(x => x.CreatedByOperatorId);
+    }
+
+    private static void ConfigureStockMovementReceiving(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<StockMovementReceiving>();
+        e.ToTable("stock_movement_receiving", "metal_link");
+        e.HasKey(x => x.StockMovementReceivingId);
+        e.Property(x => x.StockMovementReceivingId).HasColumnName("stock_movement_receiving_id").ValueGeneratedOnAdd();
+        e.Property(x => x.SiteId).HasColumnName("site_id").IsRequired();
+        e.Property(x => x.ProductId).HasColumnName("product_id").IsRequired();
+        e.Property(x => x.TicketReceivingId).HasColumnName("receiving_ticket_id").IsRequired();
+        e.Property(x => x.TicketReceivingLineId).HasColumnName("receiving_ticket_line_id");
+        e.Property(x => x.QuantityKg).HasColumnName("quantity_kg").IsRequired();
+        e.Property(x => x.UnitPricePerKg).HasColumnName("unit_price_per_kg").IsRequired();
+        e.Property(x => x.TotalValue).HasColumnName("total_value").IsRequired();
+        e.Property(x => x.CurrencyCode).HasColumnName("currency_code").HasMaxLength(10).IsRequired();
+        e.Property(x => x.TicketNumber).HasColumnName("ticket_number").HasMaxLength(100).IsRequired();
+        e.Property(x => x.CustomerId).HasColumnName("customer_id").IsRequired();
+        e.Property(x => x.CustomerName).HasColumnName("customer_name").HasMaxLength(255).IsRequired();
+        e.Property(x => x.Notes).HasColumnName("notes");
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.MovementDate).HasColumnName("movement_date").HasDefaultValueSql("now()");
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+
+        e.HasOne(x => x.Site).WithMany().HasForeignKey(x => x.SiteId);
+        e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+        e.HasOne(x => x.TicketReceiving).WithMany(x => x.StockMovements).HasForeignKey(x => x.TicketReceivingId);
+        e.HasOne(x => x.TicketReceivingLine).WithMany().HasForeignKey(x => x.TicketReceivingLineId);
+    }
+
+    private static void ConfigureStockMovementSending(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<StockMovementSending>();
+        e.ToTable("stock_movement_sending", "metal_link");
+        e.HasKey(x => x.StockMovementSendingId);
+        e.Property(x => x.StockMovementSendingId).HasColumnName("stock_movement_sending_id").ValueGeneratedOnAdd();
+        e.Property(x => x.SiteId).HasColumnName("site_id").IsRequired();
+        e.Property(x => x.ProductId).HasColumnName("product_id").IsRequired();
+        e.Property(x => x.TicketSendingId).HasColumnName("sending_ticket_id").IsRequired();
+        e.Property(x => x.TicketSendingLineId).HasColumnName("sending_ticket_line_id");
+        e.Property(x => x.QuantityKg).HasColumnName("quantity_kg").IsRequired();
+        e.Property(x => x.UnitPricePerKg).HasColumnName("unit_price_per_kg").IsRequired();
+        e.Property(x => x.TotalValue).HasColumnName("total_value").IsRequired();
+        e.Property(x => x.CurrencyCode).HasColumnName("currency_code").HasMaxLength(10).IsRequired();
+        e.Property(x => x.TicketNumber).HasColumnName("ticket_number").HasMaxLength(100).IsRequired();
+        e.Property(x => x.BuyerId).HasColumnName("buyer_id").IsRequired();
+        e.Property(x => x.BuyerName).HasColumnName("buyer_name").HasMaxLength(255).IsRequired();
+        e.Property(x => x.Notes).HasColumnName("notes");
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.MovementDate).HasColumnName("movement_date").HasDefaultValueSql("now()");
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+
+        e.HasOne(x => x.Site).WithMany().HasForeignKey(x => x.SiteId);
+        e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+        e.HasOne(x => x.TicketSending).WithMany().HasForeignKey(x => x.TicketSendingId);
+        e.HasOne(x => x.TicketSendingLine).WithMany().HasForeignKey(x => x.TicketSendingLineId);
     }
 
     private static void ConfigureProducts(ModelBuilder modelBuilder)

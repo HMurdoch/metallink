@@ -71,14 +71,14 @@ public sealed class TicketSendingProperties
     
     // Site and Company
     public SiteLookupDto? SelectedSite { get; set; }
-    public long CompanyId { get; set; }
-    public long SiteId { get; set; }
+    public int CompanyId { get; set; }
+    public int SiteId { get; set; }
     
     // Operator
-    public long OperatorId { get; set; }
+    public int OperatorId { get; set; }
     
     // Created ticket info
-    public long? TicketSendingId { get; set; }
+    public int? TicketSendingId { get; set; }
     public DateTimeOffset? CreatedTime { get; set; }
     public DateTimeOffset? UpdatedTime { get; set; }
 }
@@ -88,7 +88,7 @@ public sealed class TicketSendingProperties
 /// </summary>
 public class BuyerDto
 {
-    public long BuyerId { get; set; }
+    public int BuyerId { get; set; }
     public string BuyerName { get; set; } = string.Empty;
     public string? BuyerCode { get; set; }
     public string? ContactPerson { get; set; }

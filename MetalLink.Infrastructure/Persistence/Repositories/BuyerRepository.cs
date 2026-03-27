@@ -22,13 +22,13 @@ public class BuyerRepository : IBuyerRepository
     // Basic CRUD-style operations
     // -------------------------------------------------
 
-    public Task<Buyer?> GetByIdAsync(long buyerId)
+    public Task<Buyer?> GetByIdAsync(int buyerId)
     {
         return GetByIdAsync(buyerId, CancellationToken.None);
     }
 
     public async Task<Buyer?> GetByIdAsync(
-        long buyerId,
+        int buyerId,
         CancellationToken cancellationToken)
     {
         return await _db.Buyers
@@ -331,8 +331,8 @@ public class BuyerRepository : IBuyerRepository
     }
 
     public async Task<IReadOnlyList<Buyer>> SearchBuyersWithZeroSendingTicketsAsync(
-        long? companyId,
-        long? siteId,
+        int? companyId,
+        int? siteId,
         int? buyerId,
         string? firstName,
         string? lastName,
