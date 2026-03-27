@@ -590,7 +590,7 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
         e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
 
-        e.HasOne(x => x.Customer).WithMany().HasForeignKey(x => x.CustomerId);
+        e.HasOne(x => x.Customer).WithMany(x => x.TicketsReceiving).HasForeignKey(x => x.CustomerId);
         e.HasOne(x => x.TicketType).WithMany(x => x.TicketsReceiving).HasForeignKey(x => x.TicketTypeId);
         e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
     }
