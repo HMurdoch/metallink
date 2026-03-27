@@ -581,11 +581,9 @@ public sealed class StockMovementViewModel : ViewModelBase
                         var typeLabel = (change >= 0) ? "Buy" : "Sell";
                         
                         if (change != 0)
-                        {
-                            return $"{name} On Hand: {pt.LevelKg:N2}\n{new string(' ', name.Length + 10)}{typeLabel}: {Math.Abs(change):N2}";
-                        }
-                        
-                        return $"{name} On Hand: {pt.LevelKg:N2}";
+                            return $"On Hand: {pt.LevelKg:N2} {typeLabel}: {Math.Abs(change):N2}";
+                        else                        
+                            return $"On Hand: {pt.LevelKg:N2}";
                     }
                 };
 
@@ -604,7 +602,7 @@ public sealed class StockMovementViewModel : ViewModelBase
 
                 var scatterSeries = new ScatterSeries<double?>
                 {
-                    Name = $"{name} Transactions",
+                    Name = $"{name}",
                     Values = transactionPoints,
                     GeometrySize = 6,
                     Stroke = null,
@@ -617,11 +615,9 @@ public sealed class StockMovementViewModel : ViewModelBase
                         var typeLabel = (change >= 0) ? "Buy" : "Sell";
                         
                         if (change != 0)
-                        {
-                            return $"{name} On Hand: {pt.LevelKg:N2}\n{new string(' ', name.Length + 10)}{typeLabel}: {Math.Abs(change):N2}";
-                        }
-                        
-                        return $"{name} On Hand: {pt.LevelKg:N2}";
+                            return $"On Hand: {pt.LevelKg:N2} {typeLabel}: {Math.Abs(change):N2}";
+                        else
+                            return $"On Hand: {pt.LevelKg:N2}";
                     }
                 };
 
