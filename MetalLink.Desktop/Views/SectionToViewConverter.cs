@@ -1,6 +1,7 @@
 using System;
 using Avalonia.Controls;
 using Avalonia.Data.Converters;
+using Avalonia.Layout;
 using MetalLink.Desktop.ViewModels;
 
 namespace MetalLink.Desktop.Views;
@@ -26,7 +27,9 @@ public class SectionToViewConverter : IValueConverter
                 EnumMainSection.Customers => new CustomersView(),
                 EnumMainSection.Buyers => new BuyersView(),
                 EnumMainSection.CompanyAndSites => new CompanyAndSitesView(),
-                EnumMainSection.ProductsAndPrices => new ProductsAndPricesView(),
+                EnumMainSection.Products => new ProductsView(),
+                EnumMainSection.PriceLists => new PriceListsView(),
+                EnumMainSection.Prices => new PricesView(),
                 EnumMainSection.TicketsReceiving => new TicketsReceivingView(),
                 EnumMainSection.TicketsSending => new TicketsSendingView(),
                 EnumMainSection.Documents => new DocumentsView(),

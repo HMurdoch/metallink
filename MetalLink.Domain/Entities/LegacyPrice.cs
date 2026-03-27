@@ -2,9 +2,9 @@ using System;
 
 namespace MetalLink.Domain.Entities;
 
-public class Price
+public class LegacyPrice
 {
-    public int PriceId { get; set; }
+    public int LegacyPriceId { get; set; }
     public int ProductId { get; set; }
     // PriceA, PriceB, PriceC removed in favor of ProductPriceListProductPrice table
     public int CreatedByOperatorId { get; set; }

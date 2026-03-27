@@ -37,8 +37,8 @@ public sealed class StockMovementsControllerTimeSeriesTests
 
         var movements = new List<StockMovementsController.MovementRow>
         {
-            new() { ProductId = 1, CreatedTime = from.AddDays(3), BaseWeightKg = 100, BuyWeightKg = 10, SellWeightKg = 0 }, // -> 110
-            new() { ProductId = 1, CreatedTime = from.AddDays(7), BaseWeightKg = 110, BuyWeightKg = 0, SellWeightKg = 20 }, // -> 90
+            new() { ProductId = 1, MovementDate = from.AddDays(3), BaseWeightKg = 100, BuyWeightKg = 10, SellWeightKg = 0 }, // -> 110
+            new() { ProductId = 1, MovementDate = from.AddDays(7), BaseWeightKg = 110, BuyWeightKg = 0, SellWeightKg = 20 }, // -> 90
         };
 
         var points = StockMovementsController.ComputeBucketedSeries(bucketEnds, startLevel: 100, movements);

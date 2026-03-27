@@ -35,7 +35,10 @@ public class MetalLinkDbContext : DbContext
     public DbSet<OperatorSetting> OperatorSettings => Set<OperatorSetting>();
 
     public DbSet<Product> Products => Set<Product>();
-    public DbSet<Price> Prices => Set<Price>();
+    public DbSet<LegacyProduct> LegacyProducts => Set<LegacyProduct>();
+    public DbSet<LegacyPrice> LegacyPrices => Set<LegacyPrice>();
+    public DbSet<ProductSpecificationFlag> ProductSpecificationFlags => Set<ProductSpecificationFlag>();
+    public DbSet<ProductGroup> ProductGroups => Set<ProductGroup>();
     public DbSet<ProductPriceList> ProductPriceLists => Set<ProductPriceList>();
     public DbSet<ProductPriceListProductPrice> ProductPriceListProductPrices => Set<ProductPriceListProductPrice>();
 
@@ -69,7 +72,10 @@ public class MetalLinkDbContext : DbContext
         ConfigureOperatorSettings(modelBuilder);
 
         ConfigureProducts(modelBuilder);
-        ConfigurePrices(modelBuilder);
+        ConfigureLegacyProducts(modelBuilder);
+        ConfigureLegacyPrices(modelBuilder);
+        ConfigureProductSpecificationFlags(modelBuilder);
+        ConfigureProductGroups(modelBuilder);
         ConfigureProductPriceLists(modelBuilder);
         ConfigureProductPriceListProductPrices(modelBuilder);
 
@@ -417,22 +423,51 @@ public class MetalLinkDbContext : DbContext
         e.ToTable("products", "metal_link");
         e.HasKey(x => x.ProductId);
         e.Property(x => x.ProductId).HasColumnName("product_id").ValueGeneratedOnAdd();
+        e.Property(x => x.HtsCode).HasColumnName("hts_code");
+        e.Property(x => x.IsriProductCode).HasColumnName("isri_product_code").IsRequired();
+        e.Property(x => x.IsriProductName).HasColumnName("isri_product_name").IsRequired();
+        e.Property(x => x.IsriProductDescription).HasColumnName("isri_product_description");
+        e.Property(x => x.IsriProductUrl).HasColumnName("isri_product_url");
+        e.Property(x => x.IsriProduct).HasColumnName("isri_product").HasDefaultValue(false);
+        e.Property(x => x.ProductGroupId).HasColumnName("product_group_id").IsRequired();
+        e.Property(x => x.ProductSpecificationFlagId).HasColumnName("product_specification_flag_id").IsRequired();
+        e.Property(x => x.StarredProduct).HasColumnName("starred_product").HasDefaultValue(false);
+        e.Property(x => x.StarredProductAlias).HasColumnName("starred_product_alias");
+        e.Property(x => x.MustDeclare).HasColumnName("must_declare").HasDefaultValue(false);
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+
+        e.HasOne(x => x.ProductGroup).WithMany().HasForeignKey(x => x.ProductGroupId);
+        e.HasOne(x => x.ProductSpecificationFlag).WithMany().HasForeignKey(x => x.ProductSpecificationFlagId);
+    }
+
+    private static void ConfigureLegacyProducts(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<LegacyProduct>();
+        e.ToTable("legacy_products", "metal_link");
+        e.HasKey(x => x.LegacyProductId);
+        e.Property(x => x.LegacyProductId).HasColumnName("product_id").ValueGeneratedOnAdd();
         e.Property(x => x.ProductCode).HasColumnName("product_code").HasMaxLength(50).IsRequired();
         e.Property(x => x.ProductName).HasColumnName("product_name").HasMaxLength(255).IsRequired();
         e.Property(x => x.Grade).HasColumnName("grade").HasMaxLength(50);
+        e.Property(x => x.ProductGroupId).HasColumnName("product_group_id");
         e.Property(x => x.MustDeclare).HasColumnName("must_declare").HasDefaultValue(false);
+
+        e.HasOne(x => x.ProductGroup).WithMany().HasForeignKey(x => x.ProductGroupId);
         e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
         e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
     }
 
-    private static void ConfigurePrices(ModelBuilder modelBuilder)
+    private static void ConfigureLegacyPrices(ModelBuilder modelBuilder)
     {
-        var e = modelBuilder.Entity<Price>();
-        e.ToTable("prices", "metal_link");
-        e.HasKey(x => x.PriceId);
-        e.Property(x => x.PriceId).HasColumnName("price_id").ValueGeneratedOnAdd();
+        var e = modelBuilder.Entity<LegacyPrice>();
+        e.ToTable("legacy_prices", "metal_link");
+        e.HasKey(x => x.LegacyPriceId);
+        e.Property(x => x.LegacyPriceId).HasColumnName("price_id").ValueGeneratedOnAdd();
         e.Property(x => x.ProductId).HasColumnName("product_id").IsRequired();
         // Legacy price_a, price_b, price_c columns removed
         e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
@@ -441,6 +476,37 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
 
         e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+    }
+
+    private static void ConfigureProductSpecificationFlags(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<ProductSpecificationFlag>();
+        e.ToTable("product_specification_flags", "metal_link");
+        e.HasKey(x => x.ProductSpecificationFlagId);
+        e.Property(x => x.ProductSpecificationFlagId).HasColumnName("product_specification_flag_id").ValueGeneratedOnAdd();
+        e.Property(x => x.ProductSpecificationTypeFlag).HasColumnName("product_specification_type_flag").HasMaxLength(1).IsRequired();
+        e.Property(x => x.ProductSpecificationDescription).HasColumnName("product_specification_description").IsRequired();
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+    }
+
+    private static void ConfigureProductGroups(ModelBuilder modelBuilder)
+    {
+        var e = modelBuilder.Entity<ProductGroup>();
+        e.ToTable("product_groups", "metal_link");
+        e.HasKey(x => x.ProductGroupId);
+        e.Property(x => x.ProductGroupId).HasColumnName("product_group_id").ValueGeneratedOnAdd();
+        e.Property(x => x.ProductGroupName).HasColumnName("product_group_name").IsRequired();
+        e.Property(x => x.ProductGroupDescription).HasColumnName("product_group_description").IsRequired();
+        e.Property(x => x.ProductSpecificationFlagId).HasColumnName("product_specification_flag_id").IsRequired();
+        e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
+        e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
+        e.Property(x => x.UpdatedTime).HasColumnName("updated_time").HasDefaultValueSql("now()");
+
+        e.HasOne(x => x.ProductSpecificationFlag).WithMany(x => x.ProductGroups).HasForeignKey(x => x.ProductSpecificationFlagId);
     }
 
     private static void ConfigureProductPriceLists(ModelBuilder modelBuilder)

@@ -11,7 +11,14 @@ public sealed class NavIndentConverter : IValueConverter
         // value = IsNavCollapsed
         // When nav is collapsed, we must NOT indent, otherwise the icons get pushed off-screen.
         if (value is bool isCollapsed && !isCollapsed)
-            return new Thickness(18, 0, 0, 0);
+        {
+            double indent = 18;
+            if (parameter != null && double.TryParse(parameter.ToString(), out double multiplier))
+            {
+                indent += (multiplier * 18);
+            }
+            return new Thickness(indent, 0, 0, 0);
+        }
 
         return new Thickness(0);
     }

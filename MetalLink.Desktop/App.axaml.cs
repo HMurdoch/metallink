@@ -18,7 +18,7 @@ public partial class App : Application
     public CustomerService CustomerService { get; private set; } = null!;
     public BuyerService BuyerService { get; private set; } = null!;
     public CompanyAndSiteService CompanyAndSiteService { get; private set; } = null!;
-    public ProductsAndPricesService ProductsAndPricesService { get; private set; } = null!;
+    public ProductsService ProductsService { get; private set; } = null!;
     public TicketReceivingService TicketReceivingService { get; private set; } = null!;
     public TicketSendingService TicketSendingService { get; private set; } = null!;
     public IScaleService ScaleService { get; private set; } = null!;
@@ -53,7 +53,7 @@ public partial class App : Application
         CustomerService = new CustomerService(ApiClient, AuthState);
         BuyerService = new BuyerService(ApiClient, AuthState);
         CompanyAndSiteService = new CompanyAndSiteService(ApiClient, AuthState);
-        ProductsAndPricesService = new ProductsAndPricesService(ApiClient, AuthState);
+        ProductsService = new ProductsService(ApiClient, AuthState);
         TicketReceivingService = new TicketReceivingService(ApiClient, AuthState);
         TicketSendingService = new TicketSendingService(ApiClient, AuthState);
         ScaleService = new MockScaleService();

@@ -47,7 +47,7 @@ public partial class MainWindowViewModel
     /// <summary>
     /// Call this ONCE from your constructor in MWVM.Core.cs
     /// </summary>
-    private void InitializeProductsAndPricesCommands()
+    private void InitializeProductsCommands()
     {
         SearchProductsCommand = new AsyncRelayCommand(ct => SearchProductsAsync(ct));
         CreateProductCommand = new AsyncRelayCommand(ct => CreateProductAsync(ct), () => CanCreateProduct);
@@ -68,7 +68,7 @@ public partial class MainWindowViewModel
     {
         try
         {
-            var lists = await _app.ProductsAndPricesService.GetPriceListsAsync(ct);
+            var lists = await _app.ProductsService.GetPriceListsAsync(ct);
             ProductPriceLists.Clear();
             foreach (var list in lists)
                 ProductPriceLists.Add(list);
@@ -155,7 +155,7 @@ public partial class MainWindowViewModel
         {
             StatusMessage = "[STATUS] Creating product...";
 
-            var product = await _app.ProductsAndPricesService.CreateProductAsync(
+            var product = await _app.ProductsService.CreateProductAsync(
                 new ProductDto
                 {
                     ProductCode = string.IsNullOrWhiteSpace(ProductCode) ? null! : ProductCode.Trim(),
@@ -245,7 +245,7 @@ public partial class MainWindowViewModel
                 IsActive = true
             };
 
-            await _app.ProductsAndPricesService.UpdateProductAsync(SelectedProduct.ProductId, dto, ct);
+            await _app.ProductsService.UpdateProductAsync(SelectedProduct.ProductId, dto, ct);
 
             var idx = ProductResults.IndexOf(SelectedProduct);
             if (idx >= 0)
@@ -300,7 +300,7 @@ public partial class MainWindowViewModel
         try
         {
             StatusMessage = "[STATUS] Deleting product...";
-            await _app.ProductsAndPricesService.DeleteProductAsync(product.ProductId, ct);
+            await _app.ProductsService.DeleteProductAsync(product.ProductId, ct);
 
             // Remove from results grid
             var row = ProductResults.FirstOrDefault(x => x.ProductId == product.ProductId);
@@ -435,7 +435,7 @@ public partial class MainWindowViewModel
     {
         try
         {
-            var items = await _app.ProductsAndPricesService.LookupProductsAsync(string.Empty);
+            var items = await _app.ProductsService.LookupProductsAsync(string.Empty);
 
             _allProducts.Clear();
             // Only add active products to cache
@@ -512,7 +512,7 @@ public partial class MainWindowViewModel
         try
         {
             StatusMessage = "Loading price...";
-            CurrentPrice = await _app.ProductsAndPricesService.GetProductPriceAsync(
+            CurrentPrice = await _app.ProductsService.GetProductPriceAsync(
                 (int)SelectedProduct.ProductId, 
                 SelectedProductPriceList.ProductPriceListId, 
                 ct);
@@ -538,7 +538,7 @@ public partial class MainWindowViewModel
         try
         {
             StatusMessage = "[STATUS] Updating price...";
-            await _app.ProductsAndPricesService.SetProductPriceAsync(
+            await _app.ProductsService.SetProductPriceAsync(
                 (int)SelectedProduct.ProductId, 
                 SelectedProductPriceList.ProductPriceListId, 
                 CurrentPrice, 

@@ -53,7 +53,9 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand ShowCustomersCommand { get; }
     public ICommand ShowBuyersCommand { get; }
     public ICommand ShowCompanyAndSitesCommand { get; }
-    public ICommand ShowProductsAndPricesCommand { get; }
+    public ICommand ShowProductsCommand { get; }
+    public ICommand ShowPriceListsCommand { get; }
+    public ICommand ShowPricesCommand { get; }
     public ICommand ShowTicketsCommand { get; }
     public ICommand ShowTicketsReceivingCommand { get; }
     public ICommand ShowTicketsSendingCommand { get; }
@@ -153,8 +155,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         _themeService = app.ThemeService;
         _appearanceService = app.AppearanceService;
 
-        Receiving = new MetalLink.Desktop.ViewModels.Receiving.TicketsReceivingViewModel(_ticketReceivingService, new CompanyAndSiteService(_apiClient, _authState), _scaleService, new ProductsAndPricesService(_apiClient, _authState));
-        Sending = new MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel(_ticketSendingService, new CompanyAndSiteService(_apiClient, _authState), _scaleService, new ProductsAndPricesService(_apiClient, _authState));
+        Receiving = new MetalLink.Desktop.ViewModels.Receiving.TicketsReceivingViewModel(_ticketReceivingService, new CompanyAndSiteService(_apiClient, _authState), _scaleService, new ProductsService(_apiClient, _authState));
+        Sending = new MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel(_ticketSendingService, new CompanyAndSiteService(_apiClient, _authState), _scaleService, new ProductsService(_apiClient, _authState));
         StockLevels = new StockLevelsViewModel(_apiClient);
         StockMovement = new StockMovementViewModel(_apiClient);
 
@@ -202,7 +204,9 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
             await SearchCompaniesAsync();
         });
-        ShowProductsAndPricesCommand = new RelayCommand(() => CurrentSection = EnumMainSection.ProductsAndPrices);
+        ShowProductsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Products);
+        ShowPriceListsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.PriceLists);
+        ShowPricesCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Prices);
         ShowTicketsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.TicketsReceiving);
         ShowTicketsReceivingCommand = new RelayCommand(() =>
         {
@@ -344,7 +348,11 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         NavItems.Add(new NavItemViewModel { Title = "Customers", IconKey = "People", Command = ShowCustomersCommand });
         NavItems.Add(new NavItemViewModel { Title = "Buyers", IconKey = "People", Command = ShowBuyersCommand });
         NavItems.Add(new NavItemViewModel { Title = "Companies & Sites", IconKey = "Business", Command = ShowCompanyAndSitesCommand });
-        NavItems.Add(new NavItemViewModel { Title = "Products & Prices", IconKey = "Inventory", Command = ShowProductsAndPricesCommand });
+        // Commodities Group
+        NavItems.Add(new NavItemViewModel { Title = "Products", IconKey = "Inventory", Command = ShowProductsCommand });
+        NavItems.Add(new NavItemViewModel { Title = "Price Lists", IconKey = "List", Command = ShowPriceListsCommand, IsIndented = true });
+        NavItems.Add(new NavItemViewModel { Title = "Prices", IconKey = "Sell", Command = ShowPricesCommand, IsIndented = true });
+        
         NavItems.Add(new NavItemViewModel { Title = "Ticket Receiving", IconKey = "Download", Command = ShowTicketsReceivingCommand });
         NavItems.Add(new NavItemViewModel { Title = "Ticket Sending", IconKey = "Upload", Command = ShowTicketsSendingCommand });
         NavItems.Add(new NavItemViewModel { Title = "Stock Levels", IconKey = "Assessment", Command = ShowStockLevelsCommand });
@@ -361,7 +369,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     {
         try
         {
-            var lists = await _app.ProductsAndPricesService.GetPriceListsAsync();
+            var lists = await _app.ProductsService.GetPriceListsAsync();
             CustomerPriceLists.Clear();
             BuyerPriceLists.Clear();
             foreach (var list in lists)

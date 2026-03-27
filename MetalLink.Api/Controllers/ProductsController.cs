@@ -31,18 +31,18 @@ public class ProductsController : ControllerBase
         {
             var searchTerm = term.Trim().ToLower();
             query = query.Where(p =>
-                p.ProductName.ToLower().Contains(searchTerm) ||
-                (p.ProductCode != null && p.ProductCode.ToLower().Contains(searchTerm)));
+                p.IsriProductName.ToLower().Contains(searchTerm) ||
+                p.IsriProductCode.ToLower().Contains(searchTerm) ||
+                (p.StarredProductAlias != null && p.StarredProductAlias.ToLower().Contains(searchTerm)));
         }
 
         var results = await query
-            .OrderBy(p => p.ProductName)
+            .OrderBy(p => p.IsriProductName)
             .Select(p => new ProductLookupDto
             {
                 ProductId = p.ProductId,
-                ProductName = p.ProductName,
-                ProductCode = p.ProductCode,
-                Grade = p.Grade,
+                ProductName = p.StarredProductAlias ?? p.IsriProductName,
+                ProductCode = p.IsriProductCode,
                 IsActive = p.IsActive
             })
             .ToListAsync(ct);
@@ -63,9 +63,17 @@ public class ProductsController : ControllerBase
         var dto = new ProductDto
         {
             ProductId = product.ProductId,
-            ProductCode = product.ProductCode,
-            ProductName = product.ProductName,
-            Grade = product.Grade,
+            HtsCode = product.HtsCode,
+            IsriProductCode = product.IsriProductCode,
+            IsriProductName = product.IsriProductName,
+            IsriProductDescription = product.IsriProductDescription,
+            IsriProductUrl = product.IsriProductUrl,
+            IsriProduct = product.IsriProduct,
+            ProductGroupId = product.ProductGroupId,
+            ProductSpecificationFlagId = product.ProductSpecificationFlagId,
+            StarredProduct = product.StarredProduct,
+            StarredProductAlias = product.StarredProductAlias,
+            MustDeclare = product.MustDeclare,
             IsActive = product.IsActive,
             CreatedTime = product.CreatedTime,
             UpdatedTime = product.UpdatedTime

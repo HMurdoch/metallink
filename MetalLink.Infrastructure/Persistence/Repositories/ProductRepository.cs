@@ -21,7 +21,10 @@ public class ProductRepository : IProductRepository
 
     public async Task<IReadOnlyList<Product>> SearchAsync(string? term, bool? isActive, CancellationToken ct = default)
     {
-        var query = _context.Products.AsQueryable();
+        var query = _context.Products
+            .Include(p => p.ProductGroup)
+            .Include(p => p.ProductSpecificationFlag)
+            .AsQueryable();
 
         if (isActive.HasValue)
             query = query.Where(p => p.IsActive == isActive.Value);
@@ -30,12 +33,13 @@ public class ProductRepository : IProductRepository
         {
             var searchTerm = term.Trim().ToLower();
             query = query.Where(p =>
-                p.ProductName.ToLower().Contains(searchTerm) ||
-                (p.ProductCode != null && p.ProductCode.ToLower().Contains(searchTerm)));
+                p.IsriProductName.ToLower().Contains(searchTerm) ||
+                p.IsriProductCode.ToLower().Contains(searchTerm) ||
+                (p.StarredProductAlias != null && p.StarredProductAlias.ToLower().Contains(searchTerm)));
         }
 
         return await query
-            .OrderBy(p => p.ProductName)
+            .OrderBy(p => p.IsriProductName)
             .ToListAsync(ct);
     }
 

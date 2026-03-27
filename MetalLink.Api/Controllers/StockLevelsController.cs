@@ -42,16 +42,16 @@ public sealed class StockLevelsController : ControllerBase
         FormattableString sql = $@"
             SELECT
                 p.product_id        AS ""ProductId"",
-                p.product_code      AS ""ProductCode"",
-                p.product_name      AS ""ProductName"",
+                p.isri_product_code AS ""ProductCode"",
+                COALESCE(p.starred_product_alias, p.isri_product_name) AS ""ProductName"",
                 COALESCE(sl.weight_kg, 0) AS ""WeightKg""
             FROM metal_link.products p
             LEFT JOIN metal_link.stock_levels sl
                 ON sl.product_id = p.product_id AND sl.is_active = true
             WHERE p.is_active = true
-              AND ({like}::text IS NULL OR (p.product_name ILIKE {like} OR p.product_code ILIKE {like}))
-              AND ({letter}::text IS NULL OR LEFT(p.product_name, 1) = {letter})
-            ORDER BY p.product_name
+              AND ({like}::text IS NULL OR (p.isri_product_name ILIKE {like} OR p.isri_product_code ILIKE {like} OR p.starred_product_alias ILIKE {like}))
+              AND ({letter}::text IS NULL OR LEFT(COALESCE(p.starred_product_alias, p.isri_product_name), 1) = {letter})
+            ORDER BY ""ProductName""
             LIMIT {take};
         ";
 

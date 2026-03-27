@@ -5,9 +5,9 @@ using MetalLink.Desktop.ViewModels;
 
 namespace MetalLink.Desktop.Views;
 
-public partial class ProductsAndPricesView : UserControl
+public partial class ProductsView : UserControl
 {
-    public ProductsAndPricesView()
+    public ProductsView()
     {
         InitializeComponent();
     }

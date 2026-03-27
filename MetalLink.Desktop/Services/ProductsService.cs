@@ -9,12 +9,12 @@ using MetalLink.Shared.Prices;
 
 namespace MetalLink.Desktop.Services;
 
-public sealed class ProductsAndPricesService
+public sealed class ProductsService
 {
     private readonly ApiClient _apiClient;
     private readonly AuthState _authState;
 
-    public ProductsAndPricesService(ApiClient apiClient, AuthState authState)
+    public ProductsService(ApiClient apiClient, AuthState authState)
     {
         _apiClient = apiClient;
         _authState = authState;

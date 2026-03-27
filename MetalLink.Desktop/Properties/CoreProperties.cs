@@ -90,7 +90,9 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(IsTicketsSendingSectionVisible));
             OnPropertyChanged(nameof(IsBuyersSectionVisible));
             OnPropertyChanged(nameof(IsCompanyAndSitesSectionVisible));
-            OnPropertyChanged(nameof(IsProductsAndPricesSectionVisible));
+            OnPropertyChanged(nameof(IsProductsSectionVisible));
+            OnPropertyChanged(nameof(IsPriceListsSectionVisible));
+            OnPropertyChanged(nameof(IsPricesSectionVisible));
             OnPropertyChanged(nameof(IsStockLevelsSectionVisible));
             OnPropertyChanged(nameof(IsStockMovementSectionVisible));
             OnPropertyChanged(nameof(IsReportsSectionVisible));
@@ -126,7 +128,9 @@ public partial class MainWindowViewModel
     public bool IsTicketsSendingSectionVisible => CurrentSection == EnumMainSection.TicketsSending;
     public bool IsBuyersSectionVisible => CurrentSection == EnumMainSection.Buyers;
     public bool IsCompanyAndSitesSectionVisible => CurrentSection == EnumMainSection.CompanyAndSites;
-    public bool IsProductsAndPricesSectionVisible => CurrentSection == EnumMainSection.ProductsAndPrices;
+    public bool IsProductsSectionVisible => CurrentSection == EnumMainSection.Products;
+    public bool IsPriceListsSectionVisible => CurrentSection == EnumMainSection.PriceLists;
+    public bool IsPricesSectionVisible => CurrentSection == EnumMainSection.Prices;
     public bool IsStockLevelsSectionVisible => CurrentSection == EnumMainSection.StockLevels;
     public bool IsStockMovementSectionVisible => CurrentSection == EnumMainSection.StockMovement;
     public bool IsReportsSectionVisible => CurrentSection == EnumMainSection.Reports;
