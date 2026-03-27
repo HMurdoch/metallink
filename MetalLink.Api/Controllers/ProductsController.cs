@@ -19,13 +19,44 @@ public class ProductsController : ControllerBase
     }
 
     // GET /api/products/lookup?term=abc
+    [HttpGet("groups")]
+    public async Task<ActionResult<IEnumerable<ProductGroupDto>>> GetGroups(CancellationToken ct)
+    {
+        var groups = await _db.ProductGroups
+            .Where(p => p.IsActive)
+            .OrderBy(p => p.ProductGroupName)
+            .Select(p => new ProductGroupDto { ProductGroupId = p.ProductGroupId, ProductGroupName = p.ProductGroupName })
+            .ToListAsync(ct);
+        return Ok(groups);
+    }
+
     [HttpGet("lookup")]
     public async Task<ActionResult<IEnumerable<ProductLookupDto>>> Lookup(
         [FromQuery] string? term,
-        CancellationToken ct)
+        [FromQuery] int? groupId,
+        [FromQuery] string? letter,
+        [FromQuery] bool includeNonStarred = false,
+        CancellationToken ct = default)
     {
-        // Only return active products
-        var query = _db.Products.Where(p => p.IsActive);
+        var query = _db.Products
+            .Include(p => p.ProductGroup)
+            .AsNoTracking()
+            .Where(p => p.IsActive);
+
+        if (!includeNonStarred)
+        {
+            query = query.Where(p => p.StarredProduct);
+        }
+
+        if (groupId.HasValue && groupId.Value > 0)
+        {
+            query = query.Where(p => p.ProductGroupId == groupId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(letter) && letter != "ALL")
+        {
+            query = query.Where(p => EF.Functions.ILike(p.StarredProductAlias ?? p.IsriProductName, $"{letter}%"));
+        }
 
         if (!string.IsNullOrWhiteSpace(term))
         {
@@ -37,12 +68,18 @@ public class ProductsController : ControllerBase
         }
 
         var results = await query
-            .OrderBy(p => p.IsriProductName)
+            .OrderBy(p => p.StarredProductAlias ?? p.IsriProductName)
             .Select(p => new ProductLookupDto
             {
                 ProductId = p.ProductId,
-                ProductName = p.StarredProductAlias ?? p.IsriProductName,
+                ProductName = p.IsriProductName,
                 ProductCode = p.IsriProductCode,
+                HtsCode = p.HtsCode,
+                IsriProduct = p.IsriProduct,
+                ProductGroupName = p.ProductGroup != null ? p.ProductGroup.ProductGroupName : null,
+                ProductSpecificationFlagId = p.ProductSpecificationFlagId,
+                StarredProductAlias = p.StarredProductAlias,
+                StarredProduct = p.StarredProduct,
                 IsActive = p.IsActive
             })
             .ToListAsync(ct);

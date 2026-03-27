@@ -338,6 +338,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         };
 
         InitializeCompanyAndSiteCommands();
+        InitializeProductsCommands();
         BuildNavItems();
     }
 

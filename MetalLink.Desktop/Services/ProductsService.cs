@@ -29,14 +29,27 @@ public sealed class ProductsService
     /// </summary>
     public async Task<IReadOnlyList<ProductLookupDto>> LookupProductsAsync(
         string? term,
+        int? groupId = null,
+        string? letter = null,
+        bool includeNonStarred = false,
         CancellationToken ct = default)
     {
-        var path = "api/products/lookup";
+        var path = $"api/products/lookup?includeNonStarred={includeNonStarred}";
         if (!string.IsNullOrWhiteSpace(term))
-            path += $"?term={Uri.EscapeDataString(term)}";
+            path += $"&term={Uri.EscapeDataString(term)}";
+        if (groupId.HasValue && groupId.Value > 0)
+            path += $"&groupId={groupId.Value}";
+        if (!string.IsNullOrWhiteSpace(letter) && letter != "ALL")
+            path += $"&letter={Uri.EscapeDataString(letter)}";
 
         var result = await _apiClient.GetAsync<ProductLookupDto[]>(path, ct);
         return result ?? Array.Empty<ProductLookupDto>();
+    }
+
+    public async Task<IReadOnlyList<ProductGroupDto>> GetProductGroupsAsync(CancellationToken ct = default)
+    {
+        var result = await _apiClient.GetAsync<ProductGroupDto[]>("api/products/groups", ct);
+        return result ?? Array.Empty<ProductGroupDto>();
     }
 
     /// <summary>

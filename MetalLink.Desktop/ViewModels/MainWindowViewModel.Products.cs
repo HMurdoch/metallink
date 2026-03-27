@@ -36,10 +36,10 @@ public partial class MainWindowViewModel
     public string ProductSaveButtonText => IsProductEditMode ? "Update" : "Create";
 
     public bool CanCreateProduct =>
-        IsProductCreateMode && !string.IsNullOrWhiteSpace(ProductName) && !string.IsNullOrWhiteSpace(ProductCode);
+        IsProductCreateMode && !string.IsNullOrWhiteSpace(ProductIsriName);
 
     public bool CanUpdateProduct =>
-        IsProductEditMode && !string.IsNullOrWhiteSpace(ProductName) && !string.IsNullOrWhiteSpace(ProductCode);
+        IsProductEditMode && !string.IsNullOrWhiteSpace(ProductIsriName);
 
     public bool CanUpdatePrice =>
         SelectedProduct != null;
@@ -47,6 +47,9 @@ public partial class MainWindowViewModel
     /// <summary>
     /// Call this ONCE from your constructor in MWVM.Core.cs
     /// </summary>
+    public IAsyncRelayCommand<ProductLookupDto> ToggleStarredCommand { get; private set; } = null!;
+    public IRelayCommand OpenIsriUrlCommand { get; private set; } = null!;
+
     private void InitializeProductsCommands()
     {
         SearchProductsCommand = new AsyncRelayCommand(ct => SearchProductsAsync(ct));
@@ -56,12 +59,106 @@ public partial class MainWindowViewModel
         DeleteProductCommand = new AsyncRelayCommand<ProductLookupDto>(DeleteProductAsync);
         ClearProductFormCommand = new AsyncRelayCommand(ct => ClearProductFormAsync(ct));
         RefreshProductsCommand = new AsyncRelayCommand(ct => RefreshProductsAsync(ct));
+        ToggleStarredCommand = new AsyncRelayCommand<ProductLookupDto>(ToggleStarredAsync);
+        OpenIsriUrlCommand = new RelayCommand(OpenIsriUrl);
 
         UpdatePriceCommand = new AsyncRelayCommand(ct => UpdatePriceAsync(ct), () => CanUpdatePrice);
 
-        // Load product letters on initialization
-        _ = LoadProductsAndLettersAsync();
+        // Initial loads
+        _ = LoadProductGroupsAsync();
+        _ = LoadProductLettersAsync();
         _ = LoadProductPriceListsAsync();
+        _ = ApplyProductFiltersAsync();
+    }
+
+    private void OpenIsriUrl()
+    {
+        if (!string.IsNullOrWhiteSpace(ProductIsriUrl))
+        {
+            try { 
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = ProductIsriUrl, UseShellExecute = true });
+            } catch { }
+        }
+    }
+
+    private async Task ToggleStarredAsync(ProductLookupDto? product)
+    {
+        if (product == null) return;
+        try
+        {
+            var detail = await _app.ProductsService.GetProductAsync(product.ProductId);
+            if (detail != null)
+            {
+                detail.StarredProduct = !detail.StarredProduct;
+                // If starring, set alias to current ISRI name if empty
+                if (detail.StarredProduct && string.IsNullOrWhiteSpace(detail.StarredProductAlias))
+                {
+                    detail.StarredProductAlias = "*" + detail.IsriProductName;
+                }
+
+                await _app.ProductsService.UpdateProductAsync(product.ProductId, detail);
+                product.StarredProduct = detail.StarredProduct;
+                product.StarredProductAlias = detail.StarredProductAlias;
+                
+                // Refresh list if we are only showing starred
+                if (!ShowNonStarred && !product.StarredProduct)
+                {
+                    ProductResults.Remove(product);
+                }
+                
+                OnPropertyChanged(nameof(ProductResults));
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Failed to toggle starred: {ex.Message}";
+        }
+    }
+
+    private async Task LoadProductGroupsAsync()
+    {
+        try
+        {
+            var groups = await _app.ProductsService.GetProductGroupsAsync();
+            ProductGroups.Clear();
+            ProductGroups.Add(new ProductGroupDto { ProductGroupId = 0, ProductGroupName = "ALL" });
+            foreach (var g in groups) ProductGroups.Add(g);
+            SelectedProductGroup = ProductGroups[0];
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Failed to load product groups: {ex.Message}";
+        }
+    }
+
+    private async Task LoadProductLettersAsync()
+    {
+        // Simple A-Z + ALL
+        ProductLetterFilters.Clear();
+        ProductLetterFilters.Add("ALL");
+        for (char c = 'A'; c <= 'Z'; c++) ProductLetterFilters.Add(c.ToString());
+        SelectedProductLetter = "ALL";
+    }
+
+    private async Task ApplyProductFiltersAsync()
+    {
+        try
+        {
+            var results = await _app.ProductsService.LookupProductsAsync(
+                ProductSearchTerm, 
+                SelectedProductGroup?.ProductGroupId, 
+                SelectedProductLetter, 
+                ShowNonStarred);
+
+            ProductResults.Clear();
+            foreach (var r in results) ProductResults.Add(r);
+            
+            StatusMessage = $"[STATUS] Found {ProductResults.Count} products.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Filter failed: {ex.Message}";
+        }
     }
 
     private async Task LoadProductPriceListsAsync(CancellationToken ct = default)
@@ -158,9 +255,16 @@ public partial class MainWindowViewModel
             var product = await _app.ProductsService.CreateProductAsync(
                 new ProductDto
                 {
-                    ProductCode = string.IsNullOrWhiteSpace(ProductCode) ? null! : ProductCode.Trim(),
-                    ProductName = ProductName.Trim(),
-                    Grade = ProductGrade > 0 ? ProductGrade.ToString() : null,
+                    HtsCode = ProductHtsCode,
+                    IsriProduct = ProductIsIsri,
+                    IsriProductCode = ProductIsriCode,
+                    IsriProductName = ProductIsriName,
+                    IsriProductDescription = ProductIsriDescription,
+                    IsriProductUrl = ProductIsriUrl,
+                    ProductGroupId = ProductGroupId,
+                    ProductSpecificationFlagId = ProductSpecFlagId,
+                    StarredProduct = ProductStarred,
+                    StarredProductAlias = ProductStarredAlias,
                     MustDeclare = ProductMustDeclare,
                     IsActive = true
                 },
@@ -169,27 +273,9 @@ public partial class MainWindowViewModel
             if (product == null)
                 throw new Exception("CreateProduct returned null.");
 
-            // Clear form
-            ProductCode = string.Empty;
-            ProductName = string.Empty;
-            ProductGrade = 0;
-
-            StatusMessage = $"[STATUS] Created product {product.ProductName}.";
-
-            // Add to cache and select
-            var lookup = new ProductLookupDto
-            {
-                ProductId = product.ProductId,
-                ProductName = product.ProductName,
-                ProductCode = product.ProductCode,
-                Grade = product.Grade,
-                IsActive = product.IsActive
-            };
-
-            Dispatcher.UIThread.Post(() =>
-            {
-                AddProductToCachesAndSelect(lookup);
-            }, DispatcherPriority.Background);
+            StatusMessage = $"[STATUS] Created product {product.IsriProductName}.";
+            await ClearProductFormAsync(ct);
+            await ApplyProductFiltersAsync();
         }
         catch (Exception ex)
         {
@@ -201,33 +287,48 @@ public partial class MainWindowViewModel
         }
     }
 
-    private void OnEditProduct(ProductLookupDto? product)
+    private async void OnEditProduct(ProductLookupDto? product)
     {
         if (product == null) return;
 
-        SelectedProduct = product;
-        EditingProductId = product.ProductId;
+        try
+        {
+            var detail = await _app.ProductsService.GetProductAsync(product.ProductId);
+            if (detail == null) return;
 
-        ProductCode = product.ProductCode ?? "";
-        ProductName = product.ProductName ?? "";
-        ProductGrade = string.IsNullOrEmpty(product.Grade) ? 0 : decimal.Parse(product.Grade);
-        ProductMustDeclare = product.MustDeclare; // Note: Ensure ProductLookupDto has MustDeclare
+            EditingProductId = detail.ProductId;
+            ProductHtsCode = detail.HtsCode;
+            ProductIsIsri = detail.IsriProduct;
+            ProductIsriCode = detail.IsriProductCode;
+            ProductIsriName = detail.IsriProductName;
+            ProductIsriDescription = detail.IsriProductDescription;
+            ProductIsriUrl = detail.IsriProductUrl;
+            ProductGroupId = detail.ProductGroupId;
+            ProductSpecFlagId = detail.ProductSpecificationFlagId;
+            ProductStarred = detail.StarredProduct;
+            ProductStarredAlias = detail.StarredProductAlias;
+            ProductMustDeclare = detail.MustDeclare;
 
-        OnPropertyChanged(nameof(IsProductEditMode));
-        OnPropertyChanged(nameof(IsProductCreateMode));
-        OnPropertyChanged(nameof(CanUpdateProduct));
-        OnPropertyChanged(nameof(CanCreateProduct));
-        OnPropertyChanged(nameof(ProductSaveButtonText));
-        (UpdateProductCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
-        (CreateProductCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            OnPropertyChanged(nameof(IsProductEditMode));
+            OnPropertyChanged(nameof(IsProductCreateMode));
+            OnPropertyChanged(nameof(CanUpdateProduct));
+            OnPropertyChanged(nameof(CanCreateProduct));
+            OnPropertyChanged(nameof(ProductSaveButtonText));
+            (UpdateProductCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            (CreateProductCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
 
-        StatusMessage = $"[STATUS] Editing product {product.ProductId}.";
+            StatusMessage = $"[STATUS] Editing product {detail.ProductId}.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Failed to load product details: {ex.Message}";
+        }
     }
 
     private async Task UpdateProductAsync(CancellationToken ct = default)
     {
         if (IsBusy) return;
-        if (SelectedProduct == null) return;
+        if (!EditingProductId.HasValue) return;
         if (!CanUpdateProduct) return;
 
         IsBusy = true;
@@ -237,45 +338,25 @@ public partial class MainWindowViewModel
 
             var dto = new ProductDto
             {
-                ProductId = SelectedProduct.ProductId,
-                ProductCode = string.IsNullOrWhiteSpace(ProductCode) ? null! : ProductCode.Trim(),
-                ProductName = ProductName.Trim(),
-                Grade = ProductGrade > 0 ? ProductGrade.ToString() : null,
+                ProductId = EditingProductId.Value,
+                HtsCode = ProductHtsCode,
+                IsriProduct = ProductIsIsri,
+                IsriProductCode = ProductIsriCode,
+                IsriProductName = ProductIsriName,
+                IsriProductDescription = ProductIsriDescription,
+                IsriProductUrl = ProductIsriUrl,
+                ProductGroupId = ProductGroupId,
+                ProductSpecificationFlagId = ProductSpecFlagId,
+                StarredProduct = ProductStarred,
+                StarredProductAlias = ProductStarredAlias,
                 MustDeclare = ProductMustDeclare,
                 IsActive = true
             };
 
-            await _app.ProductsService.UpdateProductAsync(SelectedProduct.ProductId, dto, ct);
+            await _app.ProductsService.UpdateProductAsync(dto.ProductId, dto, ct);
 
-            var idx = ProductResults.IndexOf(SelectedProduct);
-            if (idx >= 0)
-            {
-                var updatedLookup = new ProductLookupDto
-                {
-                    ProductId = SelectedProduct.ProductId,
-                    ProductName = dto.ProductName,
-                    ProductCode = dto.ProductCode!,
-                    Grade = dto.Grade,
-                    IsActive = true
-                };
-
-                ProductResults[idx] = updatedLookup;
-                SelectedProduct = updatedLookup;
-            }
-
-            // Keep cache in sync
-            var cache = _allProducts?.FirstOrDefault(x => x.ProductId == dto.ProductId);
-            if (cache != null)
-            {
-                cache.ProductName = dto.ProductName;
-                cache.ProductCode = dto.ProductCode!;
-                cache.Grade = dto.Grade;
-            }
-
-            OnPropertyChanged(nameof(ProductResults));
-            OnPropertyChanged(nameof(SelectedProduct));
-
-            StatusMessage = $"[STATUS] Product updated: {dto.ProductName}";
+            StatusMessage = $"[STATUS] Product updated: {dto.IsriProductName}";
+            await ApplyProductFiltersAsync();
         }
         catch (Exception ex)
         {
@@ -317,10 +398,7 @@ public partial class MainWindowViewModel
             if (SelectedProduct?.ProductId == product.ProductId)
             {
                 SelectedProduct = null;
-                EditingProductId = null;
-                ProductCode = "";
-                ProductName = "";
-                ProductGrade = 0;
+                await ClearProductFormAsync(ct);
                 ClearPriceForm();
             }
 
@@ -339,9 +417,17 @@ public partial class MainWindowViewModel
     private Task ClearProductFormAsync(CancellationToken ct = default)
     {
         EditingProductId = null;
-        ProductCode = string.Empty;
-        ProductName = string.Empty;
-        ProductGrade = 0;
+        ProductHtsCode = null;
+        ProductIsIsri = false;
+        ProductIsriCode = string.Empty;
+        ProductIsriName = string.Empty;
+        ProductIsriDescription = null;
+        ProductIsriUrl = null;
+        ProductGroupId = ProductGroups.FirstOrDefault()?.ProductGroupId ?? 0;
+        ProductSpecFlagId = 1;
+        ProductStarred = false;
+        ProductStarredAlias = null;
+        ProductMustDeclare = false;
 
         OnPropertyChanged(nameof(IsProductEditMode));
         OnPropertyChanged(nameof(IsProductCreateMode));

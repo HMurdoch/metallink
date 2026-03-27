@@ -29,13 +29,13 @@ public sealed class TicketsSendingViewModel : ViewModelBase
     private readonly CompanyAndSiteService _companyAndSiteService;
 
     private readonly IScaleService _scaleService;
-    private readonly ProductsAndPricesService _productsAndPricesService;
+    private readonly ProductsService _productsAndPricesService;
 
     public TicketsSendingViewModel(
         TicketSendingService ticketSendingService,
         CompanyAndSiteService companyAndSiteService,
         IScaleService scaleService,
-        ProductsAndPricesService productsAndPricesService)
+        ProductsService productsAndPricesService)
     {
         _ticketSendingService = ticketSendingService;
         _companyAndSiteService = companyAndSiteService;

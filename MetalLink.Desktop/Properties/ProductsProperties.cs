@@ -14,6 +14,49 @@ public partial class MainWindowViewModel
     // PRODUCT SEARCH & LETTER FILTER
     // =====================================================
 
+    private ObservableCollection<ProductGroupDto> _productGroups = new();
+    public ObservableCollection<ProductGroupDto> ProductGroups
+    {
+        get => _productGroups;
+        set { _productGroups = value; OnPropertyChanged(); }
+    }
+
+    private ProductGroupDto? _selectedProductGroup;
+    public ProductGroupDto? SelectedProductGroup
+    {
+        get => _selectedProductGroup;
+        set 
+        { 
+            _selectedProductGroup = value; 
+            OnPropertyChanged();
+            _ = ApplyProductFiltersAsync();
+        }
+    }
+
+    private bool _showNonStarred = false;
+    public bool ShowNonStarred
+    {
+        get => _showNonStarred;
+        set 
+        { 
+            _showNonStarred = value; 
+            OnPropertyChanged();
+            _ = ApplyProductFiltersAsync();
+        }
+    }
+
+    private string _productSearchTerm = string.Empty;
+    public string ProductSearchTerm
+    {
+        get => _productSearchTerm;
+        set
+        {
+            _productSearchTerm = value;
+            OnPropertyChanged();
+            _ = ApplyProductFiltersAsync();
+        }
+    }
+
     private ObservableCollection<string> _productLetterFilters = new();
     public ObservableCollection<string> ProductLetterFilters
     {
@@ -29,7 +72,7 @@ public partial class MainWindowViewModel
         { 
             _selectedProductLetter = value; 
             OnPropertyChanged();
-            ApplyProductLetterFilter();
+            _ = ApplyProductFiltersAsync();
         }
     }
 
@@ -83,41 +126,74 @@ public partial class MainWindowViewModel
         set { _editingProductId = value; OnPropertyChanged(); }
     }
 
-    private string _productName = string.Empty;
-    public string ProductName
+    private string? _productHtsCode;
+    public string? ProductHtsCode
     {
-        get => _productName;
-        set 
-        { 
-            _productName = value; 
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(CanCreateProduct));
-            OnPropertyChanged(nameof(CanUpdateProduct));
-            (CreateProductCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
-            (UpdateProductCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
-        }
+        get => _productHtsCode;
+        set { _productHtsCode = value; OnPropertyChanged(); }
     }
 
-    private string _productCode = string.Empty;
-    public string ProductCode
+    private bool _productIsIsri;
+    public bool ProductIsIsri
     {
-        get => _productCode;
-        set 
-        { 
-            _productCode = value; 
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(CanCreateProduct));
-            OnPropertyChanged(nameof(CanUpdateProduct));
-            (CreateProductCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
-            (UpdateProductCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
-        }
+        get => _productIsIsri;
+        set { _productIsIsri = value; OnPropertyChanged(); }
     }
 
-    private decimal? _productGrade = 0;
-    public decimal? ProductGrade
+    private string _productIsriCode = string.Empty;
+    public string ProductIsriCode
     {
-        get => _productGrade;
-        set { _productGrade = value; OnPropertyChanged(); }
+        get => _productIsriCode;
+        set { _productIsriCode = value; OnPropertyChanged(); }
+    }
+
+    private string _productIsriName = string.Empty;
+    public string ProductIsriName
+    {
+        get => _productIsriName;
+        set { _productIsriName = value; OnPropertyChanged(); }
+    }
+
+    private string? _productIsriDescription;
+    public string? ProductIsriDescription
+    {
+        get => _productIsriDescription;
+        set { _productIsriDescription = value; OnPropertyChanged(); }
+    }
+
+    private string? _productIsriUrl;
+    public string? ProductIsriUrl
+    {
+        get => _productIsriUrl;
+        set { _productIsriUrl = value; OnPropertyChanged(); }
+    }
+
+    private int _productGroupId;
+    public int ProductGroupId
+    {
+        get => _productGroupId;
+        set { _productGroupId = value; OnPropertyChanged(); }
+    }
+
+    private int _productSpecFlagId;
+    public int ProductSpecFlagId
+    {
+        get => _productSpecFlagId;
+        set { _productSpecFlagId = value; OnPropertyChanged(); }
+    }
+
+    private bool _productStarred;
+    public bool ProductStarred
+    {
+        get => _productStarred;
+        set { _productStarred = value; OnPropertyChanged(); }
+    }
+
+    private string? _productStarredAlias;
+    public string? ProductStarredAlias
+    {
+        get => _productStarredAlias;
+        set { _productStarredAlias = value; OnPropertyChanged(); }
     }
 
     private bool _productMustDeclare;

@@ -1,278 +1,155 @@
-<UserControl
-  x:Class="MetalLink.Desktop.Views.ProductsView"
-  xmlns="https://github.com/avaloniaui"
-  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-
-  <UserControl.Resources>
-    <DataTemplate x:Key="ProductLookupTemplate">
-      <TextBlock Text="{Binding ProductName}" />
-    </DataTemplate>
-  </UserControl.Resources>
-
-  <UserControl.Styles>
-    <!-- Text inputs/dropdowns: match entity button text size -->
-    <Style Selector="TextBox">
-      <Setter Property="FontSize" Value="11" />
-    </Style>
-
-    <Style Selector="ComboBox">
-      <Setter Property="FontSize" Value="11" />
-    </Style>
-
-    <!-- DataGrid font sizes: rows slightly smaller than headers -->
-    <Style Selector="DataGrid">
-      <Setter Property="Background" Value="{DynamicResource Brush.PanelBackground}" />
-      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
-      <Setter Property="GridLinesVisibility" Value="Horizontal" />
-      <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource Brush.BorderSubtle}" />
-      <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource Brush.BorderSubtle}" />
-      <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderSubtle}" />
-      <Setter Property="BorderThickness" Value="1" />
-    </Style>
-
-    <Style Selector="DataGridCell">
-      <Setter Property="FontSize" Value="11" />
-    </Style>
-
-    <Style Selector="DataGridColumnHeader">
-      <Setter Property="Background" Value="{DynamicResource Brush.NavBackground}" />
-      <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}" />
-      <Setter Property="FontSize" Value="13" />
-      <Setter Property="FontWeight" Value="Bold" />
-    </Style>
-  </UserControl.Styles>
-
-  <Grid RowDefinitions="Auto,*">
-    <!-- Sticky Header Panel -->
-    <Border Grid.Row="0" 
-            Background="{DynamicResource Brush.PanelBackground}"
-            Padding="12,8"
-            CornerRadius="4"
-            Margin="16,16,16,8"
-            ZIndex="100">
-      <Image Source="avares://MetalLink.Desktop/Assets/products_and_prices_heading.png"
-             Height="40"
-             HorizontalAlignment="Left"
-             Stretch="Uniform" />
-    </Border>
-    
-    <!-- Scrollable Content -->
-    <ScrollViewer Grid.Row="1" Padding="16,8,16,10">
-      <StackPanel Spacing="16" Margin="0,0,0,80">
-
-        <!-- Search Products -->
-        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
-    <StackPanel Spacing="10">
-            <Grid PointerPressed="ToggleSearchCriteria" Cursor="Hand">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-              </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" 
-                         Text="{Binding ProductsIsSearchCriteriaExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
-                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
-              <TextBlock Grid.Column="1" Text="Search product" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
-            </Grid>
-
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" IsVisible="{Binding ProductsIsSearchCriteriaExpanded}">
-              <StackPanel Grid.Column="0" Spacing="6">
-                <TextBlock Text="Product" Foreground="{DynamicResource Brush.TextMuted}" />
-                <Grid ColumnDefinitions="70,*,*">
-                  <ComboBox
-                    Grid.Column="0"
-                    ItemsSource="{Binding ProductLetterFilters}"
-                    SelectedItem="{Binding SelectedProductLetter}" />
-
-                  <ComboBox
-                    Grid.Column="1"
-                    Margin="4,0,0,0"
-                    HorizontalAlignment="Stretch"
-                    ItemsSource="{Binding SearchProductSuggestions}"
-                    SelectedItem="{Binding SelectedSearchProduct}"
-                    ItemTemplate="{StaticResource ProductLookupTemplate}" />
-                </Grid>
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                  <Button Content="Search"
-                          Command="{Binding SearchProductsCommand}"
-                          HorizontalAlignment="Left"
-                          Width="100" />
-                </StackPanel>
-              </StackPanel>
-            </Grid>
-          </StackPanel>
-        </Border>
-
-        <!-- Product Results -->
-        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
-    <StackPanel Spacing="8">
-            <Grid PointerPressed="ToggleSearchResults" Cursor="Hand">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-              </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" 
-                         Text="{Binding ProductsIsSearchResultsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
-                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
-              <TextBlock Grid.Column="1" Text="Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
-            </Grid>
-
-            <DataGrid
-              AutoGenerateColumns="False"
-              ItemsSource="{Binding ProductResults}"
-              SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
-              IsVisible="{Binding ProductsIsSearchResultsExpanded}"
-              Height="220">
-              <DataGrid.Columns>
-                <DataGridTextColumn Header="Product ID" Binding="{Binding ProductId}" IsReadOnly="True" Width="100" />
-                <DataGridTextColumn Header="Product Code" Binding="{Binding ProductCode}" IsReadOnly="True" Width="120" />
-                <DataGridTextColumn Header="Product Name" Binding="{Binding ProductName}" IsReadOnly="True" Width="*" />
-                <DataGridTextColumn Header="Gradient" Binding="{Binding Grade, StringFormat='{}{0:N2}'}" IsReadOnly="True" Width="150" />
-                <DataGridTemplateColumn Header="" Width="160">
-                  <DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate>
-                      <StackPanel Orientation="Horizontal" Spacing="6">
-                        <Button
-                          Content="Edit"
-                          Padding="6,2"
-                          Command="{Binding DataContext.EditProductCommand,
-                                            RelativeSource={RelativeSource AncestorType=UserControl}}"
-                          CommandParameter="{Binding}" />
-
-                        <Button
-                          Content="Delete"
-                          Padding="6,2"
-                          Command="{Binding DataContext.DeleteProductCommand,
-                                            RelativeSource={RelativeSource AncestorType=UserControl}}"
-                          CommandParameter="{Binding}" />
-                      </StackPanel>
-                    </DataTemplate>
-                  </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-              </DataGrid.Columns>
-            </DataGrid>
-          </StackPanel>
-        </Border>
-
-        <!-- Create/Edit Product -->
-        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
-    <StackPanel Spacing="10">
-            <Grid PointerPressed="ToggleCreateEdit" Cursor="Hand">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-              </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" 
-                         Text="{Binding ProductsIsCreateEditExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
-                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
-              <TextBlock Grid.Column="1" Text="Create/Edit Product" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
-            </Grid>
-
-            <Border Padding="12" Background="{DynamicResource Brush.PanelBackground}" CornerRadius="8" IsVisible="{Binding ProductsIsCreateEditExpanded}">
-        <StackPanel Spacing="10">
-
-                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
-
-                  <StackPanel Grid.Row="0" Grid.Column="0" Spacing="6">
-                    <TextBlock Text="Product code" Foreground="{DynamicResource Brush.TextMuted}" />
-                    <TextBox
-                      Watermark="Product code"
-                      Text="{Binding ProductCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                  </StackPanel>
-
-                  <StackPanel Grid.Row="0" Grid.Column="1" Spacing="6">
-                    <TextBlock Text="Product name" Foreground="{DynamicResource Brush.TextMuted}" />
-                    <TextBox
-                      Watermark="Product name"
-                      Text="{Binding ProductName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                  </StackPanel>
-
-                  <StackPanel Grid.Row="1" Grid.Column="0" Spacing="6">
-                    <TextBlock Text="Gradient (optional)" Foreground="{DynamicResource Brush.TextMuted}" />
-                    <TextBox
-                      Watermark="Gradient"
-                      Text="{Binding ProductGrade, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                  </StackPanel>
-
-                  <StackPanel Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="0,20,0,0">
-                    <CheckBox Content="Must Declare" 
-                              IsChecked="{Binding ProductMustDeclare, Mode=TwoWay}"
-                              Foreground="{DynamicResource Brush.TextPrimary}" />
-                  </StackPanel>
-
-                </Grid>
-
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-                  <Button Width="100"
-                          HorizontalContentAlignment="Center"
-                          Content="Clear"
-                          Command="{Binding ClearProductFormCommand}" />
-
-                  <Button Width="100"
-                          HorizontalContentAlignment="Center"
-                          Content="Create"
-                          Command="{Binding CreateProductCommand}"
-                          IsVisible="{Binding IsProductCreateMode}" />
-
-                  <Button Width="100"
-                          HorizontalContentAlignment="Center"
-                          Content="Update"
-                          Command="{Binding UpdateProductCommand}"
-                          IsVisible="{Binding !IsProductCreateMode}" />
-                </StackPanel>
-
-              </StackPanel>
-            </Border>
-          </StackPanel>
-        </Border>
-
-        <!-- Edit Price -->
-        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
-          <StackPanel Spacing="10">
-            <Grid PointerPressed="ToggleEditPrice" Cursor="Hand">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-              </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" 
-                         Text="{Binding ProductsIsDetailsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
-                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
-              <TextBlock Grid.Column="1" Text="Edit Price" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
-            </Grid>
-
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto" ColumnSpacing="10" RowSpacing="10" IsVisible="{Binding ProductsIsDetailsExpanded}">
-
-              <!-- Price List Selection -->
-              <StackPanel Grid.Column="0" Spacing="6">
-                <TextBlock Text="Price List" Foreground="{DynamicResource Brush.TextMuted}" />
-                <ComboBox ItemsSource="{Binding ProductPriceLists}"
-                          SelectedItem="{Binding SelectedProductPriceList}"
-                          HorizontalAlignment="Stretch">
-                  <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                      <TextBlock Text="{Binding ProductPriceListName}" />
-                    </DataTemplate>
-                  </ComboBox.ItemTemplate>
-                </ComboBox>
-              </StackPanel>
-
-              <!-- Price Input -->
-              <StackPanel Grid.Column="1" Spacing="6">
-                <TextBlock Text="Current Price" Foreground="{DynamicResource Brush.TextMuted}" />
-                <TextBox Text="{Binding CurrentPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-              </StackPanel>
-
-            </Grid>
-
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-              <Button Width="100"
-                      HorizontalContentAlignment="Center"
-                      Content="Update"
-                      Command="{Binding UpdatePriceCommand}" />
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MetalLink.Desktop.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+             x:Class="MetalLink.Desktop.Views.ProductsView">
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header -->
+        <Border Grid.Row="0" Background="{DynamicResource Brush.PanelBackground}" Padding="16,8">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <PathIcon Data="{StaticResource Inventory}" Width="24" Height="24" Foreground="{DynamicResource Brush.Accent}" />
+                <TextBlock Text="Products" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
             </StackPanel>
-
-          </StackPanel>
         </Border>
-        </StackPanel>
-    </ScrollViewer>
-  </Grid>
+
+        <Grid Grid.Row="1" RowDefinitions="Auto,*,Auto">
+            <!-- Filter Bar -->
+            <Border Grid.Row="0" Background="{DynamicResource Brush.PanelBackground}" Padding="16,12" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource Brush.Border}">
+                <Grid ColumnDefinitions="*,*,Auto" RowDefinitions="Auto,Auto">
+                    <!-- Row 1: Filters -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="16">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Product Group" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                            <ComboBox Width="200" 
+                                      ItemsSource="{Binding ProductGroups}" 
+                                      SelectedItem="{Binding SelectedProductGroup}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding ProductGroupName}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                        
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Product Search" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                            <TextBox Width="250" Watermark="Search name or code..." Text="{Binding ProductSearchTerm}" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="First Letter" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                            <ComboBox ItemsSource="{Binding ProductLetterFilters}" 
+                                      SelectedItem="{Binding SelectedProductLetter}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Row 2: Non-Starred Toggle -->
+                    <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Spacing="8" Margin="0,12,0,0" VerticalAlignment="Center">
+                        <ToggleSwitch IsChecked="{Binding ShowNonStarred}" OnContent="All Products" OffContent="Starred Only" />
+                    </StackPanel>
+                    
+                    <Button Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" Command="{Binding RefreshProductsCommand}" VerticalAlignment="Center">
+                        <PathIcon Data="{StaticResource Refresh}" />
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Results Grid -->
+            <DataGrid Grid.Row="1" ItemsSource="{Binding ProductResults}" SelectedItem="{Binding SelectedProduct}" 
+                      IsReadOnly="True" AutoGenerateColumns="False" CanUserResizeColumns="True">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="Starred" Width="Auto">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ToggleSwitch IsChecked="{Binding StarredProduct}" 
+                                              Command="{Binding $parent[UserControl].DataContext.ToggleStarredCommand}"
+                                              CommandParameter="{Binding}"
+                                              Margin="8,0" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="HTS" Binding="{Binding HtsCode}" Width="100" />
+                    <DataGridTextColumn Header="ISRI Code" Binding="{Binding ProductCode}" Width="100" />
+                    <DataGridTextColumn Header="ISRI Name" Binding="{Binding ProductName}" Width="*" />
+                    <DataGridCheckBoxColumn Header="ISRI" Binding="{Binding IsriProduct}" Width="Auto" />
+                    <DataGridTextColumn Header="Group" Binding="{Binding ProductGroupName}" Width="150" />
+                    <DataGridTextColumn Header="Spec Flag" Binding="{Binding ProductSpecificationFlagId}" Width="100" />
+                    <DataGridTextColumn Header="Alias" Binding="{Binding StarredProductAlias}" Width="150" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Create/Edit Form -->
+            <Border Grid.Row="2" Background="{DynamicResource Brush.PanelBackground}" Padding="16" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Brush.Border}">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="{Binding ProductSaveButtonText, StringFormat='\{0\} Product'}" FontSize="16" FontWeight="SemiBold" />
+                    
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="24" RowSpacing="12">
+                        <!-- Column 1 -->
+                        <StackPanel Grid.Column="0" Grid.Row="0" Spacing="4">
+                            <TextBlock Text="HTS Code" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                            <TextBox Text="{Binding ProductHtsCode}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="0" Grid.Row="1" Orientation="Horizontal" Spacing="12">
+                            <CheckBox IsChecked="{Binding ProductIsIsri}" Content="ISRI Product" />
+                            <CheckBox IsChecked="{Binding ProductStarred}" Content="Starred" />
+                            <CheckBox IsChecked="{Binding ProductMustDeclare}" Content="Must Declare" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="0" Grid.Row="2" Spacing="4">
+                            <TextBlock Text="Product Group" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                            <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding ProductGroups}" 
+                                      SelectedValue="{Binding ProductGroupId}" SelectedValueBinding="{Binding ProductGroupId}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding ProductGroupName}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="0" Grid.Row="3" Spacing="4">
+                            <TextBlock Text="Starred Alias" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                            <TextBox Text="{Binding ProductStarredAlias}" />
+                        </StackPanel>
+
+                        <!-- Column 2 -->
+                        <StackPanel Grid.Column="1" Grid.Row="0" Spacing="4">
+                            <TextBlock Text="ISRI Name" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                            <TextBox Text="{Binding ProductIsriName}" IsEnabled="{Binding ProductIsIsri}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Grid.Row="1" Spacing="4">
+                            <TextBlock Text="ISRI Code" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                            <TextBox Text="{Binding ProductIsriCode}" IsEnabled="{Binding ProductIsIsri}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Grid.Row="2" Spacing="4">
+                            <TextBlock Text="ISRI URL" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBox Text="{Binding ProductIsriUrl}" IsEnabled="{Binding ProductIsIsri}" />
+                                <Button Grid.Column="1" Command="{Binding OpenIsriUrlCommand}" Margin="4,0,0,0">
+                                    <PathIcon Data="{StaticResource Refresh}" />
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Grid.Row="3" Spacing="4">
+                            <TextBlock Text="Description" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                            <TextBox Text="{Binding ProductIsriDescription}" Height="60" AcceptsReturn="True" IsEnabled="{Binding ProductIsIsri}" />
+                        </StackPanel>
+
+                        <!-- Actions -->
+                        <StackPanel Grid.Row="4" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                            <Button Content="Clear" Command="{Binding ClearProductFormCommand}" />
+                            <Button Content="{Binding ProductSaveButtonText}" Classes="Accent" 
+                                    Command="{Binding UpdateProductCommand}" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
 </UserControl>
