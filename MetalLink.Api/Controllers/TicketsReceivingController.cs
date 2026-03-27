@@ -366,15 +366,15 @@ public class TicketsReceivingController : ControllerBase
             var vatAmount = lineTotal * 0.15m;
             var totalInclVat = lineTotal + vatAmount;
             
-            Console.WriteLine($"[API DEBUG] Line mapping: ReceivingTicketLineId={l.ReceivingTicketLineId}, ProductId={l.ProductId}, ProductName={l.Product?.ProductName}, FirstWeightKg={l.FirstWeightKg}, SecondWeightKg={l.SecondWeightKg}, NetWeightKg={l.NetWeightKg}, Notes='{l.Notes}'");
+            Console.WriteLine($"[API DEBUG] Line mapping: ReceivingTicketLineId={l.ReceivingTicketLineId}, ProductId={l.ProductId}, ProductName={l.Product?.StarredProductAlias ?? l.Product?.IsriProductName}, FirstWeightKg={l.FirstWeightKg}, SecondWeightKg={l.SecondWeightKg}, NetWeightKg={l.NetWeightKg}, Notes='{l.Notes}'");
             
             return new TicketReceivingLineDto
             {
                 ReceivingTicketLineId = l.ReceivingTicketLineId,
                 ReceivingTicketId = l.ReceivingTicketId,
                 ProductId = l.ProductId,
-                ProductCode = l.Product?.ProductCode ?? "",
-                ProductName = l.Product?.ProductName ?? "",
+                ProductCode = l.Product?.IsriProductCode ?? "",
+                ProductName = l.Product?.StarredProductAlias ?? l.Product?.IsriProductName ?? "",
                 FirstWeightKg = l.FirstWeightKg,
                 SecondWeightKg = l.SecondWeightKg,
                 NetWeightKg = l.NetWeightKg,

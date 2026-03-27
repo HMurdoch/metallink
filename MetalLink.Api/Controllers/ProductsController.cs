@@ -127,9 +127,17 @@ public class ProductsController : ControllerBase
     {
         var product = new Product
         {
-            ProductCode = dto.ProductCode.Trim(),
-            ProductName = dto.ProductName.Trim(),
-            Grade = dto.Grade,
+            HtsCode = dto.HtsCode,
+            IsriProductCode = dto.IsriProductCode.Trim(),
+            IsriProductName = dto.IsriProductName.Trim(),
+            IsriProductDescription = dto.IsriProductDescription,
+            IsriProductUrl = dto.IsriProductUrl,
+            IsriProduct = dto.IsriProduct,
+            ProductGroupId = dto.ProductGroupId,
+            ProductSpecificationFlagId = dto.ProductSpecificationFlagId,
+            StarredProduct = dto.StarredProduct,
+            StarredProductAlias = dto.StarredProductAlias,
+            MustDeclare = dto.MustDeclare,
             IsActive = true,
             CreatedByOperatorId = (int)User.GetOperatorId(),
             CreatedTime = DateTimeOffset.UtcNow,
@@ -138,8 +146,6 @@ public class ProductsController : ControllerBase
 
         _db.Products.Add(product);
         await _db.SaveChangesAsync(ct);
-
-        // Legacy price record creation removed - prices are now in product_price_list_product_prices table
 
         dto.ProductId = product.ProductId;
         dto.CreatedTime = product.CreatedTime;
@@ -159,9 +165,17 @@ public class ProductsController : ControllerBase
         if (product == null)
             return NotFound();
 
-        product.ProductCode = dto.ProductCode.Trim();
-        product.ProductName = dto.ProductName.Trim();
-        product.Grade = dto.Grade;
+        product.HtsCode = dto.HtsCode;
+        product.IsriProductCode = dto.IsriProductCode.Trim();
+        product.IsriProductName = dto.IsriProductName.Trim();
+        product.IsriProductDescription = dto.IsriProductDescription;
+        product.IsriProductUrl = dto.IsriProductUrl;
+        product.IsriProduct = dto.IsriProduct;
+        product.ProductGroupId = dto.ProductGroupId;
+        product.ProductSpecificationFlagId = dto.ProductSpecificationFlagId;
+        product.StarredProduct = dto.StarredProduct;
+        product.StarredProductAlias = dto.StarredProductAlias;
+        product.MustDeclare = dto.MustDeclare;
         product.UpdatedTime = DateTimeOffset.UtcNow;
 
         await _db.SaveChangesAsync(ct);
