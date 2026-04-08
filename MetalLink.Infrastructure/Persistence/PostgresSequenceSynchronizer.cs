@@ -49,7 +49,7 @@ public static class PostgresSequenceSynchronizer
                 JOIN pg_class seq ON seq.oid = dep.objid
                                  AND seq.relkind = 'S'
                 JOIN pg_namespace ns ON ns.oid = seq.relnamespace
-                WHERE c.relkind IN ('r', 'p')
+                WHERE c.relkind = 'r'
                   AND n.nspname NOT IN ('pg_catalog', 'information_schema')
             ),
             default_sequences AS (
@@ -65,7 +65,7 @@ public static class PostgresSequenceSynchronizer
                                    AND a.attnum > 0
                                    AND NOT a.attisdropped
                 JOIN pg_attrdef ad ON ad.adrelid = c.oid AND ad.adnum = a.attnum
-                WHERE c.relkind IN ('r', 'p')
+                WHERE c.relkind = 'r'
                   AND n.nspname NOT IN ('pg_catalog', 'information_schema')
                   AND pg_get_expr(ad.adbin, ad.adrelid) LIKE 'nextval(%'
             )

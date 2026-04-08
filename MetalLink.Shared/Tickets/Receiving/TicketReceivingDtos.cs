@@ -47,6 +47,7 @@ public class TicketReceivingLineDto
     public int ProductId { get; set; }
     public string ProductCode { get; set; } = string.Empty;
     public string ProductName { get; set; } = string.Empty;
+    public string? ProductGroupName { get; set; }
     public decimal? FirstWeightKg { get; set; }
     public decimal? SecondWeightKg { get; set; }
     public decimal NetWeightKg { get; set; }
@@ -100,23 +101,3 @@ public class CreateTicketReceivingLineDto
     public string? Notes { get; set; }
 }
 
-public class TicketReceivingSearchRequestDto
-{
-    // When true, search returns customers with 0 receiving tickets (instead of tickets)
-    public bool NewCustomerOnly { get; set; }
-
-    public string? SearchTerm { get; set; }
-    public int? CompanyId { get; set; }
-    public int? SiteId { get; set; }
-    public int? CustomerId { get; set; }
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-    public string? IdNumber { get; set; }
-    public long? AccountNumber { get; set; }
-    public int? ProductId { get; set; }
-    public string? TicketType { get; set; }
-    public DateTimeOffset? StartDate { get; set; }
-    public DateTimeOffset? EndDate { get; set; }
-    public int PageNumber { get; set; } = 1;
-    public int PageSize { get; set; } = 50;
-}

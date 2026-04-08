@@ -482,6 +482,113 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.ToTable("image_paths", "metal_link");
                 });
 
+            modelBuilder.Entity("MetalLink.Domain.Entities.LegacyPrice", b =>
+                {
+                    b.Property<int>("LegacyPriceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("price_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LegacyPriceId"));
+
+                    b.Property<int>("CreatedByOperatorId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_operator_id");
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
+
+                    b.Property<DateTimeOffset>("UpdatedTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("LegacyPriceId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("legacy_prices", "metal_link");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.LegacyProduct", b =>
+                {
+                    b.Property<int>("LegacyProductId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LegacyProductId"));
+
+                    b.Property<int>("CreatedByOperatorId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_operator_id");
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Grade")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("grade");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("MustDeclare")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("must_declare");
+
+                    b.Property<string>("ProductCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("product_code");
+
+                    b.Property<int?>("ProductGroupId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_group_id");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("product_name");
+
+                    b.Property<DateTimeOffset>("UpdatedTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("LegacyProductId");
+
+                    b.HasIndex("ProductGroupId");
+
+                    b.ToTable("legacy_products", "metal_link");
+                });
+
             modelBuilder.Entity("MetalLink.Domain.Entities.Operator", b =>
                 {
                     b.Property<int>("OperatorId")
@@ -600,48 +707,6 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.ToTable("operator_settings", "metal_link");
                 });
 
-            modelBuilder.Entity("MetalLink.Domain.Entities.Price", b =>
-                {
-                    b.Property<int>("PriceId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("price_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PriceId"));
-
-                    b.Property<int>("CreatedByOperatorId")
-                        .HasColumnType("integer")
-                        .HasColumnName("created_by_operator_id");
-
-                    b.Property<DateTimeOffset>("CreatedTime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_time")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("integer")
-                        .HasColumnName("product_id");
-
-                    b.Property<DateTimeOffset>("UpdatedTime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_time")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("PriceId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("prices", "metal_link");
-                });
-
             modelBuilder.Entity("MetalLink.Domain.Entities.Product", b =>
                 {
                     b.Property<int>("ProductId")
@@ -661,10 +726,9 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasColumnName("created_time")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<string>("Grade")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("grade");
+                    b.Property<string>("HtsCode")
+                        .HasColumnType("text")
+                        .HasColumnName("hts_code");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -672,23 +736,58 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
+                    b.Property<bool>("IsriProduct")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("isri_product");
+
+                    b.Property<string>("IsriProductCode")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("isri_product_code");
+
+                    b.Property<string>("IsriProductDescription")
+                        .HasColumnType("text")
+                        .HasColumnName("isri_product_description");
+
+                    b.Property<string>("IsriProductName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("isri_product_name");
+
+                    b.Property<string>("IsriProductUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("isri_product_url");
+
                     b.Property<bool>("MustDeclare")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("must_declare");
 
-                    b.Property<string>("ProductCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("product_code");
+                    b.Property<int>("ProductGroupId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_group_id");
 
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("product_name");
+                    b.Property<int>("ProductSpecificationFlagId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_specification_flag_id");
+
+                    b.Property<string>("QKey")
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)")
+                        .HasColumnName("q_key");
+
+                    b.Property<bool>("StarredProduct")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("starred_product");
+
+                    b.Property<string>("StarredProductAlias")
+                        .HasColumnType("text")
+                        .HasColumnName("starred_product_alias");
 
                     b.Property<DateTimeOffset>("UpdatedTime")
                         .ValueGeneratedOnAdd()
@@ -698,7 +797,63 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
 
                     b.HasKey("ProductId");
 
+                    b.HasIndex("ProductGroupId");
+
+                    b.HasIndex("ProductSpecificationFlagId");
+
                     b.ToTable("products", "metal_link");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.ProductGroup", b =>
+                {
+                    b.Property<int>("ProductGroupId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("product_group_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ProductGroupId"));
+
+                    b.Property<int>("CreatedByOperatorId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_operator_id");
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("ProductGroupDescription")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("product_group_description");
+
+                    b.Property<string>("ProductGroupName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("product_group_name");
+
+                    b.Property<int>("ProductSpecificationFlagId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_specification_flag_id");
+
+                    b.Property<DateTimeOffset>("UpdatedTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("ProductGroupId");
+
+                    b.HasIndex("ProductSpecificationFlagId");
+
+                    b.ToTable("product_groups", "metal_link");
                 });
 
             modelBuilder.Entity("MetalLink.Domain.Entities.ProductPriceList", b =>
@@ -808,6 +963,52 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .HasFilter("is_active = true");
 
                     b.ToTable("product_price_list_product_prices", "metal_link");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.ProductSpecificationFlag", b =>
+                {
+                    b.Property<int>("ProductSpecificationFlagId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("product_specification_flag_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ProductSpecificationFlagId"));
+
+                    b.Property<int>("CreatedByOperatorId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_operator_id");
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("ProductSpecificationDescription")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("product_specification_description");
+
+                    b.Property<char>("ProductSpecificationTypeFlag")
+                        .HasMaxLength(1)
+                        .HasColumnType("character(1)")
+                        .HasColumnName("product_specification_type_flag");
+
+                    b.Property<DateTimeOffset>("UpdatedTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("ProductSpecificationFlagId");
+
+                    b.ToTable("product_specification_flags", "metal_link");
                 });
 
             modelBuilder.Entity("MetalLink.Domain.Entities.Province", b =>
@@ -1061,354 +1262,204 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.ToTable("sites", "metal_link");
                 });
 
-            modelBuilder.Entity("MetalLink.Domain.Entities.StockMovement", b =>
+            modelBuilder.Entity("MetalLink.Domain.Entities.StockMovementReceiving", b =>
                 {
-                    b.Property<int>("StockMovementId")
+                    b.Property<int>("StockMovementReceivingId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("stock_movement_receiving_id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("StockMovementId"));
-
-                    b.Property<string>("CounterpartyName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("CounterpartyType")
-                        .HasColumnType("text");
-
-                    b.Property<int>("CreatedByOperatorId")
-                        .HasColumnType("integer");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("StockMovementReceivingId"));
 
                     b.Property<DateTimeOffset>("CreatedTime")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<string>("CurrencyCode")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("currency_code");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("integer")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("customer_name");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
 
-                    b.Property<string>("MovementType")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<DateTimeOffset>("MovementDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("movement_date")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
 
                     b.Property<int>("ProductId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
 
                     b.Property<decimal>("QuantityKg")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("ReferenceNumber")
-                        .HasColumnType("text");
+                        .HasColumnType("numeric")
+                        .HasColumnName("quantity_kg");
 
                     b.Property<int>("SiteId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("site_id");
 
-                    b.Property<int>("TicketId")
-                        .HasColumnType("integer");
+                    b.Property<string>("TicketNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("ticket_number");
 
-                    b.Property<long?>("TicketId1")
-                        .HasColumnType("bigint");
+                    b.Property<int>("TicketReceivingId")
+                        .HasColumnType("integer")
+                        .HasColumnName("receiving_ticket_id");
 
-                    b.Property<int?>("TicketLineId")
-                        .HasColumnType("integer");
+                    b.Property<int?>("TicketReceivingLineId")
+                        .HasColumnType("integer")
+                        .HasColumnName("receiving_ticket_line_id");
+
+                    b.Property<decimal>("TotalValue")
+                        .HasColumnType("numeric")
+                        .HasColumnName("total_value");
 
                     b.Property<decimal>("UnitPricePerKg")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("unit_price_per_kg");
 
                     b.Property<DateTimeOffset>("UpdatedTime")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time")
+                        .HasDefaultValueSql("now()");
 
-                    b.HasKey("StockMovementId");
+                    b.HasKey("StockMovementReceivingId");
 
                     b.HasIndex("ProductId");
 
                     b.HasIndex("SiteId");
 
-                    b.HasIndex("TicketId1");
+                    b.HasIndex("TicketReceivingId");
 
-                    b.ToTable("StockMovement");
+                    b.HasIndex("TicketReceivingLineId");
+
+                    b.ToTable("stock_movement_receiving", "metal_link");
                 });
 
-            modelBuilder.Entity("MetalLink.Domain.Entities.StockMovementReceiving", b =>
+            modelBuilder.Entity("MetalLink.Domain.Entities.StockMovementSending", b =>
                 {
-                    b.Property<long>("StockMovementReceivingId")
+                    b.Property<int>("StockMovementSendingId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("integer")
+                        .HasColumnName("stock_movement_sending_id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("StockMovementReceivingId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("StockMovementSendingId"));
+
+                    b.Property<int>("BuyerId")
+                        .HasColumnType("integer")
+                        .HasColumnName("buyer_id");
+
+                    b.Property<string>("BuyerName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("buyer_name");
 
                     b.Property<DateTimeOffset>("CreatedTime")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<string>("CurrencyCode")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("CustomerId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("CustomerName")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("currency_code");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
 
                     b.Property<DateTimeOffset>("MovementDate")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("movement_date")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
 
-                    b.Property<long>("ProductId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("ProductId1")
-                        .HasColumnType("integer");
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
 
                     b.Property<decimal>("QuantityKg")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("quantity_kg");
 
-                    b.Property<long>("SiteId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("SiteId1")
-                        .HasColumnType("integer");
+                    b.Property<int>("SiteId")
+                        .HasColumnType("integer")
+                        .HasColumnName("site_id");
 
                     b.Property<string>("TicketNumber")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("ticket_number");
 
-                    b.Property<long>("TicketReceivingId")
-                        .HasColumnType("bigint");
+                    b.Property<int>("TicketSendingId")
+                        .HasColumnType("integer")
+                        .HasColumnName("sending_ticket_id");
 
-                    b.Property<int>("TicketReceivingId1")
-                        .HasColumnType("integer");
-
-                    b.Property<long?>("TicketReceivingLineId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int?>("TicketReceivingLineReceivingTicketLineId")
-                        .HasColumnType("integer");
+                    b.Property<int?>("TicketSendingLineId")
+                        .HasColumnType("integer")
+                        .HasColumnName("sending_ticket_line_id");
 
                     b.Property<decimal>("TotalValue")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("total_value");
 
                     b.Property<decimal>("UnitPricePerKg")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("unit_price_per_kg");
 
                     b.Property<DateTimeOffset>("UpdatedTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("StockMovementReceivingId");
-
-                    b.HasIndex("ProductId1");
-
-                    b.HasIndex("SiteId1");
-
-                    b.HasIndex("TicketReceivingId1");
-
-                    b.HasIndex("TicketReceivingLineReceivingTicketLineId");
-
-                    b.ToTable("StockMovementReceiving");
-                });
-
-            modelBuilder.Entity("MetalLink.Domain.Entities.Ticket", b =>
-                {
-                    b.Property<long>("TicketId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_time")
+                        .HasDefaultValueSql("now()");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("TicketId"));
+                    b.HasKey("StockMovementSendingId");
 
-                    b.Property<long?>("BuyerId")
-                        .HasColumnType("bigint");
+                    b.HasIndex("ProductId");
 
-                    b.Property<int?>("BuyerId1")
-                        .HasColumnType("integer");
+                    b.HasIndex("SiteId");
 
-                    b.Property<string>("CkNumber")
-                        .HasColumnType("text");
+                    b.HasIndex("TicketSendingId");
 
-                    b.Property<DateTimeOffset>("CreatedTime")
-                        .HasColumnType("timestamp with time zone");
+                    b.HasIndex("TicketSendingLineId");
 
-                    b.Property<string>("CurrencyCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long?>("CurrencyId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int?>("CurrencyId1")
-                        .HasColumnType("integer");
-
-                    b.Property<long?>("CustomerId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int?>("CustomerId1")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("DeliveryNumber")
-                        .HasColumnType("text");
-
-                    b.Property<string>("DriverName")
-                        .HasColumnType("text");
-
-                    b.Property<decimal?>("FirstWeightKg")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("ForeignTicket")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<decimal>("NetWeightKg")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("text");
-
-                    b.Property<string>("OfmWeighbridgeTicket")
-                        .HasColumnType("text");
-
-                    b.Property<long>("OperatorId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("OperatorId1")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ProductDescription")
-                        .HasColumnType("text");
-
-                    b.Property<long?>("ProductId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int?>("ProductId1")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("RfidCardNumber")
-                        .HasColumnType("text");
-
-                    b.Property<decimal?>("SecondWeightKg")
-                        .HasColumnType("numeric");
-
-                    b.Property<long>("SiteId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("SiteId1")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("TicketNumber")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("TicketType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("TotalInclVat")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("TrailerRegistration")
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("UnitPricePerKg")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTimeOffset>("UpdatedTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("VatAmount")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("VatRate")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("VehicleRegistration")
-                        .HasColumnType("text");
-
-                    b.HasKey("TicketId");
-
-                    b.HasIndex("BuyerId1");
-
-                    b.HasIndex("CurrencyId1");
-
-                    b.HasIndex("CustomerId1");
-
-                    b.HasIndex("OperatorId1");
-
-                    b.HasIndex("ProductId1");
-
-                    b.HasIndex("SiteId1");
-
-                    b.ToTable("Ticket");
-                });
-
-            modelBuilder.Entity("MetalLink.Domain.Entities.TicketLine", b =>
-                {
-                    b.Property<long>("TicketLineId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("TicketLineId"));
-
-                    b.Property<DateTimeOffset>("CreatedTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<decimal>("LineTotal")
-                        .HasColumnType("numeric");
-
-                    b.Property<long>("ProductId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("ProductId1")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("TicketId")
-                        .HasColumnType("bigint");
-
-                    b.Property<decimal>("TotalInclVat")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("UnitPricePerKg")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTimeOffset>("UpdatedTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("VatAmount")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("WeightKg")
-                        .HasColumnType("numeric");
-
-                    b.HasKey("TicketLineId");
-
-                    b.HasIndex("ProductId1");
-
-                    b.HasIndex("TicketId");
-
-                    b.ToTable("TicketLine");
+                    b.ToTable("stock_movement_sending", "metal_link");
                 });
 
             modelBuilder.Entity("MetalLink.Domain.Entities.TicketReceiving", b =>
@@ -1874,6 +1925,26 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.Navigation("Site");
                 });
 
+            modelBuilder.Entity("MetalLink.Domain.Entities.LegacyPrice", b =>
+                {
+                    b.HasOne("MetalLink.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.LegacyProduct", b =>
+                {
+                    b.HasOne("MetalLink.Domain.Entities.ProductGroup", "ProductGroup")
+                        .WithMany()
+                        .HasForeignKey("ProductGroupId");
+
+                    b.Navigation("ProductGroup");
+                });
+
             modelBuilder.Entity("MetalLink.Domain.Entities.OperatorSetting", b =>
                 {
                     b.HasOne("MetalLink.Domain.Entities.Operator", "CreatedByOperator")
@@ -1883,7 +1954,7 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.HasOne("MetalLink.Domain.Entities.Operator", "Operator")
-                        .WithMany()
+                        .WithMany("OperatorSettings")
                         .HasForeignKey("OperatorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1909,15 +1980,34 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.Navigation("SettingOption");
                 });
 
-            modelBuilder.Entity("MetalLink.Domain.Entities.Price", b =>
+            modelBuilder.Entity("MetalLink.Domain.Entities.Product", b =>
                 {
-                    b.HasOne("MetalLink.Domain.Entities.Product", "Product")
+                    b.HasOne("MetalLink.Domain.Entities.ProductGroup", "ProductGroup")
                         .WithMany()
-                        .HasForeignKey("ProductId")
+                        .HasForeignKey("ProductGroupId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Product");
+                    b.HasOne("MetalLink.Domain.Entities.ProductSpecificationFlag", "ProductSpecificationFlag")
+                        .WithMany()
+                        .HasForeignKey("ProductSpecificationFlagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProductGroup");
+
+                    b.Navigation("ProductSpecificationFlag");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.ProductGroup", b =>
+                {
+                    b.HasOne("MetalLink.Domain.Entities.ProductSpecificationFlag", "ProductSpecificationFlag")
+                        .WithMany("ProductGroups")
+                        .HasForeignKey("ProductSpecificationFlagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProductSpecificationFlag");
                 });
 
             modelBuilder.Entity("MetalLink.Domain.Entities.ProductPriceList", b =>
@@ -2015,7 +2105,7 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.Navigation("Province");
                 });
 
-            modelBuilder.Entity("MetalLink.Domain.Entities.StockMovement", b =>
+            modelBuilder.Entity("MetalLink.Domain.Entities.StockMovementReceiving", b =>
                 {
                     b.HasOne("MetalLink.Domain.Entities.Product", "Product")
                         .WithMany()
@@ -2029,38 +2119,15 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MetalLink.Domain.Entities.Ticket", null)
-                        .WithMany("StockMovements")
-                        .HasForeignKey("TicketId1");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("Site");
-                });
-
-            modelBuilder.Entity("MetalLink.Domain.Entities.StockMovementReceiving", b =>
-                {
-                    b.HasOne("MetalLink.Domain.Entities.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MetalLink.Domain.Entities.Site", "Site")
-                        .WithMany()
-                        .HasForeignKey("SiteId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("MetalLink.Domain.Entities.TicketReceiving", "TicketReceiving")
                         .WithMany("StockMovements")
-                        .HasForeignKey("TicketReceivingId1")
+                        .HasForeignKey("TicketReceivingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MetalLink.Domain.Entities.TicketReceivingLine", "TicketReceivingLine")
                         .WithMany()
-                        .HasForeignKey("TicketReceivingLineReceivingTicketLineId");
+                        .HasForeignKey("TicketReceivingLineId");
 
                     b.Navigation("Product");
 
@@ -2071,66 +2138,37 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                     b.Navigation("TicketReceivingLine");
                 });
 
-            modelBuilder.Entity("MetalLink.Domain.Entities.Ticket", b =>
+            modelBuilder.Entity("MetalLink.Domain.Entities.StockMovementSending", b =>
                 {
-                    b.HasOne("MetalLink.Domain.Entities.Buyer", "Buyer")
-                        .WithMany("Tickets")
-                        .HasForeignKey("BuyerId1");
-
-                    b.HasOne("MetalLink.Domain.Entities.Currency", "Currency")
-                        .WithMany()
-                        .HasForeignKey("CurrencyId1");
-
-                    b.HasOne("MetalLink.Domain.Entities.Customer", "Customer")
-                        .WithMany("Tickets")
-                        .HasForeignKey("CustomerId1");
-
-                    b.HasOne("MetalLink.Domain.Entities.Operator", "Operator")
-                        .WithMany()
-                        .HasForeignKey("OperatorId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("MetalLink.Domain.Entities.Product", "Product")
                         .WithMany()
-                        .HasForeignKey("ProductId1");
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("MetalLink.Domain.Entities.Site", "Site")
                         .WithMany()
-                        .HasForeignKey("SiteId1")
+                        .HasForeignKey("SiteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Buyer");
+                    b.HasOne("MetalLink.Domain.Entities.TicketSending", "TicketSending")
+                        .WithMany()
+                        .HasForeignKey("TicketSendingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("Currency");
-
-                    b.Navigation("Customer");
-
-                    b.Navigation("Operator");
+                    b.HasOne("MetalLink.Domain.Entities.TicketSendingLine", "TicketSendingLine")
+                        .WithMany()
+                        .HasForeignKey("TicketSendingLineId");
 
                     b.Navigation("Product");
 
                     b.Navigation("Site");
-                });
 
-            modelBuilder.Entity("MetalLink.Domain.Entities.TicketLine", b =>
-                {
-                    b.HasOne("MetalLink.Domain.Entities.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("TicketSending");
 
-                    b.HasOne("MetalLink.Domain.Entities.Ticket", "Ticket")
-                        .WithMany("Lines")
-                        .HasForeignKey("TicketId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-
-                    b.Navigation("Ticket");
+                    b.Navigation("TicketSendingLine");
                 });
 
             modelBuilder.Entity("MetalLink.Domain.Entities.TicketReceiving", b =>
@@ -2142,7 +2180,7 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.HasOne("MetalLink.Domain.Entities.Customer", "Customer")
-                        .WithMany()
+                        .WithMany("TicketsReceiving")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2243,8 +2281,6 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("MetalLink.Domain.Entities.Buyer", b =>
                 {
-                    b.Navigation("Tickets");
-
                     b.Navigation("TicketsSending");
                 });
 
@@ -2262,12 +2298,22 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("MetalLink.Domain.Entities.Customer", b =>
                 {
-                    b.Navigation("Tickets");
+                    b.Navigation("TicketsReceiving");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.Operator", b =>
+                {
+                    b.Navigation("OperatorSettings");
                 });
 
             modelBuilder.Entity("MetalLink.Domain.Entities.ProductPriceList", b =>
                 {
                     b.Navigation("ProductPrices");
+                });
+
+            modelBuilder.Entity("MetalLink.Domain.Entities.ProductSpecificationFlag", b =>
+                {
+                    b.Navigation("ProductGroups");
                 });
 
             modelBuilder.Entity("MetalLink.Domain.Entities.Province", b =>
@@ -2283,13 +2329,6 @@ namespace MetalLink.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("MetalLink.Domain.Entities.Site", b =>
                 {
                     b.Navigation("Customers");
-                });
-
-            modelBuilder.Entity("MetalLink.Domain.Entities.Ticket", b =>
-                {
-                    b.Navigation("Lines");
-
-                    b.Navigation("StockMovements");
                 });
 
             modelBuilder.Entity("MetalLink.Domain.Entities.TicketReceiving", b =>

@@ -46,6 +46,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     private readonly ThemeService _themeService;
     private readonly AppearanceService _appearanceService;
 
+    partial void InitializePriceListsCommands();
+
     // Navigation
     public ObservableCollection<NavItemViewModel> NavItems { get; } = new();
     public ICommand ToggleNavCommand { get; }
@@ -205,7 +207,11 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             await SearchCompaniesAsync();
         });
         ShowProductsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Products);
-        ShowPriceListsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.PriceLists);
+        ShowPriceListsCommand = new RelayCommand(async () => {
+            CurrentSection = EnumMainSection.PriceLists;
+            SelectedPriceListEntityType = "Customer";
+            await SearchPriceListsAsync();
+        });
         ShowPricesCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Prices);
         ShowTicketsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.TicketsReceiving);
         ShowTicketsReceivingCommand = new RelayCommand(() =>
@@ -241,6 +247,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             await StockMovement.RefreshAsync();
         });
         ShowSettingsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Settings);
+
+        InitializePriceListsCommands();
 
         LogoutCommand = new AsyncRelayCommand(LogoutAsync);
         CheckDbCommand = new AsyncRelayCommand(CheckDbAsync);

@@ -33,13 +33,37 @@ public partial class MainWindowViewModel
         }
     }
 
+    private bool _showStarred = true;
+    public bool ShowStarred
+    {
+        get => _showStarred;
+        set
+        {
+            if (value == _showStarred) return;
+            _showStarred = value;
+            if (!_showStarred && !_showNonStarred)
+            {
+                _showNonStarred = true;
+                OnPropertyChanged(nameof(ShowNonStarred));
+            }
+            OnPropertyChanged();
+            _ = ApplyProductFiltersAsync();
+        }
+    }
+
     private bool _showNonStarred = false;
     public bool ShowNonStarred
     {
         get => _showNonStarred;
-        set 
-        { 
-            _showNonStarred = value; 
+        set
+        {
+            if (value == _showNonStarred) return;
+            _showNonStarred = value;
+            if (!_showNonStarred && !_showStarred)
+            {
+                _showStarred = true;
+                OnPropertyChanged(nameof(ShowStarred));
+            }
             OnPropertyChanged();
             _ = ApplyProductFiltersAsync();
         }
@@ -53,6 +77,11 @@ public partial class MainWindowViewModel
         {
             _productSearchTerm = value;
             OnPropertyChanged();
+            if (!string.IsNullOrEmpty(value) && _selectedProductLetter != "ALL")
+            {
+                _selectedProductLetter = "ALL";
+                OnPropertyChanged(nameof(SelectedProductLetter));
+            }
             _ = ApplyProductFiltersAsync();
         }
     }
@@ -72,6 +101,11 @@ public partial class MainWindowViewModel
         { 
             _selectedProductLetter = value; 
             OnPropertyChanged();
+            if (value != "ALL" && !string.IsNullOrEmpty(_productSearchTerm))
+            {
+                _productSearchTerm = string.Empty;
+                OnPropertyChanged(nameof(ProductSearchTerm));
+            }
             _ = ApplyProductFiltersAsync();
         }
     }
@@ -112,6 +146,10 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(CanUpdatePrice));
             (UpdatePriceCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
             _ = LoadPricesForSelectedProductAsync();
+            if (value != null)
+            {
+                OnEditProduct(value);
+            }
         }
     }
 
@@ -131,6 +169,13 @@ public partial class MainWindowViewModel
     {
         get => _productHtsCode;
         set { _productHtsCode = value; OnPropertyChanged(); }
+    }
+
+    private string? _productQKey;
+    public string? ProductQKey
+    {
+        get => _productQKey;
+        set { _productQKey = value; OnPropertyChanged(); }
     }
 
     private bool _productIsIsri;
@@ -236,6 +281,13 @@ public partial class MainWindowViewModel
     {
         get => _editingPriceId;
         set { _editingPriceId = value; OnPropertyChanged(); }
+    }
+
+    private PaginationViewModel _productsPagination = new() { PageSize = 25 };
+    public PaginationViewModel ProductsPagination
+    {
+        get => _productsPagination;
+        set { _productsPagination = value; OnPropertyChanged(); }
     }
 
     private decimal _currentPrice;

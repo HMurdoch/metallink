@@ -28,6 +28,7 @@ public partial class FfmpegLoopingVideoView : UserControl
     }
 
     public event EventHandler? FirstFrameRendered;
+    public bool IsReady { get; private set; }
     private bool _hasRenderedFirstFrame;
     public static readonly StyledProperty<Uri?> SourceProperty =
         AvaloniaProperty.Register<FfmpegLoopingVideoView, Uri?>(nameof(Source));
@@ -64,6 +65,7 @@ public partial class FfmpegLoopingVideoView : UserControl
         _cts?.Dispose();
         _cts = null;
         _hasRenderedFirstFrame = false;
+        IsReady = false;
     }
 
     private void Start(Uri uri)
@@ -85,9 +87,11 @@ public partial class FfmpegLoopingVideoView : UserControl
             }
         }
 
-        // Fallback: Downloads FFmpeg binaries on first run into a cache folder.
-        // Works cross-distro without system ffmpeg.
-        var dir = Path.Combine(Path.GetTempPath(), "metallink_ffmpeg");
+        // Unified path with IntroWindow
+        var dir = OperatingSystem.IsWindows() 
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetalLink", "ffmpeg")
+            : Path.Combine(Path.GetTempPath(), "metallink_ffmpeg");
+
         Directory.CreateDirectory(dir);
         FFmpeg.SetExecutablesPath(dir);
 
@@ -251,6 +255,7 @@ public partial class FfmpegLoopingVideoView : UserControl
                         if (!_hasRenderedFirstFrame)
                         {
                             _hasRenderedFirstFrame = true;
+                            IsReady = true;
                             FirstFrameRendered?.Invoke(this, EventArgs.Empty);
                         }
                     }

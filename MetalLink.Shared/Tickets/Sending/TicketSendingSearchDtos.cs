@@ -21,7 +21,29 @@ public sealed class TicketSendingSearchResultDto
 
     public decimal NetWeightKg { get; set; }
 
+    public string? ProductGroupName { get; set; }
+
     public char? TicketStatus { get; set; }
 
     public DateTimeOffset CreatedTime { get; set; }
+}
+
+public class TicketSendingSearchRequestDto
+{
+    public bool NewBuyerOnly { get; set; }
+    public string? SearchTerm { get; set; }
+    public int? CompanyId { get; set; }
+    public int? SiteId { get; set; }
+    public int? BuyerId { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? IdNumber { get; set; }
+    public long? AccountNumber { get; set; }
+    public int? ProductId { get; set; }
+    public int? ProductGroupId { get; set; }
+    public string? TicketType { get; set; }
+    public DateTimeOffset? StartDate { get; set; }
+    public DateTimeOffset? EndDate { get; set; }
+    public int PageNumber { get; set; } = 1;
+    public int PageSize { get; set; } = 50;
 }

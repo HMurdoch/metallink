@@ -24,6 +24,7 @@ public partial class IntroWindow : Window
 
     private Views.Controls.FfmpegLoopingVideoView? _video;
     private Process? _ffplay;
+    private CancellationTokenSource? _playCts;
 
     public IntroWindow()
     {
@@ -33,41 +34,38 @@ public partial class IntroWindow : Window
 
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
-    /// <summary>
-    /// Plays the intro clip:
-    /// - Wait for first frame (avoid blank while FFmpeg extracts)
-    /// - Fade video in over 1s
-    /// - Hold 4s
-    /// - Fade video out over 1s
-    ///
-    /// NOTE: audio fade is not implemented yet because the FFmpeg frame renderer has no audio output.
-    /// </summary>
     public async Task PlayAsync(bool playVideo = true)
     {
         if (_video is null)
+        {
+            Console.WriteLine("[WARN] Intro: _video control not found.");
             return;
+        }
+
+        _playCts = new CancellationTokenSource();
+        var ct = _playCts.Token;
 
         var src = new Uri("avares://MetalLink.Desktop/Assets/intro_video_6sec.mp4");
 
-        // Size the window to match the video's true aspect ratio so Stretch=Uniform doesn't letterbox.
         try
         {
+            Console.WriteLine("[INFO] Intro: Ensuring FFmpeg is ready...");
             await EnsureFfmpegReadyAsync();
+            if (ct.IsCancellationRequested) return;
 
             var inputPath = ResolveInputPath(src);
             var mediaInfo = await FFmpeg.GetMediaInfo(inputPath);
+            if (ct.IsCancellationRequested) return;
+
             var stream = mediaInfo.VideoStreams.FirstOrDefault();
             if (stream is not null)
             {
-                // Target max height so it fits typical screens; keep aspect ratio.
                 var maxH = 900.0;
                 var h = Math.Min(maxH, stream.Height);
                 var w = h * stream.Width / stream.Height;
-
                 Width = w;
                 Height = h;
 
-                // Re-center (prefer the bounds provided by LoginWindow)
                 var bounds = _targetBounds ?? (Screens.Primary is not null
                     ? (Screens.ScreenFromWindow(this) ?? Screens.Primary).WorkingArea
                     : default);
@@ -82,333 +80,166 @@ public partial class IntroWindow : Window
 
             if (!playVideo)
             {
-                // Requirement: display last frame for 1 second and then go to main application
+                Console.WriteLine("[DEBUG] Intro: playVideo is false. Showing last frame.");
                 var lastFramePath = Path.Combine(Path.GetTempPath(), "metallink_intro_last_frame.jpg");
-                
-                // Extract last frame if not exists or just always refresh
                 var ffmpegExe = Path.Combine(FFmpeg.ExecutablesPath, OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg");
-                // -sseof -3 means seek to 3 seconds before end of file
-                // -update 1 -frames:v 1 gets one frame
                 var args = $"-y -sseof -1 -i \"{inputPath}\" -update 1 -frames:v 1 \"{lastFramePath}\"";
                 var psi = new ProcessStartInfo { FileName = ffmpegExe, Arguments = args, CreateNoWindow = true, UseShellExecute = false };
                 using var p = Process.Start(psi);
-                if (p != null) await p.WaitForExitAsync();
+                if (p != null) await p.WaitForExitAsync(ct);
 
-                if (File.Exists(lastFramePath))
+                if (File.Exists(lastFramePath) && !ct.IsCancellationRequested)
                 {
-                    // Use a simple Image control or just hijack the video view if it supports images
-                    // For now, let's just use the video view and seek to the end if possible, 
-                    // but the request asks for an image export.
-                    // We'll just show the window with the extracted image for 1s.
-                    // Since I don't want to change XAML, I'll just set the video source to the image 
-                    // if FfmpegLoopingVideoView supports it, or just show the window.
-                    
-                    // Actually, let's just use the video view but set its source to the JPG.
                     _video.Source = new Uri(lastFramePath);
                     _video.Opacity = 1;
-                    await Task.Delay(1000);
-                    return;
+                    await Task.Delay(1000, ct);
                 }
+                return;
             }
-
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("[WARN] Intro sizing/audio failed: " + ex.Message);
+            Console.WriteLine($"[WARN] Intro setup error: {ex.Message}");
         }
 
-        if (!playVideo)
-        {
-            await Task.Delay(1000); // Wait 1s if we showed last frame
-            return;
+        // Play sequence
+        var tcs = new TaskCompletionSource<bool>();
+        void Handler(object? s, EventArgs e) {
+            Console.WriteLine("[DEBUG] Intro: FirstFrameRendered received.");
+            tcs.TrySetResult(true);
         }
 
-        _video.Source = src;
-        _video.Opacity = 0;
-
-        // Wait for first frame so we don't show a blank window while FFmpeg extracts frames.
-        var tcs = new TaskCompletionSource();
-        void Handler(object? s, EventArgs e) => tcs.TrySetResult();
         _video.FirstFrameRendered += Handler;
 
         try
         {
-            var completed = await Task.WhenAny(tcs.Task, Task.Delay(8000));
-            if (completed != tcs.Task)
-                return;
+            _video.Source = src;
+            _video.Opacity = 0;
 
-            // Now that first frame is ready, start audio playback
+            if (_video.IsReady)
+            {
+                Console.WriteLine("[DEBUG] Intro: Video is already ready (cached).");
+                tcs.TrySetResult(true);
+            }
+
+            Console.WriteLine("[DEBUG] Intro: Waiting for first frame...");
+            var completed = await Task.WhenAny(tcs.Task, Task.Delay(10000, ct));
+            if (completed != tcs.Task && !ct.IsCancellationRequested)
+            {
+                Console.WriteLine("[WARN] Intro: First frame wait timed out (10s).");
+            }
+
+            if (ct.IsCancellationRequested) return;
+
             try
             {
                 var inputPath = ResolveInputPath(src);
                 _ffplay = await StartAudioAsync(inputPath);
             }
-            catch (Exception ex)
+            catch (Exception ex) { Console.WriteLine($"[WARN] Intro audio failed: {ex.Message}"); }
+
+            Console.WriteLine("[DEBUG] Intro: Fade-in.");
+            await FadeOpacityAsync(_video, 0, 1, 1000, ct);
+            
+            if (!ct.IsCancellationRequested)
             {
-                Console.Error.WriteLine($"[WARN] Intro audio failed: {ex.Message}");
+                Console.WriteLine("[DEBUG] Intro: Playing for 4s.");
+                await Task.Delay(4000, ct);
             }
 
-            await FadeOpacityAsync(_video, from: 0, to: 1, ms: 1000);
-            await Task.Delay(4000);
-            await FadeOpacityAsync(_video, from: 1, to: 0, ms: 1000);
+            if (!ct.IsCancellationRequested)
+            {
+                Console.WriteLine("[DEBUG] Intro: Fade-out.");
+                await FadeOpacityAsync(_video, 1, 0, 1000, ct);
+            }
         }
         finally
         {
             _video.FirstFrameRendered -= Handler;
-
-            try
-            {
-                if (_ffplay is { HasExited: false })
-                    _ffplay.Kill(entireProcessTree: true);
-            }
-            catch { /* ignore */ }
+            try { if (_ffplay is { HasExited: false }) _ffplay.Kill(true); } catch { }
+            Console.WriteLine("[DEBUG] Intro: PlayAsync finished.");
         }
     }
 
-    private static async Task FadeOpacityAsync(Control target, double from, double to, int ms)
+    private string ResolveInputPath(Uri uri)
+    {
+        if (uri.Scheme == "avares")
+        {
+            var assets = AssetLoader.Open(uri);
+            var tempPath = Path.Combine(Path.GetTempPath(), Path.GetFileName(uri.LocalPath));
+            using (var fileStream = File.Create(tempPath))
+            {
+                assets.CopyTo(fileStream);
+            }
+            return tempPath;
+        }
+        return uri.LocalPath;
+    }
+
+    private async Task<Process?> StartAudioAsync(string videoPath)
+    {
+        var ffplayExe = Path.Combine(FFmpeg.ExecutablesPath, OperatingSystem.IsWindows() ? "ffplay.exe" : "ffplay");
+        if (!File.Exists(ffplayExe)) return null;
+
+        var args = $"-nodisp -autoexit -i \"{videoPath}\"";
+        var psi = new ProcessStartInfo { FileName = ffplayExe, Arguments = args, CreateNoWindow = true, UseShellExecute = false };
+        return Process.Start(psi);
+    }
+
+    private static async Task FadeOpacityAsync(Control target, double from, double to, int ms, CancellationToken ct)
     {
         target.Opacity = from;
-        const int steps = 60;
+        const int steps = 30;
         var delay = TimeSpan.FromMilliseconds(ms / (double)steps);
-
         for (var i = 1; i <= steps; i++)
         {
+            if (ct.IsCancellationRequested) break;
             var t = i / (double)steps;
             target.Opacity = from + (to - from) * t;
-            await Task.Delay(delay);
+            await Task.Delay(delay, ct);
         }
-
         target.Opacity = to;
     }
 
-    private static string ResolveInputPath(Uri source)
+    private async Task EnsureFfmpegReadyAsync()
     {
-        if (source.Scheme.Equals("avares", StringComparison.OrdinalIgnoreCase))
-        {
-            using var stream = AssetLoader.Open(source);
-            var fileName = Path.GetFileName(source.AbsolutePath);
-            if (string.IsNullOrWhiteSpace(fileName))
-                fileName = "intro.mp4";
-
-            var tempPath = Path.Combine(Path.GetTempPath(), $"metallink_{fileName}");
-            using var fs = File.Create(tempPath);
-            stream.CopyTo(fs);
-            return tempPath;
-        }
-
-        if (source.IsFile)
-            return source.LocalPath;
-
-        return source.ToString();
-    }
-
-    private static async Task<Process?> StartAudioAsync(string inputPath)
-    {
-        // 1) Best case: ffplay available (ships with some ffmpeg bundles)
-        var ffplay = TryGetFfplayPath();
-        if (ffplay is not null)
-        {
-            return StartProcess(ffplay, $"-nodisp -autoexit -loglevel quiet \"{inputPath}\"");
-        }
-
-        // 2) Linux fallback: extract audio to wav using ffmpeg binary, then play via paplay/aplay
+        // Check for system ffmpeg first (common on linux/vm)
         if (OperatingSystem.IsLinux())
         {
-            try
+            if (File.Exists("/usr/bin/ffmpeg"))
             {
-                var wav = Path.Combine(Path.GetTempPath(), "metallink_intro_audio.wav");
-                await ExtractAudioWavWithFfmpegAsync(inputPath, wav);
-
-                var paplay = "/usr/bin/paplay";
-                if (File.Exists(paplay))
-                    return StartProcess(paplay, $"\"{wav}\"");
-
-                var aplay = "/usr/bin/aplay";
-                if (File.Exists(aplay))
-                    return StartProcess(aplay, $"-q \"{wav}\"");
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine("[WARN] Intro audio fallback failed: " + ex);
-            }
-        }
-
-        return null;
-    }
-
-    private static string? TryGetFfplayPath()
-    {
-        try
-        {
-            var exeDir = FFmpeg.ExecutablesPath;
-            if (string.IsNullOrWhiteSpace(exeDir))
-                return null;
-
-            var ffplay = Path.Combine(exeDir, "ffplay");
-            if (OperatingSystem.IsWindows()) ffplay += ".exe";
-            return File.Exists(ffplay) ? ffplay : null;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private static Process? StartProcess(string fileName, string args)
-    {
-        try
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = fileName,
-                Arguments = args,
-                UseShellExecute = false,
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true
-            };
-            return Process.Start(psi);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private static async Task ExtractAudioWavWithFfmpegAsync(string inputPath, string wavPath)
-    {
-        // Always extract fresh audio for this session to avoid stale cached files
-        // Delete any existing cache file
-        try
-        {
-            if (File.Exists(wavPath))
-                File.Delete(wavPath);
-        }
-        catch
-        {
-            // If we can't delete it, just continue
-        }
-
-        var exeDir = FFmpeg.ExecutablesPath;
-        if (string.IsNullOrWhiteSpace(exeDir))
-            throw new InvalidOperationException("FFmpeg executables path is not set.");
-
-        var ffmpeg = Path.Combine(exeDir, "ffmpeg");
-        if (OperatingSystem.IsWindows()) ffmpeg += ".exe";
-        if (!File.Exists(ffmpeg))
-            throw new FileNotFoundException("ffmpeg not found", ffmpeg);
-
-        // Extract audio track to wav using ProcessStartInfo
-        // Use -af volume=0.7 to set intro audio to 70%
-        var args = $"-y -i \"{inputPath}\" -vn -acodec pcm_s16le -ar 44100 -ac 2 -af volume=0.7 \"{wavPath}\"";
-        var psi = new ProcessStartInfo
-        {
-            FileName = ffmpeg,
-            Arguments = args,
-            UseShellExecute = false,
-            RedirectStandardError = true,
-            RedirectStandardOutput = true,
-            CreateNoWindow = true
-        };
-
-        using var process = Process.Start(psi);
-        if (process == null)
-            throw new InvalidOperationException("Failed to start ffmpeg for audio extraction.");
-
-        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-        try
-        {
-            await process.WaitForExitAsync(cts.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            try { if (!process.HasExited) process.Kill(true); } catch { }
-            throw new TimeoutException("ffmpeg audio extraction timed out.");
-        }
-
-        if (process.ExitCode != 0)
-        {
-            var err = await process.StandardError.ReadToEndAsync();
-            throw new InvalidOperationException($"ffmpeg audio extraction failed with code {process.ExitCode}: {err}");
-        }
-        
-        // Ensure file is fully written to disk and accessible before returning.
-        // This is critical: we must wait for the file to be completely written
-        // and not locked by any processes before attempting playback.
-        await EnsureAudioFileAccessibleAsync(wavPath);
-    }
-
-    private static async Task EnsureAudioFileAccessibleAsync(string wavPath)
-    {
-        const int maxRetries = 100;
-        const int retryDelayMs = 50;
-
-        for (var attempt = 0; attempt < maxRetries; attempt++)
-        {
-            if (!File.Exists(wavPath))
-            {
-                await Task.Delay(retryDelayMs);
-                continue;
-            }
-
-            try
-            {
-                // Try to open the file to verify it's accessible and fully written
-                // We use FileAccess.Read and FileShare.Read to check if the file is unlocked
-                using var fs = new FileStream(wavPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                var fileSize = fs.Length;
-                
-                // Basic sanity check: WAV files should be at least a few KB
-                if (fileSize > 1024)
-                {
-                    // File is accessible and has meaningful content
-                    return;
-                }
-            }
-            catch (IOException)
-            {
-                // File still locked or inaccessible, retry
-                await Task.Delay(retryDelayMs);
-                continue;
-            }
-
-            await Task.Delay(retryDelayMs);
-        }
-
-        // If we get here, check one more time - the file should exist if ffmpeg succeeded
-        if (!File.Exists(wavPath))
-        {
-            throw new FileNotFoundException("Audio extraction produced no output file", wavPath);
-        }
-
-        // File exists but we couldn't verify it's fully written - wait a bit more and proceed
-        // This is a fallback to ensure we don't fail when the file is actually fine
-        await Task.Delay(TimeSpan.FromMilliseconds(200));
-    }
-
-    private static async Task EnsureFfmpegReadyAsync()
-    {
-        // Try to use system FFmpeg first
-        if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
-        {
-            var systemFfmpeg = OperatingSystem.IsLinux() ? "/usr/bin/ffmpeg" : "/usr/local/bin/ffmpeg";
-            if (File.Exists(systemFfmpeg))
-            {
-                FFmpeg.SetExecutablesPath(Path.GetDirectoryName(systemFfmpeg) ?? "/usr/bin");
+                FFmpeg.SetExecutablesPath("/usr/bin");
                 return;
             }
         }
 
-        // Fallback: Download ffmpeg binaries on first run.
-        var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache", "metallink_ffmpeg");
+        var dir = OperatingSystem.IsWindows() 
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetalLink", "ffmpeg")
+            : Path.Combine(Path.GetTempPath(), "metallink_ffmpeg");
+        
         Directory.CreateDirectory(dir);
         FFmpeg.SetExecutablesPath(dir);
-
-        // If ffmpeg already present, skip download.
+        
         var ffmpeg = Path.Combine(dir, OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg");
-        if (File.Exists(ffmpeg))
-            return;
+        if (!File.Exists(ffmpeg)) 
+        {
+            Console.WriteLine($"[INFO] Intro: Downloading FFmpeg to {dir}...");
+            await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official, dir);
+        }
+    }
 
-        await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official, dir);
+    public void OnPointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        Console.WriteLine("[INFO] Intro: Skip via click.");
+        _playCts?.Cancel();
+    }
+
+    public void OnKeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+    {
+        if (e.Key == Avalonia.Input.Key.Escape || e.Key == Avalonia.Input.Key.Enter || e.Key == Avalonia.Input.Key.Space)
+        {
+            Console.WriteLine($"[INFO] Intro: Skip via {e.Key}.");
+            _playCts?.Cancel();
+        }
     }
 }

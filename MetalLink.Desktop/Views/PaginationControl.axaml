@@ -43,8 +43,14 @@
         <ComboBox
             ItemsSource="{Binding PageSizeOptions}"
             SelectedItem="{Binding PageSize}"
-            Width="60"
-            FontSize="11" />
+            Width="80"
+            FontSize="11">
+          <ComboBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
         <TextBlock Text="per page" Foreground="#c0c4cf" VerticalAlignment="Center" />
       </StackPanel>
     </Border>

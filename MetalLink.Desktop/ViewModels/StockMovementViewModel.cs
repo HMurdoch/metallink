@@ -21,16 +21,30 @@ public sealed class StockMovementViewModel : ViewModelBase
     private bool _isFilterExpanded = true;
     public bool IsFilterExpanded { get => _isFilterExpanded; set => SetProperty(ref _isFilterExpanded, value); }
 
-    private bool _isChartExpanded = false;
+    private bool _isChartExpanded = true;
     public bool IsChartExpanded { get => _isChartExpanded; set => SetProperty(ref _isChartExpanded, value); }
 
-    private bool _isResultsExpanded = false;
+    private bool _isResultsExpanded = true;
     public bool IsResultsExpanded { get => _isResultsExpanded; set => SetProperty(ref _isResultsExpanded, value); }
 
     private bool _suppressFilterSync;
     private readonly ApiClient _api;
 
     public ObservableCollection<string> ProductLetterFilters { get; } = new();
+    public ObservableCollection<MetalLink.Shared.Products.ProductGroupDto> ProductGroups { get; } = new();
+
+    private MetalLink.Shared.Products.ProductGroupDto? _selectedProductGroup;
+    public MetalLink.Shared.Products.ProductGroupDto? SelectedProductGroup
+    {
+        get => _selectedProductGroup;
+        set
+        {
+            if (SetProperty(ref _selectedProductGroup, value))
+            {
+                _ = RefreshAsync();
+            }
+        }
+    }
 
     private string _productSearchText = string.Empty;
     public string ProductSearchText
@@ -359,8 +373,7 @@ public sealed class StockMovementViewModel : ViewModelBase
     {
         _api = api;
 
-        ProductLetterFilters.Add("ALL");
-        for (var c = 'A'; c <= 'Z'; c++) ProductLetterFilters.Add(c.ToString());
+        _ = InitializeAsync();
 
         Pagination.PageSize = 20;
         Pagination.PageChanged += (_, __) =>
@@ -384,6 +397,7 @@ public sealed class StockMovementViewModel : ViewModelBase
         {
             SelectedProduct = null;
             SelectedProductRow = null;
+            SelectedProductGroup = ProductGroups.FirstOrDefault(g => g.ProductGroupId == 0);
             ProductSearchText = string.Empty;
             SelectedProductLetter = "ALL";
         });
@@ -393,8 +407,68 @@ public sealed class StockMovementViewModel : ViewModelBase
             SelectedProductRow = null;
             _ = RefreshSeriesAsync();
         });
+    }
 
-        _ = RefreshAsync();
+    private async Task InitializeAsync()
+    {
+        await LoadProductGroupsAsync();
+        await LoadProductLettersAsync();
+
+        if (SelectedProductGroup == null && ProductGroups.Count > 0)
+        {
+            SelectedProductGroup = ProductGroups[0];
+        }
+
+        await RefreshAsync();
+    }
+
+    private async Task LoadProductGroupsAsync()
+    {
+        try
+        {
+            var groups = await _api.GetAsync<List<MetalLink.Shared.Products.ProductGroupDto>>("api/products/groups") ?? new List<MetalLink.Shared.Products.ProductGroupDto>();
+            ProductGroups.Clear();
+            var allGroup = new MetalLink.Shared.Products.ProductGroupDto { ProductGroupId = 0, ProductGroupName = "All" };
+            ProductGroups.Add(allGroup);
+            foreach (var g in groups) ProductGroups.Add(g);
+            
+            _selectedProductGroup = allGroup;
+            OnPropertyChanged(nameof(SelectedProductGroup));
+        }
+        catch { /* handle error */ }
+    }
+
+    private async Task LoadProductLettersAsync()
+    {
+        try
+        {
+            // Requirement: Only include first letters for Products we have in the DB that are starred
+            var result = await _api.GetAsync<List<StockLevelLookupDto>>("api/stock-levels/lookup?take=1000&includeNonStarred=false") ?? new List<StockLevelLookupDto>();
+            
+            ProductLetterFilters.Clear();
+            ProductLetterFilters.Add("ALL");
+
+            var letters = result
+                .Where(p => !string.IsNullOrEmpty(p.ProductName))
+                .Select(p => char.ToUpperInvariant(p.ProductName[0]))
+                .Distinct()
+                .OrderBy(c => c);
+
+            foreach (var c in letters)
+            {
+                ProductLetterFilters.Add(c.ToString());
+            }
+            
+            SelectedProductLetter = "ALL";
+        }
+        catch
+        {
+            // Fallback
+            ProductLetterFilters.Clear();
+            ProductLetterFilters.Add("ALL");
+            for (var c = 'A'; c <= 'Z'; c++) ProductLetterFilters.Add(c.ToString());
+            SelectedProductLetter = "ALL";
+        }
     }
 
     private void ApplyPaging()
@@ -418,11 +492,15 @@ public sealed class StockMovementViewModel : ViewModelBase
         {
             var term = string.IsNullOrWhiteSpace(ProductSearchText) ? null : ProductSearchText.Trim();
             var letter = string.IsNullOrWhiteSpace(SelectedProductLetter) ? null : SelectedProductLetter.Trim();
+            var groupId = SelectedProductGroup?.ProductGroupId ?? 0;
 
             // Reuse stock-level lookup as product search source.
-            var url = $"api/stock-levels/lookup?take=500";
+            // Rule: only starred products (showNonStarred = false)
+            var url = $"api/stock-levels/lookup?take=500&includeNonStarred=false";
             if (!string.IsNullOrWhiteSpace(term))
                 url += $"&term={Uri.EscapeDataString(term)}";
+            if (groupId > 0)
+                url += $"&groupId={groupId}";
             if (!string.IsNullOrWhiteSpace(letter) && letter != "ALL")
                 url += $"&letter={Uri.EscapeDataString(letter)}";
 
@@ -435,13 +513,9 @@ public sealed class StockMovementViewModel : ViewModelBase
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 Console.WriteLine($"[DEBUG] StockMovementViewModel: Dispatching UI update. Results count: {results.Length}");
-                // Auto-expand results and chart on refresh IF we have data or filters
-                if (results.Length > 0 || !string.IsNullOrWhiteSpace(term) || (!string.IsNullOrWhiteSpace(letter) && letter != "ALL"))
-                {
-                    IsChartExpanded = true;
-                    IsResultsExpanded = true;
-                    Console.WriteLine($"[DEBUG] StockMovementViewModel: Expanded Chart and Results. IsChartExpanded={IsChartExpanded}, IsResultsExpanded={IsResultsExpanded}");
-                }
+                // Ensure results and chart are expanded on load/refresh
+                IsChartExpanded = true;
+                IsResultsExpanded = true;
 
                 ProductSuggestions = new ObservableCollection<StockLevelLookupDto>(results);
                 Console.WriteLine($"[DEBUG] StockMovementViewModel: Updated ProductSuggestions with {ProductSuggestions.Count} items.");

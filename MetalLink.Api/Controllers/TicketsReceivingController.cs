@@ -375,6 +375,7 @@ public class TicketsReceivingController : ControllerBase
                 ProductId = l.ProductId,
                 ProductCode = l.Product?.IsriProductCode ?? "",
                 ProductName = l.Product?.StarredProductAlias ?? l.Product?.IsriProductName ?? "",
+                ProductGroupName = l.Product?.ProductGroup?.ProductGroupName,
                 FirstWeightKg = l.FirstWeightKg,
                 SecondWeightKg = l.SecondWeightKg,
                 NetWeightKg = l.NetWeightKg,
@@ -561,6 +562,7 @@ public class TicketsReceivingController : ControllerBase
             SiteName = ticket.Customer?.Site?.SiteName,
             AccountNumber = accountNumber,
             NetWeightKg = ticket.NetWeightKg,
+            ProductGroupName = ticket.Lines?.FirstOrDefault()?.Product?.ProductGroup?.ProductGroupName,
             TicketStatus = ticket.TicketState,
             CreatedTime = ticket.CreatedTime
         };

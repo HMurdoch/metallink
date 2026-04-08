@@ -139,7 +139,7 @@
         
         <!-- Scrollable Content -->
         <ScrollViewer x:Name="TicketsScrollViewer" Padding="16,8,16,16">
-          <StackPanel Spacing="16">
+          <StackPanel Spacing="16" Margin="0,0,0,100">
 
         <!-- SEARCH TICKETS -->
         <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
@@ -251,6 +251,20 @@
                 </ComboBox>
               </StackPanel>
 
+              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2">
+                <TextBlock Text="Product Group" Foreground="#c0c4cf" />
+                <ComboBox
+                  ItemsSource="{Binding ProductGroups}"
+                  SelectedItem="{Binding SelectedSearchProductGroup}"
+                  HorizontalAlignment="Stretch">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding ProductGroupName}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+
             </Grid>
 
             <!-- Search buttons -->
@@ -309,6 +323,7 @@
                 <DataGridTextColumn Header="Account #" Binding="{Binding AccountNumber}" Width="100" IsReadOnly="True" />
                 <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" Width="180" IsReadOnly="True" />
                 <DataGridTextColumn Header="Site" Binding="{Binding SiteName}" Width="180" IsReadOnly="True" />
+                <DataGridTextColumn Header="Group" Binding="{Binding ProductGroupName}" Width="150" IsReadOnly="True" />
                 <DataGridTextColumn Header="Net Kg" Binding="{Binding NetWeightKg, StringFormat='{}{0:N2}'}"
                                     Width="100" IsReadOnly="True" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                 <DataGridTextColumn Header="Created"
@@ -494,6 +509,7 @@
                 HeadersVisibility="Column"
                 MaxHeight="250">
                 <DataGrid.Columns>
+                  <DataGridTextColumn Header="Group" Binding="{Binding ProductGroupName}" Width="150" />
                   <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="300" />
                   <DataGridTextColumn Header="Weight (kg)" Binding="{Binding NetWeightKg, StringFormat='{}{0:N2}'}"
                                       Width="140" />
@@ -784,6 +800,19 @@
 
               <!-- Row 0: Product Search / Product Letter + Dropdown -->
               <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Product Group" Foreground="#c0c4cf" />
+                <ComboBox
+                  ItemsSource="{Binding ProductGroups}"
+                  SelectedItem="{Binding SelectedAddLineProductGroup}"
+                  HorizontalAlignment="Stretch">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding ProductGroupName}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+              <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="Product Search" Foreground="#c0c4cf" />
                 <TextBox Text="{Binding ReceivingProductSearchText, UpdateSourceTrigger=PropertyChanged}"
                          Watermark="Search products..." />

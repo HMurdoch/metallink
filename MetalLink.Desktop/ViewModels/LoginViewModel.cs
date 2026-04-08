@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using MetalLink.Desktop.Services;
@@ -115,48 +116,79 @@ public class LoginViewModel : INotifyPropertyChanged
                         bounds.Y + (bounds.Height - initialH) / 2);
                 }
 
-                desktop.MainWindow = intro;
+                // 1) Show Intro Window
+                intro.Topmost = true; // Ensure it's on top of everything
                 intro.Show();
 
-                // Close login window immediately after intro shows
-                loginWindow?.Close();
-
-                // Check "playintrovideo" setting (case-insensitive)
+                // 2) Play Intro Sequence in parallel with preparing MainWindow
                 var introSetting = _app.AuthState.OperatorSettings.FirstOrDefault(s => s.SettingName.Equals("playintrovideo", StringComparison.OrdinalIgnoreCase));
                 bool playVideo = introSetting == null || introSetting.SettingOptionValue.Equals("true", StringComparison.OrdinalIgnoreCase);
 
-                // Play intro sequence
-                await intro.PlayAsync(playVideo);
+                // Start playing intro
+                Console.WriteLine("[DEBUG] Starting intro playback task...");
+                var introTask = intro.PlayAsync(playVideo);
 
-                // Now create and show the main window
+                // Prepare MainWindow in the background (don't call Show yet)
                 var mainWindow = new MainWindow
                 {
                     DataContext = new MainWindowViewModel(_app)
                 };
-
                 var vm = (MainWindowViewModel)mainWindow.DataContext;
                 _ = vm.InitializeLookupsAsync();
 
-                // Set MainWindow initial size to 1920x950
+                // Initial size/position for MainWindow
                 mainWindow.Width = 1920;
                 mainWindow.Height = 950;
-
-                // Position on the same monitor as intro/login
-                if (intro.Screens.Primary != null)
+                
+                if (loginWindow != null)
                 {
-                    var screen = intro.Screens.ScreenFromWindow(intro) ?? intro.Screens.Primary;
-                    var bounds = screen.WorkingArea;
-                    var centerX = bounds.X + (bounds.Width - 1920) / 2;
-                    var centerY = bounds.Y + (bounds.Height - 950) / 2;
-                    mainWindow.Position = new Avalonia.PixelPoint(centerX, centerY);
+                    var screen = loginWindow.Screens.ScreenFromWindow(loginWindow) ?? loginWindow.Screens.Primary;
+                    if (screen != null)
+                    {
+                        var bounds = screen.WorkingArea;
+                        mainWindow.Position = new PixelPoint(
+                            bounds.X + (bounds.Width - 1920) / 2,
+                            bounds.Y + (bounds.Height - 950) / 2);
+                    }
                 }
 
-                desktop.MainWindow = mainWindow;
-                mainWindow.Show();
-                mainWindow.WindowState = Avalonia.Controls.WindowState.Normal;
+                // Close login window
+                loginWindow?.Close();
 
-                // Close intro after main window is shown
-                intro.Close();
+                // Await intro with a global timeout as a failsafe
+                var timeoutTask = Task.Delay(15000); // 15s max for intro failsafe
+                var completedTask = await Task.WhenAny(introTask, timeoutTask);
+                
+                if (completedTask == timeoutTask)
+                {
+                    Console.WriteLine("[WARN] Intro sequence timed out at 15s. Forcing transition to MainWindow.");
+                }
+                else
+                {
+                    Console.WriteLine("[DEBUG] Intro sequence completed or was skipped.");
+                }
+
+                // 3) Switch to Main Window
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    Console.WriteLine("[DEBUG] Switching to MainWindow...");
+                    
+                    // Crucial: Set the new MainWindow BEFORE showing it
+                    desktop.MainWindow = mainWindow;
+                    
+                    Console.WriteLine("[DEBUG] Calling mainWindow.Show()...");
+                    mainWindow.Show();
+                    
+                    Console.WriteLine("[DEBUG] Setting WindowState to Normal...");
+                    mainWindow.WindowState = WindowState.Normal;
+                    
+                    Console.WriteLine("[DEBUG] Calling mainWindow.Activate()...");
+                    mainWindow.Activate();
+                    
+                    // 4) Cleanup Intro
+                    Console.WriteLine("[DEBUG] Closing IntroWindow.");
+                    intro.Close();
+                });
             }
         }
         catch (HttpRequestException ex)

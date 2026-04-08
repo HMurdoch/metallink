@@ -17,7 +17,9 @@ The following heading images are currently in use:
 | Customers | `customers_heading.png` | `MetalLink.Desktop/Assets/` | Customers view |
 | Buyers | `buyers_heading.png` | `MetalLink.Desktop/Assets/` | Buyers view |
 | Companies & Sites | `companies_and_sites_heading.png` | `MetalLink.Desktop/Assets/` | Companies & Sites view |
-| Products & Prices | `products_and_prices_heading.png` | `MetalLink.Desktop/Assets/` | Products & Prices view |
+| Products | `products_heading.png` | `MetalLink.Desktop/Assets/` | Products view |
+| Price Lists | `price_lists_heading.png` | `MetalLink.Desktop/Assets/` | Price Lists view |
+| Prices | `prices_heading.png` | `MetalLink.Desktop/Assets/` | Prices view |
 | Receiving | `receiving_heading.png` | `MetalLink.Desktop/Assets/` | Tickets Receiving view |
 | Sending | `sending_heading.png` | `MetalLink.Desktop/Assets/` | Tickets Sending view |
 | Stock Levels | `stock_levels_heading.png` | `MetalLink.Desktop/Assets/` | Stock Levels view |
@@ -234,7 +236,9 @@ if __name__ == "__main__":
         "Customers",
         "Buyers",
         "Companies & Sites",
-        "Products & Prices",
+        "Products",
+        "Price Lists",
+        "Prices",
         "Receiving",
         "Sending",
         "Stock Levels",

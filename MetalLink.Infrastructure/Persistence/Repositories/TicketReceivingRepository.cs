@@ -56,6 +56,7 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         string? idNumber = null,
         long? accountNumber = null,
         int? productId = null,
+        int? productGroupId = null,
         string? ticketType = null,
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
@@ -102,6 +103,12 @@ public class TicketReceivingRepository : ITicketReceivingRepository
 
         if (accountNumber.HasValue)
             query = query.Where(t => t.Customer != null && t.Customer.AccountNumber == accountNumber.Value);
+
+        if (productId.HasValue)
+            query = query.Where(t => t.Lines.Any(l => l.ProductId == productId.Value));
+
+        if (productGroupId.HasValue)
+            query = query.Where(t => t.Lines.Any(l => l.Product != null && l.Product.ProductGroupId == productGroupId.Value));
 
         if (!string.IsNullOrWhiteSpace(ticketType))
             query = query.Where(t => t.TicketType != null && t.TicketType.TicketTypeName.ToLower() == ticketType.ToLower());

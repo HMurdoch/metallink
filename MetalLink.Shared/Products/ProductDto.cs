@@ -9,6 +9,7 @@ public class ProductDto
     public string IsriProductCode { get; set; } = string.Empty;
     public string IsriProductName { get; set; } = string.Empty;
     public string? IsriProductDescription { get; set; }
+    public string? QKey { get; set; }
     public string? IsriProductUrl { get; set; }
     public bool IsriProduct { get; set; }
     public int ProductGroupId { get; set; }

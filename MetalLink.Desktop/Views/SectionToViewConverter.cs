@@ -10,9 +10,15 @@ public class SectionToViewConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
     {
-        if (parameter?.ToString() == "arrow" && value is bool isExpanded)
+        var paramStr = parameter?.ToString();
+        if (paramStr == "arrow" && value is bool isExpanded)
         {
             return isExpanded ? "▼" : "▶";
+        }
+        
+        if (paramStr == "entity" && value is char flag)
+        {
+            return flag == 'C' ? "Customer" : "Buyer";
         }
 
         if (value is not EnumMainSection section) return null;

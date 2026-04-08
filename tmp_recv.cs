@@ -29,7 +29,7 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
     private readonly CompanyAndSiteService _companyAndSiteService;
 
     private readonly IScaleService _scaleService;
-    private readonly ProductsAndPricesService _productsAndPricesService;
+    private readonly ProductsService _productsAndPricesService;
 
     // --- UI Toggles ---
     private bool _receivingIsSearchCriteriaExpanded = true;
@@ -47,7 +47,7 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
         TicketReceivingService ticketReceivingService,
         CompanyAndSiteService companyAndSiteService,
         IScaleService scaleService,
-        ProductsAndPricesService productsAndPricesService)
+        ProductsService productsAndPricesService)
     {
         _ticketReceivingService = ticketReceivingService;
         _companyAndSiteService = companyAndSiteService;

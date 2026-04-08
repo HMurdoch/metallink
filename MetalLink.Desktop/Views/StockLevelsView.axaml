@@ -32,22 +32,35 @@
                   <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" 
-                           Text="{Binding IsFilterExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter=\'arrow\'}" 
+                           Text="{Binding StockLevels.IsFilterExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
                            Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="Product Filters" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
               </Grid>
-              <Grid ColumnDefinitions="*,*" ColumnSpacing="12" IsVisible="{Binding StockLevels.IsFilterExpanded}">
-                <TextBox Grid.Column="0"
-                         Watermark="Product Search"
-                         Text="{Binding StockLevels.ProductSearchText, UpdateSourceTrigger=PropertyChanged}" />
+              <Grid ColumnDefinitions="*,*,*,Auto" ColumnSpacing="12" IsVisible="{Binding StockLevels.IsFilterExpanded}">
+                <StackPanel Grid.Column="0" Spacing="4">
+                  <TextBlock Text="Product Group" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                  <ComboBox ItemsSource="{Binding StockLevels.ProductGroups}" SelectedItem="{Binding StockLevels.SelectedProductGroup}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding ProductGroupName}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
 
-                <Grid Grid.Column="1" ColumnDefinitions="120,*,Auto" ColumnSpacing="10">
-                  <ComboBox Grid.Column="0"
-                            ItemsSource="{Binding StockLevels.ProductLetterFilters}"
+                <StackPanel Grid.Column="1" Spacing="4">
+                  <TextBlock Text="Product Search" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                  <TextBox Watermark="Search name or code..."
+                           Text="{Binding StockLevels.ProductSearchText, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Spacing="4">
+                  <TextBlock Text="First Letter" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                  <ComboBox ItemsSource="{Binding StockLevels.ProductLetterFilters}"
                             SelectedItem="{Binding StockLevels.SelectedProductLetter}" />
+                </StackPanel>
 
-                  <Button Grid.Column="1" Content="Clear" Command="{Binding StockLevels.ClearProductCommand}" />
-                </Grid>
+                <Button Grid.Column="3" Content="Clear" Command="{Binding StockLevels.ClearProductCommand}" VerticalAlignment="Bottom" />
               </Grid>
             </StackPanel>
           </Border>

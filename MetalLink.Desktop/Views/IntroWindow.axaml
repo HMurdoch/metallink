@@ -4,9 +4,12 @@
         x:Class="MetalLink.Desktop.Views.IntroWindow"
         SystemDecorations="None"
         CanResize="False"
-        Background="Black">
+        Background="Black"
+        Topmost="True"
+        KeyDown="OnKeyDown">
 
-  <Grid Background="Black" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+  <Grid Background="Black" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
+        PointerPressed="OnPointerPressed">
 
     <!-- Portrait video, no decorative border; window itself is borderless -->
     <controls:FfmpegLoopingVideoView x:Name="IntroVideo"

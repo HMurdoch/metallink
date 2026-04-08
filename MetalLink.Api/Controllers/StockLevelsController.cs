@@ -25,6 +25,8 @@ public sealed class StockLevelsController : ControllerBase
     public async Task<ActionResult<StockLevelLookupDto[]>> Lookup(
         [FromQuery] string? term = null,
         [FromQuery] string? letter = null,
+        [FromQuery] int? groupId = null,
+        [FromQuery] bool includeNonStarred = false,
         [FromQuery] int take = 50,
         CancellationToken ct = default)
     {
@@ -36,27 +38,36 @@ public sealed class StockLevelsController : ControllerBase
         if (letter == "ALL") letter = null;
 
         // We use raw SQL because stock_levels is not mapped in the EF model.
-        // Only active products; stock_levels is active-only. Missing stock_levels rows => treat as 0.
         var like = term is null ? null : $"%{term}%";
 
-        FormattableString sql = $@"
+        // Using explicit parameters to avoid "could not determine data type" errors with nulls in PostgreSQL
+        var pIncludeNonStarred = new Npgsql.NpgsqlParameter("includeNonStarred", includeNonStarred);
+        var pGroupId = new Npgsql.NpgsqlParameter("groupId", (object?)groupId ?? DBNull.Value);
+        var pLike = new Npgsql.NpgsqlParameter("like", (object?)like ?? DBNull.Value);
+        var pLetter = new Npgsql.NpgsqlParameter("letter", (object?)letter ?? DBNull.Value);
+        var pTake = new Npgsql.NpgsqlParameter("take", take);
+
+        var sql = @"
             SELECT
                 p.product_id        AS ""ProductId"",
                 p.isri_product_code AS ""ProductCode"",
+                p.q_key             AS ""QKey"",
                 COALESCE(p.starred_product_alias, p.isri_product_name) AS ""ProductName"",
                 COALESCE(sl.weight_kg, 0) AS ""WeightKg""
             FROM metal_link.products p
             LEFT JOIN metal_link.stock_levels sl
                 ON sl.product_id = p.product_id AND sl.is_active = true
             WHERE p.is_active = true
-              AND ({like}::text IS NULL OR (p.isri_product_name ILIKE {like} OR p.isri_product_code ILIKE {like} OR p.starred_product_alias ILIKE {like}))
-              AND ({letter}::text IS NULL OR LEFT(COALESCE(p.starred_product_alias, p.isri_product_name), 1) = {letter})
+              AND (@includeNonStarred::boolean = true OR p.starred_product = true)
+              AND (@groupId::int IS NULL OR @groupId::int = 0 OR p.product_group_id = @groupId::int)
+              AND (@like::text IS NULL OR (p.isri_product_name ILIKE @like::text OR p.isri_product_code ILIKE @like::text OR p.starred_product_alias ILIKE @like::text OR p.q_key ILIKE @like::text))
+              AND (@letter::text IS NULL OR LEFT(COALESCE(p.starred_product_alias, p.isri_product_name), 1) = @letter::text)
             ORDER BY ""ProductName""
-            LIMIT {take};
+            LIMIT @take::int;
         ";
 
         var result = await _db.Database
-            .SqlQuery<StockLevelLookupDto>(sql)
+            .SqlQueryRaw<StockLevelLookupDto>(sql, pIncludeNonStarred, pGroupId, pLike, pLetter, pTake)
             .ToArrayAsync(ct);
 
         Console.WriteLine($"[DEBUG] StockLevelsController.Lookup: Found {result.Length} products for term='{term}', letter='{letter}'.");

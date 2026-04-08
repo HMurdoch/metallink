@@ -634,6 +634,7 @@ public class TicketsSendingController : ControllerBase
             SiteName = ticket.Buyer?.Site?.SiteName,
             AccountNumber = accountNumber,
             NetWeightKg = ticket.NetWeightKg,
+            ProductGroupName = ticket.Lines?.FirstOrDefault()?.Product?.ProductGroup?.ProductGroupName,
             TicketStatus = ticket.TicketState,
             CreatedTime = ticket.CreatedTime
         };

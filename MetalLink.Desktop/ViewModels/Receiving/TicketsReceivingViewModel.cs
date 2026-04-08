@@ -51,9 +51,7 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
         SaveAndResetReceivingTicketCommand = new AsyncCommand(SaveAndResetReceivingTicketAsync);
         FinalizeReceivingTicketCommand = new AsyncCommand(FinalizeReceivingTicketAsync);
 
-        ProductLetterFilters.Add("ALL");
-        for (var c = 'A'; c <= 'Z'; c++) ProductLetterFilters.Add(c.ToString());
-        SelectedReceivingProductLetter = "ALL";
+        _ = LoadProductLettersAsync();
 
         // Keep totals in sync when the selected ticket's line collection changes
         SelectedReceivingTicketLines.CollectionChanged += (_, __) =>
@@ -194,6 +192,24 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
     public async Task InitializeAsync()
     {
         await RefreshCompaniesAsync();
+        await LoadProductGroupsAsync();
+    }
+
+    private async Task LoadProductGroupsAsync()
+    {
+        try
+        {
+            var groups = await _productsAndPricesService.GetProductGroupsAsync();
+            ProductGroups.Clear();
+            ProductGroups.Add(new ProductGroupDto { ProductGroupId = 0, ProductGroupName = "ALL GROUPS" });
+            foreach (var g in groups) ProductGroups.Add(g);
+            SelectedSearchProductGroup = ProductGroups[0];
+            SelectedAddLineProductGroup = ProductGroups[0];
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Failed to load product groups: {ex.Message}";
+        }
     }
 
     public void ResetPlatformWeight()
@@ -356,6 +372,27 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
         set { _selectedSearchReceivingTicketTypeOption = value; OnPropertyChanged(); }
     }
 
+    public ObservableCollection<ProductGroupDto> ProductGroups { get; } = new();
+
+    private ProductGroupDto? _selectedSearchProductGroup;
+    public ProductGroupDto? SelectedSearchProductGroup
+    {
+        get => _selectedSearchProductGroup;
+        set { _selectedSearchProductGroup = value; OnPropertyChanged(); }
+    }
+
+    private ProductGroupDto? _selectedAddLineProductGroup;
+    public ProductGroupDto? SelectedAddLineProductGroup
+    {
+        get => _selectedAddLineProductGroup;
+        set
+        {
+            _selectedAddLineProductGroup = value;
+            OnPropertyChanged();
+            _ = RefreshReceivingProductSuggestionsAsync();
+        }
+    }
+
     public ICommand SearchReceivingTicketsCommand { get; }
     public ICommand ClearReceivingTicketSearchCommand { get; }
 
@@ -376,6 +413,7 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
                 TicketType = ticketType,
                 CompanyId = SelectedSearchCompany?.CompanyId,
                 SiteId = SelectedSearchSite?.SiteId,
+                ProductGroupId = SelectedSearchProductGroup != null && SelectedSearchProductGroup.ProductGroupId > 0 ? SelectedSearchProductGroup.ProductGroupId : (int?)null,
                 CustomerId = int.TryParse(SearchReceivingTicketCustomerIdText, out var cid) ? cid : null,
                 FirstName = string.IsNullOrWhiteSpace(SearchReceivingTicketFirstNameText) ? null : SearchReceivingTicketFirstNameText.Trim(),
                 LastName = string.IsNullOrWhiteSpace(SearchReceivingTicketLastNameText) ? null : SearchReceivingTicketLastNameText.Trim(),
@@ -1066,6 +1104,39 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
         }
     }
 
+    private async Task LoadProductLettersAsync()
+    {
+        try
+        {
+            // Requirement: Only include first letters for Products we have in the DB that are starred
+            var result = await _productsAndPricesService.LookupProductsAsync(null, 0, "ALL", false, 0, 1000); // includeNonStarred=false is default now
+            
+            ProductLetterFilters.Clear();
+            ProductLetterFilters.Add("ALL");
+
+            var letters = result.Items
+                .Where(p => !string.IsNullOrEmpty(p.ProductName))
+                .Select(p => char.ToUpperInvariant(p.ProductName[0]))
+                .Distinct()
+                .OrderBy(c => c);
+
+            foreach (var c in letters)
+            {
+                ProductLetterFilters.Add(c.ToString());
+            }
+            
+            SelectedReceivingProductLetter = "ALL";
+        }
+        catch
+        {
+            // Fallback
+            ProductLetterFilters.Clear();
+            ProductLetterFilters.Add("ALL");
+            for (var c = 'A'; c <= 'Z'; c++) ProductLetterFilters.Add(c.ToString());
+            SelectedReceivingProductLetter = "ALL";
+        }
+    }
+
     public ObservableCollection<string> ProductLetterFilters { get; } = new();
     public ObservableCollection<object> CompanyLetterFilters { get; } = new();
 
@@ -1138,18 +1209,22 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
         try
         {
             var term = string.IsNullOrWhiteSpace(ReceivingProductSearchText) ? null : ReceivingProductSearchText.Trim();
-            var items = await _productsAndPricesService.LookupProductsAsync(term);
+            int? groupId = SelectedAddLineProductGroup != null && SelectedAddLineProductGroup.ProductGroupId > 0 ? SelectedAddLineProductGroup.ProductGroupId : (int?)null;
+            
+            // Rule: only starred products (includeNonStarred = false)
+            var result = await _productsAndPricesService.LookupProductsAsync(term, groupId, "ALL", false, 0, 100);
+           var items = result.Items;
 
-            if (!string.IsNullOrWhiteSpace(SelectedReceivingProductLetter) && SelectedReceivingProductLetter != "ALL")
-            {
-                items = items.Where(p => p.ProductName.StartsWith(SelectedReceivingProductLetter, StringComparison.OrdinalIgnoreCase)).ToList();
-            }
+           if (!string.IsNullOrWhiteSpace(SelectedReceivingProductLetter) && SelectedReceivingProductLetter != "ALL")
+           {
+               items = items.Where(p => p.ProductName.StartsWith(SelectedReceivingProductLetter, StringComparison.OrdinalIgnoreCase)).ToList();
+           }
 
-            await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                ReceivingProductSuggestions.Clear();
-                foreach (var p in items) ReceivingProductSuggestions.Add(p);
-            });
+           await Dispatcher.UIThread.InvokeAsync(() =>
+           {
+               ReceivingProductSuggestions.Clear();
+               foreach (var p in items) ReceivingProductSuggestions.Add(p);
+           });
         }
         catch
         {

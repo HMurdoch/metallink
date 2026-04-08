@@ -27,14 +27,16 @@ public sealed class ProductsService
     /// <summary>
     /// GET api/products/lookup?term=foo
     /// </summary>
-    public async Task<IReadOnlyList<ProductLookupDto>> LookupProductsAsync(
+    public async Task<(IReadOnlyList<ProductLookupDto> Items, int TotalCount)> LookupProductsAsync(
         string? term,
         int? groupId = null,
         string? letter = null,
         bool includeNonStarred = false,
+        int skip = 0,
+        int take = 25,
         CancellationToken ct = default)
     {
-        var path = $"api/products/lookup?includeNonStarred={includeNonStarred}";
+        var path = $"api/products/lookup?includeNonStarred={includeNonStarred}&skip={skip}&take={take}";
         if (!string.IsNullOrWhiteSpace(term))
             path += $"&term={Uri.EscapeDataString(term)}";
         if (groupId.HasValue && groupId.Value > 0)
@@ -42,8 +44,14 @@ public sealed class ProductsService
         if (!string.IsNullOrWhiteSpace(letter) && letter != "ALL")
             path += $"&letter={Uri.EscapeDataString(letter)}";
 
-        var result = await _apiClient.GetAsync<ProductLookupDto[]>(path, ct);
-        return result ?? Array.Empty<ProductLookupDto>();
+        var result = await _apiClient.GetAsync<PagedResult<ProductLookupDto>>(path, ct);
+        return (result?.Items ?? Array.Empty<ProductLookupDto>(), result?.TotalCount ?? 0);
+    }
+
+    public class PagedResult<T>
+    {
+        public IReadOnlyList<T> Items { get; set; } = Array.Empty<T>();
+        public int TotalCount { get; set; }
     }
 
     public async Task<IReadOnlyList<ProductGroupDto>> GetProductGroupsAsync(CancellationToken ct = default)

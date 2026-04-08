@@ -5,19 +5,95 @@
              xmlns:vm="clr-namespace:MetalLink.Desktop.ViewModels"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="MetalLink.Desktop.Views.PricesView">
-    <Grid RowDefinitions="Auto,*">
-        <!-- Header -->
-        <Border Grid.Row="0" Background="{DynamicResource Brush.PanelBackground}" Padding="16,8">
-            <StackPanel Orientation="Horizontal" Spacing="12">
-                <PathIcon Data="{StaticResource Sell}" Width="24" Height="24" Foreground="{DynamicResource Brush.Accent}" />
-                <TextBlock Text="Prices" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
-            </StackPanel>
+  <UserControl.Styles>
+    <Style Selector="TextBox">
+      <Setter Property="BorderBrush" Value="#444a55" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="BorderBrush" Value="#444a55" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+    <Style Selector="DataGrid">
+      <Setter Property="Background" Value="{DynamicResource Brush.PanelBackground}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+      <Setter Property="GridLinesVisibility" Value="Horizontal" />
+      <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource Brush.BorderSubtle}" />
+      <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource Brush.BorderSubtle}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderSubtle}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="DataGridColumnHeader">
+      <Setter Property="Background" Value="{DynamicResource Brush.NavBackground}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*">
+    <!-- Sticky Header Panel -->
+    <Border Grid.Row="0"
+            Background="{DynamicResource Brush.PanelBackground}"
+            Padding="12,8"
+            CornerRadius="4"
+            Margin="16,16,16,8"
+            ZIndex="100">
+      <Image Source="avares://MetalLink.Desktop/Assets/prices_heading.png"
+             Height="40"
+             HorizontalAlignment="Left"
+             Stretch="Uniform" />
+    </Border>
+
+    <ScrollViewer Grid.Row="1" Padding="16,8,16,16">
+      <StackPanel Spacing="16" Margin="0,0,0,100">
+        <!-- Filter Panel -->
+        <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Product Price Search" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            <Grid ColumnDefinitions="*,*,Auto" Margin="0,8,0,0">
+              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="Product Search" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                <TextBox Watermark="Search name or code..." />
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="Price List" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                <ComboBox PlaceholderText="Select Price List">
+                  <ComboBoxItem Content="Default Price List" />
+                </ComboBox>
+              </StackPanel>
+              <Button Grid.Column="2" VerticalAlignment="Bottom" Content="Search" Classes="Accent" Width="100" />
+            </Grid>
+          </StackPanel>
         </Border>
 
-        <ScrollViewer Grid.Row="1" Padding="16">
-            <TextBlock Text="Prices implementation coming soon..." 
-                       HorizontalAlignment="Center" VerticalAlignment="Center" 
-                       FontSize="16" Opacity="0.7" />
-        </ScrollViewer>
-    </Grid>
+        <!-- Results Panel -->
+        <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Price Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            <DataGrid Margin="0,8,0,0" Height="400" IsReadOnly="True" AutoGenerateColumns="False">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Product" Width="*" />
+                <DataGridTextColumn Header="Q-Key" Binding="{Binding QKey}" Width="100" />
+                <DataGridTextColumn Header="Price A" Width="100" />
+                <DataGridTextColumn Header="Price B" Width="100" />
+                <DataGridTextColumn Header="Price C" Width="100" />
+                <DataGridCheckBoxColumn Header="Active" Width="80" />
+                <DataGridTemplateColumn Header="Actions" Width="100">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <Button Content="Update" Classes="row-action" />
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+              </DataGrid.Columns>
+            </DataGrid>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
 </UserControl>

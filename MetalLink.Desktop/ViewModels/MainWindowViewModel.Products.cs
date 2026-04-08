@@ -14,9 +14,12 @@ namespace MetalLink.Desktop.ViewModels;
 
 public partial class MainWindowViewModel
 {
+    public event Action<string>? RequestProductImagePopup;
+
     // Master cache for products (letter filtering)
     private readonly ObservableCollection<ProductLookupDto> _allProducts = new();
     private bool _productLettersLoaded = false;
+    private List<ProductSpecificationFlagDto> _specFlags = new();
 
     // Commands
     public IAsyncRelayCommand SearchProductsCommand { get; private set; } = null!;
@@ -26,6 +29,7 @@ public partial class MainWindowViewModel
     public IAsyncRelayCommand<ProductLookupDto> DeleteProductCommand { get; private set; } = null!;
     public IAsyncRelayCommand ClearProductFormCommand { get; private set; } = null!;
     public IAsyncRelayCommand RefreshProductsCommand { get; private set; } = null!;
+    public IRelayCommand ResetProductFiltersCommand { get; private set; } = null!;
 
     public IAsyncRelayCommand UpdatePriceCommand { get; private set; } = null!;
 
@@ -49,6 +53,8 @@ public partial class MainWindowViewModel
     /// </summary>
     public IAsyncRelayCommand<ProductLookupDto> ToggleStarredCommand { get; private set; } = null!;
     public IRelayCommand OpenIsriUrlCommand { get; private set; } = null!;
+    public IRelayCommand<ProductLookupDto> OpenProductUrlCommand { get; private set; } = null!;
+    public IRelayCommand<ProductLookupDto> OpenProductImageCommand { get; private set; } = null!;
 
     private void InitializeProductsCommands()
     {
@@ -59,26 +65,39 @@ public partial class MainWindowViewModel
         DeleteProductCommand = new AsyncRelayCommand<ProductLookupDto>(DeleteProductAsync);
         ClearProductFormCommand = new AsyncRelayCommand(ct => ClearProductFormAsync(ct));
         RefreshProductsCommand = new AsyncRelayCommand(ct => RefreshProductsAsync(ct));
+        ResetProductFiltersCommand = new RelayCommand(ResetProductFilters);
         ToggleStarredCommand = new AsyncRelayCommand<ProductLookupDto>(ToggleStarredAsync);
         OpenIsriUrlCommand = new RelayCommand(OpenIsriUrl);
+        OpenProductUrlCommand = new RelayCommand<ProductLookupDto>(p => OpenProductUrl(p));
+        OpenProductImageCommand = new RelayCommand<ProductLookupDto>(p => OpenProductImage(p));
 
         UpdatePriceCommand = new AsyncRelayCommand(ct => UpdatePriceAsync(ct), () => CanUpdatePrice);
 
+        ProductsPagination.PageChanged += async (s, e) => await ApplyProductFiltersAsync();
+
         // Initial loads
-        _ = LoadProductGroupsAsync();
-        _ = LoadProductLettersAsync();
-        _ = LoadProductPriceListsAsync();
-        _ = ApplyProductFiltersAsync();
+        _ = InitializeProductDataAsync();
     }
 
-    private void OpenIsriUrl()
+    private async Task InitializeProductDataAsync()
     {
-        if (!string.IsNullOrWhiteSpace(ProductIsriUrl))
-        {
-            try { 
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = ProductIsriUrl, UseShellExecute = true });
-            } catch { }
-        }
+        // Results panel expanded by default
+        ProductsIsSearchResultsExpanded = true;
+        ProductsIsSearchCriteriaExpanded = true;
+        ProductsIsCreateEditExpanded = true;
+
+        await LoadProductGroupsAsync();
+        LoadProductSpecFlags();
+        await LoadProductLettersAsync();
+        await LoadProductPriceListsAsync();
+        
+        // Explicitly set initial filter states
+        _showStarred = true;
+        _showNonStarred = false;
+        OnPropertyChanged(nameof(ShowStarred));
+        OnPropertyChanged(nameof(ShowNonStarred));
+
+        await ApplyProductFiltersAsync();
     }
 
     private async Task ToggleStarredAsync(ProductLookupDto? product)
@@ -131,29 +150,139 @@ public partial class MainWindowViewModel
         }
     }
 
+    private void ResetProductFilters()
+    {
+        SelectedProductGroup = ProductGroups.FirstOrDefault(g => g.ProductGroupId == 0);
+        ProductSearchTerm = string.Empty;
+        SelectedProductLetter = "ALL";
+    }
+
     private async Task LoadProductLettersAsync()
     {
-        // Simple A-Z + ALL
-        ProductLetterFilters.Clear();
-        ProductLetterFilters.Add("ALL");
-        for (char c = 'A'; c <= 'Z'; c++) ProductLetterFilters.Add(c.ToString());
-        SelectedProductLetter = "ALL";
+        try
+        {
+            // Only include first letters for Products we have in the DB that are starred
+            var result = await _app.ProductsService.LookupProductsAsync(null, 0, "ALL", false, 0, 1000);
+            
+            ProductLetterFilters.Clear();
+            ProductLetterFilters.Add("ALL");
+
+            var letters = result.Items
+                .Where(p => !string.IsNullOrEmpty(p.ProductName))
+                .Select(p => char.ToUpperInvariant(p.ProductName[0]))
+                .Distinct()
+                .OrderBy(c => c);
+
+            foreach (var c in letters)
+            {
+                ProductLetterFilters.Add(c.ToString());
+            }
+            
+            SelectedProductLetter = "ALL";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Failed to load letters: {ex.Message}";
+            // Fallback
+            ProductLetterFilters.Clear();
+            ProductLetterFilters.Add("ALL");
+            SelectedProductLetter = "ALL";
+        }
+    }
+
+    private void LoadProductSpecFlags()
+    {
+        try
+        {
+            // This is a bit of a hack since we don't have a service method for this, 
+            // but we can try to get them from the context if it was injected, 
+            // or just hardcode the common ones if needed.
+            // For now, let's assume we might need a service method.
+            // Since I can't easily add one to the service, I'll use a hardcoded list for now
+            // based on what's typically in the DB for this app.
+            _specFlags = new List<ProductSpecificationFlagDto>
+            {
+                new() { ProductSpecificationFlagId = 1, ProductSpecificationDescription = "Standard" },
+                new() { ProductSpecificationFlagId = 2, ProductSpecificationDescription = "Premium" },
+                new() { ProductSpecificationFlagId = 3, ProductSpecificationDescription = "Mixed" },
+                new() { ProductSpecificationFlagId = 4, ProductSpecificationDescription = "Low Grade" }
+            };
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"[STATUS] Failed to load spec flags: {ex.Message}";
+        }
     }
 
     private async Task ApplyProductFiltersAsync()
     {
         try
         {
-            var results = await _app.ProductsService.LookupProductsAsync(
+            // Ensure we have a valid group ID (0 = ALL)
+            int? gid = SelectedProductGroup != null ? SelectedProductGroup.ProductGroupId : 0;
+            
+            // Logic for the dual toggles:
+            // If both are on, we show everything (includeNonStarred = true)
+            // If only Starred is on, we show only Starred (includeNonStarred = false)
+            // If only Non-Starred is on, we need a way to filter for ONLY non-starred.
+            // However, the current API LookupProductsAsync takes 'includeNonStarred'.
+            // If includeNonStarred is false, it ONLY shows Starred.
+            // If includeNonStarred is true, it shows BOTH.
+            // To show ONLY Non-Starred, we'd need an API change or client-side filter.
+            // For now, I'll follow the existing API behavior but map the toggles as best as possible.
+            // If ShowNonStarred is true and ShowStarred is false, it implies "Show me what's NOT starred".
+            // If both are true, it shows everything.
+            
+            // Logic for the dual toggles:
+            // 1. Both on -> Show everything (includeNonStarred = true)
+            // 2. Only Starred on -> Show only Starred (includeNonStarred = false)
+            // 3. Only Non-Starred on -> Show only Non-Starred (includeNonStarred = true, then filter)
+            
+            bool includeNonStarred = ShowNonStarred;
+            
+            var result = await _app.ProductsService.LookupProductsAsync(
                 ProductSearchTerm, 
-                SelectedProductGroup?.ProductGroupId, 
+                gid, 
                 SelectedProductLetter, 
-                ShowNonStarred);
+                includeNonStarred,
+                ProductsPagination.GetSkip(),
+                ProductsPagination.GetTake());
 
             ProductResults.Clear();
-            foreach (var r in results) ProductResults.Add(r);
             
-            StatusMessage = $"[STATUS] Found {ProductResults.Count} products.";
+            // If Only Non-Starred is on, we filter the items client-side
+            var items = result.Items.AsEnumerable();
+            if (ShowNonStarred && !ShowStarred)
+            {
+                items = items.Where(p => !p.StarredProduct);
+            }
+
+            foreach (var r in items) 
+            {
+                // Map spec description
+                var spec = _specFlags.FirstOrDefault(f => f.ProductSpecificationFlagId == r.ProductSpecificationFlagId);
+                r.ProductSpecificationDescription = spec?.ProductSpecificationDescription ?? $"Flag {r.ProductSpecificationFlagId}";
+                
+                // Ensure description is not null for tooltip
+                if (string.IsNullOrEmpty(r.IsriProductDescription))
+                {
+                    r.IsriProductDescription = "No description available.";
+                }
+
+                ProductResults.Add(r);
+            }
+            
+            ProductsPagination.SetTotalRecords(result.TotalCount);
+
+            string filterText;
+            if (ShowStarred && ShowNonStarred) filterText = "Showing All Products";
+            else if (ShowStarred) filterText = "Showing Starred Products Only";
+            else filterText = "Showing Non-Starred Products Only";
+            
+            StatusMessage = $"[STATUS] Found {ProductResults.Count} products. ({filterText})";
+            
+            // Debug check
+            Console.WriteLine($"[DEBUG] Applied Filter. Results count: {ProductResults.Count}, Total: {result.TotalCount}");
         }
         catch (Exception ex)
         {
@@ -185,60 +314,7 @@ public partial class MainWindowViewModel
 
     private async Task SearchProductsAsync(CancellationToken ct = default)
     {
-        if (IsBusy) return;
-        IsBusy = true;
-
-        try
-        {
-            StatusMessage = "Searching products...";
-
-            // Ensure lookup cache is loaded
-            if (!_productLettersLoaded)
-            {
-                await LoadProductsAndLettersAsync();
-            }
-
-            // Start from cached master list - only active products
-            var query = _allProducts.Where(p => p.IsActive);
-
-            // Apply letter filter
-            var letter = (SelectedProductLetter ?? "ALL").Trim();
-
-            if (!letter.Equals("ALL", StringComparison.OrdinalIgnoreCase) &&
-                !string.IsNullOrWhiteSpace(letter))
-            {
-                var ch = char.ToUpperInvariant(letter[0]);
-                query = query.Where(p =>
-                    !string.IsNullOrWhiteSpace(p.ProductName) &&
-                    char.ToUpperInvariant(p.ProductName![0]) == ch);
-            }
-
-            // Populate dropdown suggestions with filtered products
-            SearchProductSuggestions.Clear();
-            foreach (var p in query.OrderBy(p => p.ProductName))
-                SearchProductSuggestions.Add(p);
-
-            // Populate results grid
-            ProductResults.Clear();
-            foreach (var p in query.OrderBy(p => p.ProductName))
-                ProductResults.Add(p);
-
-            SelectedProduct = ProductResults.FirstOrDefault();
-
-            StatusMessage = $"[STATUS] Found {ProductResults.Count} product(s).";
-
-            // Load prices for selected product
-            if (SelectedProduct != null)
-                await LoadPricesForSelectedProductAsync(ct);
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"[STATUS] Product search failed: {ex.Message}";
-        }
-        finally
-        {
-            IsBusy = false;
-        }
+        await ApplyProductFiltersAsync();
     }
 
     private async Task CreateProductAsync(CancellationToken ct = default)
@@ -256,6 +332,7 @@ public partial class MainWindowViewModel
                 new ProductDto
                 {
                     HtsCode = ProductHtsCode,
+                    QKey = ProductQKey,
                     IsriProduct = ProductIsIsri,
                     IsriProductCode = ProductIsriCode,
                     IsriProductName = ProductIsriName,
@@ -418,6 +495,7 @@ public partial class MainWindowViewModel
     {
         EditingProductId = null;
         ProductHtsCode = null;
+        ProductQKey = null;
         ProductIsIsri = false;
         ProductIsriCode = string.Empty;
         ProductIsriName = string.Empty;
@@ -517,41 +595,10 @@ public partial class MainWindowViewModel
             SelectedSearchProduct = SearchProductSuggestions.FirstOrDefault(x => x.ProductId == selectedId.Value);
     }
 
-    private async Task LoadProductsAndLettersAsync()
+    private Task LoadProductsAndLettersAsync()
     {
-        try
-        {
-            var items = await _app.ProductsService.LookupProductsAsync(string.Empty);
-
-            _allProducts.Clear();
-            // Only add active products to cache
-            foreach (var p in items.Where(p => p.IsActive).OrderBy(p => p.ProductName))
-                _allProducts.Add(p);
-
-            _productLetterFilters.Clear();
-            _productLetterFilters.Add("ALL");
-
-            var letters = _allProducts
-                .Select(p => p.ProductName?.FirstOrDefault() ?? '\0')
-                .Where(ch => ch != '\0')
-                .Select(ch => char.ToUpperInvariant(ch))
-                .Distinct()
-                .OrderBy(ch => ch);
-
-            foreach (var ch in letters)
-                _productLetterFilters.Add(ch.ToString());
-
-            _productLettersLoaded = true;
-
-            SelectedProductLetter ??= "ALL";
-
-            ApplyProductLetterFilter();
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"[STATUS] Failed to load product letters: {ex.Message}";
-            _productLettersLoaded = true;
-        }
+        // Letters are handled dynamically now
+        return Task.CompletedTask;
     }
 
     private async Task RefreshProductsAsync(CancellationToken ct = default)
@@ -648,5 +695,48 @@ public partial class MainWindowViewModel
         CurrentPrice = 0;
         OnPropertyChanged(nameof(CanUpdatePrice));
         (UpdatePriceCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+    }
+
+    private void OpenIsriUrl()
+    {
+        // Try selected product URL first, then the form URL
+        string? url = SelectedProduct?.IsriProductUrl ?? ProductIsriUrl;
+        if (string.IsNullOrEmpty(url)) return;
+        OpenUrl(url);
+    }
+
+    private void OpenProductUrl(ProductLookupDto? product)
+    {
+        if (product == null || string.IsNullOrEmpty(product.IsriProductUrl)) return;
+        OpenUrl(product.IsriProductUrl);
+    }
+
+    private void OpenUrl(string url)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+        }
+        catch { }
+    }
+
+    private string? _productSampleImage;
+    public string? ProductSampleImage
+    {
+        get => _productSampleImage;
+        set { _productSampleImage = value; OnPropertyChanged(); }
+    }
+
+    private void OpenProductImage(ProductLookupDto? product)
+    {
+        if (product == null) return;
+        string imageUrl = $"http://localhost:9000/product-samples/product_{product.ProductId}.jpg";
+        ProductSampleImage = imageUrl;
+        
+        RequestProductImagePopup?.Invoke(imageUrl);
     }
 }

@@ -427,6 +427,7 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.IsriProductCode).HasColumnName("isri_product_code").IsRequired();
         e.Property(x => x.IsriProductName).HasColumnName("isri_product_name").IsRequired();
         e.Property(x => x.IsriProductDescription).HasColumnName("isri_product_description");
+        e.Property(x => x.QKey).HasColumnName("q_key").HasMaxLength(5);
         e.Property(x => x.IsriProductUrl).HasColumnName("isri_product_url");
         e.Property(x => x.IsriProduct).HasColumnName("isri_product").HasDefaultValue(false);
         e.Property(x => x.ProductGroupId).HasColumnName("product_group_id").IsRequired();

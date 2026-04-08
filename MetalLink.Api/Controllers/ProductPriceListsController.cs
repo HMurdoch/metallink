@@ -24,10 +24,29 @@ public class ProductPriceListsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductPriceListDto>>> GetAll()
+    public async Task<ActionResult<IEnumerable<ProductPriceListDto>>> GetAll(
+        [FromQuery] string? term,
+        [FromQuery] string? entityType)
     {
         var lists = await _priceListRepo.GetAllActiveAsync();
-        return Ok(lists.Select(l => new ProductPriceListDto
+        
+        var query = lists.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(entityType))
+        {
+            char flag = entityType.Equals("Buyer", StringComparison.OrdinalIgnoreCase) ? 'B' : 'C';
+            query = query.Where(l => l.EntityFlag == flag);
+        }
+
+        if (!string.IsNullOrWhiteSpace(term))
+        {
+            var t = term.Trim().ToLower();
+            query = query.Where(l => 
+                (l.ProductPriceListName != null && l.ProductPriceListName.ToLower().Contains(t)) ||
+                (l.ProductPriceListDescription != null && l.ProductPriceListDescription.ToLower().Contains(t)));
+        }
+
+        return Ok(query.OrderBy(l => l.ProductPriceListName).Select(l => new ProductPriceListDto
         {
             ProductPriceListId = l.ProductPriceListId,
             ProductPriceListName = l.ProductPriceListName,

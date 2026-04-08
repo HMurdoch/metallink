@@ -19,6 +19,7 @@ public interface ITicketReceivingRepository
         string? idNumber = null,
         long? accountNumber = null,
         int? productId = null,
+        int? productGroupId = null,
         string? ticketType = null,
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,

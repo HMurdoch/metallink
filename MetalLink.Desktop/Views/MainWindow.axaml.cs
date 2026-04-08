@@ -1,3 +1,4 @@
+using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
@@ -22,4 +23,10 @@ public partial class MainWindow : Window
     {
         AvaloniaXamlLoader.Load(this);
     }
+
+    // We'll control visibility and opacity from LoginViewModel during the intro transition.
+    // protected override void OnOpened(EventArgs e)
+    // {
+    //     base.OnOpened(e);
+    // }
 }

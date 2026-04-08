@@ -31,11 +31,13 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("lookup")]
-    public async Task<ActionResult<IEnumerable<ProductLookupDto>>> Lookup(
+    public async Task<ActionResult> Lookup(
         [FromQuery] string? term,
         [FromQuery] int? groupId,
         [FromQuery] string? letter,
         [FromQuery] bool includeNonStarred = false,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 25,
         CancellationToken ct = default)
     {
         var query = _db.Products
@@ -67,24 +69,31 @@ public class ProductsController : ControllerBase
                 (p.StarredProductAlias != null && p.StarredProductAlias.ToLower().Contains(searchTerm)));
         }
 
+        var totalCount = await query.CountAsync(ct);
+
         var results = await query
             .OrderBy(p => p.StarredProductAlias ?? p.IsriProductName)
+            .Skip(skip)
+            .Take(take)
             .Select(p => new ProductLookupDto
             {
                 ProductId = p.ProductId,
                 ProductName = p.IsriProductName,
                 ProductCode = p.IsriProductCode,
+                QKey = p.QKey,
                 HtsCode = p.HtsCode,
                 IsriProduct = p.IsriProduct,
                 ProductGroupName = p.ProductGroup != null ? p.ProductGroup.ProductGroupName : null,
                 ProductSpecificationFlagId = p.ProductSpecificationFlagId,
                 StarredProductAlias = p.StarredProductAlias,
                 StarredProduct = p.StarredProduct,
+                IsriProductDescription = p.IsriProductDescription,
+                IsriProductUrl = p.IsriProductUrl,
                 IsActive = p.IsActive
             })
             .ToListAsync(ct);
 
-        return Ok(results);
+        return Ok(new { Items = results, TotalCount = totalCount });
     }
 
     // GET /api/products/{productId}
@@ -133,6 +142,7 @@ public class ProductsController : ControllerBase
             IsriProductDescription = dto.IsriProductDescription,
             IsriProductUrl = dto.IsriProductUrl,
             IsriProduct = dto.IsriProduct,
+            QKey = dto.QKey,
             ProductGroupId = dto.ProductGroupId,
             ProductSpecificationFlagId = dto.ProductSpecificationFlagId,
             StarredProduct = dto.StarredProduct,
@@ -166,6 +176,7 @@ public class ProductsController : ControllerBase
             return NotFound();
 
         product.HtsCode = dto.HtsCode;
+        product.QKey = dto.QKey;
         product.IsriProductCode = dto.IsriProductCode.Trim();
         product.IsriProductName = dto.IsriProductName.Trim();
         product.IsriProductDescription = dto.IsriProductDescription;

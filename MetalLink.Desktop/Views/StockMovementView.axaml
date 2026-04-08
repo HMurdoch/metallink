@@ -40,18 +40,31 @@
           <StackPanel Spacing="10" IsVisible="{Binding StockMovement.IsFilterExpanded}">
 
             <!-- Product Filter (same as Stock Levels) -->
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-              <TextBox Grid.Column="0"
-                       Watermark="Product Search"
-                       Text="{Binding StockMovement.ProductSearchText, UpdateSourceTrigger=PropertyChanged}" />
+            <Grid ColumnDefinitions="*,*,*,Auto" ColumnSpacing="12" IsVisible="{Binding StockMovement.IsFilterExpanded}">
+              <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Text="Product Group" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                <ComboBox ItemsSource="{Binding StockMovement.ProductGroups}" SelectedItem="{Binding StockMovement.SelectedProductGroup}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding ProductGroupName}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
 
-              <Grid Grid.Column="1" ColumnDefinitions="120,Auto" ColumnSpacing="10">
-                <ComboBox Grid.Column="0"
-                          ItemsSource="{Binding StockMovement.ProductLetterFilters}"
+              <StackPanel Grid.Column="1" Spacing="4">
+                <TextBlock Text="Product Search" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                <TextBox Watermark="Search name or code..."
+                         Text="{Binding StockMovement.ProductSearchText, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+
+              <StackPanel Grid.Column="2" Spacing="4">
+                <TextBlock Text="First Letter" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                <ComboBox ItemsSource="{Binding StockMovement.ProductLetterFilters}"
                           SelectedItem="{Binding StockMovement.SelectedProductLetter}" />
+              </StackPanel>
 
-                <Button Grid.Column="1" Content="Clear" Command="{Binding StockMovement.ClearProductCommand}" />
-              </Grid>
+              <Button Grid.Column="3" Content="Clear" Command="{Binding StockMovement.ClearProductCommand}" VerticalAlignment="Bottom" />
             </Grid>
 
             <!-- All history toggle -->
