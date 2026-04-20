@@ -15,6 +15,7 @@ public partial class MainWindowViewModel
     public IAsyncRelayCommand SearchPriceListsCommand { get; private set; } = null!;
     public IAsyncRelayCommand CreatePriceListCommand { get; private set; } = null!;
     public IAsyncRelayCommand UpdatePriceListCommand { get; private set; } = null!;
+    public IAsyncRelayCommand SavePriceListCommand { get; private set; } = null!;
     public IRelayCommand ClearPriceListFormCommand { get; private set; } = null!;
     public IRelayCommand ResetPriceListFiltersCommand { get; private set; } = null!;
     public IAsyncRelayCommand<ProductPriceListDto> DeletePriceListCommand { get; private set; } = null!;
@@ -24,6 +25,7 @@ public partial class MainWindowViewModel
         SearchPriceListsCommand = new AsyncRelayCommand(ct => SearchPriceListsAsync(ct));
         CreatePriceListCommand = new AsyncRelayCommand(ct => CreatePriceListAsync(ct));
         UpdatePriceListCommand = new AsyncRelayCommand(ct => UpdatePriceListAsync(ct));
+        SavePriceListCommand = new AsyncRelayCommand(ct => IsPriceListEditMode ? UpdatePriceListAsync(ct) : CreatePriceListAsync(ct));
         ClearPriceListFormCommand = new RelayCommand(ClearPriceListForm);
         ResetPriceListFiltersCommand = new RelayCommand(ResetPriceListFilters);
         DeletePriceListCommand = new AsyncRelayCommand<ProductPriceListDto>(DeletePriceListAsync);
@@ -47,8 +49,7 @@ public partial class MainWindowViewModel
         try
         {
             StatusMessage = $"[STATUS] Deleting price list '{list.ProductPriceListName}'...";
-            list.IsActive = false;
-            await _app.ApiClient.PutAsJsonAsync($"api/product-price-lists/{list.ProductPriceListId}", list);
+            await _app.ApiClient.DeleteAsync($"api/product-price-lists/{list.ProductPriceListId}");
             StatusMessage = $"[STATUS] Price list '{list.ProductPriceListName}' deleted.";
             await SearchPriceListsAsync();
         }
@@ -89,7 +90,7 @@ public partial class MainWindowViewModel
         EditingPriceListId = list.ProductPriceListId;
         PriceListName = list.ProductPriceListName ?? string.Empty;
         PriceListDescription = list.ProductPriceListDescription;
-        PriceListEntityType = list.EntityFlag == 'C' ? "Customer" : "Buyer";
+        PriceListEntityType = list.EntityFlag == "C" ? "Customer" : "Buyer";
         PriceListsIsCreateEditExpanded = true;
         
         // Ensure form reflects the selected values
@@ -100,6 +101,7 @@ public partial class MainWindowViewModel
         OnPropertyChanged(nameof(IsPriceListEditMode));
         OnPropertyChanged(nameof(IsPriceListCreateMode));
         OnPropertyChanged(nameof(PriceListSaveButtonText));
+        OnPropertyChanged(nameof(IsCloneDropdownEnabled));
     }
 
     private void ClearPriceListForm()
@@ -109,6 +111,8 @@ public partial class MainWindowViewModel
         PriceListDescription = string.Empty;
         PriceListEntityType = "Customer";
         SelectedPriceList = null;
+        UseLastKnownPrice = true;
+        SelectedCloneFrom = null;
         
         // Ensure form reflects the selected values
         OnPropertyChanged(nameof(PriceListEntityType));
@@ -118,6 +122,8 @@ public partial class MainWindowViewModel
         OnPropertyChanged(nameof(IsPriceListEditMode));
         OnPropertyChanged(nameof(IsPriceListCreateMode));
         OnPropertyChanged(nameof(PriceListSaveButtonText));
+        OnPropertyChanged(nameof(IsCloneDropdownEnabled));
+        _ = LoadCloneFromListAsync();
     }
 
     public async Task CreatePriceListAsync(CancellationToken ct = default)
@@ -131,11 +137,37 @@ public partial class MainWindowViewModel
             {
                 ProductPriceListName = PriceListName,
                 ProductPriceListDescription = PriceListDescription,
-                EntityFlag = PriceListEntityType == "Customer" ? 'C' : 'B',
+                EntityFlag = PriceListEntityType == "Customer" ? "C" : "B",
                 IsActive = true
             };
             
-            await _app.ApiClient.PostAsJsonAsync("api/product-price-lists", dto, ct);
+            var created = await _app.ApiClient.PostAsync<ProductPriceListDto, ProductPriceListDto>("api/product-price-lists", dto, ct);
+
+            if (created != null && created.ProductPriceListId > 0)
+            {
+                StatusMessage = $"[STATUS] Seeding prices for '{PriceListName}'...";
+                var seedRequest = new SeedPriceListRequestDto
+                {
+                    UseLastKnownPrice = UseLastKnownPrice,
+                    CloneFromPriceListId = UseLastKnownPrice ? null : SelectedCloneFrom?.ProductPriceListId
+                };
+
+                Console.WriteLine($"[SEED] UseLastKnownPrice={seedRequest.UseLastKnownPrice}, CloneFromPriceListId={seedRequest.CloneFromPriceListId}");
+
+                var seedResponse = await _app.ApiClient.PostAsJsonAsync(
+                    $"api/product-price-lists/{created.ProductPriceListId}/seed", seedRequest, ct);
+
+                if (!seedResponse.IsSuccessStatusCode)
+                {
+                    var body = await seedResponse.Content.ReadAsStringAsync(ct);
+                    Console.WriteLine($"[SEED] FAILED {(int)seedResponse.StatusCode}: {body}");
+                    StatusMessage = $"[STATUS] Price list created but seeding failed ({(int)seedResponse.StatusCode}): {body}";
+                    ClearPriceListForm();
+                    await SearchPriceListsAsync(ct);
+                    return;
+                }
+            }
+
             StatusMessage = $"[STATUS] Price list '{PriceListName}' created successfully.";
             ClearPriceListForm();
             await SearchPriceListsAsync(ct);
@@ -162,7 +194,7 @@ public partial class MainWindowViewModel
                 ProductPriceListId = EditingPriceListId.Value,
                 ProductPriceListName = PriceListName,
                 ProductPriceListDescription = PriceListDescription,
-                EntityFlag = PriceListEntityType == "Customer" ? 'C' : 'B',
+                EntityFlag = PriceListEntityType == "Customer" ? "C" : "B",
                 IsActive = true
             };
             
@@ -178,6 +210,27 @@ public partial class MainWindowViewModel
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    private async Task LoadCloneFromListAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var entity = PriceListEntityType ?? "Customer";
+            var results = await _app.ApiClient.GetAsync<ProductPriceListDto[]>(
+                $"api/product-price-lists?entityType={Uri.EscapeDataString(entity)}", ct);
+
+            CloneFromPriceLists.Clear();
+            if (results != null)
+            {
+                foreach (var r in results)
+                    CloneFromPriceLists.Add(r);
+            }
+        }
+        catch
+        {
+            // Non-critical — swallow silently
         }
     }
 }

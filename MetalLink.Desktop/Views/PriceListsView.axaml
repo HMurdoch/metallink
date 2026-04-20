@@ -120,13 +120,19 @@
                 <DataGridTextColumn Header="ID" Binding="{Binding ProductPriceListId}" Width="60" />
                 <DataGridTextColumn Header="Name" Binding="{Binding ProductPriceListName}" Width="200" />
                 <DataGridTextColumn Header="Description" Binding="{Binding ProductPriceListDescription}" Width="500" />
-                <DataGridTextColumn Header="Entity Type" Binding="{Binding EntityFlag, Converter={StaticResource SectionToViewConverter}, ConverterParameter='entity'}" Width="200" />
-                <DataGridTemplateColumn Header="Actions" Width="140">
+                <DataGridTextColumn Header="Entity Type" Binding="{Binding EntityFlag, Converter={StaticResource SectionToViewConverter}, ConverterParameter='entity'}" Width="120" />
+                <DataGridTextColumn Header="# Products" Binding="{Binding ProductCount}" Width="90" />
+                <DataGridTemplateColumn Header="Actions" Width="200">
                   <DataTemplate>
-                    <Button Content="Delete" 
-                            Command="{Binding $parent[UserControl].DataContext.DeletePriceListCommand}" 
-                            CommandParameter="{Binding}"
-                            Classes="row-action" />
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                      <Button Content="Movements"
+                              Command="{Binding $parent[UserControl].DataContext.ShowStockMovementCommand}"
+                              Classes="row-action" />
+                      <Button Content="Delete" 
+                              Command="{Binding $parent[UserControl].DataContext.DeletePriceListCommand}" 
+                              CommandParameter="{Binding}"
+                              Classes="row-action" />
+                    </StackPanel>
                   </DataTemplate>
                 </DataGridTemplateColumn>
               </DataGrid.Columns>
@@ -143,7 +149,7 @@
               <TextBlock Grid.Column="1" Text="Create/Edit Price Lists" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
             </Grid>
 
-            <StackPanel Spacing="16" IsVisible="{Binding PriceListsIsCreateEditExpanded}" Margin="0,8,0,0">
+            <StackPanel Spacing="16" IsVisible="{Binding !PriceListsIsCreateEditExpanded}" Margin="0,8,0,0">
               <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto" ColumnSpacing="24">
                 <StackPanel Grid.Column="0" Spacing="4">
                   <TextBlock Text="Entity Type" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
@@ -162,9 +168,33 @@
                 </StackPanel>
               </Grid>
 
+              <!-- Seed options — only shown in Create mode -->
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="24" IsVisible="{Binding IsPriceListCreateMode}">
+                <StackPanel Grid.Column="0" Spacing="4" VerticalAlignment="Center">
+                  <TextBlock Text="Initial Prices" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                  <ToggleSwitch IsChecked="{Binding UseLastKnownPrice}"
+                                OnContent="Use last known transaction price"
+                                OffContent="Clone from another price list"
+                                FontSize="11" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Bottom">
+                  <TextBlock Text="Clone From" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                  <ComboBox ItemsSource="{Binding CloneFromPriceLists}"
+                            SelectedItem="{Binding SelectedCloneFrom}"
+                            IsEnabled="{Binding IsCloneDropdownEnabled}"
+                            PlaceholderText="Select price list to clone...">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding ProductPriceListName}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+              </Grid>
+
               <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
                 <Button Content="Clear" Command="{Binding ClearPriceListFormCommand}" Width="80" HorizontalContentAlignment="Center" />
-                <Button Content="{Binding PriceListSaveButtonText}" Command="{Binding UpdatePriceListCommand}" Classes="Accent" Width="120" HorizontalContentAlignment="Center" />
+                <Button Content="{Binding PriceListSaveButtonText}" Command="{Binding SavePriceListCommand}" Classes="Accent" Width="120" HorizontalContentAlignment="Center" />
               </StackPanel>
             </StackPanel>
           </StackPanel>

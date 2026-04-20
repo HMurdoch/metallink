@@ -383,8 +383,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             BuyerPriceLists.Clear();
             foreach (var list in lists)
             {
-                if (list.EntityFlag == 'C') CustomerPriceLists.Add(list);
-                else if (list.EntityFlag == 'B') BuyerPriceLists.Add(list);
+                if (list.EntityFlag == "C") CustomerPriceLists.Add(list);
+                else if (list.EntityFlag == "B") BuyerPriceLists.Add(list);
             }
         }
         catch (Exception ex)

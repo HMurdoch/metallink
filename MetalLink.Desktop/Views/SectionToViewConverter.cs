@@ -16,8 +16,16 @@ public class SectionToViewConverter : IValueConverter
             return isExpanded ? "▼" : "▶";
         }
         
-        if (paramStr == "entity" && value is char flag)
+        if (paramStr == "entity")
         {
+            // EntityFlag can arrive as char or as a single-char string depending on
+            // the binding path / JSON deserialisation round-trip.
+            char flag = value switch
+            {
+                char c => c,
+                string s when s.Length > 0 => s[0],
+                _ => '\0'
+            };
             return flag == 'C' ? "Customer" : "Buyer";
         }
 

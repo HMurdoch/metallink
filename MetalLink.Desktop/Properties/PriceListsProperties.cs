@@ -3,6 +3,7 @@ using MetalLink.Shared.Prices;
 
 namespace MetalLink.Desktop.ViewModels;
 
+
 public partial class MainWindowViewModel
 {
     private ObservableCollection<ProductPriceListDto> _priceListsResults = new();
@@ -95,10 +96,44 @@ public partial class MainWindowViewModel
     public string PriceListEntityType
     {
         get => _priceListEntityType;
-        set { _priceListEntityType = value; OnPropertyChanged(); }
+        set
+        {
+            _priceListEntityType = value;
+            OnPropertyChanged();
+            _ = LoadCloneFromListAsync();
+        }
     }
 
     public bool IsPriceListEditMode => EditingPriceListId.HasValue;
     public bool IsPriceListCreateMode => !EditingPriceListId.HasValue;
     public string PriceListSaveButtonText => IsPriceListEditMode ? "Update" : "Create";
+
+    // Seeding options (only relevant in Create mode)
+    private bool _useLastKnownPrice = true;
+    public bool UseLastKnownPrice
+    {
+        get => _useLastKnownPrice;
+        set
+        {
+            _useLastKnownPrice = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsCloneDropdownEnabled));
+        }
+    }
+
+    private ProductPriceListDto? _selectedCloneFrom;
+    public ProductPriceListDto? SelectedCloneFrom
+    {
+        get => _selectedCloneFrom;
+        set { _selectedCloneFrom = value; OnPropertyChanged(); }
+    }
+
+    private ObservableCollection<ProductPriceListDto> _cloneFromPriceLists = new();
+    public ObservableCollection<ProductPriceListDto> CloneFromPriceLists
+    {
+        get => _cloneFromPriceLists;
+        set { _cloneFromPriceLists = value; OnPropertyChanged(); }
+    }
+
+    public bool IsCloneDropdownEnabled => !UseLastKnownPrice && IsPriceListCreateMode;
 }
