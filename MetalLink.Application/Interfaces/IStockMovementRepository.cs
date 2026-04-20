@@ -12,5 +12,7 @@ public interface IStockMovementRepository
         decimal sellWeightKg,
         int createdByOperatorId,
         string notes,
+        decimal unitPricePerKg = 0m,
+        int? productPriceListId = null,
         CancellationToken ct = default);
 }

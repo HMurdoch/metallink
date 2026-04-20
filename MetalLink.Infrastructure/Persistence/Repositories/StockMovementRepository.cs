@@ -24,13 +24,15 @@ public sealed class StockMovementRepository : IStockMovementRepository
         decimal sellWeightKg,
         int createdByOperatorId,
         string notes,
+        decimal unitPricePerKg = 0m,
+        int? productPriceListId = null,
         CancellationToken ct = default)
     {
         return _db.Database.ExecuteSqlInterpolatedAsync($@"
             INSERT INTO metal_link.stock_movements
-                (product_id, base_weight_kg, buy_weight_kg, sell_weight_kg, created_by_operator_id, notes, is_active)
+                (product_id, base_weight_kg, buy_weight_kg, sell_weight_kg, unit_price_per_kg, product_price_list_id, created_by_operator_id, notes, is_active)
             VALUES
-                ({productId}, {baseWeightKg}, {buyWeightKg}, {sellWeightKg}, {createdByOperatorId}, {notes}, true);
+                ({productId}, {baseWeightKg}, {buyWeightKg}, {sellWeightKg}, {unitPricePerKg}, {productPriceListId}, {createdByOperatorId}, {notes}, true);
         ", ct);
     }
 }

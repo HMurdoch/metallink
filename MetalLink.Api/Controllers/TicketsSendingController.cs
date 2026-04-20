@@ -370,6 +370,8 @@ public class TicketsSendingController : ControllerBase
             sellWeightKg: 0m,
             createdByOperatorId: operatorId,
             notes: $"Sale Deleted - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
+            unitPricePerKg: line.UnitPricePerKg,
+            productPriceListId: line.ProductPriceListId ?? ticket.Buyer?.ProductPriceListId,
             ct: ct);
         await _stockLevelRepo.UpdateWeightKgAsync(line.ProductId, baseWeight + line.NetWeightKg, ct);
 
@@ -430,6 +432,7 @@ public class TicketsSendingController : ControllerBase
                 firstWeightKg: fw,
                 secondWeightKg: sw
             );
+            line.ProductPriceListId = ticket.Buyer?.ProductPriceListId;
 
             ticket.AddLine(line);
 
@@ -442,6 +445,8 @@ public class TicketsSendingController : ControllerBase
                 sellWeightKg: line.NetWeightKg,
                 createdByOperatorId: operatorId,
                 notes: $"Sale - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
+                unitPricePerKg: unitPrice,
+                productPriceListId: ticket.Buyer?.ProductPriceListId,
                 ct: ct);
             await _stockLevelRepo.UpdateWeightKgAsync(dto.ProductId, baseWeight - line.NetWeightKg, ct);
 
@@ -462,6 +467,7 @@ public class TicketsSendingController : ControllerBase
                 tare: dto.Tare,
                 notes: dto.Notes
             );
+            line.ProductPriceListId = ticket.Buyer?.ProductPriceListId;
 
             ticket.AddLine(line);
 
@@ -474,6 +480,8 @@ public class TicketsSendingController : ControllerBase
                 sellWeightKg: line.NetWeightKg,
                 createdByOperatorId: operatorId,
                 notes: $"Sale - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
+                unitPricePerKg: unitPrice,
+                productPriceListId: ticket.Buyer?.ProductPriceListId,
                 ct: ct);
             await _stockLevelRepo.UpdateWeightKgAsync(dto.ProductId, baseWeight - line.NetWeightKg, ct);
         }

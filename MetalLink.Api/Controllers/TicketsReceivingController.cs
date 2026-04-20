@@ -308,6 +308,7 @@ public class TicketsReceivingController : ControllerBase
             secondWeightKg: dto.SecondWeightKg,
             tare: dto.Tare
         );
+        line.ProductPriceListId = ticket.Customer?.ProductPriceListId;
         
         Console.WriteLine($"[API ADD LINE] Line created: FW={line.FirstWeightKg}, SW={line.SecondWeightKg}, NetWeight={line.NetWeightKg}");
 
@@ -329,6 +330,8 @@ public class TicketsReceivingController : ControllerBase
             sellWeightKg: 0m,
             createdByOperatorId: operatorId,
             notes: $"Purchase - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
+            unitPricePerKg: unitPrice,
+            productPriceListId: ticket.Customer?.ProductPriceListId,
             ct: ct);
         await _stockLevelRepo.UpdateWeightKgAsync(dto.ProductId, baseWeight + line.NetWeightKg, ct);
 
@@ -501,6 +504,8 @@ public class TicketsReceivingController : ControllerBase
             sellWeightKg: line.NetWeightKg,
             createdByOperatorId: operatorId,
             notes: $"Purchase Deleted - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
+            unitPricePerKg: line.UnitPricePerKg,
+            productPriceListId: line.ProductPriceListId ?? ticket.Customer?.ProductPriceListId,
             ct: ct);
         await _stockLevelRepo.UpdateWeightKgAsync(line.ProductId, baseWeight - line.NetWeightKg, ct);
 
