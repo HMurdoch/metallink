@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using LiveChartsCore;
 using LiveChartsCore.Measure;
@@ -30,6 +31,10 @@ public partial class MainWindowViewModel
     private int _animatedTotalCompaniesInDb;
     private int _animatedTotalSitesInDb;
     private int _animatedTotalProductsInDb;
+
+    // Actual DB counts (not animated)
+    private int _totalCustomersInDb;
+    private int _totalTicketsInDb;
 
     // Charts
     public ISeries[] TicketsByTypeSeries { get; set; } = System.Array.Empty<ISeries>();
@@ -66,32 +71,36 @@ public partial class MainWindowViewModel
         get => _currentSection;
         set
         {
+            Console.WriteLine($"[DEBUG] CoreProperties: CurrentSection changing from '{_currentSection}' to '{value}'");
             if (_currentSection == value) return;
 
             _previousSection = _currentSection;
             _currentSection = value;
-
             // if target index < previous index we treat as "back"
             IsSlideFromLeft = (int)_currentSection < (int)_previousSection;
 
-            // Initialize ticket form when entering Receiving or Sending sections
-            if (_currentSection == EnumMainSection.TicketsReceiving)
-            {
-                _ = OnEnterTicketsReceivingAsync();
-            }
-            else if (_currentSection == EnumMainSection.TicketsSending)
-            {
-                _ = OnEnterTicketsSendingAsync();
-            }
+            // TicketsReceiving/TicketsSending now manage their own state in isolated viewmodels.
+            // No shared shell initialization here.
 
+            Console.WriteLine($"[DEBUG] CoreProperties: Raising OnPropertyChanged for CurrentSection (value: {_currentSection})");
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsDashboardSectionVisible));
             OnPropertyChanged(nameof(IsCustomerSectionVisible));
             OnPropertyChanged(nameof(IsTicketsReceivingSectionVisible));
             OnPropertyChanged(nameof(IsTicketsSendingSectionVisible));
+            OnPropertyChanged(nameof(IsBuyersSectionVisible));
+            OnPropertyChanged(nameof(IsCompanyAndSitesSectionVisible));
+            OnPropertyChanged(nameof(IsProductsSectionVisible));
+            OnPropertyChanged(nameof(IsPriceListsSectionVisible));
+            OnPropertyChanged(nameof(IsPricesSectionVisible));
+            OnPropertyChanged(nameof(IsStockLevelsSectionVisible));
+            OnPropertyChanged(nameof(IsStockMovementSectionVisible));
+            OnPropertyChanged(nameof(IsReportsSectionVisible));
+            OnPropertyChanged(nameof(IsSettingsSectionVisible));
             OnPropertyChanged(nameof(IsDocumentSectionVisible));
             OnPropertyChanged(nameof(IsCameraSectionVisible));
             OnPropertyChanged(nameof(TicketsPageHeading));
+            Console.WriteLine("[DEBUG] CoreProperties: PropertyChanged events fired for CurrentSection.");
         }
     }
 
@@ -117,6 +126,33 @@ public partial class MainWindowViewModel
     public bool IsCustomerSectionVisible  => CurrentSection == EnumMainSection.Customers;
     public bool IsTicketsReceivingSectionVisible => CurrentSection == EnumMainSection.TicketsReceiving;
     public bool IsTicketsSendingSectionVisible => CurrentSection == EnumMainSection.TicketsSending;
+    public bool IsBuyersSectionVisible => CurrentSection == EnumMainSection.Buyers;
+    public bool IsCompanyAndSitesSectionVisible => CurrentSection == EnumMainSection.CompanyAndSites;
+    public bool IsProductsSectionVisible => CurrentSection == EnumMainSection.Products;
+    public bool IsPriceListsSectionVisible => CurrentSection == EnumMainSection.PriceLists;
+    public bool IsPricesSectionVisible => CurrentSection == EnumMainSection.Prices;
+    public bool IsStockLevelsSectionVisible => CurrentSection == EnumMainSection.StockLevels;
+    public bool IsStockMovementSectionVisible => CurrentSection == EnumMainSection.StockMovement;
+    public bool IsReportsSectionVisible => CurrentSection == EnumMainSection.Reports;
+    public bool IsSettingsSectionVisible => CurrentSection == EnumMainSection.Settings;
+
+    private bool _isNavCollapsed;
+    public bool IsNavCollapsed
+    {
+        get => _isNavCollapsed;
+        set
+        {
+            if (_isNavCollapsed == value) return;
+            _isNavCollapsed = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(NavColumnWidth));
+            OnPropertyChanged(nameof(NavLabelOpacity));
+        }
+    }
+
+    public double NavColumnWidth => IsNavCollapsed ? 64 : 260;
+    public double NavLabelOpacity => IsNavCollapsed ? 0 : 1;
+
     public bool IsDocumentSectionVisible  => CurrentSection == EnumMainSection.Documents;
     public bool IsCameraSectionVisible    => CurrentSection == EnumMainSection.Camera;
 
@@ -170,5 +206,68 @@ public partial class MainWindowViewModel
         set { _animatedTotalProductsInDb = value; OnPropertyChanged(); }
     }
 
-    public bool HasUnsavedChanges => HasUnsavedNewCustomer || HasUnsavedTicketReceiving || HasUnsavedTicketSending;
+    public int TotalCustomersInDb
+    {
+        get => _totalCustomersInDb;
+        set { _totalCustomersInDb = value; OnPropertyChanged(); }
+    }
+
+    public int TotalTicketsInDb
+    {
+        get => _totalTicketsInDb;
+        set { _totalTicketsInDb = value; OnPropertyChanged(); }
+    }
+
+    private int _pageSize = 20;
+    public int PageSize
+    {
+        get => _pageSize;
+        set { _pageSize = value; OnPropertyChanged(); }
+    }
+
+    private bool _enforceBuyerCompany = true;
+    public bool EnforceBuyerCompany
+    {
+        get => _enforceBuyerCompany;
+        set 
+        { 
+            _enforceBuyerCompany = value; 
+            OnPropertyChanged(); 
+            if (value && CurrentSection == EnumMainSection.Buyers)
+            {
+                NewIsCompany = true;
+            }
+        }
+    }
+
+    private bool _playIntroVideo = true;
+    public bool PlayIntroVideo
+    {
+        get => _playIntroVideo;
+        set
+        {
+            if (_playIntroVideo == value) return;
+            _playIntroVideo = value;
+            OnPropertyChanged();
+            _ = SetPlayIntroVideoAsync(value);
+        }
+    }
+
+    public async Task SetPlayIntroVideoAsync(bool enabled)
+    {
+        try
+        {
+            if (_app != null)
+            {
+                var payload = new MetalLink.Shared.Settings.UpdatePlayIntroVideoSettingDto { PlayIntroVideo = enabled };
+                await _app.ApiClient.PutAsJsonAsync("api/operator-settings/play-intro-video", payload);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] SetPlayIntroVideoAsync: {ex.Message}");
+        }
+    }
+
+
 }

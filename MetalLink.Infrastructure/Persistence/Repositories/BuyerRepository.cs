@@ -22,13 +22,13 @@ public class BuyerRepository : IBuyerRepository
     // Basic CRUD-style operations
     // -------------------------------------------------
 
-    public Task<Buyer?> GetByIdAsync(long buyerId)
+    public Task<Buyer?> GetByIdAsync(int buyerId)
     {
         return GetByIdAsync(buyerId, CancellationToken.None);
     }
 
     public async Task<Buyer?> GetByIdAsync(
-        long buyerId,
+        int buyerId,
         CancellationToken cancellationToken)
     {
         return await _db.Buyers
@@ -38,6 +38,7 @@ public class BuyerRepository : IBuyerRepository
             .Include(c => c.Site!)
                 .ThenInclude(s => s!.Country!)
             .Include(c => c.ImagePath!)
+            .Include(c => c.ProductPriceList)
             .FirstOrDefaultAsync(c => c.BuyerId == buyerId, cancellationToken);
     }
 
@@ -46,11 +47,12 @@ public class BuyerRepository : IBuyerRepository
         CancellationToken cancellationToken = default)
     {
         return await _db.Buyers
-            .Include(c => c.Company!)
-            .Include(c => c.Site!)
+            .Include(b => b.Company!)
+            .Include(b => b.Site!)
                 .ThenInclude(s => s!.Province!)
+            .Include(b => b.ProductPriceList)
             .FirstOrDefaultAsync(
-                c => c.AccountNumber == accountNumber,
+                b => b.AccountNumber == accountNumber,
                 cancellationToken);
     }
 
@@ -109,6 +111,7 @@ public class BuyerRepository : IBuyerRepository
             .Include(c => c.Site!)
                 .ThenInclude(s => s!.Country!)
             .Include(c => c.ImagePath!)
+            .Include(c => c.ProductPriceList)
             .Where(c => c.IsActive)
             .AsQueryable();
 
@@ -165,15 +168,13 @@ public class BuyerRepository : IBuyerRepository
         if (request.AccountNumber.HasValue)
         {
             var acc = request.AccountNumber.Value;
-            query = query.Where(c => c.AccountNumber == acc);
+            query = query.Where(b => b.AccountNumber == acc);
         }
 
-        if (!string.IsNullOrWhiteSpace(request.PriceCode))
+        if (request.ProductPriceListId.HasValue)
         {
-            var term = request.PriceCode.ToLower();
-            query = query.Where(c =>
-                c.PriceCode != null &&
-                c.PriceCode.ToLower().Contains(term));
+            var priceListId = request.ProductPriceListId.Value;
+            query = query.Where(b => b.ProductPriceListId == priceListId);
         }
 
         // Province filter (site)
@@ -309,7 +310,6 @@ public class BuyerRepository : IBuyerRepository
             CompanyName   = companyName,
             IdNumber      = idNumber,
             AccountNumber = accountNumber,
-            PriceCode     = priceCode,
             AddressLine1  = addressLine1,
             AddressLine2  = addressLine2,
             Suburb        = suburb,
@@ -328,6 +328,53 @@ public class BuyerRepository : IBuyerRepository
     {
         _db.Buyers.Update(buyer);
         await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Buyer>> SearchBuyersWithZeroSendingTicketsAsync(
+        int? companyId,
+        int? siteId,
+        int? buyerId,
+        string? firstName,
+        string? lastName,
+        string? idNumber,
+        long? accountNumber,
+        CancellationToken cancellationToken = default)
+    {
+        const int MaxResults = 500;
+
+        var query = _db.Buyers
+            .Include(b => b.Company!)
+            .Include(b => b.Site!)
+            .Include(b => b.ProductPriceList)
+            .Where(b => b.IsActive)
+            .Where(b => !_db.SendingTickets.Any(t => t.BuyerId == b.BuyerId))
+            .AsQueryable();
+
+        if (companyId.HasValue)
+            query = query.Where(b => b.CompanyId == companyId.Value);
+        if (siteId.HasValue)
+            query = query.Where(b => b.SiteId == siteId.Value);
+        if (buyerId.HasValue)
+            query = query.Where(b => b.BuyerId == buyerId.Value);
+        if (!string.IsNullOrWhiteSpace(firstName))
+        {
+            var term = firstName.ToLower();
+            query = query.Where(b => b.FirstName != null && b.FirstName.ToLower().Contains(term));
+        }
+        if (!string.IsNullOrWhiteSpace(lastName))
+        {
+            var term = lastName.ToLower();
+            query = query.Where(b => b.LastName != null && b.LastName.ToLower().Contains(term));
+        }
+        if (!string.IsNullOrWhiteSpace(idNumber))
+        {
+            var term = idNumber.ToLower();
+            query = query.Where(b => b.IdNumber != null && b.IdNumber.ToLower().Contains(term));
+        }
+        if (accountNumber.HasValue)
+            query = query.Where(b => b.AccountNumber == accountNumber.Value);
+
+        return await query.OrderBy(b => b.BuyerId).Take(MaxResults).ToListAsync(cancellationToken);
     }
 
     public async Task SoftDeleteAsync(int buyerId, CancellationToken cancellationToken = default)

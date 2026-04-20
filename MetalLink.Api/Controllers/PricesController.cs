@@ -18,52 +18,46 @@ public class PricesController : ControllerBase
         _db = db;
     }
 
-    // GET /api/prices/product/{productId} - Get single price for a product
+    // GET /api/prices/product/{productId} - Get single legacyPrice for a product
     [HttpGet("product/{productId:int}")]
     public async Task<ActionResult<PriceDto>> GetByProductId(int productId, CancellationToken ct)
     {
-        var price = await _db.Prices
+        var legacyPrice = await _db.LegacyPrices
             .Where(p => p.ProductId == productId && p.IsActive)
             .FirstOrDefaultAsync(ct);
 
-        if (price == null)
+        if (legacyPrice == null)
             return NotFound();
 
         var dto = new PriceDto
         {
-            PriceId = price.PriceId,
-            ProductId = price.ProductId,
-            PriceA = price.PriceA,
-            PriceB = price.PriceB,
-            PriceC = price.PriceC,
-            IsActive = price.IsActive,
-            CreatedTime = price.CreatedTime,
-            UpdatedTime = price.UpdatedTime
+            PriceId = legacyPrice.LegacyPriceId,
+            ProductId = legacyPrice.ProductId,
+            IsActive = legacyPrice.IsActive,
+            CreatedTime = legacyPrice.CreatedTime,
+            UpdatedTime = legacyPrice.UpdatedTime
         };
 
         return Ok(dto);
     }
 
-    // GET /api/prices/{priceId}
-    [HttpGet("{priceId:int}")]
-    public async Task<ActionResult<PriceDto>> GetById(int priceId, CancellationToken ct)
+    // GET /api/prices/{legacyPriceId}
+    [HttpGet("{legacyPriceId:int}")]
+    public async Task<ActionResult<PriceDto>> GetById(int legacyPriceId, CancellationToken ct)
     {
-        var price = await _db.Prices
-            .FirstOrDefaultAsync(p => p.PriceId == priceId, ct);
+        var legacyPrice = await _db.LegacyPrices
+            .FirstOrDefaultAsync(p => p.LegacyPriceId == legacyPriceId, ct);
 
-        if (price == null)
+        if (legacyPrice == null)
             return NotFound();
 
         var dto = new PriceDto
         {
-            PriceId = price.PriceId,
-            ProductId = price.ProductId,
-            PriceA = price.PriceA,
-            PriceB = price.PriceB,
-            PriceC = price.PriceC,
-            IsActive = price.IsActive,
-            CreatedTime = price.CreatedTime,
-            UpdatedTime = price.UpdatedTime
+            PriceId = legacyPrice.LegacyPriceId,
+            ProductId = legacyPrice.ProductId,
+            IsActive = legacyPrice.IsActive,
+            CreatedTime = legacyPrice.CreatedTime,
+            UpdatedTime = legacyPrice.UpdatedTime
         };
 
         return Ok(dto);
@@ -75,61 +69,55 @@ public class PricesController : ControllerBase
         [FromBody] PriceDto dto,
         CancellationToken ct)
     {
-        var price = new Price
+        var legacyPrice = new LegacyPrice
         {
             ProductId = dto.ProductId,
-            PriceA = dto.PriceA,
-            PriceB = dto.PriceB,
-            PriceC = dto.PriceC,
             IsActive = true,
             CreatedByOperatorId = (int)User.GetOperatorId(),
             CreatedTime = DateTimeOffset.UtcNow,
             UpdatedTime = DateTimeOffset.UtcNow
         };
 
-        _db.Prices.Add(price);
+        _db.LegacyPrices.Add(legacyPrice);
         await _db.SaveChangesAsync(ct);
 
-        dto.PriceId = price.PriceId;
-        dto.CreatedTime = price.CreatedTime;
-        dto.UpdatedTime = price.UpdatedTime;
+        dto.PriceId = legacyPrice.LegacyPriceId;
+        dto.CreatedTime = legacyPrice.CreatedTime;
+        dto.UpdatedTime = legacyPrice.UpdatedTime;
 
-        return CreatedAtAction(nameof(GetById), new { priceId = price.PriceId }, dto);
+        return CreatedAtAction(nameof(GetById), new { legacyPriceId = legacyPrice.LegacyPriceId }, dto);
     }
 
-    // PUT /api/prices/{priceId}
-    [HttpPut("{priceId:int}")]
+    // PUT /api/prices/{legacyPriceId}
+    [HttpPut("{legacyPriceId:int}")]
     public async Task<IActionResult> Update(
-        int priceId,
+        int legacyPriceId,
         [FromBody] PriceDto dto,
         CancellationToken ct)
     {
-        var price = await _db.Prices.FirstOrDefaultAsync(p => p.PriceId == priceId, ct);
-        if (price == null)
+        var legacyPrice = await _db.LegacyPrices.FirstOrDefaultAsync(p => p.LegacyPriceId == legacyPriceId, ct);
+        if (legacyPrice == null)
             return NotFound();
 
-        price.PriceA = dto.PriceA;
-        price.PriceB = dto.PriceB;
-        price.PriceC = dto.PriceC;
-        price.UpdatedTime = DateTimeOffset.UtcNow;
+        legacyPrice.UpdatedTime = DateTimeOffset.UtcNow;
 
         await _db.SaveChangesAsync(ct);
         return NoContent();
     }
 
-    // DELETE /api/prices/{priceId} (soft delete)
-    [HttpDelete("{priceId:int}")]
-    public async Task<IActionResult> Delete(int priceId, CancellationToken ct)
+    // DELETE /api/prices/{legacyPriceId} (soft delete)
+    [HttpDelete("{legacyPriceId:int}")]
+    public async Task<IActionResult> Delete(int legacyPriceId, CancellationToken ct)
     {
-        var price = await _db.Prices.FirstOrDefaultAsync(p => p.PriceId == priceId, ct);
-        if (price == null)
+        var legacyPrice = await _db.LegacyPrices.FirstOrDefaultAsync(p => p.LegacyPriceId == legacyPriceId, ct);
+        if (legacyPrice == null)
             return NotFound();
 
-        if (!price.IsActive)
-            return BadRequest("Price is already inactive.");
+        if (!legacyPrice.IsActive)
+            return BadRequest("LegacyPrice is already inactive.");
 
-        price.IsActive = false;
-        price.UpdatedTime = DateTimeOffset.UtcNow;
+        legacyPrice.IsActive = false;
+        legacyPrice.UpdatedTime = DateTimeOffset.UtcNow;
 
         await _db.SaveChangesAsync(ct);
         return NoContent();

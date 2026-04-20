@@ -1,7 +1,7 @@
 public sealed class SiteDto
 {
-    public long SiteId { get; set; }
-    public long CompanyId { get; set; }
+    public int SiteId { get; set; }
+    public int CompanyId { get; set; }
     public string SiteName { get; set; } = string.Empty;
     public string SiteCode { get; set; } = string.Empty;
 
@@ -14,4 +14,10 @@ public sealed class SiteDto
     public int? CountryId      { get; set; }
     public string? ProvinceName { get; set; }
     public bool IsActive { get; set; } = false;
+
+    public string? CipcDocumentPath { get; set; }
+    public string? TradingLicensePath { get; set; }
+    public string? VatRegistrationCertificatePath { get; set; }
+    public string? TaxClearanceCertificatePath { get; set; }
+    public string? BbbeeComplianceCertificatePath { get; set; }
 }

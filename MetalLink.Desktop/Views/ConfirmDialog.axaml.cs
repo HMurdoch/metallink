@@ -6,10 +6,13 @@ namespace MetalLink.Desktop.Views;
 
 public partial class ConfirmDialog : Window
 {
-    public ConfirmDialog(string message)
+    public ConfirmDialog()
     {
         InitializeComponent();
+    }
 
+    public ConfirmDialog(string message) : this()
+    {
         var messageTextBlock = this.FindControl<TextBlock>("MessageText");
         if (messageTextBlock is not null)
         {

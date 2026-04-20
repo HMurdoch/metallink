@@ -5,7 +5,7 @@
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         Title="Confirm delete">
-  <Border Background="#252932" Padding="16">
+  <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="16">
     <StackPanel Spacing="14">
       <TextBlock x:Name="MessageText"
                  Foreground="#f5f5f5"

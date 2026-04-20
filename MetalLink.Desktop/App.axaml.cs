@@ -1,3 +1,4 @@
+using System;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -17,8 +18,7 @@ public partial class App : Application
     public CustomerService CustomerService { get; private set; } = null!;
     public BuyerService BuyerService { get; private set; } = null!;
     public CompanyAndSiteService CompanyAndSiteService { get; private set; } = null!;
-    public ProductsAndPricesService ProductsAndPricesService { get; private set; } = null!;
-    public TicketService TicketService { get; private set; } = null!;
+    public ProductsService ProductsService { get; private set; } = null!;
     public TicketReceivingService TicketReceivingService { get; private set; } = null!;
     public TicketSendingService TicketSendingService { get; private set; } = null!;
     public IScaleService ScaleService { get; private set; } = null!;
@@ -31,22 +31,29 @@ public partial class App : Application
     public SiteService SiteService { get; private set; } = null!;
     public ProvinceService ProvinceService { get; private set; } = null!;
 
+    public OperatorSettingsService OperatorSettingsService { get; private set; } = null!;
+    public ThemeService ThemeService { get; private set; } = null!;
+    public AppearanceService AppearanceService { get; private set; } = null!;
 
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
     }
 
+
     public override void OnFrameworkInitializationCompleted()
     {
+        Avalonia.Threading.Dispatcher.UIThread.UnhandledException += (_, e) =>
+        {
+            System.Console.Error.WriteLine("[FATAL] UIThread exception: " + e.Exception);
+        };
         // Initialize services
         ApiClient = new ApiClient(AuthState);
         AuthService = new AuthService(AuthState);
         CustomerService = new CustomerService(ApiClient, AuthState);
         BuyerService = new BuyerService(ApiClient, AuthState);
         CompanyAndSiteService = new CompanyAndSiteService(ApiClient, AuthState);
-        ProductsAndPricesService = new ProductsAndPricesService(ApiClient, AuthState);
-        TicketService = new TicketService(ApiClient, AuthState);
+        ProductsService = new ProductsService(ApiClient, AuthState);
         TicketReceivingService = new TicketReceivingService(ApiClient, AuthState);
         TicketSendingService = new TicketSendingService(ApiClient, AuthState);
         ScaleService = new MockScaleService();
@@ -58,6 +65,20 @@ public partial class App : Application
         FingerprintScanner = new MockFingerprintScanner();
         SiteService = new SiteService(ApiClient);
         ProvinceService = new ProvinceService(ApiClient);
+
+        OperatorSettingsService = new OperatorSettingsService(ApiClient);
+        ThemeService = new ThemeService(ApiClient);
+        AppearanceService = new AppearanceService(ApiClient);
+
+        // When the theme switches we must re-resolve our "effective" brushes
+        // (they are stored as brush instances in Application resources).
+        ThemeService.ThemeChanged += (_, _) => AppearanceService.ReapplyForCurrentTheme();
+
+        // Initialize panel background to solid by default; AppearanceService will swap after login.
+        // At this stage theme dictionaries are loaded, so Brush.SolidPanelBackground is resolvable.
+        var theme = ActualThemeVariant;
+        if (Resources.TryGetResource("Brush.SolidPanelBackground", theme, out var solid))
+            Resources["Brush.PanelBackground"] = solid;
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {

@@ -4,10 +4,10 @@ namespace MetalLink.Shared.Stock;
 
 public class StockOnHandDto
 {
-    public long StockOnHandId { get; set; }
-    public long SiteId { get; set; }
+    public int StockOnHandId { get; set; }
+    public int SiteId { get; set; }
     public string SiteName { get; set; } = string.Empty;
-    public long ProductId { get; set; }
+    public int ProductId { get; set; }
     public string ProductCode { get; set; } = string.Empty;
     public string ProductName { get; set; } = string.Empty;
     public decimal? Grade { get; set; }
@@ -27,14 +27,14 @@ public class StockOnHandDto
 
 public class StockMovementDto
 {
-    public long MovementId { get; set; }
+    public int MovementId { get; set; }
     public string MovementType { get; set; } = string.Empty; // "receiving" or "sending"
     public DateTimeOffset MovementDate { get; set; }
     
-    public long SiteId { get; set; }
+    public int SiteId { get; set; }
     public string SiteName { get; set; } = string.Empty;
     
-    public long ProductId { get; set; }
+    public int ProductId { get; set; }
     public string ProductCode { get; set; } = string.Empty;
     public string ProductName { get; set; } = string.Empty;
     
@@ -53,8 +53,8 @@ public class StockMovementDto
 
 public class StockMovementSearchRequestDto
 {
-    public long? SiteId { get; set; }
-    public long? ProductId { get; set; }
+    public int? SiteId { get; set; }
+    public int? ProductId { get; set; }
     public string? MovementType { get; set; } // "receiving" or "sending"
     public DateTimeOffset? StartDate { get; set; }
     public DateTimeOffset? EndDate { get; set; }

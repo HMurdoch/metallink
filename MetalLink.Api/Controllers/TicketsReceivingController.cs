@@ -4,7 +4,7 @@ using MetalLink.Application.Interfaces;
 using MetalLink.Application.Services;
 using MetalLink.Api.Extensions;
 using MetalLink.Domain.Entities;
-using MetalLink.Shared.Tickets;
+using MetalLink.Shared.Tickets.Receiving;
 
 namespace MetalLink.Api.Controllers;
 
@@ -16,6 +16,8 @@ public class TicketsReceivingController : ControllerBase
     private readonly ICustomerRepository _customerRepo;
     private readonly IProductRepository _productRepo;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IStockLevelRepository _stockLevelRepo;
+    private readonly IStockMovementRepository _stockMovementRepo;
     private readonly TicketNumberService _ticketNumberService;
     private readonly WeightCalculationService _weightCalculationService;
     private readonly PriceLookupService _priceLookupService;
@@ -25,6 +27,8 @@ public class TicketsReceivingController : ControllerBase
         ICustomerRepository customerRepo,
         IProductRepository productRepo,
         IUnitOfWork unitOfWork,
+        IStockLevelRepository stockLevelRepo,
+        IStockMovementRepository stockMovementRepo,
         TicketNumberService ticketNumberService,
         WeightCalculationService weightCalculationService,
         PriceLookupService priceLookupService)
@@ -33,6 +37,8 @@ public class TicketsReceivingController : ControllerBase
         _customerRepo = customerRepo;
         _productRepo = productRepo;
         _unitOfWork = unitOfWork;
+        _stockLevelRepo = stockLevelRepo;
+        _stockMovementRepo = stockMovementRepo;
         _ticketNumberService = ticketNumberService;
         _weightCalculationService = weightCalculationService;
         _priceLookupService = priceLookupService;
@@ -61,8 +67,39 @@ public class TicketsReceivingController : ControllerBase
     }
 
     [HttpPost("search")]
-    public async Task<ActionResult<List<TicketSearchResultDto>>> SearchTicketsReceiving([FromBody] TicketReceivingSearchRequestDto request)
+    public async Task<ActionResult<List<TicketReceivingSearchResultDto>>> SearchTicketsReceiving([FromBody] TicketReceivingSearchRequestDto request)
     {
+        if (request.NewCustomerOnly)
+        {
+            var customers = await _customerRepo.SearchCustomersWithZeroReceivingTicketsAsync(
+                companyId: request.CompanyId,
+                siteId: request.SiteId,
+                customerId: request.CustomerId,
+                firstName: request.FirstName,
+                lastName: request.LastName,
+                idNumber: request.IdNumber,
+                accountNumber: request.AccountNumber);
+
+            var newCustomerResults = customers.Select(c => new TicketReceivingSearchResultDto
+            {
+                TicketId = 0,
+                TicketNumber = string.Empty,
+                TicketType = string.Empty,
+                TicketTypeId = 0,
+                CustomerId = c.CustomerId,
+                FirstName = c.FirstName,
+                LastName = c.LastName,
+                CompanyName = c.Company?.CompanyName,
+                SiteName = c.Site?.SiteName,
+                AccountNumber = c.AccountNumber.HasValue ? c.AccountNumber.Value.ToString("D8") : null,
+                NetWeightKg = 0m,
+                TicketStatus = '\0',
+                CreatedTime = c.CreatedTime
+            }).ToList();
+
+            return Ok(newCustomerResults);
+        }
+
         var tickets = await _ticketReceivingRepo.SearchAsync(
             searchTerm: request.SearchTerm,
             companyId: request.CompanyId,
@@ -79,7 +116,7 @@ public class TicketsReceivingController : ControllerBase
             pageSize: request.PageSize
         );
 
-        var results = new List<TicketSearchResultDto>();
+        var results = new List<TicketReceivingSearchResultDto>();
         bool needsSave = false;
         
         foreach (var ticket in tickets)
@@ -109,8 +146,47 @@ public class TicketsReceivingController : ControllerBase
     [HttpGet("last-ticket-number/{prefix}")]
     public async Task<IActionResult> GetLastTicketNumberByPrefix(string prefix)
     {
-        var lastTicketNumber = await _ticketReceivingRepo.GetLastTicketNumberByPrefixAsync(prefix);
-        return Ok(new { ticketNumber = lastTicketNumber });
+        // Backwards-compatible route: historically used by the desktop.
+        // WARNING: this *advances* the sequence (consumes a number).
+        var ticketTypeId = prefix.ToUpperInvariant() switch
+        {
+            "RWB" => 1,
+            "RPL" => 2,
+            _ => throw new ArgumentException($"Invalid prefix: {prefix}")
+        };
+
+        var next = await _ticketNumberService.GetNextReceivingTicketNumberAsync(ticketTypeId);
+        return Ok(new { ticketNumber = next });
+    }
+
+    [HttpGet("peek-next-ticket-number/{ticketTypeId}")]
+    public async Task<IActionResult> PeekNextTicketNumber(int ticketTypeId)
+    {
+        var nextNumber = await _ticketNumberService.PeekNextReceivingTicketNumberAsync(ticketTypeId);
+        return Ok(new { ticketNumber = nextNumber });
+    }
+
+    [HttpGet("peek-next-ticket-number-prefix/{prefix}")]
+    public async Task<IActionResult> PeekNextTicketNumberByPrefix(string prefix)
+    {
+        var ticketTypeId = prefix.ToUpperInvariant() switch
+        {
+            "RWB" => 1,
+            "RPL" => 2,
+            _ => throw new ArgumentException($"Invalid prefix: {prefix}")
+        };
+
+        var nextNumber = await _ticketNumberService.PeekNextReceivingTicketNumberAsync(ticketTypeId);
+        return Ok(new { ticketNumber = nextNumber });
+    }
+
+    // Returns the last *stored* ticket number in the table for a prefix (non-mutating).
+    // Example: RWB-00000033
+    [HttpGet("last-stored-ticket-number/{prefix}")]
+    public async Task<IActionResult> GetLastStoredTicketNumberByPrefix(string prefix)
+    {
+        var last = await _ticketReceivingRepo.GetLastTicketNumberByPrefixAsync(prefix.ToUpperInvariant());
+        return Ok(new { ticketNumber = last });
     }
 
     [HttpGet("next-ticket-number/{ticketTypeId}")]
@@ -209,11 +285,11 @@ public class TicketsReceivingController : ControllerBase
 
         // Get unit price from customer's price code if not provided
         var unitPrice = dto.UnitPricePerKg;
-        if (unitPrice == 0 && ticket.Customer?.PriceCode != null)
+        if (unitPrice == 0 && ticket.Customer?.ProductPriceListId != null)
         {
-            unitPrice = await _priceLookupService.GetUnitPriceAsync(dto.ProductId, ticket.Customer.PriceCode, ct);
+            unitPrice = await _priceLookupService.GetUnitPriceAsync(dto.ProductId, ticket.Customer.ProductPriceListId, null, ct);
             if (unitPrice == 0)
-                return BadRequest($"Price not found for product {dto.ProductId} with price code {ticket.Customer.PriceCode}");
+                return BadRequest($"Price not found for product {dto.ProductId} in Customer's Price List.");
         }
 
         // Get operator ID from authenticated user
@@ -232,10 +308,33 @@ public class TicketsReceivingController : ControllerBase
             secondWeightKg: dto.SecondWeightKg,
             tare: dto.Tare
         );
+        line.ProductPriceListId = ticket.Customer?.ProductPriceListId;
         
         Console.WriteLine($"[API ADD LINE] Line created: FW={line.FirstWeightKg}, SW={line.SecondWeightKg}, NetWeight={line.NetWeightKg}");
 
         ticket.AddLine(line);
+
+        // Ticket state transitions and header net-weight tracking
+        // - TicketState: 'H' if no active lines, 'M' if 1+ active lines
+        // - NetWeightKg on ticket header: SUM of active line net weights
+        var activeLinesAfterAdd = ticket.Lines?.Where(l => l.IsActive).ToList() ?? new List<TicketReceivingLine>();
+        ticket.TicketState = activeLinesAfterAdd.Count == 0 ? 'H' : 'M';
+        ticket.UpdateWeights(null, null, activeLinesAfterAdd.Sum(l => l.NetWeightKg));
+
+        // Stock update + movement log (Purchase)
+        var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(dto.ProductId, operatorId, ct);
+        await _stockMovementRepo.AddAsync(
+            productId: dto.ProductId,
+            baseWeightKg: baseWeight,
+            buyWeightKg: line.NetWeightKg,
+            sellWeightKg: 0m,
+            createdByOperatorId: operatorId,
+            notes: $"Purchase - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
+            unitPricePerKg: unitPrice,
+            productPriceListId: ticket.Customer?.ProductPriceListId,
+            ct: ct);
+        await _stockLevelRepo.UpdateWeightKgAsync(dto.ProductId, baseWeight + line.NetWeightKg, ct);
+
         await _ticketReceivingRepo.UpdateAsync(ticket);
         await _unitOfWork.SaveChangesAsync(ct);
 
@@ -270,15 +369,16 @@ public class TicketsReceivingController : ControllerBase
             var vatAmount = lineTotal * 0.15m;
             var totalInclVat = lineTotal + vatAmount;
             
-            Console.WriteLine($"[API DEBUG] Line mapping: ReceivingTicketLineId={l.ReceivingTicketLineId}, ProductId={l.ProductId}, ProductName={l.Product?.ProductName}, FirstWeightKg={l.FirstWeightKg}, SecondWeightKg={l.SecondWeightKg}, NetWeightKg={l.NetWeightKg}, Notes='{l.Notes}'");
+            Console.WriteLine($"[API DEBUG] Line mapping: ReceivingTicketLineId={l.ReceivingTicketLineId}, ProductId={l.ProductId}, ProductName={l.Product?.StarredProductAlias ?? l.Product?.IsriProductName}, FirstWeightKg={l.FirstWeightKg}, SecondWeightKg={l.SecondWeightKg}, NetWeightKg={l.NetWeightKg}, Notes='{l.Notes}'");
             
             return new TicketReceivingLineDto
             {
                 ReceivingTicketLineId = l.ReceivingTicketLineId,
                 ReceivingTicketId = l.ReceivingTicketId,
                 ProductId = l.ProductId,
-                ProductCode = l.Product?.ProductCode ?? "",
-                ProductName = l.Product?.ProductName ?? "",
+                ProductCode = l.Product?.IsriProductCode ?? "",
+                ProductName = l.Product?.StarredProductAlias ?? l.Product?.IsriProductName ?? "",
+                ProductGroupName = l.Product?.ProductGroup?.ProductGroupName,
                 FirstWeightKg = l.FirstWeightKg,
                 SecondWeightKg = l.SecondWeightKg,
                 NetWeightKg = l.NetWeightKg,
@@ -321,7 +421,7 @@ public class TicketsReceivingController : ControllerBase
     }
 
     [HttpPut("{id}/create-header")]
-    public async Task<ActionResult> CreateTicketHeaderAsync(long id, [FromBody] CreateHeaderRequest request, CancellationToken ct = default)
+    public async Task<ActionResult> CreateTicketHeaderAsync(int id, [FromBody] CreateHeaderRequest request, CancellationToken ct = default)
     {
         try
         {
@@ -344,7 +444,7 @@ public class TicketsReceivingController : ControllerBase
     }
 
     [HttpPut("{id}/state")]
-    public async Task<ActionResult> UpdateTicketStateAsync(long id, [FromBody] UpdateTicketStateRequest request, CancellationToken ct = default)
+    public async Task<ActionResult> UpdateTicketStateAsync(int id, [FromBody] UpdateTicketStateRequest request, CancellationToken ct = default)
     {
         try
         {
@@ -379,6 +479,47 @@ public class TicketsReceivingController : ControllerBase
         }
     }
 
+    [HttpDelete("{id}/lines/{lineId}")]
+    public async Task<ActionResult> DeleteTicketReceivingLine(int id, int lineId, CancellationToken ct = default)
+    {
+        var ticket = await _ticketReceivingRepo.GetByIdAsync(id);
+        if (ticket == null)
+            return NotFound("Ticket not found");
+
+        var line = ticket.Lines?.FirstOrDefault(l => l.ReceivingTicketLineId == lineId);
+        if (line == null)
+            return NotFound("Line item not found");
+
+        // Soft delete line
+        line.SoftDelete();
+
+        // Stock update + movement log (Purchase Deleted)
+        var operatorId = (int)User.GetOperatorId();
+
+        var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(line.ProductId, operatorId, ct);
+        await _stockMovementRepo.AddAsync(
+            productId: line.ProductId,
+            baseWeightKg: baseWeight,
+            buyWeightKg: 0m,
+            sellWeightKg: line.NetWeightKg,
+            createdByOperatorId: operatorId,
+            notes: $"Purchase Deleted - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
+            unitPricePerKg: line.UnitPricePerKg,
+            productPriceListId: line.ProductPriceListId ?? ticket.Customer?.ProductPriceListId,
+            ct: ct);
+        await _stockLevelRepo.UpdateWeightKgAsync(line.ProductId, baseWeight - line.NetWeightKg, ct);
+
+        // Ticket state transitions and header net-weight tracking
+        var activeLinesAfterDelete = ticket.Lines?.Where(l => l.IsActive).ToList() ?? new List<TicketReceivingLine>();
+        ticket.TicketState = activeLinesAfterDelete.Count == 0 ? 'H' : 'M';
+        ticket.UpdateWeights(null, null, activeLinesAfterDelete.Sum(l => l.NetWeightKg));
+
+        await _ticketReceivingRepo.UpdateAsync(ticket);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return Ok(new { message = "Line deleted (soft).", ticketState = ticket.TicketState });
+    }
+
     [HttpPut("{id}/lines/{lineId}/tare")]
     public async Task<ActionResult> UpdateLineTare(int id, int lineId, [FromBody] UpdateLineTareRequest request, CancellationToken ct = default)
     {
@@ -409,11 +550,11 @@ public class TicketsReceivingController : ControllerBase
         }
     }
 
-    private Task<TicketSearchResultDto> MapToSearchResultDtoAsync(TicketReceiving ticket)
+    private Task<TicketReceivingSearchResultDto> MapToSearchResultDtoAsync(TicketReceiving ticket)
     {
         var accountNumber = ticket.Customer?.AccountNumber?.ToString("D8");
         
-        var result = new TicketSearchResultDto
+        var result = new TicketReceivingSearchResultDto
         {
             TicketId = ticket.TicketReceivingId,
             TicketNumber = ticket.TicketNumber,
@@ -426,6 +567,7 @@ public class TicketsReceivingController : ControllerBase
             SiteName = ticket.Customer?.Site?.SiteName,
             AccountNumber = accountNumber,
             NetWeightKg = ticket.NetWeightKg,
+            ProductGroupName = ticket.Lines?.FirstOrDefault()?.Product?.ProductGroup?.ProductGroupName,
             TicketStatus = ticket.TicketState,
             CreatedTime = ticket.CreatedTime
         };

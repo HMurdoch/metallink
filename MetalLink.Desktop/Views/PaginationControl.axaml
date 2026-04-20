@@ -16,7 +16,7 @@
         FontSize="11" />
 
     <!-- Page Info -->
-    <Border Background="#30333A" Padding="12,4" CornerRadius="3">
+    <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12,4" CornerRadius="3">
       <StackPanel Orientation="Horizontal" Spacing="4">
         <TextBlock Text="Page" Foreground="#c0c4cf" />
         <TextBlock Text="{Binding CurrentPage}" Foreground="#f5f5f5" FontWeight="Bold" />
@@ -37,14 +37,20 @@
         FontSize="11" />
 
     <!-- Records per page selector -->
-    <Border Background="#30333A" Padding="8,4" CornerRadius="3" Margin="8,0,0,0">
+    <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="8,4" CornerRadius="3" Margin="8,0,0,0">
       <StackPanel Orientation="Horizontal" Spacing="4">
         <TextBlock Text="Show:" Foreground="#c0c4cf" VerticalAlignment="Center" />
         <ComboBox
             ItemsSource="{Binding PageSizeOptions}"
             SelectedItem="{Binding PageSize}"
-            Width="60"
-            FontSize="11" />
+            Width="80"
+            FontSize="11">
+          <ComboBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
         <TextBlock Text="per page" Foreground="#c0c4cf" VerticalAlignment="Center" />
       </StackPanel>
     </Border>

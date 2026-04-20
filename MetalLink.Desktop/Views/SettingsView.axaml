@@ -1,5 +1,65 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MetalLink.Desktop.Views.SettingsView">
-  <TextBlock Text="Settings (TODO)" Margin="16"/>
+  <Grid RowDefinitions="Auto,*">
+    <!-- Sticky Header Panel -->
+    <Border Grid.Row="0" 
+            Background="{DynamicResource Brush.PanelBackground}"
+            Padding="12,8"
+            CornerRadius="4"
+            Margin="16,16,16,8"
+            ZIndex="100">
+      <Image Source="avares://MetalLink.Desktop/Assets/settings_heading.png"
+             Height="40"
+             HorizontalAlignment="Left"
+             Stretch="Uniform" />
+    </Border>
+    
+    <!-- Scrollable Content -->
+    <ScrollViewer Grid.Row="1" Padding="16,8,16,10">
+      <StackPanel Spacing="16" Margin="0,0,0,100">
+
+    <Border Background="{DynamicResource Brush.PanelBackground}" CornerRadius="8" Padding="16">
+      <StackPanel Spacing="10">
+        <Grid PointerPressed="ToggleAppearance" Cursor="Hand">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <TextBlock Grid.Column="0" 
+                     Text="{Binding IsAppearanceExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                     Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" Text="Appearance" FontSize="16" FontWeight="SemiBold"/>
+        </Grid>
+
+        <StackPanel Spacing="10" IsVisible="{Binding IsAppearanceExpanded}">
+        <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+          <TextBlock Text="Theme" VerticalAlignment="Center"/>
+
+          <RadioButton Content="Light" GroupName="Theme" IsChecked="{Binding IsLightTheme}" />
+          <RadioButton Content="Dark" GroupName="Theme" IsChecked="{Binding IsDarkTheme}" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+          <TextBlock Text="Crystaline" VerticalAlignment="Center"/>
+          <ToggleSwitch IsChecked="{Binding IsCrystaline}" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+          <TextBlock Text="Enforce Buyer Company" VerticalAlignment="Center"/>
+          <ToggleSwitch IsChecked="{Binding EnforceBuyerCompany}" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+          <TextBlock Text="Play Intro Video" VerticalAlignment="Center"/>
+          <ToggleSwitch IsChecked="{Binding PlayIntroVideo}" OnContent="Yes" OffContent="No" />
+        </StackPanel>
+
+        <TextBlock Text="Theme/Appearance/Settings are stored per operator in the database." Opacity="0.7" FontSize="12"/>
+        </StackPanel>
+        </StackPanel>
+      </Border>
+        </StackPanel>
+    </ScrollViewer>
+  </Grid>
 </UserControl>

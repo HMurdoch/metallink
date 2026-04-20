@@ -1,6 +1,8 @@
 # Visual Studio 2015+
 .vs/
 
+# Documentation exceptions (must come AFTER *.md rule below)
+
 # Build results
 [Bb]in/
 [Oo]bj/
@@ -117,6 +119,13 @@
 
 *.md
 *.txt
+
+# Documentation file exceptions (include these specific .md files)
+!SYSTEM_RULES.md
+!ScratchPad.md
+!HeadingGeneration.md
+!UI_REFACTORING_PLAN.md
+!UI_FIXES_PLAN.md
 
 # NuGet
 packages/

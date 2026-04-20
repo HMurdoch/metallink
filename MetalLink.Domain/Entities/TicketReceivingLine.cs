@@ -26,6 +26,12 @@ public class TicketReceivingLine
 
     public string? Notes { get; private set; }
 
+    /// <summary>
+    /// Which customer price list was active when this line was created.
+    /// Nullable – populated for new lines; backfilled via migration for existing rows.
+    /// </summary>
+    public int? ProductPriceListId { get; set; }
+
     public bool IsActive { get; private set; } = true;
     public DateTimeOffset CreatedTime { get; private set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedTime { get; private set; } = DateTimeOffset.UtcNow;

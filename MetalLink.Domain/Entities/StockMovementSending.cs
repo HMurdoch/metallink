@@ -8,22 +8,22 @@ namespace MetalLink.Domain.Entities;
 /// </summary>
 public class StockMovementSending
 {
-    public long StockMovementSendingId { get; private set; }
+    public int StockMovementSendingId { get; private set; }
 
     // Site where the movement occurred
-    public long SiteId { get; private set; }
+    public int SiteId { get; private set; }
     public Site Site { get; set; } = null!;
 
     // Product being moved
-    public long ProductId { get; private set; }
+    public int ProductId { get; private set; }
     public Product Product { get; set; } = null!;
 
     // Link to the sending ticket that caused this movement
-    public long TicketSendingId { get; private set; }
+    public int TicketSendingId { get; private set; }
     public TicketSending TicketSending { get; set; } = null!;
 
     // Link to the specific ticket line (if applicable - for platform tickets)
-    public long? TicketSendingLineId { get; private set; }
+    public int? TicketSendingLineId { get; private set; }
     public TicketSendingLine? TicketSendingLine { get; set; }
 
     // Movement details
@@ -37,8 +37,12 @@ public class StockMovementSending
     public string? Notes { get; private set; }
 
     // Buyer reference (denormalized for reporting)
-    public long BuyerId { get; private set; }
+    public int BuyerId { get; private set; }
     public string BuyerName { get; private set; } = string.Empty;
+
+    // Price list that was active when this movement was recorded
+    public int? ProductPriceListId { get; set; }
+    public ProductPriceList? ProductPriceList { get; set; }
 
     // Audit
     public bool IsActive { get; private set; } = true;
@@ -49,15 +53,15 @@ public class StockMovementSending
     private StockMovementSending() { }
 
     public StockMovementSending(
-        long siteId,
-        long productId,
-        long ticketSendingId,
-        long? ticketSendingLineId,
+        int siteId,
+        int productId,
+        int ticketSendingId,
+        int? ticketSendingLineId,
         decimal quantityKg,
         decimal unitPricePerKg,
         string currencyCode,
         string ticketNumber,
-        long buyerId,
+        int buyerId,
         string buyerName,
         string? notes = null)
     {

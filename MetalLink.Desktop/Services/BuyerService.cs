@@ -53,7 +53,7 @@ public sealed class BuyerService
         response.EnsureSuccessStatusCode();
     }
 
-    public async Task SoftDeleteBuyerAsync(
+    public async Task DeleteBuyerAsync(
         long buyerId,
         CancellationToken cancellationToken = default)
     {

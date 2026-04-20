@@ -4,7 +4,7 @@ using MetalLink.Application.Interfaces;
 using MetalLink.Application.Services;
 using MetalLink.Api.Extensions;
 using MetalLink.Domain.Entities;
-using MetalLink.Shared.Tickets;
+using MetalLink.Shared.Tickets.Sending;
 
 namespace MetalLink.Api.Controllers;
 
@@ -16,6 +16,8 @@ public class TicketsSendingController : ControllerBase
     private readonly IBuyerRepository _buyerRepo;
     private readonly IProductRepository _productRepo;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IStockLevelRepository _stockLevelRepo;
+    private readonly IStockMovementRepository _stockMovementRepo;
     private readonly TicketNumberService _ticketNumberService;
     private readonly WeightCalculationService _weightCalculationService;
     private readonly PriceLookupService _priceLookupService;
@@ -25,6 +27,8 @@ public class TicketsSendingController : ControllerBase
         IBuyerRepository buyerRepo,
         IProductRepository productRepo,
         IUnitOfWork unitOfWork,
+        IStockLevelRepository stockLevelRepo,
+        IStockMovementRepository stockMovementRepo,
         TicketNumberService ticketNumberService,
         WeightCalculationService weightCalculationService,
         PriceLookupService priceLookupService)
@@ -33,6 +37,8 @@ public class TicketsSendingController : ControllerBase
         _buyerRepo = buyerRepo;
         _productRepo = productRepo;
         _unitOfWork = unitOfWork;
+        _stockLevelRepo = stockLevelRepo;
+        _stockMovementRepo = stockMovementRepo;
         _ticketNumberService = ticketNumberService;
         _weightCalculationService = weightCalculationService;
         _priceLookupService = priceLookupService;
@@ -49,9 +55,40 @@ public class TicketsSendingController : ControllerBase
     }
 
     [HttpPost("search")]
-    public async Task<ActionResult<List<TicketSearchResultDto>>> SearchTicketsSending([FromBody] TicketSendingSearchRequestDto request)
+    public async Task<ActionResult<List<TicketSendingSearchResultDto>>> SearchTicketsSending([FromBody] TicketSendingSearchRequestDto request)
 
     {
+        if (request.NewBuyerOnly)
+        {
+            var buyers = await _buyerRepo.SearchBuyersWithZeroSendingTicketsAsync(
+                companyId: request.CompanyId,
+                siteId: request.SiteId,
+                buyerId: request.BuyerId,
+                firstName: request.FirstName,
+                lastName: request.LastName,
+                idNumber: request.IdNumber,
+                accountNumber: request.AccountNumber);
+
+            var newBuyerResults = buyers.Select(b => new TicketSendingSearchResultDto
+            {
+                TicketId = 0,
+                TicketNumber = string.Empty,
+                TicketType = string.Empty,
+                TicketTypeId = 0,
+                BuyerId = b.BuyerId,
+                FirstName = b.FirstName,
+                LastName = b.LastName,
+                CompanyName = b.Company?.CompanyName,
+                SiteName = b.Site?.SiteName,
+                AccountNumber = b.AccountNumber.HasValue ? b.AccountNumber.Value.ToString("D8") : null,
+                NetWeightKg = 0m,
+                TicketStatus = '\0',
+                CreatedTime = b.CreatedTime
+            }).ToList();
+
+            return Ok(newBuyerResults);
+        }
+
         var tickets = await _ticketSendingRepo.SearchAsync(
             searchTerm: request.SearchTerm,
             companyId: request.CompanyId,
@@ -68,7 +105,7 @@ public class TicketsSendingController : ControllerBase
             pageSize: request.PageSize
         );
 
-        var results = new List<TicketSearchResultDto>();
+        var results = new List<TicketSendingSearchResultDto>();
         foreach (var ticket in tickets)
         {
             results.Add(await MapToSearchResultDtoAsync(ticket));
@@ -77,59 +114,50 @@ public class TicketsSendingController : ControllerBase
         return Ok(results);
     }
 
-    /// <summary>
-    /// Search for buyers that do NOT have any sending tickets created yet.
-    /// Mirrors the legacy api/tickets/search-new-customers endpoint but is sending-specific.
-    /// </summary>
-    [HttpPost("search-new-buyers")]
-    public async Task<ActionResult<NewBuyerResultDto[]>> SearchNewBuyersWithoutTickets(
-        [FromBody] TicketSearchRequestDto request,
-        CancellationToken ct = default)
-    {
-        // Build buyer search criteria
-        var criteria = new MetalLink.Shared.Buyers.BuyerSearchRequestDto
-        {
-            BuyerId = request.BuyerId,
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            IdNumber = request.IdNumber,
-            AccountNumber = request.AccountNumber,
-            SiteId = request.SiteId
-        };
-
-        var allBuyers = await _buyerRepo.SearchAsync(criteria, ct);
-
-        // Buyers that already have at least one active sending ticket
-        var buyerIdsWithTickets = await _ticketSendingRepo.GetBuyerIdsWithActiveTicketsAsync(
-            companyId: request.CompanyId,
-            siteId: request.SiteId,
-            ct: ct);
-
-        var buyersWithoutTickets = allBuyers
-            .Where(b => !buyerIdsWithTickets.Contains(b.BuyerId))
-            .ToArray();
-
-        var results = buyersWithoutTickets
-            .Select(b => new NewBuyerResultDto
-            {
-                BuyerId = b.BuyerId,
-                FirstName = b.FirstName,
-                LastName = b.LastName,
-                CompanyName = b.Company?.CompanyName,
-                SiteName = b.Site?.SiteName,
-                AccountNumber = b.AccountNumber?.ToString(),
-                CreatedTime = b.CreatedTime
-            })
-            .ToArray();
-
-        return Ok(results);
-    }
-
     [HttpGet("last-ticket-number/{prefix}")]
     public async Task<IActionResult> GetLastTicketNumberByPrefix(string prefix)
     {
-        var lastTicketNumber = await _ticketSendingRepo.GetLastTicketNumberByPrefixAsync(prefix);
-        return Ok(new { ticketNumber = lastTicketNumber });
+        // Backwards-compatible route.
+        // WARNING: this *advances* the sequence (consumes a number).
+        var ticketTypeId = prefix.ToUpperInvariant() switch
+        {
+            "SWB" => 1,
+            "SPL" => 2,
+            _ => throw new ArgumentException($"Invalid prefix: {prefix}")
+        };
+
+        var next = await _ticketNumberService.GetNextSendingTicketNumberAsync(ticketTypeId);
+        return Ok(new { ticketNumber = next });
+    }
+
+    [HttpGet("peek-next-ticket-number/{ticketTypeId}")]
+    public async Task<IActionResult> PeekNextTicketNumber(int ticketTypeId)
+    {
+        var nextNumber = await _ticketNumberService.PeekNextSendingTicketNumberAsync(ticketTypeId);
+        return Ok(new { ticketNumber = nextNumber });
+    }
+
+    [HttpGet("peek-next-ticket-number-prefix/{prefix}")]
+    public async Task<IActionResult> PeekNextTicketNumberByPrefix(string prefix)
+    {
+        var ticketTypeId = prefix.ToUpperInvariant() switch
+        {
+            "SWB" => 1,
+            "SPL" => 2,
+            _ => throw new ArgumentException($"Invalid prefix: {prefix}")
+        };
+
+        var nextNumber = await _ticketNumberService.PeekNextSendingTicketNumberAsync(ticketTypeId);
+        return Ok(new { ticketNumber = nextNumber });
+    }
+
+    // Returns the last *stored* ticket number in the table for a prefix (non-mutating).
+    // Example: SWB-00000033
+    [HttpGet("last-stored-ticket-number/{prefix}")]
+    public async Task<IActionResult> GetLastStoredTicketNumberByPrefix(string prefix)
+    {
+        var last = await _ticketSendingRepo.GetLastTicketNumberByPrefixAsync(prefix.ToUpperInvariant());
+        return Ok(new { ticketNumber = last });
     }
 
     [HttpGet("next-ticket-number/{ticketTypeId}")]
@@ -176,7 +204,9 @@ public class TicketsSendingController : ControllerBase
         }
 
         // Generate ticket number
-        var ticketNumber = await _ticketNumberService.GetNextSendingTicketNumberAsync(dto.TicketTypeId);
+        // NOTE: ticket numbers are unique (even across soft-deleted rows). In case of race conditions or
+        // mis-detected "last ticket" due to data drift, we retry on unique-constraint violations.
+        string? ticketNumber = null;
 
         // Calculate net weight for weighbridge tickets
         // For header-only creation, NetWeightKg stays 0 (net weight is calculated per line as weights are captured)
@@ -193,33 +223,50 @@ public class TicketsSendingController : ControllerBase
         // Get operator ID from authenticated user
         var operatorId = (int)User.GetOperatorId();
 
-        var ticket = new TicketSending(
-            buyerId: dto.BuyerId,
-            ticketTypeId: dto.TicketTypeId,
-            ticketNumber: ticketNumber,
-            netWeightKg: netWeightKg,
-            createdByOperatorId: operatorId,
-            // For header create: dto.InitializeWeightKg should carry the initial weighbridge reading
-            firstWeightKg: WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId) ? dto.InitializeWeightKg : null,
-            secondWeightKg: null,
-            vehicleRegistration: WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId) ? dto.VehicleRegistration : null,
-            trailerRegistration: WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId) ? dto.TrailerRegistration : null,
-            driverName: WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId) ? dto.DriverName : null,
-            notes: dto.Notes
-        );
-
-        // Persist extra weighbridge header fields
-        if (WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId))
+        // Try create (with retry on unique constraint)
+        for (var attempt = 1; attempt <= 3; attempt++)
         {
-            ticket.SetWeighbridgeReferences(dto.OfmWeighbridgeTicket, dto.CkNumber, dto.DeliveryNumber, dto.ForeignTicket);
+            ticketNumber = await _ticketNumberService.GetNextSendingTicketNumberAsync(dto.TicketTypeId);
+
+            var ticket = new TicketSending(
+                buyerId: dto.BuyerId,
+                ticketTypeId: dto.TicketTypeId,
+                ticketNumber: ticketNumber,
+                netWeightKg: netWeightKg,
+                createdByOperatorId: operatorId,
+                // For header create: dto.InitializeWeightKg should carry the initial weighbridge reading
+                firstWeightKg: WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId) ? dto.InitializeWeightKg : null,
+                secondWeightKg: null,
+                vehicleRegistration: WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId) ? dto.VehicleRegistration : null,
+                trailerRegistration: WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId) ? dto.TrailerRegistration : null,
+                driverName: WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId) ? dto.DriverName : null,
+                notes: dto.Notes
+            );
+
+            if (WeightCalculationService.IsWeighbridgeTicket(dto.TicketTypeId))
+            {
+                ticket.SetWeighbridgeReferences(dto.OfmWeighbridgeTicket, dto.CkNumber, dto.DeliveryNumber, dto.ForeignTicket);
+            }
+
+            try
+            {
+                await _ticketSendingRepo.AddAsync(ticket);
+                await _unitOfWork.SaveChangesAsync(ct);
+
+                var result = await _ticketSendingRepo.GetByIdAsync(ticket.TicketSendingId);
+                return CreatedAtAction(nameof(GetTicketSending), new { id = result!.TicketSendingId }, MapToDto(result));
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException ex) when (ex.InnerException is Npgsql.PostgresException pgEx && pgEx.SqlState == "23505")
+            {
+                // Unique violation - retry with a new generated number
+                if (attempt == 3)
+                    return StatusCode(500, new { error = "Failed to generate unique ticket number after retries." });
+
+                continue;
+            }
         }
 
-
-        await _ticketSendingRepo.AddAsync(ticket);
-        await _unitOfWork.SaveChangesAsync(ct);
-
-        var result = await _ticketSendingRepo.GetByIdAsync(ticket.TicketSendingId);
-        return CreatedAtAction(nameof(GetTicketSending), new { id = result!.TicketSendingId }, MapToDto(result));
+        return StatusCode(500, new { error = "Failed to create ticket." });
     }
 
     [HttpPut("{id}")]
@@ -279,8 +326,8 @@ public class TicketsSendingController : ControllerBase
                     TicketSendingLineId = l.TicketSendingLineId,
                     TicketSendingId = l.TicketSendingId,
                     ProductId = l.ProductId,
-                    ProductCode = l.Product?.ProductCode ?? "",
-                    ProductName = l.Product?.ProductName ?? "",
+                    ProductCode = l.Product?.IsriProductCode ?? "",
+                    ProductName = l.Product?.StarredProductAlias ?? l.Product?.IsriProductName ?? "",
                     FirstWeightKg = l.FirstWeightKg,
                     SecondWeightKg = l.SecondWeightKg,
                     NetWeightKg = l.NetWeightKg,
@@ -311,10 +358,34 @@ public class TicketsSendingController : ControllerBase
             return NotFound("Line item not found");
 
         line.SoftDelete();
+
+        // Stock update + movement log (Sale Deleted)
+        var operatorId = (int)User.GetOperatorId();
+
+        var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(line.ProductId, operatorId, ct);
+        await _stockMovementRepo.AddAsync(
+            productId: line.ProductId,
+            baseWeightKg: baseWeight,
+            buyWeightKg: line.NetWeightKg,
+            sellWeightKg: 0m,
+            createdByOperatorId: operatorId,
+            notes: $"Sale Deleted - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
+            unitPricePerKg: line.UnitPricePerKg,
+            productPriceListId: line.ProductPriceListId ?? ticket.Buyer?.ProductPriceListId,
+            ct: ct);
+        await _stockLevelRepo.UpdateWeightKgAsync(line.ProductId, baseWeight + line.NetWeightKg, ct);
+
+        // Ticket state transitions and header net-weight tracking
+        // If the last active line is deleted, revert ticket back to Header-only state.
+        ticket.RevertToHeaderIfNoActiveLines();
+
+        var activeLinesAfterDelete = ticket.Lines?.Where(l => l.IsActive).ToList() ?? new List<TicketSendingLine>();
+        ticket.UpdateWeights(null, null, activeLinesAfterDelete.Sum(l => l.NetWeightKg));
+
         await _ticketSendingRepo.UpdateAsync(ticket);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return Ok(new { message = "Line deleted (soft)." });
+        return Ok(new { message = "Line deleted (soft).", ticketState = ticket.TicketState });
     }
 
     [HttpPost("{id}/lines")]
@@ -330,11 +401,11 @@ public class TicketsSendingController : ControllerBase
 
         // Get unit price from buyer's price code if not provided
         var unitPrice = dto.UnitPricePerKg;
-        if (unitPrice == 0 && ticket.Buyer?.PriceCode != null)
+        if (unitPrice == 0 && ticket.Buyer?.ProductPriceListId != null)
         {
-            unitPrice = await _priceLookupService.GetUnitPriceAsync(dto.ProductId, ticket.Buyer.PriceCode, ct);
+            unitPrice = await _priceLookupService.GetUnitPriceAsync(dto.ProductId, ticket.Buyer.ProductPriceListId, null, ct);
             if (unitPrice == 0)
-                return BadRequest($"Price not found for product {dto.ProductId} with price code {ticket.Buyer.PriceCode}");
+                return BadRequest($"Price not found for product {dto.ProductId} in Buyer's Price List.");
         }
 
         // Get operator ID from authenticated user
@@ -361,11 +432,29 @@ public class TicketsSendingController : ControllerBase
                 firstWeightKg: fw,
                 secondWeightKg: sw
             );
+            line.ProductPriceListId = ticket.Buyer?.ProductPriceListId;
 
             ticket.AddLine(line);
 
-            // After adding a line, the next "first" weight becomes the previous "second" weight
-            ticket.AdvanceInitializeWeight(sw);
+            // Stock update + movement log (Sale)
+            var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(dto.ProductId, operatorId, ct);
+            await _stockMovementRepo.AddAsync(
+                productId: dto.ProductId,
+                baseWeightKg: baseWeight,
+                buyWeightKg: 0m,
+                sellWeightKg: line.NetWeightKg,
+                createdByOperatorId: operatorId,
+                notes: $"Sale - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
+                unitPricePerKg: unitPrice,
+                productPriceListId: ticket.Buyer?.ProductPriceListId,
+                ct: ct);
+            await _stockLevelRepo.UpdateWeightKgAsync(dto.ProductId, baseWeight - line.NetWeightKg, ct);
+
+            // Ticket state transitions and header net-weight tracking
+            var activeLinesAfterAdd = ticket.Lines?.Where(l => l.IsActive).ToList() ?? new List<TicketSendingLine>();
+            // Ticket.AddLine already transitions H -> M.
+            // NetWeightKg on header = SUM of active line net weights.
+            ticket.UpdateWeights(null, null, activeLinesAfterAdd.Sum(l => l.NetWeightKg));
         }
         else
         {
@@ -378,8 +467,23 @@ public class TicketsSendingController : ControllerBase
                 tare: dto.Tare,
                 notes: dto.Notes
             );
+            line.ProductPriceListId = ticket.Buyer?.ProductPriceListId;
 
             ticket.AddLine(line);
+
+            // Stock update + movement log (Sale)
+            var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(dto.ProductId, operatorId, ct);
+            await _stockMovementRepo.AddAsync(
+                productId: dto.ProductId,
+                baseWeightKg: baseWeight,
+                buyWeightKg: 0m,
+                sellWeightKg: line.NetWeightKg,
+                createdByOperatorId: operatorId,
+                notes: $"Sale - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
+                unitPricePerKg: unitPrice,
+                productPriceListId: ticket.Buyer?.ProductPriceListId,
+                ct: ct);
+            await _stockLevelRepo.UpdateWeightKgAsync(dto.ProductId, baseWeight - line.NetWeightKg, ct);
         }
         await _ticketSendingRepo.UpdateAsync(ticket);
         await _unitOfWork.SaveChangesAsync(ct);
@@ -389,7 +493,7 @@ public class TicketsSendingController : ControllerBase
     }
 
     [HttpPut("{id}/lines/{lineId}/tare")]
-    public async Task<ActionResult> UpdateLineTare(int id, int lineId, [FromBody] UpdateLineTareRequest request, CancellationToken ct = default)
+    public async Task<ActionResult> UpdateLineTare(int id, int lineId, [FromBody] SendingUpdateLineTareRequest request, CancellationToken ct = default)
     {
         try
         {
@@ -414,7 +518,7 @@ public class TicketsSendingController : ControllerBase
         }
     }
 
-    public class UpdateLineTareRequest
+    public class SendingUpdateLineTareRequest
     {
         public decimal Tare { get; set; }
     }
@@ -437,7 +541,7 @@ public class TicketsSendingController : ControllerBase
     }
 
     [HttpPut("{id}/state")]
-    public async Task<ActionResult> UpdateTicketStateAsync(long id, [FromBody] UpdateTicketStateRequest request, CancellationToken ct = default)
+    public async Task<ActionResult> UpdateTicketStateAsync(int id, [FromBody] UpdateTicketStateRequest request, CancellationToken ct = default)
     {
         try
         {
@@ -503,8 +607,8 @@ public class TicketsSendingController : ControllerBase
                     TicketSendingLineId = l.TicketSendingLineId,
                     TicketSendingId = l.TicketSendingId,
                     ProductId = l.ProductId,
-                    ProductCode = l.Product?.ProductCode ?? "",
-                    ProductName = l.Product?.ProductName ?? "",
+                    ProductCode = l.Product?.IsriProductCode ?? "",
+                    ProductName = l.Product?.StarredProductAlias ?? l.Product?.IsriProductName ?? "",
                     FirstWeightKg = l.FirstWeightKg,
                     SecondWeightKg = l.SecondWeightKg,
                     NetWeightKg = l.NetWeightKg,
@@ -521,23 +625,24 @@ public class TicketsSendingController : ControllerBase
         };
     }
 
-    private Task<TicketSearchResultDto> MapToSearchResultDtoAsync(TicketSending ticket)
+    private Task<TicketSendingSearchResultDto> MapToSearchResultDtoAsync(TicketSending ticket)
     {
         var accountNumber = ticket.Buyer?.AccountNumber?.ToString("D8");
         
-        var result = new TicketSearchResultDto
+        var result = new TicketSendingSearchResultDto
         {
             TicketId = ticket.TicketSendingId,
             TicketNumber = ticket.TicketNumber,
             TicketType = ticket.TicketType?.TicketTypeName ?? "Unknown",
             TicketTypeId = ticket.TicketTypeId,
-            CustomerId = ticket.BuyerId,
+            BuyerId = ticket.BuyerId,
             FirstName = ticket.Buyer?.FirstName,
             LastName = ticket.Buyer?.LastName,
             CompanyName = ticket.Buyer?.Company?.CompanyName,
             SiteName = ticket.Buyer?.Site?.SiteName,
             AccountNumber = accountNumber,
             NetWeightKg = ticket.NetWeightKg,
+            ProductGroupName = ticket.Lines?.FirstOrDefault()?.Product?.ProductGroup?.ProductGroupName,
             TicketStatus = ticket.TicketState,
             CreatedTime = ticket.CreatedTime
         };

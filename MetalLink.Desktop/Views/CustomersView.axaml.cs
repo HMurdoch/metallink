@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using MetalLink.Desktop.ViewModels;
 
@@ -9,12 +10,34 @@ public partial class CustomersView : UserControl
     public CustomersView()
     {
         InitializeComponent();
-        // NOTE: Selection is already handled via DataGrid SelectedItem binding.
-        // Do NOT execute commands from PropertyChanged here; it causes recursion.
     }
 
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);
+    }
+
+    private void ToggleSearchCriteria(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+            vm.CustomerIsSearchCriteriaExpanded = !vm.CustomerIsSearchCriteriaExpanded;
+    }
+
+    private void ToggleSearchResults(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+            vm.CustomerIsSearchResultsExpanded = !vm.CustomerIsSearchResultsExpanded;
+    }
+
+    private void ToggleDetails(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+            vm.CustomerIsDetailsExpanded = !vm.CustomerIsDetailsExpanded;
+    }
+
+    private void ToggleCreateEdit(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+            vm.CustomerIsCreateEditExpanded = !vm.CustomerIsCreateEditExpanded;
     }
 }

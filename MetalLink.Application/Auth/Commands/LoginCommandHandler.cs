@@ -1,6 +1,7 @@
 using MediatR;
 using MetalLink.Application.Interfaces;
 using MetalLink.Shared.Auth;
+using MetalLink.Shared.Settings;
 
 namespace MetalLink.Application.Auth.Commands;
 
@@ -38,9 +39,19 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, LoginRes
         return new LoginResponseDto
         {
             Token = token,
+            OperatorId = op.OperatorId,
             Username = op.Username,
             DisplayName = op.DisplayName,
-            Role = op.Role
+            Role = op.Role,
+            OperatorSettings = op.OperatorSettings.Select(s => new OperatorSettingDto
+            {
+                OperatorId = s.OperatorId,
+                SettingId = s.SettingId,
+                SettingName = s.Setting.SettingName,
+                SettingOptionId = s.SettingOptionId,
+                SettingOptionValue = s.SettingOption.SettingOptionValue,
+                IsActive = s.IsActive
+            }).ToList()
         };
     }
 }

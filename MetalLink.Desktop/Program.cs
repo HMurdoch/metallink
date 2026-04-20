@@ -1,6 +1,9 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
+using Projektanker.Icons.Avalonia;
+using Projektanker.Icons.Avalonia.FontAwesome;
 using System;
+using System.Threading.Tasks;
 
 namespace MetalLink.Desktop;
 
@@ -10,8 +13,21 @@ sealed class Program
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
     // yet and stuff might break.
     [STAThread]
-    public static void Main(string[] args) => BuildAvaloniaApp()
-        .StartWithClassicDesktopLifetime(args);
+    public static void Main(string[] args)
+    {
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        {
+            Console.Error.WriteLine("[FATAL] UnhandledException: " + e.ExceptionObject);
+        };
+
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            Console.Error.WriteLine("[ERROR] UnobservedTaskException: " + e.Exception);
+            e.SetObserved();
+        };
+
+        BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+    }
 
     // Avalonia configuration, don't remove; also used by visual designer.
     public static AppBuilder BuildAvaloniaApp()
@@ -19,5 +35,7 @@ sealed class Program
             .UsePlatformDetect()
             .UseReactiveUI()
             .WithInterFont()
+            // Icon provider init (FontAwesome)
+            .AfterSetup(_ => IconProvider.Current.Register<FontAwesomeIconProvider>())
             .LogToTrace();
 }

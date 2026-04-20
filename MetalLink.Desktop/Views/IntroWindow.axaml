@@ -1,0 +1,22 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MetalLink.Desktop.Views.Controls"
+        x:Class="MetalLink.Desktop.Views.IntroWindow"
+        SystemDecorations="None"
+        CanResize="False"
+        Background="Black"
+        Topmost="True"
+        KeyDown="OnKeyDown">
+
+  <Grid Background="Black" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
+        PointerPressed="OnPointerPressed">
+
+    <!-- Portrait video, no decorative border; window itself is borderless -->
+    <controls:FfmpegLoopingVideoView x:Name="IntroVideo"
+                                    StretchMode="Uniform"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch"
+                                    Opacity="0" />
+
+  </Grid>
+</Window>

@@ -81,8 +81,8 @@ public sealed class CompaniesController : ControllerBase
     }
 
     // GET api/companies/{companyId}
-    [HttpGet("{companyId:long}")]
-    public async Task<ActionResult<CompanyLookupDto>> GetById(long companyId, CancellationToken ct)
+    [HttpGet("{companyId:int}")]
+    public async Task<ActionResult<CompanyLookupDto>> GetById(int companyId, CancellationToken ct)
     {
         var c = await _db.Companies.AsNoTracking().FirstOrDefaultAsync(x => x.CompanyId == companyId, ct);
         if (c == null) return NotFound();
@@ -97,8 +97,8 @@ public sealed class CompaniesController : ControllerBase
     }
 
     // PUT /api/companies/14
-    [HttpPut("{companyId:long}")]
-    public async Task<IActionResult> Update(long companyId, [FromBody] CompanyDto dto, CancellationToken ct)
+    [HttpPut("{companyId:int}")]
+    public async Task<IActionResult> Update(int companyId, [FromBody] CompanyDto dto, CancellationToken ct)
     {
         if (dto == null) return BadRequest("Body required.");
 
@@ -121,8 +121,8 @@ public sealed class CompaniesController : ControllerBase
     }
 
     // DELETE /api/companies/14  (soft delete)
-    [HttpDelete("{companyId:long}")]
-    public async Task<IActionResult> Delete(long companyId, CancellationToken ct)
+    [HttpDelete("{companyId:int}")]
+    public async Task<IActionResult> Delete(int companyId, CancellationToken ct)
     {
         var company = await _db.Companies.FirstOrDefaultAsync(x => x.CompanyId == companyId, ct);
         if (company == null) return NotFound();

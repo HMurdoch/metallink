@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MetalLink.Desktop.Auth;
-using MetalLink.Shared.Tickets;
+using MetalLink.Shared.Tickets.Sending;
 
 namespace MetalLink.Desktop.Services;
 
@@ -37,19 +37,6 @@ public sealed class TicketSendingService
         );
     }
 
-    /// <summary>
-    /// Get a sending ticket by ID
-    /// </summary>
-    public async Task<NewBuyerResultDto[]?> SearchNewBuyersWithoutTicketsAsync(
-        TicketSearchRequestDto request,
-        CancellationToken cancellationToken = default)
-    {
-        return await _apiClient.PostAsync<TicketSearchRequestDto, NewBuyerResultDto[]>(
-            "api/tickets-sending/search-new-buyers",
-            request,
-            cancellationToken);
-    }
-
     public async Task<TicketSendingDto?> GetTicketSendingByIdAsync(
         long ticketSendingId,
         CancellationToken cancellationToken = default)
@@ -63,17 +50,17 @@ public sealed class TicketSendingService
     /// <summary>
     /// Search for sending tickets
     /// </summary>
-    public async Task<IReadOnlyList<TicketSearchResultDto>> SearchTicketsSendingAsync(
+    public async Task<IReadOnlyList<TicketSendingSearchResultDto>> SearchTicketsSendingAsync(
         TicketSendingSearchRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        var result = await _apiClient.PostAsync<TicketSendingSearchRequestDto, TicketSearchResultDto[]>(
+        var result = await _apiClient.PostAsync<TicketSendingSearchRequestDto, TicketSendingSearchResultDto[]>(
             "api/tickets-sending/search",
             request,
             cancellationToken
         );
 
-        return result ?? Array.Empty<TicketSearchResultDto>();
+        return result ?? Array.Empty<TicketSendingSearchResultDto>();
     }
 
     /// <summary>
@@ -263,39 +250,36 @@ public sealed class TicketSendingService
 
     public async Task<string> GenerateTicketNumberAsync(string prefix)
     {
+        // Requirement: compute next ticket number by looking at the LAST STORED ticket number in the table.
+        // Example: last stored SWB-00000033 -> next SWB-00000034.
+
+        prefix = prefix.ToUpperInvariant();
+
         try
         {
-            // Get last ticket number from API
-            var result = await _apiClient.GetAsync<System.Collections.Generic.Dictionary<string, object>>($"api/tickets-sending/last-ticket-number/{prefix}");
-            
-            if (result == null || !result.ContainsKey("ticketNumber"))
-            {
-                // No previous ticket, start with 00000001
-                return $"{prefix}-00000001";
-            }
+            var resp = await _apiClient.GetAsync<System.Collections.Generic.Dictionary<string, object>>(
+                $"api/tickets-sending/last-stored-ticket-number/{prefix}");
 
-            var lastTicketNumber = result["ticketNumber"]?.ToString();
-            if (string.IsNullOrEmpty(lastTicketNumber))
-            {
+            string? last = null;
+            if (resp != null && resp.TryGetValue("ticketNumber", out var lastObj))
+                last = lastObj?.ToString();
+
+            if (string.IsNullOrWhiteSpace(last))
                 return $"{prefix}-00000001";
-            }
-            
-            // Extract numeric part: "SPL-00000003" -> "00000003"
-            var numericPart = lastTicketNumber.Substring(prefix.Length + 1);
-            
-            // Convert to int and increment
-            if (int.TryParse(numericPart, out int lastNumber))
-            {
-                int nextNumber = lastNumber + 1;
-                // Format with prefix and pad to 8 digits
-                return $"{prefix}-{nextNumber:D8}";
-            }
-            
-            return string.Empty;
+
+            var parts = last.Split('-');
+            var numericPart = parts.Length >= 2 ? parts[^1] : "";
+            var width = numericPart.Length > 0 ? numericPart.Length : 8;
+
+            if (!long.TryParse(numericPart, out var lastNumber))
+                return $"{prefix}-00000001";
+
+            var next = lastNumber + 1;
+            return $"{prefix}-{next.ToString().PadLeft(width, '0')}";
         }
         catch
         {
-            return string.Empty;
+            return $"{prefix}-00000001";
         }
     }
 

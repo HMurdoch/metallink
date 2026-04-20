@@ -1,0 +1,205 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MetalLink.Desktop.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="MetalLink.Desktop.Views.PriceListsView">
+  <UserControl.Styles>
+    <Style Selector="TextBox">
+      <Setter Property="BorderBrush" Value="#444a55" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+    <Style Selector="TextBox:focus">
+      <Setter Property="BorderBrush" Value="#5c7cfa" />
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="BorderBrush" Value="#444a55" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+    <Style Selector="ComboBox:focus">
+      <Setter Property="BorderBrush" Value="#5c7cfa" />
+    </Style>
+    <Style Selector="DataGrid">
+      <Setter Property="Background" Value="{DynamicResource Brush.PanelBackground}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+      <Setter Property="GridLinesVisibility" Value="Horizontal" />
+      <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource Brush.BorderSubtle}" />
+      <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource Brush.BorderSubtle}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderSubtle}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="DataGridCell">
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+    <Style Selector="DataGridColumnHeader">
+      <Setter Property="Background" Value="{DynamicResource Brush.NavBackground}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style Selector="DataGridRow">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="DataGridRow:pointerover">
+      <Setter Property="Background" Value="#20FFFFFF" />
+    </Style>
+    <Style Selector="DataGridRow:selected">
+      <Setter Property="Background" Value="#303B82F6" />
+    </Style>
+    <Style Selector="Button.row-action">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+      <Setter Property="Background" Value="#30333A" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderSubtle}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Padding" Value="6,2" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*">
+    <!-- Sticky Header Panel -->
+    <Border Grid.Row="0"
+            Background="{DynamicResource Brush.PanelBackground}"
+            Padding="12,8"
+            CornerRadius="4"
+            Margin="16,16,16,8"
+            ZIndex="100">
+      <Image Source="avares://MetalLink.Desktop/Assets/price_lists_heading.png"
+             Height="40"
+             HorizontalAlignment="Left"
+             Stretch="Uniform" />
+    </Border>
+
+    <ScrollViewer Grid.Row="1" Padding="16,8,16,16">
+      <StackPanel Spacing="16" Margin="0,0,0,100">
+        <!-- Filter Panel -->
+        <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="8">
+            <Grid Background="Transparent" PointerPressed="ToggleSearchCriteria" ColumnDefinitions="Auto,*">
+              <TextBlock Grid.Column="0" Text="{Binding PriceListsIsSearchCriteriaExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Filter Price Lists" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
+
+            <Grid ColumnDefinitions="*,*,Auto" Margin="0,8,0,0" IsVisible="{Binding PriceListsIsSearchCriteriaExpanded}">
+              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="Entity Type" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                <ComboBox SelectedItem="{Binding SelectedPriceListEntityType}">
+                  <x:String>Customer</x:String>
+                  <x:String>Buyer</x:String>
+                </ComboBox>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="Search Name" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                <TextBox Text="{Binding PriceListSearchTerm}" Watermark="Search price lists..." />
+              </StackPanel>
+              <Button Grid.Column="2" VerticalAlignment="Bottom" Content="Reset" Command="{Binding ResetPriceListFiltersCommand}" Width="100" />
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <!-- Results Panel -->
+        <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="8">
+            <Grid Background="Transparent" PointerPressed="ToggleSearchResults" ColumnDefinitions="Auto,*">
+              <TextBlock Grid.Column="0" Text="{Binding PriceListsIsSearchResultsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Price List Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
+
+            <DataGrid Margin="0,8,0,0" Height="400" IsReadOnly="True" AutoGenerateColumns="False" 
+                      ItemsSource="{Binding PriceListsResults}" SelectedItem="{Binding SelectedPriceList}"
+                      IsVisible="{Binding PriceListsIsSearchResultsExpanded}">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding ProductPriceListId}" Width="60" />
+                <DataGridTextColumn Header="Name" Binding="{Binding ProductPriceListName}" Width="200" />
+                <DataGridTextColumn Header="Description" Binding="{Binding ProductPriceListDescription}" Width="500" />
+                <DataGridTextColumn Header="Entity Type" Binding="{Binding EntityFlag, Converter={StaticResource SectionToViewConverter}, ConverterParameter='entity'}" Width="120" />
+                <DataGridTextColumn Header="# Products" Binding="{Binding ProductCount}" Width="90" />
+                <DataGridTemplateColumn Header="Actions" Width="200">
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                      <Button Content="Movements"
+                              Command="{Binding $parent[UserControl].DataContext.ShowStockMovementCommand}"
+                              Classes="row-action" />
+                      <Button Content="Delete" 
+                              Command="{Binding $parent[UserControl].DataContext.DeletePriceListCommand}" 
+                              CommandParameter="{Binding}"
+                              Classes="row-action" />
+                    </StackPanel>
+                  </DataTemplate>
+                </DataGridTemplateColumn>
+              </DataGrid.Columns>
+            </DataGrid>
+          </StackPanel>
+        </Border>
+
+        <!-- Create/Edit Panel -->
+        <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
+          <StackPanel Spacing="8">
+            <Grid Background="Transparent" PointerPressed="ToggleCreateEdit" ColumnDefinitions="Auto,*">
+              <TextBlock Grid.Column="0" Text="{Binding PriceListsIsCreateEditExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Create/Edit Price Lists" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
+
+            <StackPanel Spacing="16" IsVisible="{Binding !PriceListsIsCreateEditExpanded}" Margin="0,8,0,0">
+              <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto" ColumnSpacing="24">
+                <StackPanel Grid.Column="0" Spacing="4">
+                  <TextBlock Text="Entity Type" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                  <ComboBox SelectedItem="{Binding PriceListEntityType}">
+                    <x:String>Customer</x:String>
+                    <x:String>Buyer</x:String>
+                  </ComboBox>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="4">
+                  <TextBlock Text="Name" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                  <TextBox Text="{Binding PriceListName}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Spacing="4">
+                  <TextBlock Text="Description" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                  <TextBox Text="{Binding PriceListDescription}" />
+                </StackPanel>
+              </Grid>
+
+              <!-- Seed options — only shown in Create mode -->
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="24" IsVisible="{Binding IsPriceListCreateMode}">
+                <StackPanel Grid.Column="0" Spacing="4" VerticalAlignment="Center">
+                  <TextBlock Text="Initial Prices" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                  <ToggleSwitch IsChecked="{Binding UseLastKnownPrice}"
+                                OnContent="Use last known transaction price"
+                                OffContent="Clone from another price list"
+                                FontSize="11" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Bottom">
+                  <TextBlock Text="Clone From" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                  <ComboBox ItemsSource="{Binding CloneFromPriceLists}"
+                            SelectedItem="{Binding SelectedCloneFrom}"
+                            IsEnabled="{Binding IsCloneDropdownEnabled}"
+                            PlaceholderText="Select price list to clone...">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding ProductPriceListName}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+              </Grid>
+
+              <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                <Button Content="Clear" Command="{Binding ClearPriceListFormCommand}" Width="80" HorizontalContentAlignment="Center" />
+                <Button Content="{Binding PriceListSaveButtonText}" Command="{Binding SavePriceListCommand}" Classes="Accent" Width="120" HorizontalContentAlignment="Center" />
+              </StackPanel>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

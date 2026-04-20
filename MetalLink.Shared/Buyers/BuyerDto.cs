@@ -38,7 +38,8 @@ public sealed class BuyerDto
         ? AccountNumber.Value.ToString("D8")
         : "";
     
-    public string? PriceCode     { get; set; }
+    public int? ProductPriceListId { get; set; }
+    public string? ProductPriceListName { get; set; }
 
     // Contact
     public string? PhoneNumber  { get; set; }
@@ -58,4 +59,10 @@ public sealed class BuyerDto
     public string? PhotoImagePath { get; set; }
     public string? SignatureImagePath { get; set; }
     public string? FingerprintImagePath { get; set; }
+
+    public byte[]? IdCardImage { get; set; }
+    public byte[]? DriverLicenseImage { get; set; }
+    public byte[]? PhotoImage { get; set; }
+    public byte[]? SignatureImage { get; set; }
+    public byte[]? FingerprintImage { get; set; }
 }

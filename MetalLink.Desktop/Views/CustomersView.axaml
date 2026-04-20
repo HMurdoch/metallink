@@ -46,12 +46,12 @@
 
     <!-- DataGrid overall -->
     <Style Selector="DataGrid">
-      <Setter Property="Background" Value="{StaticResource Brush.PanelBackground}" />
-      <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+      <Setter Property="Background" Value="{DynamicResource Brush.PanelBackground}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
       <Setter Property="GridLinesVisibility" Value="Horizontal" />
-      <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource Brush.BorderSubtle}" />
-      <Setter Property="VerticalGridLinesBrush" Value="{StaticResource Brush.BorderSubtle}" />
-      <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource Brush.BorderSubtle}" />
+      <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource Brush.BorderSubtle}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderSubtle}" />
       <Setter Property="BorderThickness" Value="1" />
     </Style>
 
@@ -62,8 +62,8 @@
 
     <!-- Header row (slightly larger + bold) -->
     <Style Selector="DataGridColumnHeader">
-      <Setter Property="Background" Value="{StaticResource Brush.NavBackground}" />
-      <Setter Property="Foreground" Value="{StaticResource Brush.TextMuted}" />
+      <Setter Property="Background" Value="{DynamicResource Brush.NavBackground}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}" />
       <Setter Property="FontSize" Value="13" />
       <Setter Property="FontWeight" Value="Bold" />
     </Style>
@@ -90,9 +90,9 @@
 
     <!-- Row action buttons in the results grid -->
     <Style Selector="Button.row-action">
-      <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
       <Setter Property="Background" Value="#30333A" />
-      <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderSubtle}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderSubtle}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="3" />
       <Setter Property="Padding" Value="6,2" />
@@ -117,7 +117,7 @@
 
     <Style Selector="Button.row-action:pointerover">
       <Setter Property="Background" Value="#3A4150" />
-      <Setter Property="BorderBrush" Value="{StaticResource Brush.AccentGradient}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.AccentGradient}" />
     </Style>
 
     <Style Selector="Button.row-action:pressed">
@@ -135,101 +135,45 @@
     </Style>
   </UserControl.Styles>
 
-  <Border Background="{StaticResource Brush.MainBackground}" Padding="16">
-    <ScrollViewer>
-      <StackPanel Spacing="16">
+  <Grid RowDefinitions="Auto,*">
+    <!-- Sticky Header Panel -->
+    <Border Grid.Row="0"
+            Background="{DynamicResource Brush.PanelBackground}"
+            Padding="12,8"
+            CornerRadius="4"
+            Margin="16,16,16,8"
+            ZIndex="100">
+      <Image Source="avares://MetalLink.Desktop/Assets/customers_heading.png"
+             Height="40"
+             HorizontalAlignment="Left"
+             Stretch="Uniform" />
+    </Border>
+    
+    <!-- Scrollable Content -->
+    <ScrollViewer Grid.Row="1" Padding="16,8,16,10" VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="16" Margin="0,0,0,100">
 
-        <!-- Header with animated glow -->
-        <StackPanel Spacing="4">
-          <Grid>
-            <TextBlock
-                Text="Customers"
-                FontSize="20"
-                FontWeight="Bold"
-                Foreground="{StaticResource Brush.TextPrimary}" />
-            <!-- Animated glow overlay -->
-            <TextBlock
-                Text="Customers"
-                FontSize="20"
-                FontWeight="Bold"
-                Foreground="#4a9eff"
-                Opacity="0">
-              <TextBlock.Styles>
-                <Style Selector="TextBlock">
-                  <Style.Animations>
-                    <Animation Duration="0:0:5" IterationCount="INFINITE" Delay="0:0:0">
-                      <KeyFrame Cue="0%">
-                        <Setter Property="Opacity" Value="0" />
-                      </KeyFrame>
-                      <KeyFrame Cue="10%">
-                        <Setter Property="Opacity" Value="0.8" />
-                      </KeyFrame>
-                      <KeyFrame Cue="30%">
-                        <Setter Property="Opacity" Value="0.8" />
-                      </KeyFrame>
-                      <KeyFrame Cue="40%">
-                        <Setter Property="Opacity" Value="0" />
-                      </KeyFrame>
-                      <KeyFrame Cue="100%">
-                        <Setter Property="Opacity" Value="0" />
-                      </KeyFrame>
-                    </Animation>
-                  </Style.Animations>
-                </Style>
-              </TextBlock.Styles>
-            </TextBlock>
-          </Grid>
-          <Border Height="2"
-                  Margin="0,0,0,8"
-                  CornerRadius="1">
-            <Border.Background>
-              <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <LinearGradientBrush.GradientStops>
-                  <GradientStop Color="#1E88E5" Offset="0" />
-                  <GradientStop Color="#8EC5FC" Offset="0.5" />
-                  <GradientStop Color="#1E88E5" Offset="1" />
-                </LinearGradientBrush.GradientStops>
-                <LinearGradientBrush.Transform>
-                  <TranslateTransform X="-200">
-                    <TranslateTransform.Transitions>
-                      <Transitions />
-                    </TranslateTransform.Transitions>
-                  </TranslateTransform>
-                </LinearGradientBrush.Transform>
-              </LinearGradientBrush>
-            </Border.Background>
-            <Border.Styles>
-              <Style Selector="Border">
-                <Style.Animations>
-                  <Animation Duration="0:0:5" IterationCount="INFINITE">
-                    <KeyFrame Cue="0%">
-                      <Setter Property="Opacity" Value="0.5" />
-                    </KeyFrame>
-                    <KeyFrame Cue="50%">
-                      <Setter Property="Opacity" Value="1.0" />
-                    </KeyFrame>
-                    <KeyFrame Cue="100%">
-                      <Setter Property="Opacity" Value="0.5" />
-                    </KeyFrame>
-                  </Animation>
-                </Style.Animations>
-              </Style>
-            </Border.Styles>
-          </Border>
-        </StackPanel>
-
-        <!-- SEARCH EXISTING CUSTOMER -->
-        <Border Background="{StaticResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
+        <!-- BLOCK 1: SEARCH CRITERIA -->
+        <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
-            <TextBlock Text="Search Existing Customer" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" />
+            <Grid PointerPressed="ToggleSearchCriteria" Cursor="Hand">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" x:Name="SearchCriteriaArrow" 
+                         Text="{Binding CustomerIsSearchCriteriaExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Search Existing Customer" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
 
             <!-- 4-column search grid (250px each = 1000px total) -->
-            <Grid Margin="0,8,0,0" Width="1000" HorizontalAlignment="Left">
+            <Grid x:Name="SearchCriteriaContent" Margin="0,8,0,0" Width="1000" HorizontalAlignment="Left" IsVisible="{Binding CustomerIsSearchCriteriaExpanded}">
               <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="275" />
-                <ColumnDefinition Width="275" />
-                <ColumnDefinition Width="275" />
-                <ColumnDefinition Width="275" />
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="300" />
               </Grid.ColumnDefinitions>
               <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -242,19 +186,19 @@
               <!-- Row 0: Customer ID / ID Number / First Name / Last Name -->
               <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Customer ID" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchCustomerIdText}" />
+                <TextBox Text="{Binding SearchCustomerIdText, Mode=TwoWay}" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="ID Number" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchIdNumberText}" />
+                <TextBox Text="{Binding SearchCustomerIdNumberText, Mode=TwoWay}" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="First Name" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchFirstNameText}" />
+                <TextBox Text="{Binding SearchCustomerFirstNameText, Mode=TwoWay}" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="3" Spacing="2">
                 <TextBlock Text="Last Name" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchLastNameText}" />
+                <TextBox Text="{Binding SearchCustomerLastNameText, Mode=TwoWay}" />
               </StackPanel>
 
               <!-- Row 1: Company / Site / Account Number / Price Code -->
@@ -262,23 +206,24 @@
                 <TextBlock Text="Company" Foreground="#c0c4cf" />
                 <Grid>
                   <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="50" />
+                    <ColumnDefinition Width="70" />
                     <ColumnDefinition Width="*" />
                   </Grid.ColumnDefinitions>
 
                   <!-- Letter dropdown -->
                   <ComboBox
                       Grid.Column="0"
+                      Width="70"
                       ItemsSource="{Binding CompanyLetterFilters}"
-                      SelectedItem="{Binding SelectedCompanyLetter}"
+                      SelectedItem="{Binding CustomerSelectedCompanyLetter}"
                       HorizontalAlignment="Stretch" />
 
                   <!-- Companies for selected letter -->
                   <ComboBox
                       Grid.Column="1"
                       Margin="4,0,0,0"
-                      ItemsSource="{Binding SearchCompanySuggestions}"
-                      SelectedItem="{Binding SelectedSearchCompany}"
+                      ItemsSource="{Binding CustomerSearchCompanySuggestions}"
+                      SelectedItem="{Binding CustomerSelectedSearchCompany}"
                       HorizontalContentAlignment="Stretch"
                       ItemTemplate="{StaticResource CompanyLookupTemplate}" />
                 </Grid>
@@ -288,9 +233,9 @@
               <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Site" Foreground="#c0c4cf" />
                 <ComboBox
-                    ItemsSource="{Binding SearchSiteSuggestions}"
-                    SelectedItem="{Binding SelectedSearchSite}"
-                    IsEnabled="{Binding IsSearchSiteEnabled}"
+                    ItemsSource="{Binding CustomerSearchSiteSuggestions}"
+                    SelectedItem="{Binding CustomerSelectedSearchSite}"
+                    IsEnabled="{Binding IsCustomerSearchSiteEnabled}"
                     HorizontalContentAlignment="Stretch"
                     ItemTemplate="{StaticResource SiteLookupTemplate}" />
               </StackPanel>
@@ -298,19 +243,19 @@
               <!-- Account Number -->
               <StackPanel Grid.Row="1" Grid.Column="2" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Account Number" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchAccountNumberText, Mode=TwoWay}" />
+                <TextBox Text="{Binding SearchCustomerAccountNumberText, Mode=TwoWay}" />
               </StackPanel>
 
-              <!-- Price Code -->
+              <!-- Price List -->
               <StackPanel Grid.Row="1" Grid.Column="3" Spacing="2">
-                <TextBlock Text="Price Code" Foreground="#c0c4cf" />
+                <TextBlock Text="Price List" Foreground="#c0c4cf" />
                 <ComboBox
-                  ItemsSource="{Binding PriceCodeOptions}"
-                  SelectedItem="{Binding SearchPriceCode, Mode=TwoWay}"
+                  ItemsSource="{Binding CustomerPriceLists}"
+                  SelectedItem="{Binding SearchCustomerPriceList, Mode=TwoWay}"
                   HorizontalAlignment="Stretch">
                   <ComboBox.ItemTemplate>
                     <DataTemplate>
-                      <TextBlock Text="{Binding Label}" />
+                      <TextBlock Text="{Binding ProductPriceListName}" />
                     </DataTemplate>
                   </ComboBox.ItemTemplate>
                 </ComboBox>
@@ -319,15 +264,15 @@
               <!-- Row 2: Phone / Mobile / Email / (empty) -->
               <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Phone" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchPhoneNumberText}" />
+                <TextBox Text="{Binding SearchCustomerPhoneNumberText, Mode=TwoWay}" />
               </StackPanel>
               <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2" Margin="0,0,8,0">
                 <TextBlock Text="Mobile" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchMobileNumberText}" />
+                <TextBox Text="{Binding SearchCustomerMobileNumberText, Mode=TwoWay}" />
               </StackPanel>
               <StackPanel Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Spacing="2">
                 <TextBlock Text="Email" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchEmailText}" />
+                <TextBox Text="{Binding SearchCustomerEmailText, Mode=TwoWay}" />
               </StackPanel>
 
               <!-- Row 4: Search button -->
@@ -338,6 +283,7 @@
                   Content="Clear"
                   Command="{Binding ClearCustomerSearchCommand}" />
                 <Button
+                  x:Name="SearchCustomersButton"
                   Classes="primary"
                   HorizontalAlignment="Center"
                   Width="100"
@@ -345,37 +291,60 @@
                   Command="{Binding SearchCustomerCommand}" />
               </StackPanel>
             </Grid>
+          </StackPanel>
+        </Border>
 
-            <!-- Results and Details Side-by-Side -->
-            <Grid Margin="0,12,0,0">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1100" />
-                <ColumnDefinition Width="500" />
-              </Grid.ColumnDefinitions>
+        <!-- BLOCKS 2 & 3: SEARCH RESULTS AND CUSTOMER DETAILS SIDE-BY-SIDE -->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="500" />
+          </Grid.ColumnDefinitions>
 
-              <!-- Left Column: Results grid -->
-              <StackPanel Grid.Column="0" Spacing="0">
-                <TextBlock Text="Customer Search Results" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" />
+          <!-- BLOCK 2: SEARCH RESULTS (Left Column) -->
+          <Border Grid.Column="0" Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4" Margin="0,0,8,0">
+            <StackPanel Spacing="8">
+              <Grid PointerPressed="ToggleSearchResults" Cursor="Hand">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="SearchResultsArrow" 
+                           Text="{Binding CustomerIsSearchResultsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                           Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="Customer Search Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+              </Grid>
+                <Grid x:Name="SearchResultsContent" IsVisible="{Binding CustomerIsSearchResultsExpanded}">
+                  <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                  </Grid.RowDefinitions>
+                  
                 <DataGrid
+                    Grid.Row="0"
                     Margin="0,8,0,0"
-                    Width="1100"
-                    HorizontalAlignment="Left"
+                    HorizontalAlignment="Stretch"
                     AutoGenerateColumns="False"
                     ItemsSource="{Binding PagedCustomerSearchResults}"
-                    SelectedItem="{Binding FoundCustomer, Mode=TwoWay}">
+                    SelectedItem="{Binding FoundCustomer, Mode=TwoWay}"
+                    CanUserReorderColumns="False"
+                    CanUserResizeColumns="True"
+                    IsReadOnly="True"
+                    Focusable="False">
               <DataGrid.Columns>
-                <DataGridTextColumn Header="Customer ID" Binding="{Binding CustomerId}" IsReadOnly="True" />
+                <DataGridTextColumn Header="ID" Binding="{Binding CustomerId}" IsReadOnly="True" Width="40" />
                 <DataGridTextColumn Header="First Name"
                                     Binding="{Binding FirstName}" />
                 <DataGridTextColumn Header="Last Name"
                                     Binding="{Binding LastName}" />
-                <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" IsReadOnly="True" />
-                <DataGridTextColumn Header="Account" Binding="{Binding AccountNumberFormatted}" IsReadOnly="True" />
+                <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" IsReadOnly="True" Width="140" />
+                <DataGridTextColumn Header="Site" Binding="{Binding SiteName}" IsReadOnly="True" Width="140" />
+                <DataGridTextColumn Header="Account" Binding="{Binding AccountNumberDisplay}" SortMemberPath="AccountNumber" IsReadOnly="True" />
                 <DataGridTextColumn Header="Mobile" Binding="{Binding MobileNumber}" IsReadOnly="True" />
                 <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*" IsReadOnly="True" />
 
                 <!-- Action buttons -->
-                <DataGridTemplateColumn Header="Actions" Width="150">
+                <DataGridTemplateColumn Header="Actions" Width="170">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
                       <StackPanel Orientation="Horizontal" Spacing="4">
@@ -398,14 +367,27 @@
               </DataGrid.Columns>
                 </DataGrid>
 
-                <!-- Pagination Control -->
-                <local:PaginationControl DataContext="{Binding PaginationViewModel}" Margin="0,8,0,0" />
-              </StackPanel>
+                  <!-- Pagination Control -->
+                  <local:PaginationControl Grid.Row="1" DataContext="{Binding PaginationViewModel}" Margin="0,8,0,0" />
+                </Grid>
+            </StackPanel>
+          </Border>
 
-              <!-- Right Column: Customer Details (400px) -->
-              <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="0">
-                <TextBlock Text="Customer Details" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" />
-                <Border Margin="0,8,0,0" Padding="8" Background="{StaticResource Brush.MainBackground}" CornerRadius="4">
+          <!-- BLOCK 3: CUSTOMER DETAILS (Right Column) -->
+          <Border Grid.Column="1" Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4" MinWidth="470" Width="470" HorizontalAlignment="Left">
+            <StackPanel Spacing="8">
+              <Grid PointerPressed="ToggleDetails" Cursor="Hand">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="CustomerDetailsArrow" 
+                           Text="{Binding CustomerIsDetailsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                           Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="Customer Details" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+              </Grid>
+            <StackPanel x:Name="CustomerDetailsContent" IsVisible="{Binding CustomerIsDetailsExpanded}">
+              <Border Margin="0,8,0,0" Padding="8" Background="{DynamicResource Brush.PanelBackground}" CornerRadius="4">
               <Grid>
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="Auto" />
@@ -454,8 +436,8 @@
                 <TextBlock Grid.Row="7" Grid.Column="0" Text="Account Number" Foreground="#c0c4cf" Margin="0,4,8,2" />
                 <TextBlock Grid.Row="7" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedAccountNumberFormatted}" Foreground="#f5f5f5" FontSize="11" />
 
-                <TextBlock Grid.Row="8" Grid.Column="0" Text="Price Code" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="8" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedPriceCode}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Grid.Row="8" Grid.Column="0" Text="Price List" Foreground="#c0c4cf" Margin="0,4,8,2" />
+                <TextBlock Grid.Row="8" Grid.Column="1" VerticalAlignment="Center" Text="{Binding FoundCustomer.ProductPriceListName}" Foreground="#f5f5f5" FontSize="11" />
 
                 <TextBlock Grid.Row="9" Grid.Column="0" Text="Phone" Foreground="#c0c4cf" Margin="0,4,8,2" />
                 <TextBlock Grid.Row="9" Grid.Column="1" VerticalAlignment="Center" Text="{Binding SelectedPhoneNumber}" Foreground="#f5f5f5" FontSize="11" />
@@ -468,84 +450,99 @@
 
                 <!-- Site address (read-only, from Site/CAS) -->
                 <TextBlock Grid.Row="12" Grid.Column="0" Text="Site Address" Foreground="#c0c4cf" Margin="0,4,8,2" />
-                <TextBlock Grid.Row="12" Grid.Column="1" VerticalAlignment="Center" Text="{Binding CustomerSiteAddressSummary}" Foreground="#f5f5f5" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="12" Grid.Column="1" VerticalAlignment="Center" Text="{Binding CustomerSiteAddressSummary}" Foreground="#f5f5f5" FontSize="10" TextWrapping="Wrap" />
               </Grid>
             </Border>
 
             <!-- Customer Images Display -->
             <Border Margin="0,12,0,0" 
                     Padding="12" 
-                    Background="#1f2937" 
+                    Background="{DynamicResource Brush.GlassPanel}" 
                     CornerRadius="4"
-                    BorderBrush="#4b5563"
+                    BorderBrush="{DynamicResource Brush.GlassBorder}"
                     BorderThickness="1"
-                    IsVisible="{Binding SelectedCustomer, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    IsVisible="{Binding FoundCustomer, Converter={x:Static local:ObjectConverters.IsNotNull}}"
+                    Width="430">
               <StackPanel Spacing="8">
                 <TextBlock Text="Customer Images" 
                            FontWeight="Bold" 
-                           Foreground="{StaticResource Brush.TextPrimary}"
+                           Foreground="{DynamicResource Brush.TextPrimary}"
                            FontSize="13"/>
                 
-                <UniformGrid Rows="2" Columns="3">
+                <UniformGrid Columns="2">
                   <!-- ID Card -->
-                  <Border BorderBrush="#4b5563" BorderThickness="1" Margin="4" Background="#111827">
+                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}" Padding="5">
                     <StackPanel>
-                      <TextBlock Text="ID Card" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
-                      <Image Source="{Binding SelectedIdCardImage}" 
-                             Width="125" Height="125" Stretch="Uniform" Margin="4"/>
+                      <TextBlock Text="ID Card" FontSize="11" Foreground="#c0c4cf" Margin="0,0,0,4" FontWeight="SemiBold"/>
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding SelectedIdCardImage}" Width="130" Height="130" Stretch="Uniform"/>
+                      </Viewbox>
                     </StackPanel>
                   </Border>
                   
                   <!-- Driver License -->
-                  <Border BorderBrush="#4b5563" BorderThickness="1" Margin="4" Background="#111827">
+                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}" Padding="5">
                     <StackPanel>
-                      <TextBlock Text="Driver License" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
-                      <Image Source="{Binding SelectedDriverLicenseImage}" 
-                             Width="125" Height="125" Stretch="Uniform" Margin="4"/>
+                      <TextBlock Text="Driver License" FontSize="11" Foreground="#c0c4cf" Margin="0,0,0,4" FontWeight="SemiBold"/>
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding SelectedDriverLicenseImage}" Width="130" Height="130" Stretch="Uniform"/>
+                      </Viewbox>
                     </StackPanel>
                   </Border>
                   
                   <!-- Photo -->
-                  <Border BorderBrush="#4b5563" BorderThickness="1" Margin="4" Background="#111827">
+                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}" Padding="5">
                     <StackPanel>
-                      <TextBlock Text="Photo" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
-                      <Image Source="{Binding SelectedPhotoImage}" 
-                             Width="125" Height="125" Stretch="Uniform" Margin="4"/>
+                      <TextBlock Text="Photo" FontSize="11" Foreground="#c0c4cf" Margin="0,0,0,4" FontWeight="SemiBold"/>
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding SelectedPhotoImage}" Width="130" Height="130" Stretch="Uniform"/>
+                      </Viewbox>
                     </StackPanel>
                   </Border>
                   
                   <!-- Signature -->
-                  <Border BorderBrush="#4b5563" BorderThickness="1" Margin="4" Background="#111827">
+                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}" Padding="5">
                     <StackPanel>
-                      <TextBlock Text="Signature" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
-                      <Image Source="{Binding SelectedSignatureImage}" 
-                             Width="125" Height="125" Stretch="Uniform" Margin="4"/>
+                      <TextBlock Text="Signature" FontSize="11" Foreground="#c0c4cf" Margin="0,0,0,4" FontWeight="SemiBold"/>
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding SelectedSignatureImage}" Width="130" Height="130" Stretch="Uniform"/>
+                      </Viewbox>
                     </StackPanel>
                   </Border>
                   
                   <!-- Fingerprint -->
-                  <Border BorderBrush="#4b5563" BorderThickness="1" Margin="4" Background="#111827">
+                  <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Margin="4" Background="{DynamicResource Brush.GlassPanelDarker}" Padding="5">
                     <StackPanel>
-                      <TextBlock Text="Fingerprint" FontSize="11" Foreground="#c0c4cf" Margin="4,4,4,2" FontWeight="SemiBold"/>
-                      <Image Source="{Binding SelectedFingerprintImage}" 
-                             Width="125" Height="125" Stretch="Uniform" Margin="4"/>
+                      <TextBlock Text="Fingerprint" FontSize="11" Foreground="#c0c4cf" Margin="0,0,0,4" FontWeight="SemiBold"/>
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding SelectedFingerprintImage}" Width="130" Height="130" Stretch="Uniform"/>
+                      </Viewbox>
                     </StackPanel>
                   </Border>
                 </UniformGrid>
               </StackPanel>
-            </Border>
-              </StackPanel>
-            </Grid>
+              </Border>
+            </StackPanel>
           </StackPanel>
         </Border>
+        </Grid>
 
-        <!-- CREATE NEW CUSTOMER -->
-        <Border Background="{StaticResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
+        <!-- BLOCK 4: CREATE NEW CUSTOMER -->
+        <Border Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
           <StackPanel Spacing="8">
-            <TextBlock Text="Create/Edit customer" Foreground="{StaticResource Brush.TextPrimary}" FontWeight="Bold" />
+            <Grid PointerPressed="ToggleCreateEdit" Cursor="Hand">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" x:Name="CreateEditArrow" 
+                         Text="{Binding CustomerIsCreateEditExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Create/Edit Customer" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
 
             <!-- 4-column form grid -->
-            <Grid Margin="0,8,0,0">
+            <Grid x:Name="CreateEditContent" IsVisible="{Binding CustomerIsCreateEditExpanded}" Margin="0,8,0,0">
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="275" />
                   <ColumnDefinition Width="275" />
@@ -556,20 +553,22 @@
                   <RowDefinition Height="Auto" />
                   <RowDefinition Height="Auto" />
                   <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <!-- Row 0: First Name / Last Name / ID Number / (empty) -->
                 <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2" Margin="0,0,12,0">
                   <TextBlock Text="First Name" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding NewFirstName}" />
+                  <TextBox Text="{Binding NewFirstName, Mode=TwoWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2" Margin="0,0,12,0">
                   <TextBlock Text="Last Name" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding NewLastName}" />
+                  <TextBox Text="{Binding NewLastName, Mode=TwoWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2" Margin="0,0,12,0">
                   <TextBlock Text="ID Number" Foreground="#c0c4cf" />
-                  <TextBox Text="{Binding NewIdNumber}" />
+                  <TextBox Text="{Binding NewIdNumber, Mode=TwoWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="3" Spacing="2">
                   <!-- Empty column -->
@@ -580,11 +579,12 @@
                   <TextBlock Text="Company" Foreground="#c0c4cf" />
                   <Grid>
                     <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="50" />
+                      <ColumnDefinition Width="70" />
                       <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <ComboBox
                         Grid.Column="0"
+                        Width="70"
                         ItemsSource="{Binding CompanyLetterFilters}"
                         SelectedItem="{Binding SelectedNewCompanyLetter}"
                         IsEnabled="{Binding NewIsCompany}"
@@ -617,14 +617,14 @@
                     IsTabStop="False"/>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="3" Spacing="2">
-                  <TextBlock Text="Price Code" Foreground="#c0c4cf" />
+                  <TextBlock Text="Price List" Foreground="#c0c4cf" />
                   <ComboBox
-                    ItemsSource="{Binding PriceCodeOptions}"
-                    SelectedItem="{Binding SelectedPriceCodeChar, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    ItemsSource="{Binding CustomerPriceLists}"
+                    SelectedItem="{Binding SelectedNewProductPriceList, Mode=TwoWay}"
                     HorizontalAlignment="Stretch">
                     <ComboBox.ItemTemplate>
                       <DataTemplate>
-                        <TextBlock Text="{Binding Label}" />
+                        <TextBlock Text="{Binding ProductPriceListName}" />
                       </DataTemplate>
                     </ComboBox.ItemTemplate>
                   </ComboBox>
@@ -647,91 +647,110 @@
                   <TextBlock Text="Email" Foreground="#c0c4cf" />
                   <TextBox Text="{Binding NewEmail}" />
                 </StackPanel>
+
+              <!-- Customer Images Row (Single row of 5 images) -->
+              <StackPanel Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="4" Margin="0,16,0,0" Spacing="8">
+                <TextBlock Text="Customer Images (Optional)" 
+                          FontWeight="Bold" 
+                          Foreground="{DynamicResource Brush.TextPrimary}"
+                          FontSize="13" />
+                
+                <UniformGrid Rows="1" Columns="5" Width="1100" HorizontalAlignment="Left">
+                  <!-- ID Card -->
+                  <StackPanel Spacing="4" Margin="0,0,8,0">
+                    <TextBlock Text="ID Card" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
+                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Width="150" Height="150" Padding="5">
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding IdCardImage}" Width="150" Height="150" Stretch="Uniform"/>
+                      </Viewbox>
+                    </Border>
+                    <Button Content="📄 Scan ID" Command="{Binding CaptureIdCardCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" />
+                  </StackPanel>
+                  
+                  <!-- Driver License -->
+                  <StackPanel Spacing="4" Margin="0,0,8,0">
+                    <TextBlock Text="Driver License" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
+                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Width="150" Height="150" Padding="5">
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding DriverLicenseImage}" Width="150" Height="150" Stretch="Uniform"/>
+                      </Viewbox>
+                    </Border>
+                    <Button Content="📄 License" Command="{Binding CaptureDriverLicenseCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" />
+                  </StackPanel>
+                  
+                  <!-- Photo -->
+                  <StackPanel Spacing="4" Margin="0,0,8,0">
+                    <TextBlock Text="Photo" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
+                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Width="150" Height="150" Padding="5">
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding PhotoImage}" Width="150" Height="150" Stretch="Uniform"/>
+                      </Viewbox>
+                    </Border>
+                    <Button Content="📷 Take Photo" Command="{Binding CapturePhotoCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" />
+                  </StackPanel>
+
+                  <!-- Signature -->
+                  <StackPanel Spacing="4" Margin="0,0,8,0">
+                    <TextBlock Text="Signature" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
+                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Width="150" Height="150" Padding="5">
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding SignatureImage}" Width="150" Height="150" Stretch="Uniform"/>
+                      </Viewbox>
+                    </Border>
+                    <Button Content="✍ Signature" Command="{Binding CaptureSignatureCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" />
+                  </StackPanel>
+
+                  <!-- Fingerprint -->
+                  <StackPanel Spacing="4" Margin="0,0,8,0">
+                    <TextBlock Text="Fingerprint" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
+                    <Border BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Background="{DynamicResource Brush.GlassPanelDarker}" Width="150" Height="150" Padding="5">
+                      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Image Source="{Binding FingerprintImage}" Width="150" Height="150" Stretch="Uniform"/>
+                      </Viewbox>
+                    </Border>
+                    <Button Content="👆 Fingerprint" Command="{Binding CaptureFingerprintCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,4" Cursor="Hand" Width="180" />
+                  </StackPanel>
+                </UniformGrid>
+              </StackPanel>
+
+              <!-- Action Buttons -->
+              <StackPanel Grid.Row="4"
+                          Grid.ColumnSpan="4"
+                  Orientation="Horizontal"
+                  HorizontalAlignment="Right"
+                  Spacing="8"
+                  Margin="0,20,0,0">
+
+                <Button
+                    Name="ClearCustomerButton"
+                    Width="100"
+                    Content="Clear"
+                    Command="{Binding ClearNewCustomerCommand}"
+                    Classes="primary"
+                    IsEnabled="True"
+                    ToolTip.Tip="Clear form" />
+
+                <Button
+                    Name="CreateCustomerButton"
+                    Classes="primary"
+                    Width="100"
+                    Content="Create"
+                    Command="{Binding CreateCustomerCommand}"
+                    IsVisible="{Binding IsEditMode, Converter={StaticResource BoolInvertConverter}}"
+                    IsEnabled="True"
+                    ToolTip.Tip="Create new customer" />
+
+                <Button
+                    Name="UpdateCustomerButton"
+                    Classes="primary"
+                    Width="100"
+                    Content="Update"
+                    Command="{Binding UpdateCustomerCommand}"
+                    IsVisible="{Binding IsEditMode}"
+                    IsEnabled="True"
+                    ToolTip.Tip="Update customer" />
+              </StackPanel>
             </Grid>
-
-            <!-- Customer Images Row (Single row of 5 images) -->
-            <StackPanel Margin="0,16,0,0" Spacing="8">
-              <TextBlock Text="Customer Images (Optional)" 
-                         FontWeight="Bold" 
-                         Foreground="{StaticResource Brush.TextPrimary}"
-                         FontSize="13" />
-              
-              <UniformGrid Rows="1" Columns="5" Width="1100" HorizontalAlignment="Left">
-                <!-- ID Card -->
-                <StackPanel Spacing="4" Margin="0,0,8,0">
-                  <TextBlock Text="ID Card" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
-                  <Border BorderBrush="#4b5563" BorderThickness="1" Background="#111827" Height="130" Width="130">
-                    <Image Source="{Binding IdCardImage}" Stretch="Uniform" Margin="2"/>
-                  </Border>
-                  <Button Content="📄 Scan ID" Command="{Binding CaptureIdCardCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
-                </StackPanel>
-                
-                <!-- Driver License -->
-                <StackPanel Spacing="4" Margin="0,0,8,0">
-                  <TextBlock Text="Driver License" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
-                  <Border BorderBrush="#4b5563" BorderThickness="1" Background="#111827" Height="130" Width="130">
-                    <Image Source="{Binding DriverLicenseImage}" Stretch="Uniform" Margin="2"/>
-                  </Border>
-                  <Button Content="📄 License" Command="{Binding CaptureDriverLicenseCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
-                </StackPanel>
-                
-                <!-- Photo -->
-                <StackPanel Spacing="4" Margin="0,0,8,0">
-                  <TextBlock Text="Photo" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
-                  <Border BorderBrush="#4b5563" BorderThickness="1" Background="#111827" Height="130" Width="130">
-                    <Image Source="{Binding PhotoImage}" Stretch="Uniform" Margin="2"/>
-                  </Border>
-                  <Button Content="📷 Take Photo" Command="{Binding CapturePhotoCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
-                </StackPanel>
-
-                <!-- Signature -->
-                <StackPanel Spacing="4" Margin="0,0,8,0">
-                  <TextBlock Text="Signature" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
-                  <Border BorderBrush="#4b5563" BorderThickness="1" Background="#111827" Height="130" Width="130">
-                    <Image Source="{Binding SignatureImage}" Stretch="Uniform" Margin="2"/>
-                  </Border>
-                  <Button Content="✍ Signature" Command="{Binding CaptureSignatureCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
-                </StackPanel>
-
-                <!-- Fingerprint -->
-                <StackPanel Spacing="4">
-                  <TextBlock Text="Fingerprint" Foreground="#c0c4cf" FontSize="10" FontWeight="SemiBold"/>
-                  <Border BorderBrush="#4b5563" BorderThickness="1" Background="#111827" Height="130" Width="130">
-                    <Image Source="{Binding FingerprintImage}" Stretch="Uniform" Margin="2"/>
-                  </Border>
-                  <Button Content="👆 Fingerprint" Command="{Binding CaptureFingerprintCommand}" HorizontalAlignment="Stretch" FontSize="9" Padding="4,2"/>
-                </StackPanel>
-              </UniformGrid>
-            </StackPanel>
-
-            <!-- Action Buttons -->
-            <StackPanel
-                Orientation="Horizontal"
-                HorizontalAlignment="Right"
-                Spacing="8"
-                Margin="0,20,0,0">
-
-              <Button
-                  Width="100"
-                  Content="Clear"
-                  Command="{Binding ClearNewCustomerCommand}" />
-
-              <Button
-                  Classes="primary"
-                  Width="100"
-                  Content="Create"
-                  Command="{Binding CreateCustomerCommand}"
-                  IsEnabled="{Binding CanCreateCustomer}"
-                  IsVisible="{Binding IsCreateMode}" />
-
-              <Button
-                  Classes="primary"
-                  Width="100"
-                  Content="Update"
-                  Command="{Binding UpdateCustomerCommand}"
-                  IsEnabled="{Binding CanUpdateCustomer}"
-                  IsVisible="{Binding IsEditMode}" />
-            </StackPanel>
 
             <TextBlock
                 Margin="0,4,0,0"
@@ -741,8 +760,7 @@
                 IsVisible="{Binding IsNewCustomerFullNameInvalid}" />
           </StackPanel>
         </Border>
-
-      </StackPanel>
+        </StackPanel>
     </ScrollViewer>
-  </Border>
+  </Grid>
 </UserControl>

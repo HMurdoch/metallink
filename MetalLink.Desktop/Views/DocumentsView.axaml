@@ -41,19 +41,28 @@
     </Style> -->
   </UserControl.Styles>
 
-  <Border Background="#1f2229" Padding="16">
-    <ScrollViewer>
-      <StackPanel Spacing="16">
+  <Border Background="{DynamicResource Brush.MainBackground}">
+    <Grid RowDefinitions="Auto,*">
+      <!-- Sticky Header Panel -->
+      <Border Grid.Row="0"
+              Background="{DynamicResource Brush.PanelBackground}"
+              Padding="12,8"
+              CornerRadius="4"
+              Margin="16,16,16,8"
+              ZIndex="100">
+        <Image Source="avares://MetalLink.Desktop/Assets/reports_heading.png"
+               Height="40"
+               HorizontalAlignment="Left"
+               Stretch="Uniform" />
+      </Border>
 
-        <TextBlock
-            Text="Customer Documents"
-            FontSize="22"
-            FontWeight="Bold"
-            Foreground="#f5f5f5" />
+      <!-- Scrollable Content -->
+      <ScrollViewer Grid.Row="1" Padding="16,8,16,60">
+        <StackPanel Spacing="16">
 
         <!-- Load docs -->
-        <Border Background="#252932" Padding="12" CornerRadius="4">
-          <StackPanel Spacing="8">
+        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
+    <StackPanel Spacing="8">
             <TextBlock Text="Load documents for customer" Foreground="#f5f5f5" FontWeight="Bold" />
 
             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -83,8 +92,8 @@
         </Border>
 
         <!-- Upload docs -->
-        <Border Background="#252932" Padding="12" CornerRadius="4">
-          <StackPanel Spacing="8">
+        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
+    <StackPanel Spacing="8">
             <TextBlock Text="Upload new document" Foreground="#f5f5f5" FontWeight="Bold" />
 
             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -100,7 +109,7 @@
                   Text="{Binding NewDocumentFilePath}" />
             </StackPanel>
 
-            <StackPanel Spacing="2">
+      <StackPanel Spacing="2">
               <TextBlock
                   Text="Document type is required."
                   Foreground="#ff8888"
@@ -122,11 +131,11 @@
         </Border>
 
       <!-- Signature Capture (Signature Pad → Customer Document) -->
-      <Border Background="#252932"
+      <Border Background="{DynamicResource Brush.GlassPanel}"
               Padding="12"
               CornerRadius="4"
               Margin="0,12,0,0">
-        <StackPanel Spacing="6">
+  <StackPanel Spacing="6">
 
           <TextBlock Text="Signature Capture (Pad → Customer Document)"
                      FontSize="14"
@@ -159,7 +168,8 @@
         </StackPanel>
       </Border>
 
-      </StackPanel>
-    </ScrollViewer>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
   </Border>
 </UserControl>

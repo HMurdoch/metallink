@@ -1,7 +1,7 @@
 // File: MetalLink.Shared/Sites/SiteLookupDto.cs
 namespace MetalLink.Shared.Sites;
 
-public sealed class SiteLookupDto
+public class SiteLookupDto
 {
     public int SiteId    { get; set; }
     public int? CompanyId { get; set; }
@@ -18,4 +18,13 @@ public sealed class SiteLookupDto
     public int? ProvinceId   { get; set; }
     public int? CountryId { get; set; }
     public bool IsActive { get; set; } = true;
+
+    public bool IsDeleteVisible { get; set; } = true;
+
+    // Document Paths
+    public string? CipcDocumentPath { get; set; }
+    public string? TradingLicensePath { get; set; }
+    public string? VatRegistrationCertificatePath { get; set; }
+    public string? TaxClearanceCertificatePath { get; set; }
+    public string? BbbeeComplianceCertificatePath { get; set; }
 }

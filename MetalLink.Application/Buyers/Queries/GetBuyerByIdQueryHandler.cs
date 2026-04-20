@@ -45,7 +45,8 @@ public sealed class GetBuyerByIdQueryHandler
 
             IdNumber      = buyer.IdNumber,
             AccountNumber = buyer.AccountNumber,
-            PriceCode     = buyer.PriceCode,
+            ProductPriceListId = buyer.ProductPriceListId,
+            ProductPriceListName = buyer.ProductPriceList?.ProductPriceListName,
 
             PhoneNumber   = buyer.PhoneNumber,
             MobileNumber  = buyer.MobileNumber,

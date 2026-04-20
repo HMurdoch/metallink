@@ -17,7 +17,7 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         _context = context;
     }
 
-    public async Task<TicketReceiving?> GetByIdAsync(long ticketReceivingId)
+    public async Task<TicketReceiving?> GetByIdAsync(int ticketReceivingId)
     {
         return await _context.Set<TicketReceiving>()
             .Include(t => t.Customer)
@@ -48,14 +48,15 @@ public class TicketReceivingRepository : ITicketReceivingRepository
 
     public async Task<IEnumerable<TicketReceiving>> SearchAsync(
         string? searchTerm = null,
-        long? companyId = null,
-        long? siteId = null,
-        long? customerId = null,
+        int? companyId = null,
+        int? siteId = null,
+        int? customerId = null,
         string? firstName = null,
         string? lastName = null,
         string? idNumber = null,
         long? accountNumber = null,
-        long? productId = null,
+        int? productId = null,
+        int? productGroupId = null,
         string? ticketType = null,
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
@@ -103,6 +104,12 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         if (accountNumber.HasValue)
             query = query.Where(t => t.Customer != null && t.Customer.AccountNumber == accountNumber.Value);
 
+        if (productId.HasValue)
+            query = query.Where(t => t.Lines.Any(l => l.ProductId == productId.Value));
+
+        if (productGroupId.HasValue)
+            query = query.Where(t => t.Lines.Any(l => l.Product != null && l.Product.ProductGroupId == productGroupId.Value));
+
         if (!string.IsNullOrWhiteSpace(ticketType))
             query = query.Where(t => t.TicketType != null && t.TicketType.TicketTypeName.ToLower() == ticketType.ToLower());
 
@@ -121,14 +128,14 @@ public class TicketReceivingRepository : ITicketReceivingRepository
 
     public async Task<long> GetCountAsync(
         string? searchTerm = null,
-        long? companyId = null,
-        long? siteId = null,
-        long? customerId = null,
+        int? companyId = null,
+        int? siteId = null,
+        int? customerId = null,
         string? firstName = null,
         string? lastName = null,
         string? idNumber = null,
         long? accountNumber = null,
-        long? productId = null,
+        int? productId = null,
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
         string? deliveryStatus = null)
@@ -180,7 +187,7 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         return Task.CompletedTask;
     }
 
-    public async Task<string> GenerateTicketNumberAsync(long siteId)
+    public async Task<string> GenerateTicketNumberAsync(int siteId)
     {
         var site = await _context.Set<Site>().FindAsync(siteId);
         var year = DateTime.Now.Year;
@@ -213,4 +220,21 @@ public class TicketReceivingRepository : ITicketReceivingRepository
 
         return lastTicket?.TicketNumber;
     }
+
+    public async Task<long> GetNextTicketSequenceValueAsync(string prefix)
+    {
+        var seq = $"metal_link.ticket_number_{prefix.ToLowerInvariant()}_seq";
+        var sql = $"SELECT nextval('{seq}') AS \"Value\"";
+        return await _context.Database.SqlQueryRaw<long>(sql).SingleAsync();
+    }
+
+    public async Task<long> PeekNextTicketSequenceValueAsync(string prefix)
+    {
+        // Do NOT advance the sequence (unlike nextval). We read last_value/is_called and compute the next value.
+        // When a sequence was initialized with setval(..., false), last_value already represents the next value.
+        var seq = $"metal_link.ticket_number_{prefix.ToLowerInvariant()}_seq";
+        var sql = $"SELECT CASE WHEN s.is_called THEN s.last_value + 1 ELSE s.last_value END AS \"Value\" FROM {seq} s";
+        return await _context.Database.SqlQueryRaw<long>(sql).SingleAsync();
+    }
 }
+

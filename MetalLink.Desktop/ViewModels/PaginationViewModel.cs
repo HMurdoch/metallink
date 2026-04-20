@@ -16,10 +16,14 @@ public partial class PaginationViewModel : ObservableObject
     [ObservableProperty]
     private int totalRecords = 0;
 
-    [ObservableProperty]
-    private ObservableCollection<int> pageSizeOptions = new ObservableCollection<int> { 20, 40, 60, 80, 100, 120 };
+    private ObservableCollection<int> _pageSizeOptions = new ObservableCollection<int> { 20, 40, 60, 80, 100 };
+    public ObservableCollection<int> PageSizeOptions
+    {
+        get => _pageSizeOptions;
+        set => SetProperty(ref _pageSizeOptions, value);
+    }
 
-    public int TotalPages => TotalRecords > 0 ? (TotalRecords + PageSize - 1) / PageSize : 1;
+    public int TotalPages => TotalRecords > 0 ? (int)Math.Ceiling((double)TotalRecords / Math.Max(1, PageSize)) : 1;
 
     public bool CanGoPrevious => CurrentPage > 1;
 
@@ -66,7 +70,7 @@ public partial class PaginationViewModel : ObservableObject
     {
         CurrentPage = 1;
         TotalRecords = 0;
-        PageSize = 30;
+        // Keep current PageSize
         OnPropertyChanged(nameof(TotalPages));
         OnPropertyChanged(nameof(CanGoPrevious));
         OnPropertyChanged(nameof(CanGoNext));

@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 using MetalLink.Shared.Customers;
 using MetalLink.Shared.Products;
 using MetalLink.Shared.Sites;
-using MetalLink.Shared.Tickets;
+using MetalLink.Shared.Tickets.Receiving;
 
 namespace MetalLink.Desktop.Properties;
 
@@ -73,14 +73,14 @@ public sealed class TicketReceivingProperties
     
     // Site and Company
     public SiteLookupDto? SelectedSite { get; set; }
-    public long CompanyId { get; set; }
-    public long SiteId { get; set; }
+    public int CompanyId { get; set; }
+    public int SiteId { get; set; }
     
     // Operator
-    public long OperatorId { get; set; }
+    public int OperatorId { get; set; }
     
     // Created ticket info
-    public long? TicketReceivingId { get; set; }
+    public int? TicketReceivingId { get; set; }
     public DateTimeOffset? CreatedTime { get; set; }
     public DateTimeOffset? UpdatedTime { get; set; }
 }

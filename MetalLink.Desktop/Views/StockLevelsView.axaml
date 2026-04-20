@@ -1,0 +1,182 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MetalLink.Desktop.Views.StockLevelsView"
+             xmlns:controls="using:MetalLink.Desktop.Views.Controls"
+             xmlns:stock="using:MetalLink.Shared.Stock">
+
+  <Grid RowDefinitions="Auto,*">
+    <!-- Sticky Header Panel -->
+    <Border Grid.Row="0" 
+            Background="{DynamicResource Brush.PanelBackground}"
+            Padding="12,8"
+            CornerRadius="4"
+            Margin="16,16,16,8"
+            ZIndex="100">
+      <Image Source="avares://MetalLink.Desktop/Assets/stock_levels_heading.png"
+             Height="40"
+             HorizontalAlignment="Left"
+             Stretch="Uniform" />
+    </Border>
+    
+    <!-- Scrollable Content -->
+    <ScrollViewer Grid.Row="1" Padding="16,8,16,10">
+      <StackPanel Spacing="14" Margin="0,0,0,80">
+
+          <!-- Product Filter -->
+          <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+                  CornerRadius="10" Padding="12">
+            <StackPanel Spacing="8">
+              <Grid PointerPressed="ToggleFilter" Cursor="Hand">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" 
+                           Text="{Binding StockLevels.IsFilterExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                           Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="Product Filters" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+              </Grid>
+              <Grid ColumnDefinitions="*,*,*,Auto" ColumnSpacing="12" IsVisible="{Binding StockLevels.IsFilterExpanded}">
+                <StackPanel Grid.Column="0" Spacing="4">
+                  <TextBlock Text="Product Group" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                  <ComboBox ItemsSource="{Binding StockLevels.ProductGroups}" SelectedItem="{Binding StockLevels.SelectedProductGroup}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding ProductGroupName}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Spacing="4">
+                  <TextBlock Text="Product Search" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                  <TextBox Watermark="Search name or code..."
+                           Text="{Binding StockLevels.ProductSearchText, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Spacing="4">
+                  <TextBlock Text="First Letter" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                  <ComboBox ItemsSource="{Binding StockLevels.ProductLetterFilters}"
+                            SelectedItem="{Binding StockLevels.SelectedProductLetter}" />
+                </StackPanel>
+
+                <Button Grid.Column="3" Content="Clear" Command="{Binding StockLevels.ClearProductCommand}" VerticalAlignment="Bottom" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <!-- 3D Bar Chart -->
+          <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+                  CornerRadius="10" Padding="12">
+            <StackPanel Spacing="8">
+              <Grid PointerPressed="ToggleChart" Cursor="Hand">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" 
+                           Text="{Binding StockLevels.IsChartExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                           Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="Visual Summary" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+              </Grid>
+              <Border IsVisible="{Binding StockLevels.IsChartExpanded}" Height="340">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                  <controls:BarChart3DControl x:Name="StockChart"
+                                              Items="{Binding StockLevels.ChartItems}"
+                                              HoveredProductId="{Binding StockLevels.HoveredProductId, Mode=TwoWay}"
+                                              MinWidth="900" />
+                </ScrollViewer>
+              </Border>
+            </StackPanel>
+          </Border>
+
+          <!-- Summary Grid -->
+          <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+                  CornerRadius="10" Padding="12">
+            <StackPanel Spacing="8">
+              <Grid PointerPressed="ToggleResults" Cursor="Hand">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" 
+                           Text="{Binding StockLevels.IsResultsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                           Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="Stock Levels" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+              </Grid>
+              <Grid RowDefinitions="*,Auto" IsVisible="{Binding StockLevels.IsResultsExpanded}">
+                <DataGrid Grid.Row="0" x:Name="StockGrid"
+                          ItemsSource="{Binding StockLevels.StockRows}" AutoGenerateColumns="False" IsReadOnly="True">
+                  <DataGrid.Styles>
+                    <!-- Match Stock Levels compact rows -->
+                    <Style Selector="#StockGrid DataGridRow">
+                      <Setter Property="Background" Value="Transparent" />
+                      <Setter Property="Height" Value="24" />
+                      <Setter Property="MinHeight" Value="20" />
+                      <Setter Property="Padding" Value="0" />
+                      <Setter Property="Transitions">
+                        <Transitions>
+                          <DoubleTransition Property="FontSize" Duration="0:0:0.1" />
+                          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" />
+                        </Transitions>
+                      </Setter>
+                    </Style>
+                    <!-- Use explicit Pointer events on the DataGrid for row hover tracking if possible, 
+                         or handle in code-behind via Row events. Avalonia 11 doesn't have EventSetter in XAML. -->
+                    <Style Selector="#StockGrid DataGridRow:pointerover">
+                       <Setter Property="Background" Value="{DynamicResource Brush.AccentLow}" />
+                       <Setter Property="RenderTransform" Value="translateX(5px)" />
+                    </Style>
+                    <Style Selector="#StockGrid DataGridRow.is-hovered">
+                      <Setter Property="Background" Value="{DynamicResource Brush.AccentLow}" />
+                      <Setter Property="RenderTransform" Value="translateX(5px)" />
+                      <Setter Property="ZIndex" Value="10" />
+                    </Style>
+
+                    <Style Selector="#StockGrid DataGridRow /template/ Border">
+                      <Setter Property="Margin" Value="0" />
+                      <Setter Property="Padding" Value="0" />
+                    </Style>
+                    <Style Selector="#StockGrid DataGridCell">
+                      <Setter Property="Padding" Value="6,0" />
+                      <Setter Property="VerticalContentAlignment" Value="Center" />
+                    </Style>
+                    <Style Selector="#StockGrid DataGridCell TextBlock">
+                      <Setter Property="FontSize" Value="11" />
+                      <Setter Property="VerticalAlignment" Value="Center" />
+                    </Style>
+                  </DataGrid.Styles>
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Code" Binding="{Binding ProductCode}" Width="120" FontSize="12" />
+                    <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="400" FontSize="12" />
+                    <DataGridTextColumn Header="On Hand (kg)" Binding="{Binding WeightKg}" Width="180" FontSize="12" />
+                    <DataGridTemplateColumn Header="" Width="120">
+                      <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                          <Button Content="Movement" Padding="8,2" Click="OnMovementClick" FontSize="12" />
+                        </DataTemplate>
+                      </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                  </DataGrid.Columns>
+                </DataGrid>
+
+                <StackPanel Grid.Row="1" Spacing="6" Margin="0,10,0,0">
+                  <TextBlock Text="{Binding StockLevels.PaginationStatusText}" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.TextMuted}" FontSize="12" />
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
+                    <TextBlock Text="Page size" VerticalAlignment="Center" />
+                    <ComboBox Width="90" ItemsSource="{Binding StockLevels.Pagination.PageSizeOptions}" SelectedItem="{Binding StockLevels.Pagination.PageSize}" />
+                    <Button Content="Prev" Command="{Binding StockLevels.Pagination.PreviousPageCommand}" IsEnabled="{Binding StockLevels.Pagination.CanGoPrevious}" />
+                    <TextBlock Text="{Binding StockLevels.Pagination.CurrentPage}" Foreground="{DynamicResource Brush.TextPrimary}" />
+                    <TextBlock Text="/" Foreground="{DynamicResource Brush.TextMuted}" />
+                    <TextBlock Text="{Binding StockLevels.Pagination.TotalPages}" Foreground="{DynamicResource Brush.TextPrimary}" />
+                    <Button Content="Next" Command="{Binding StockLevels.Pagination.NextPageCommand}" IsEnabled="{Binding StockLevels.Pagination.CanGoNext}" />
+                  </StackPanel>
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

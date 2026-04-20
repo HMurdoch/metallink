@@ -9,37 +9,41 @@ namespace MetalLink.Application.Services;
 public class PriceLookupService
 {
     private readonly IPriceRepository _priceRepository;
+    private readonly IProductPriceListProductPriceRepository _priceListPriceRepository;
 
-    public PriceLookupService(IPriceRepository priceRepository)
+    public PriceLookupService(
+        IPriceRepository priceRepository,
+        IProductPriceListProductPriceRepository priceListPriceRepository)
     {
         _priceRepository = priceRepository;
+        _priceListPriceRepository = priceListPriceRepository;
     }
 
     /// <summary>
-    /// Gets the unit price per kg for a product based on the customer/buyer's price code
+    /// Gets the unit price per kg for a product based on the customer/buyer's price list or legacy price code
     /// </summary>
     /// <param name="productId">The product ID</param>
-    /// <param name="priceCode">The price code (A, B, or C) from customer/buyer</param>
+    /// <param name="priceListId">The product price list ID (new system)</param>
+    /// <param name="priceCode">The legacy price code (A, B, or C)</param>
     /// <returns>The unit price per kg, or 0 if not found</returns>
-    public async Task<decimal> GetUnitPriceAsync(long productId, string? priceCode, CancellationToken ct = default)
+    public async Task<decimal> GetUnitPriceAsync(
+        int productId,
+        int? priceListId,
+        string? priceCode,
+        CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(priceCode) || priceCode.Length != 1)
-            return 0;
-
-        var prices = await _priceRepository.GetByProductIdAsync(productId, ct);
-        if (prices == null || !prices.Any())
-            return 0;
-
-        // Get the first price for this product
-        var price = prices.First();
-
-        return priceCode.ToUpper() switch
+        // 1. Try the new semantic Price List system first
+        if (priceListId.HasValue)
         {
-            "A" => price.PriceA,
-            "B" => price.PriceB,
-            "C" => price.PriceC,
-            _ => 0
-        };
+            var priceListPrice = await _priceListPriceRepository.GetByProductAndListAsync(productId, priceListId.Value, ct);
+            if (priceListPrice != null)
+            {
+                return priceListPrice.Price;
+            }
+        }
+
+        // 2. Legacy Price Code system is no longer supported
+        return 0;
     }
 
     /// <summary>

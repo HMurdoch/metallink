@@ -1,0 +1,265 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
+             xmlns:vm="using:MetalLink.Desktop.ViewModels"
+             xmlns:stock="using:MetalLink.Shared.Stock"
+             x:Class="MetalLink.Desktop.Views.StockMovementView">
+
+  <Grid RowDefinitions="Auto,*">
+    <!-- Sticky Header Panel -->
+    <Border Grid.Row="0" 
+            Background="{DynamicResource Brush.PanelBackground}"
+            Padding="12,8"
+            CornerRadius="4"
+            Margin="16,16,16,8"
+            ZIndex="100">
+      <Image Source="avares://MetalLink.Desktop/Assets/stock_movements_heading.png"
+             Height="40"
+             HorizontalAlignment="Left"
+             Stretch="Uniform" />
+    </Border>
+    
+    <!-- Scrollable Content -->
+    <ScrollViewer x:Name="ContentScrollViewer" Grid.Row="1" Padding="16,8,16,10">
+      <StackPanel Spacing="14" Margin="0,0,0,80">
+
+      <!-- Filters -->
+      <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+              CornerRadius="10" Padding="12">
+        <StackPanel Spacing="10">
+          <Grid PointerPressed="ToggleFilter" Cursor="Hand">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" 
+                       Text="{Binding StockMovement.IsFilterExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                       Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="Stock Movement Filters" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+          </Grid>
+          <StackPanel Spacing="10" IsVisible="{Binding StockMovement.IsFilterExpanded}">
+
+            <!-- Product Filter (same as Stock Levels) -->
+            <Grid ColumnDefinitions="*,*,*,Auto" ColumnSpacing="12" IsVisible="{Binding StockMovement.IsFilterExpanded}">
+              <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Text="Product Group" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                <ComboBox ItemsSource="{Binding StockMovement.ProductGroups}" SelectedItem="{Binding StockMovement.SelectedProductGroup}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding ProductGroupName}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+
+              <StackPanel Grid.Column="1" Spacing="4">
+                <TextBlock Text="Product Search" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                <TextBox Watermark="Search name or code..."
+                         Text="{Binding StockMovement.ProductSearchText, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+
+              <StackPanel Grid.Column="2" Spacing="4">
+                <TextBlock Text="First Letter" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                <ComboBox ItemsSource="{Binding StockMovement.ProductLetterFilters}"
+                          SelectedItem="{Binding StockMovement.SelectedProductLetter}" />
+              </StackPanel>
+
+              <Button Grid.Column="3" Content="Clear" Command="{Binding StockMovement.ClearProductCommand}" VerticalAlignment="Bottom" />
+            </Grid>
+
+            <!-- All history toggle -->
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" VerticalAlignment="Center">
+              <TextBlock Grid.Column="0" Text="All History" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding StockMovement.AllHistory}" HorizontalAlignment="Left" />
+            </Grid>
+
+            <!-- Date+time range (hidden when AllHistory) -->
+            <Grid IsVisible="{Binding StockMovement.IsRangeVisible}"
+                  ColumnDefinitions="Auto,Auto,*,Auto,Auto,*"
+                  ColumnSpacing="10"
+                  RowDefinitions="Auto,Auto"
+                  RowSpacing="8">
+
+              <!-- FROM row -->
+              <TextBlock Grid.Row="0" Grid.Column="0" Text="From" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
+              <CheckBox Grid.Row="0" Grid.Column="1" Content="Day 0" IsChecked="{Binding StockMovement.FromDay0}" VerticalAlignment="Center" />
+
+              <DatePicker Grid.Row="0" Grid.Column="2" SelectedDate="{Binding StockMovement.FromDate}" IsEnabled="{Binding StockMovement.IsFromPickerEnabled}" />
+
+              <TextBlock Grid.Row="0" Grid.Column="3" Text="Time" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
+              <ComboBox Grid.Row="0" Grid.Column="4" Width="90"
+                        ItemsSource="{Binding StockMovement.TimeOptions5Min}"
+                        SelectedItem="{Binding StockMovement.FromTime}"
+                        IsEnabled="{Binding StockMovement.IsFromPickerEnabled}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding StringFormat={}{0:hh\\:mm}}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+
+              <!-- TO row -->
+              <TextBlock Grid.Row="1" Grid.Column="0" Text="To" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
+              <CheckBox Grid.Row="1" Grid.Column="1" Content="Now" IsChecked="{Binding StockMovement.ToNow}" VerticalAlignment="Center" />
+
+              <DatePicker Grid.Row="1" Grid.Column="2" SelectedDate="{Binding StockMovement.ToDate}" IsEnabled="{Binding StockMovement.IsToPickerEnabled}" />
+
+              <TextBlock Grid.Row="1" Grid.Column="3" Text="Time" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
+              <ComboBox Grid.Row="1" Grid.Column="4" Width="90"
+                        ItemsSource="{Binding StockMovement.TimeOptions5Min}"
+                        SelectedItem="{Binding StockMovement.ToTime}"
+                        IsEnabled="{Binding StockMovement.IsToPickerEnabled}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding StringFormat={}{0:hh\\:mm}}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+
+            </Grid>
+
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- Line chart: 20 products on current page -->
+      <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+              CornerRadius="10" Padding="12">
+        <StackPanel Spacing="8">
+          <Grid PointerPressed="ToggleChart" Cursor="Hand">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" 
+                       Text="{Binding StockMovement.IsChartExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                       Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="Stock Levels Over Time" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource Brush.TextPrimary}" />
+          </Grid>
+          <!-- Explicit height so the chart is visible even before it has data -->
+          <lvc:CartesianChart x:Name="StockChart" Height="500"
+                             MinHeight="360"
+                             Background="{DynamicResource Brush.SolidPanelBackground}"
+                             Series="{Binding StockMovement.Series}"
+                             XAxes="{Binding StockMovement.XAxes}"
+                             IsVisible="{Binding StockMovement.IsChartExpanded}"
+                             LegendPosition="Hidden"
+                             TooltipPosition="Top"
+                             FindingStrategy="CompareAll"
+                             PointerMoved="OnChartPointerMoved"
+                             PointerExited="OnChartPointerExited"
+                             PointerWheelChanged="OnChartPointerWheelChanged"
+                             AnimationsSpeed="00:00:00" />
+          <Button Content="Reset" 
+                  Command="{Binding StockMovement.ResetViewCommand}"
+                  HorizontalAlignment="Right" 
+                  Margin="0,8,0,0"
+                  Padding="16,4"
+                  Classes="accent" />
+        </StackPanel>
+      </Border>
+
+      <!-- History and Transactions Panels (50/50 Split) -->
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="16" IsVisible="{Binding StockMovement.IsResultsExpanded}">  
+          <!-- Movement History Panel -->
+          <Border Grid.Column="0" Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+                  CornerRadius="10" Padding="12">
+            <StackPanel Spacing="8">
+              <TextBlock Text="Products" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+              <Grid RowDefinitions="*,Auto">
+                  <DataGrid Grid.Row="0" x:Name="MovementGrid"
+                            ItemsSource="{Binding StockMovement.Rows}" 
+                            SelectedItem="{Binding StockMovement.SelectedProductRow}"
+                            AutoGenerateColumns="False" IsReadOnly="True" Height="360">
+                    <DataGrid.Styles>
+                      <Style Selector="#MovementGrid DataGridRow">
+                        <Setter Property="Height" Value="24" />
+                        <Setter Property="MinHeight" Value="2" />
+                        <Setter Property="Transitions">
+                            <Transitions>
+                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" />
+                            </Transitions>
+                        </Setter>
+                      </Style>
+                      <Style Selector="#MovementGrid DataGridRow.is-hovered">
+                          <Setter Property="Background" Value="{DynamicResource Brush.AccentLow}" />
+                          <Setter Property="RenderTransform" Value="translateX(5px)" />
+                          <Setter Property="ZIndex" Value="10" />
+                      </Style>
+                    </DataGrid.Styles>
+                    <DataGrid.Columns>
+                      <DataGridTextColumn Header="Code" Binding="{Binding ProductCode}" Width="100" FontSize="11" />
+                      <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="350" FontSize="11" />
+                      <DataGridTextColumn Header="On Hand" Binding="{Binding WeightKg, StringFormat=' {0:N2}'}" Width="100" FontSize="11" />
+                    </DataGrid.Columns>
+                  </DataGrid>
+
+                  <StackPanel Grid.Row="1" Spacing="6" Margin="0,10,0,0">
+                    <TextBlock Text="{Binding StockMovement.PaginationStatusText}" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.TextMuted}" FontSize="11" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
+                      <Button Content="Prev" Command="{Binding StockMovement.Pagination.PreviousPageCommand}" IsEnabled="{Binding StockMovement.Pagination.CanGoPrevious}" Padding="4,2" FontSize="11"/>
+                      <TextBlock Text="{Binding StockMovement.Pagination.CurrentPage}" VerticalAlignment="Center" FontSize="11"/>
+                      <TextBlock Text="/" VerticalAlignment="Center" FontSize="11"/>
+                      <TextBlock Text="{Binding StockMovement.Pagination.TotalPages}" VerticalAlignment="Center" FontSize="11"/>
+                      <Button Content="Next" Command="{Binding StockMovement.Pagination.NextPageCommand}" IsEnabled="{Binding StockMovement.Pagination.CanGoNext}" Padding="4,2" FontSize="11"/>
+                    </StackPanel>
+                  </StackPanel>
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <!-- Transactions Panel -->
+          <Border Grid.Column="1" Background="{DynamicResource Brush.GlassPanel}"
+                  BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+                  CornerRadius="10" Padding="12">
+            <StackPanel Spacing="8">
+              <TextBlock Text="Transactions" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+              <DataGrid x:Name="TransactionsList" ItemsSource="{Binding StockMovement.Transactions}"
+                        Background="Transparent" BorderThickness="0" Height="400"
+                        AutoGenerateColumns="False" IsReadOnly="True"
+                        GridLinesVisibility="None">
+                <DataGrid.Styles>
+                  <Style Selector="#TransactionsList DataGridRow" x:DataType="vm:StockMovementViewModel+TransactionViewModel">
+                    <Setter Property="Height" Value="24" />
+                    <Setter Property="MinHeight" Value="20" />
+                    <Setter Property="Transitions">
+                      <Transitions>
+                        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" />
+                      </Transitions>
+                    </Setter>
+                  </Style>
+                  <Style Selector="#TransactionsList DataGridRow.is-hovered">
+                    <Setter Property="Background" Value="{DynamicResource Brush.AccentLow}" />
+                    <Setter Property="RenderTransform" Value="translateX(5px)" />
+                    <Setter Property="ZIndex" Value="10" />
+                  </Style>
+                  <Style Selector="#TransactionsList DataGridCell">
+                    <Setter Property="Padding" Value="4,2" />
+                    <Setter Property="VerticalContentAlignment" Value="Center" />
+                  </Style>
+                </DataGrid.Styles>
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Date" Binding="{Binding Timestamp, StringFormat='dd/MM HH:mm'}" Width="100" FontSize="11" />
+                  <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="300" FontSize="11" />
+                  <DataGridTemplateColumn Header="Change" Width="140">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
+                          <TextBlock Text="{Binding ChangePrefix}" Foreground="{Binding ChangeBrush}" FontSize="11" />
+                          <TextBlock Text="{Binding TypeLabel}" Foreground="{Binding ChangeBrush}" FontSize="11" Margin="4,0,0,0" />
+                          <TextBlock Text="{Binding Quantity, StringFormat=' {0:N2}'}" Foreground="{Binding ChangeBrush}" FontSize="11" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                  <DataGridTextColumn Header="On Hand" Binding="{Binding OnHandAfter, StringFormat=' {0:N2}'}" Width="100" FontSize="11" />
+                </DataGrid.Columns>
+              </DataGrid>
+            </StackPanel>
+          </Border>
+      </Grid>
+
+        </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

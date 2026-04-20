@@ -52,7 +52,8 @@ public sealed class GetCustomerByIdQueryHandler
 
             IdNumber      = customer.IdNumber,
             AccountNumber = customer.AccountNumber,
-            PriceCode     = customer.PriceCode,
+            ProductPriceListId = customer.ProductPriceListId,
+            ProductPriceListName = customer.ProductPriceList?.ProductPriceListName,
 
             PhoneNumber   = customer.PhoneNumber,
             MobileNumber  = customer.MobileNumber,

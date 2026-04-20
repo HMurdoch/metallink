@@ -22,6 +22,12 @@ public class TicketSendingLine
 
     public string? Notes { get; private set; }
 
+    /// <summary>
+    /// Which buyer price list was active when this line was created.
+    /// Nullable – populated for new lines; backfilled via migration for existing rows.
+    /// </summary>
+    public int? ProductPriceListId { get; set; }
+
     public int CreatedByOperatorId { get; private set; }
     public Operator CreatedByOperator { get; set; } = null!;
 

@@ -23,7 +23,8 @@ public class Buyer
     public Site Site { get; set; } = null!;
 
     public bool IsTaxable { get; set; }
-    public string? PriceCode { get; set; }
+    public int? ProductPriceListId { get; set; }
+    public ProductPriceList? ProductPriceList { get; set; }
 
     public string? PhoneNumber { get; set; }
     public string? MobileNumber { get; set; }
@@ -38,9 +39,6 @@ public class Buyer
     public DateTimeOffset CreatedTime { get; set; }
     public DateTimeOffset UpdatedTime { get; set; }
 
-    // Navigation (legacy)
-    public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
-    
     // Navigation to TicketSending
     public ICollection<TicketSending> TicketsSending { get; set; } = new List<TicketSending>();
 }

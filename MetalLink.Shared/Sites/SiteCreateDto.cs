@@ -15,4 +15,11 @@ public sealed class SiteCreateDto
     public string? PostalCode { get; set; }
     public int? ProvinceId { get; set; }
     public int? CountryId { get; set; }
+
+    // Document Paths
+    public string? CipcDocumentPath { get; set; }
+    public string? TradingLicensePath { get; set; }
+    public string? VatRegistrationCertificatePath { get; set; }
+    public string? TaxClearanceCertificatePath { get; set; }
+    public string? BbbeeComplianceCertificatePath { get; set; }
 }

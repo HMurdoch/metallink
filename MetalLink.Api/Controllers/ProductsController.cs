@@ -1,6 +1,12 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MetalLink.Infrastructure.Persistence;
+using MetalLink.Shared.Prices;
 using MetalLink.Shared.Products;
 using MetalLink.Domain.Entities;
 using MetalLink.Api.Extensions;
@@ -19,35 +25,81 @@ public class ProductsController : ControllerBase
     }
 
     // GET /api/products/lookup?term=abc
-    [HttpGet("lookup")]
-    public async Task<ActionResult<IEnumerable<ProductLookupDto>>> Lookup(
-        [FromQuery] string? term,
-        CancellationToken ct)
+    [HttpGet("groups")]
+    public async Task<ActionResult<IEnumerable<ProductGroupDto>>> GetGroups(CancellationToken ct)
     {
-        // Only return active products
-        var query = _db.Products.Where(p => p.IsActive);
+        var groups = await _db.ProductGroups
+            .Where(p => p.IsActive)
+            .OrderBy(p => p.ProductGroupName)
+            .Select(p => new ProductGroupDto { ProductGroupId = p.ProductGroupId, ProductGroupName = p.ProductGroupName })
+            .ToListAsync(ct);
+        return Ok(groups);
+    }
+
+    [HttpGet("lookup")]
+    public async Task<ActionResult> Lookup(
+        [FromQuery] string? term,
+        [FromQuery] int? groupId,
+        [FromQuery] string? letter,
+        [FromQuery] bool includeNonStarred = false,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 25,
+        CancellationToken ct = default)
+    {
+        var query = _db.Products
+            .Include(p => p.ProductGroup)
+            .AsNoTracking()
+            .Where(p => p.IsActive);
+
+        if (!includeNonStarred)
+        {
+            query = query.Where(p => p.StarredProduct);
+        }
+
+        if (groupId.HasValue && groupId.Value > 0)
+        {
+            query = query.Where(p => p.ProductGroupId == groupId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(letter) && letter != "ALL")
+        {
+            query = query.Where(p => EF.Functions.ILike(p.StarredProductAlias ?? p.IsriProductName, $"{letter}%"));
+        }
 
         if (!string.IsNullOrWhiteSpace(term))
         {
             var searchTerm = term.Trim().ToLower();
             query = query.Where(p =>
-                p.ProductName.ToLower().Contains(searchTerm) ||
-                (p.ProductCode != null && p.ProductCode.ToLower().Contains(searchTerm)));
+                p.IsriProductName.ToLower().Contains(searchTerm) ||
+                p.IsriProductCode.ToLower().Contains(searchTerm) ||
+                (p.StarredProductAlias != null && p.StarredProductAlias.ToLower().Contains(searchTerm)));
         }
 
+        var totalCount = await query.CountAsync(ct);
+
         var results = await query
-            .OrderBy(p => p.ProductName)
+            .OrderBy(p => p.StarredProductAlias ?? p.IsriProductName)
+            .Skip(skip)
+            .Take(take)
             .Select(p => new ProductLookupDto
             {
                 ProductId = p.ProductId,
-                ProductName = p.ProductName,
-                ProductCode = p.ProductCode,
-                Grade = p.Grade,
+                ProductName = p.IsriProductName,
+                ProductCode = p.IsriProductCode,
+                QKey = p.QKey,
+                HtsCode = p.HtsCode,
+                IsriProduct = p.IsriProduct,
+                ProductGroupName = p.ProductGroup != null ? p.ProductGroup.ProductGroupName : null,
+                ProductSpecificationFlagId = p.ProductSpecificationFlagId,
+                StarredProductAlias = p.StarredProductAlias,
+                StarredProduct = p.StarredProduct,
+                IsriProductDescription = p.IsriProductDescription,
+                IsriProductUrl = p.IsriProductUrl,
                 IsActive = p.IsActive
             })
             .ToListAsync(ct);
 
-        return Ok(results);
+        return Ok(new { Items = results, TotalCount = totalCount });
     }
 
     // GET /api/products/{productId}
@@ -63,9 +115,17 @@ public class ProductsController : ControllerBase
         var dto = new ProductDto
         {
             ProductId = product.ProductId,
-            ProductCode = product.ProductCode,
-            ProductName = product.ProductName,
-            Grade = product.Grade,
+            HtsCode = product.HtsCode,
+            IsriProductCode = product.IsriProductCode,
+            IsriProductName = product.IsriProductName,
+            IsriProductDescription = product.IsriProductDescription,
+            IsriProductUrl = product.IsriProductUrl,
+            IsriProduct = product.IsriProduct,
+            ProductGroupId = product.ProductGroupId,
+            ProductSpecificationFlagId = product.ProductSpecificationFlagId,
+            StarredProduct = product.StarredProduct,
+            StarredProductAlias = product.StarredProductAlias,
+            MustDeclare = product.MustDeclare,
             IsActive = product.IsActive,
             CreatedTime = product.CreatedTime,
             UpdatedTime = product.UpdatedTime
@@ -82,9 +142,18 @@ public class ProductsController : ControllerBase
     {
         var product = new Product
         {
-            ProductCode = dto.ProductCode.Trim(),
-            ProductName = dto.ProductName.Trim(),
-            Grade = dto.Grade,
+            HtsCode = dto.HtsCode,
+            IsriProductCode = dto.IsriProductCode.Trim(),
+            IsriProductName = dto.IsriProductName.Trim(),
+            IsriProductDescription = dto.IsriProductDescription,
+            IsriProductUrl = dto.IsriProductUrl,
+            IsriProduct = dto.IsriProduct,
+            QKey = dto.QKey,
+            ProductGroupId = dto.ProductGroupId,
+            ProductSpecificationFlagId = dto.ProductSpecificationFlagId,
+            StarredProduct = dto.StarredProduct,
+            StarredProductAlias = dto.StarredProductAlias,
+            MustDeclare = dto.MustDeclare,
             IsActive = true,
             CreatedByOperatorId = (int)User.GetOperatorId(),
             CreatedTime = DateTimeOffset.UtcNow,
@@ -92,21 +161,6 @@ public class ProductsController : ControllerBase
         };
 
         _db.Products.Add(product);
-        await _db.SaveChangesAsync(ct);
-
-        // Automatically create a price record with default values
-        var price = new Price
-        {
-            ProductId = product.ProductId,
-            PriceA = 0,
-            PriceB = 0,
-            PriceC = 0,
-            IsActive = true,
-            CreatedTime = DateTimeOffset.UtcNow,
-            UpdatedTime = DateTimeOffset.UtcNow
-        };
-
-        _db.Prices.Add(price);
         await _db.SaveChangesAsync(ct);
 
         dto.ProductId = product.ProductId;
@@ -127,9 +181,18 @@ public class ProductsController : ControllerBase
         if (product == null)
             return NotFound();
 
-        product.ProductCode = dto.ProductCode.Trim();
-        product.ProductName = dto.ProductName.Trim();
-        product.Grade = dto.Grade;
+        product.HtsCode = dto.HtsCode;
+        product.QKey = dto.QKey;
+        product.IsriProductCode = dto.IsriProductCode.Trim();
+        product.IsriProductName = dto.IsriProductName.Trim();
+        product.IsriProductDescription = dto.IsriProductDescription;
+        product.IsriProductUrl = dto.IsriProductUrl;
+        product.IsriProduct = dto.IsriProduct;
+        product.ProductGroupId = dto.ProductGroupId;
+        product.ProductSpecificationFlagId = dto.ProductSpecificationFlagId;
+        product.StarredProduct = dto.StarredProduct;
+        product.StarredProductAlias = dto.StarredProductAlias;
+        product.MustDeclare = dto.MustDeclare;
         product.UpdatedTime = DateTimeOffset.UtcNow;
 
         await _db.SaveChangesAsync(ct);
@@ -152,5 +215,83 @@ public class ProductsController : ControllerBase
 
         await _db.SaveChangesAsync(ct);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Returns stock-on-hand (from stock_levels) and last 10 transactions (from stock_movements)
+    /// per product for tooltip display. POST body: array of product IDs.
+    /// </summary>
+    [HttpPost("stock-tooltips")]
+    public async Task<ActionResult<Dictionary<int, ProductPriceTooltipDto>>> GetStockTooltips(
+        [FromBody] int[] productIds,
+        CancellationToken ct)
+    {
+        if (productIds == null || productIds.Length == 0)
+            return Ok(new Dictionary<int, ProductPriceTooltipDto>());
+
+        // Stock on hand: read directly from stock_levels table (the authoritative SOH store)
+        var stockLevelParam = new Npgsql.NpgsqlParameter("pIds", productIds);
+        var stockLevelRows = await _db.Database.SqlQueryRaw<StockLevelRow>(@"
+            SELECT product_id AS ""ProductId"", weight_kg AS ""WeightKg""
+            FROM metal_link.stock_levels
+            WHERE is_active = true AND product_id = ANY(@pIds)",
+            stockLevelParam)
+            .ToListAsync(ct);
+
+        var stockByProduct = stockLevelRows.ToDictionary(r => r.ProductId, r => r.WeightKg);
+
+        // Recent transactions from stock_movements (buy_weight_kg = received, sell_weight_kg = sent)
+        var movementParam = new Npgsql.NpgsqlParameter("pIds", productIds);
+        var movementRows = await _db.Database.SqlQueryRaw<StockMovementRow>(@"
+            SELECT product_id AS ""ProductId"",
+                   created_time AS ""CreatedTime"",
+                   buy_weight_kg AS ""BuyWeightKg"",
+                   sell_weight_kg AS ""SellWeightKg""
+            FROM metal_link.stock_movements
+            WHERE is_active = true AND product_id = ANY(@pIds)
+            ORDER BY created_time DESC",
+            movementParam)
+            .ToListAsync(ct);
+
+        var result = new Dictionary<int, ProductPriceTooltipDto>();
+        foreach (var productId in productIds)
+        {
+            var transactions = movementRows
+                .Where(m => m.ProductId == productId)
+                .Take(10)
+                .Select(m =>
+                {
+                    var net = m.BuyWeightKg - m.SellWeightKg;
+                    return new PriceTooltipTransactionDto
+                    {
+                        IsBuy = net >= 0,
+                        Date = m.CreatedTime,
+                        QuantityKg = Math.Abs(net)
+                    };
+                })
+                .ToList();
+
+            result[productId] = new ProductPriceTooltipDto
+            {
+                StockOnHandKg = stockByProduct.GetValueOrDefault(productId, 0m),
+                LastTransactions = transactions
+            };
+        }
+
+        return Ok(result);
+    }
+
+    private sealed class StockLevelRow
+    {
+        public int ProductId { get; set; }
+        public decimal WeightKg { get; set; }
+    }
+
+    private sealed class StockMovementRow
+    {
+        public int ProductId { get; set; }
+        public DateTimeOffset CreatedTime { get; set; }
+        public decimal BuyWeightKg { get; set; }
+        public decimal SellWeightKg { get; set; }
     }
 }

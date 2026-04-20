@@ -6,11 +6,15 @@ public enum EnumMainSection
     Customers,
     Buyers,
     CompanyAndSites,
-    ProductsAndPrices,
+    Products,
+    PriceLists,
+    Prices,
     TicketsReceiving, // Receiving / inbound
     TicketsSending,   // Sending / outbound
     Documents,
     Camera,
     Reports,
+    StockLevels,
+    StockMovement,
     Settings
 }

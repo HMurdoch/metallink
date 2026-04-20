@@ -16,12 +16,20 @@ public sealed class OperatorRepository : IOperatorRepository
     public Task<Operator?> GetByIdAsync(int operatorId, CancellationToken cancellationToken = default)
     {
         return _dbContext.Operators
+            .Include(o => o.OperatorSettings.Where(s => s.IsActive))
+                .ThenInclude(s => s.Setting)
+            .Include(o => o.OperatorSettings.Where(s => s.IsActive))
+                .ThenInclude(s => s.SettingOption)
             .FirstOrDefaultAsync(o => o.OperatorId == operatorId && o.IsActive, cancellationToken);
     }
 
     public Task<Operator?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
         return _dbContext.Operators
+            .Include(o => o.OperatorSettings.Where(s => s.IsActive))
+                .ThenInclude(s => s.Setting)
+            .Include(o => o.OperatorSettings.Where(s => s.IsActive))
+                .ThenInclude(s => s.SettingOption)
             .FirstOrDefaultAsync(o => o.Username == username && o.IsActive, cancellationToken);
     }
 

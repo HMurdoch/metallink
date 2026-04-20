@@ -13,35 +13,35 @@ public class PriceRepository : IPriceRepository
         _context = context;
     }
 
-    public async Task<Price?> GetByIdAsync(long priceId, CancellationToken ct = default)
+    public async Task<LegacyPrice?> GetByIdAsync(int priceId, CancellationToken ct = default)
     {
-        return await _context.Prices
+        return await _context.LegacyPrices
             .Include(p => p.Product)
-            .FirstOrDefaultAsync(p => p.PriceId == priceId, ct);
+            .FirstOrDefaultAsync(p => p.LegacyPriceId == priceId, ct);
     }
 
-    public async Task<IReadOnlyList<Price>> GetByProductIdAsync(long productId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<LegacyPrice>> GetByProductIdAsync(int productId, CancellationToken ct = default)
     {
-        return await _context.Prices
+        return await _context.LegacyPrices
             .Where(p => p.ProductId == productId && p.IsActive)
             .ToListAsync(ct);
     }
 
-    public async Task<Price> AddAsync(Price price, CancellationToken ct = default)
+    public async Task<LegacyPrice> AddAsync(LegacyPrice price, CancellationToken ct = default)
     {
-        _context.Prices.Add(price);
+        _context.LegacyPrices.Add(price);
         await _context.SaveChangesAsync(ct);
         return price;
     }
 
-    public async Task UpdateAsync(Price price, CancellationToken ct = default)
+    public async Task UpdateAsync(LegacyPrice price, CancellationToken ct = default)
     {
         price.UpdatedTime = DateTimeOffset.UtcNow;
-        _context.Prices.Update(price);
+        _context.LegacyPrices.Update(price);
         await _context.SaveChangesAsync(ct);
     }
 
-    public async Task DeleteAsync(long priceId, CancellationToken ct = default)
+    public async Task DeleteAsync(int priceId, CancellationToken ct = default)
     {
         var price = await GetByIdAsync(priceId, ct);
         if (price != null)

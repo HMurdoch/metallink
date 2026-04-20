@@ -8,8 +8,8 @@ namespace MetalLink.Application.Interfaces;
 
 public interface IBuyerRepository
 {
-    Task<Buyer?> GetByIdAsync(long buyerId);
-    Task<Buyer?> GetByIdAsync(long buyerId, CancellationToken cancellationToken);
+    Task<Buyer?> GetByIdAsync(int buyerId);
+    Task<Buyer?> GetByIdAsync(int buyerId, CancellationToken cancellationToken);
     Task<Buyer?> GetByAccountNumberAsync(long accountNumber, CancellationToken cancellationToken = default);
     Task AddAsync(Buyer buyer, CancellationToken cancellationToken = default);
 
@@ -39,4 +39,14 @@ public interface IBuyerRepository
     Task UpdateAsync(Buyer buyer, CancellationToken cancellationToken = default);
     Task SoftDeleteAsync(int buyerId, CancellationToken cancellationToken = default);
     Task<long> GetNextAccountNumberAsync(CancellationToken ct);
+
+    Task<IReadOnlyList<Buyer>> SearchBuyersWithZeroSendingTicketsAsync(
+        int? companyId,
+        int? siteId,
+        int? buyerId,
+        string? firstName,
+        string? lastName,
+        string? idNumber,
+        long? accountNumber,
+        CancellationToken cancellationToken = default);
 }

@@ -1,25 +1,32 @@
 <UserControl
     x:Class="MetalLink.Desktop.Views.CameraView"
     xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:icons="https://github.com/projektanker/icons.avalonia">
 
-  <Border Background="#1f2229" Padding="16">
-    <ScrollViewer>
-      <StackPanel Spacing="16">
+  <Border Background="{DynamicResource Brush.MainBackground}">
+    <Grid RowDefinitions="Auto,*">
+      <!-- Sticky Header Panel -->
+      <Border Grid.Row="0"
+              Background="{DynamicResource Brush.PanelBackground}"
+              Padding="12,8"
+              CornerRadius="4"
+              Margin="16,16,16,8"
+              ZIndex="100">
+        <icons:Icon Value="fa-solid fa-camera" Width="24" Height="24" Foreground="{DynamicResource Brush.TextPrimary}" HorizontalAlignment="Left" Margin="8,0,0,0"/>
+      </Border>
 
-        <TextBlock
-            Text="Cameras"
-            FontSize="22"
-            FontWeight="Bold"
-            Foreground="#f5f5f5" />
+      <!-- Scrollable Content -->
+      <ScrollViewer Grid.Row="1" Padding="16,8,16,60">
+        <StackPanel Spacing="16">
 
         <TextBlock
             Text="Captures will upload and attach as customer documents. Make sure a Customer ID is set in the Documents section."
             Foreground="#9fa4b2"
             TextWrapping="Wrap" />
 
-        <Border Background="#252932" Padding="12" CornerRadius="4">
-          <StackPanel Spacing="8">
+        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
+    <StackPanel Spacing="8">
 
             <TextBlock Text="Weighbridge Cameras" Foreground="#f5f5f5" FontWeight="Bold" />
             <WrapPanel>
@@ -46,8 +53,8 @@
           </StackPanel>
         </Border>
 
-        <Border Background="#252932" Padding="12" CornerRadius="4">
-          <StackPanel Spacing="8">
+        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
+    <StackPanel Spacing="8">
             <TextBlock Text="Platform Cameras" Foreground="#f5f5f5" FontWeight="Bold" />
             <WrapPanel>
                 <WrapPanel.Styles>
@@ -72,8 +79,8 @@
           </StackPanel>
         </Border>
 
-        <Border Background="#252932" Padding="12" CornerRadius="4">
-          <StackPanel Spacing="4">
+        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="12" CornerRadius="4">
+    <StackPanel Spacing="4">
             <TextBlock Text="Last capture" Foreground="#9fa4b2" FontSize="12" />
             <TextBlock
                 Text="{Binding LastCameraCaptureSummary}"
@@ -82,7 +89,8 @@
           </StackPanel>
         </Border>
 
-      </StackPanel>
-    </ScrollViewer>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
   </Border>
 </UserControl>

@@ -13,13 +13,16 @@ public sealed class CreateBuyerCommandHandler
 {
     private readonly IBuyerRepository _buyerRepository;
     private readonly IAccountNumberGenerator _accountNumberGenerator;
+    private readonly IProductPriceListRepository _priceListRepository;
 
     public CreateBuyerCommandHandler(
         IBuyerRepository buyerRepository,
-        IAccountNumberGenerator accountNumberGenerator)
+        IAccountNumberGenerator accountNumberGenerator,
+        IProductPriceListRepository priceListRepository)
     {
         _buyerRepository = buyerRepository;
         _accountNumberGenerator = accountNumberGenerator;
+        _priceListRepository = priceListRepository;
     }
 
     public async Task<BuyerDto?> Handle(
@@ -30,6 +33,8 @@ public sealed class CreateBuyerCommandHandler
         var accountNumber = request.AccountNumber 
             ?? await _accountNumberGenerator.GetNextAsync(cancellationToken);
 
+        var priceListId = request.ProductPriceListId;
+
         var now = DateTimeOffset.UtcNow;
         var buyer = new Buyer
         {
@@ -39,7 +44,7 @@ public sealed class CreateBuyerCommandHandler
             LastName      = request.LastName,
             IdNumber      = request.IdNumber,
             AccountNumber = accountNumber,
-            PriceCode     = request.PriceCode,
+            ProductPriceListId = priceListId,
             PhoneNumber   = request.PhoneNumber,
             MobileNumber  = request.MobileNumber,
             Email         = request.Email,
@@ -68,7 +73,7 @@ public sealed class CreateBuyerCommandHandler
 
             IdNumber      = buyer.IdNumber,
             AccountNumber = buyer.AccountNumber,
-            PriceCode     = buyer.PriceCode,
+            ProductPriceListId = buyer.ProductPriceListId,
             PhoneNumber   = buyer.PhoneNumber,
             MobileNumber  = buyer.MobileNumber,
             Email         = buyer.Email,

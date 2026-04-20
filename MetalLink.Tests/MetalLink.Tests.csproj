@@ -24,9 +24,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\\MetalLink.Api\\MetalLink.Api.csproj" />
     <ProjectReference Include="..\\MetalLink.Application\\MetalLink.Application.csproj" />
     <ProjectReference Include="..\\MetalLink.Domain\\MetalLink.Domain.csproj" />
     <ProjectReference Include="..\\MetalLink.Infrastructure\\MetalLink.Infrastructure.csproj" />
+    <ProjectReference Include="..\\MetalLink.Shared\\MetalLink.Shared.csproj" />
   </ItemGroup>
 
 </Project>

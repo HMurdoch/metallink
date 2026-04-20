@@ -8,33 +8,35 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using Avalonia.Media.Imaging;
 
 namespace MetalLink.Desktop.ViewModels;
 
 public partial class MainWindowViewModel
 {
     // Company search inputs
-    private string? _companySearchLetter = "ALL";
-
-    public string? CompanySearchLetter
+    private string _companySearchText = string.Empty;
+    public string CompanySearchText
     {
-        get => _companySearchLetter;
+        get => _companySearchText;
         set
         {
-            _companySearchLetter = value;
+            if (_companySearchText == value) return;
+            _companySearchText = value ?? string.Empty;
             OnPropertyChanged();
-        }
-    }
-
-    private string _companySearchName = string.Empty;
-
-    public string CompanySearchName
-    {
-        get => _companySearchName;
-        set
-        {
-            _companySearchName = value ?? string.Empty;
-            OnPropertyChanged();
+            
+            if (!string.IsNullOrWhiteSpace(_companySearchText))
+            {
+                // Requirement: explicitly clear the letter dropdown if text search is used
+                if (_selectedCompanyLetter != null)
+                {
+                    _selectedCompanyLetter = null;
+                    OnPropertyChanged(nameof(SelectedCompanyLetter));
+                }
+            }
+            
+            ApplyCompanyLetterFilter();
+            _ = SearchCompaniesAsync();
         }
     }
 
@@ -77,18 +79,53 @@ public partial class MainWindowViewModel
             _selectedCompany = value;
             OnPropertyChanged();
 
-            ClearCompanyEditor();
-
-            (CreateSiteForSelectedCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
-            OnPropertyChanged(nameof(CanCreateSite));
-
-            SiteResults.Clear();
-            SelectedSite = null;
-
-            //CompanyEditName = value?.CompanyName ?? string.Empty;
-
             if (value != null)
+            {
+                // User requirement: Population like "Edit" clicked
+                EditingCompanyId = value.CompanyId;
+                _originalCompanyName = value.CompanyName?.Trim() ?? "";
+                _originalVatNumber = value.VatNumber?.Trim();
+                CompanyEditName = value.CompanyName ?? "";
+                CompanyVatNumber = value.VatNumber ?? "";
+                
+                // Requirement: Initial Site Name must be hidden on Edit
+                IsCompanyInitialSiteVisible = false;
+
+                // Sync call to ensure sites are loaded before form resets/increments
                 _ = LoadSitesForSelectedCompanyResultsAsync();
+                
+                // User requirement: expand next panels
+                // Refinement: Expand Search Results and Sites Panel. 
+                // Don't expand Create/Edit panels automatically to prevent "jumping"
+                CompanyIsSearchResultsExpanded = true;
+                CompanyIsPanelExpanded = true;
+                
+                // Ensure pagination is reset for new company
+                SitePaginationViewModel.Reset();
+                SitePaginationViewModel.PageSize = 10;
+            }
+            else
+            {
+                // Clear for Create mode
+                EditingCompanyId = null;
+                CompanyEditName = string.Empty;
+                CompanyVatNumber = string.Empty;
+                CompanyFormInitialSiteName = string.Empty;
+                
+                // Requirement: Initial Site Name must be displayed on Create/Clear
+                IsCompanyInitialSiteVisible = true;
+                
+                SiteResults.Clear();
+                PagedSiteResults.Clear();
+                SelectedSite = null;
+                SitePaginationViewModel.Reset();
+            }
+
+            (UpdateCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            (CreateCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            (CreateOrUpdateSiteCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+            OnPropertyChanged(nameof(CanCreateSite));
+            OnPropertyChanged(nameof(IsCompanyInitialSiteVisible));
         }
     }
 
@@ -111,9 +148,9 @@ public partial class MainWindowViewModel
         }
     }
 
-    private long? _editingCompanyId;
+    private int? _editingCompanyId;
 
-    public long? EditingCompanyId
+    public int? EditingCompanyId
     {
         get => _editingCompanyId;
         set
@@ -169,6 +206,90 @@ public partial class MainWindowViewModel
             OnPropertyChanged(nameof(CanCreateCompany));
             (CreateCompanyCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
         }
+    }
+
+    private bool _isCompanyInitialSiteVisible = true;
+    public bool IsCompanyInitialSiteVisible
+    {
+        get => _isCompanyInitialSiteVisible;
+        set { _isCompanyInitialSiteVisible = value; OnPropertyChanged(); }
+    }
+
+    public PaginationViewModel SitePaginationViewModel { get; } = new() { PageSize = 15 };
+    public ObservableCollection<SiteLookupDto> PagedSiteResults { get; } = new();
+
+    // Site Documents (for preview/display)
+    private Bitmap? _cipcDocument;
+    public Bitmap? CipcDocument
+    {
+        get => _cipcDocument;
+        set => SetProperty(ref _cipcDocument, value);
+    }
+
+    private Bitmap? _tradingLicense;
+    public Bitmap? TradingLicense
+    {
+        get => _tradingLicense;
+        set => SetProperty(ref _tradingLicense, value);
+    }
+
+
+    private Bitmap? _vatDocument;
+    public Bitmap? VatDocument
+    {
+        get => _vatDocument;
+        set => SetProperty(ref _vatDocument, value);
+    }
+
+    private Bitmap? _taxDocument;
+    public Bitmap? TaxDocument
+    {
+        get => _taxDocument;
+        set => SetProperty(ref _taxDocument, value);
+    }
+
+    private Bitmap? _bbeeDocument;
+    public Bitmap? BbeeDocument
+    {
+        get => _bbeeDocument;
+        set => SetProperty(ref _bbeeDocument, value);
+    }
+
+    // Site Documents (for Edit/Create panel)
+    private Bitmap? _selectedCipcDocument;
+    public Bitmap? SelectedCipcDocument
+    {
+        get => _selectedCipcDocument;
+        set => SetProperty(ref _selectedCipcDocument, value);
+    }
+
+    private Bitmap? _selectedTradingLicense;
+    public Bitmap? SelectedTradingLicense
+    {
+        get => _selectedTradingLicense;
+        set => SetProperty(ref _selectedTradingLicense, value);
+    }
+
+
+    private Bitmap? _selectedVatDocument;
+    public Bitmap? SelectedVatDocument
+    {
+        get => _selectedVatDocument;
+        set => SetProperty(ref _selectedVatDocument, value);
+    }
+
+    private Bitmap? _selectedTaxDocument;
+    public Bitmap? SelectedTaxDocument
+    {
+        get => _selectedTaxDocument;
+        set => SetProperty(ref _selectedTaxDocument, value);
+    }
+
+    private Bitmap? _selectedBbeeDocument;
+    public Bitmap? SelectedBbeeDocument
+    {
+        get => _selectedBbeeDocument;
+        set => SetProperty(ref _selectedBbeeDocument, value);
     }
 
     // Create/Edit fields
@@ -245,9 +366,9 @@ public partial class MainWindowViewModel
     }
 
     // Site create/edit fields (remember: address belongs to Site)
-    private long? _editingSiteId;
+    private int? _editingSiteId;
 
-    public long? EditingSiteId
+    public int? EditingSiteId
     {
         get => _editingSiteId;
         set
@@ -484,8 +605,6 @@ public partial class MainWindowViewModel
         }
     }
 
-    private string? _selectedCompanyLetter = "ALL";
-
     private string? _selectedNewCompanyLetter = "ALL";
 
     public string? SelectedNewCompanyLetter
@@ -500,6 +619,8 @@ public partial class MainWindowViewModel
         }
     }
 
+    // --- Company Management Search ---
+    private string? _selectedCompanyLetter = null;
     public string? SelectedCompanyLetter
     {
         get => _selectedCompanyLetter;
@@ -508,30 +629,33 @@ public partial class MainWindowViewModel
             if (_selectedCompanyLetter == value) return;
             _selectedCompanyLetter = value;
             OnPropertyChanged();
-
-            // ✅ user changed letter -> clear selection and sites
+            
+            // If any letter or ALL is picked, clear the name search textbox
+            if (value != null)
+            {
+                _companySearchText = string.Empty;
+                OnPropertyChanged(nameof(CompanySearchText));
+            }
+            
             SelectedSearchCompany = null;
             SearchSiteSuggestions.Clear();
             SelectedSearchSite = null;
-
             ApplyCompanyLetterFilter();
+            
+            _ = SearchCompaniesAsync();
         }
     }
 
-    private ObservableCollection<CompanyLookupDto> _searchCompanySuggestions = new();
+    public ObservableCollection<CompanyLookupDto> PagedCompanyResults { get; } = new();
 
+    private ObservableCollection<CompanyLookupDto> _searchCompanySuggestions = new();
     public ObservableCollection<CompanyLookupDto> SearchCompanySuggestions
     {
         get => _searchCompanySuggestions;
-        set
-        {
-            _searchCompanySuggestions = value;
-            OnPropertyChanged();
-        }
+        set { _searchCompanySuggestions = value; OnPropertyChanged(); }
     }
 
     private CompanyLookupDto? _selectedSearchCompany;
-
     public CompanyLookupDto? SelectedSearchCompany
     {
         get => _selectedSearchCompany;
@@ -540,65 +664,195 @@ public partial class MainWindowViewModel
             if (_selectedSearchCompany == value) return;
             _selectedSearchCompany = value;
             OnPropertyChanged();
+            
+            // Mirror to SelectedCompany so existing logic works
+            SelectedCompany = value;
 
-            // ✅ enable/disable Search Site dropdown
             IsSearchSiteEnabled = value != null;
-            OnPropertyChanged(nameof(IsSearchSiteEnabled));
-
-            // reset sites whenever company changes
             SearchSiteSuggestions.Clear();
             SelectedSearchSite = null;
-
-            if (value != null)
-                _ = LoadSitesForSelectedCompanyAsync();
+            
+            if (value == null)
+            {
+                SiteResults.Clear();
+                UpdatePagedSiteResults();
+            }
         }
     }
 
     private bool _isSearchSiteEnabled;
-
     public bool IsSearchSiteEnabled
     {
         get => _isSearchSiteEnabled;
-        set
-        {
-            if (_isSearchSiteEnabled == value) return;
-            _isSearchSiteEnabled = value;
-            OnPropertyChanged();
-        }
+        set { if (_isSearchSiteEnabled == value) return; _isSearchSiteEnabled = value; OnPropertyChanged(); }
     }
 
     private ObservableCollection<SiteLookupDto> _searchSiteSuggestions = new();
-
     public ObservableCollection<SiteLookupDto> SearchSiteSuggestions
     {
         get => _searchSiteSuggestions;
-        set
-        {
-            _searchSiteSuggestions = value;
-            OnPropertyChanged();
-        }
+        set { _searchSiteSuggestions = value; OnPropertyChanged(); }
     }
 
     private SiteLookupDto? _selectedSearchSite;
-
     public SiteLookupDto? SelectedSearchSite
     {
         get => _selectedSearchSite;
         set
         {
             if (_selectedSearchSite == value) return;
-
             _selectedSearchSite = value;
             OnPropertyChanged();
+        }
+    }
 
-            if (value != null)
-            {
-                SearchSiteIdText = value.SiteId.ToString();
-            }
-            else
-            {
-                SearchSiteIdText = string.Empty;
-            }
+    // --- Customer Search Selections ---
+    private string? _customerSelectedCompanyLetter = "ALL";
+    public string? CustomerSelectedCompanyLetter
+    {
+        get => _customerSelectedCompanyLetter;
+        set
+        {
+            if (_customerSelectedCompanyLetter == value) return;
+            _customerSelectedCompanyLetter = value;
+            OnPropertyChanged();
+            CustomerSelectedSearchCompany = null;
+            CustomerSearchSiteSuggestions.Clear();
+            CustomerSelectedSearchSite = null;
+            ApplyCustomerCompanyLetterFilter();
+        }
+    }
+
+    // --- Buyer Search Selections ---
+    private string? _buyerSelectedCompanyLetter = "ALL";
+    public string? BuyerSelectedCompanyLetter
+    {
+        get => _buyerSelectedCompanyLetter;
+        set
+        {
+            if (_buyerSelectedCompanyLetter == value) return;
+            _buyerSelectedCompanyLetter = value;
+            OnPropertyChanged();
+            BuyerSelectedSearchCompany = null;
+            BuyerSearchSiteSuggestions.Clear();
+            BuyerSelectedSearchSite = null;
+            ApplyBuyerCompanyLetterFilter();
+        }
+    }
+
+    // --- Customer Search Selections ---
+    private ObservableCollection<CompanyLookupDto> _customerSearchCompanySuggestions = new();
+    public ObservableCollection<CompanyLookupDto> CustomerSearchCompanySuggestions
+    {
+        get => _customerSearchCompanySuggestions;
+        set { _customerSearchCompanySuggestions = value; OnPropertyChanged(); }
+    }
+
+    private CompanyLookupDto? _customerSelectedSearchCompany;
+    public CompanyLookupDto? CustomerSelectedSearchCompany
+    {
+        get => _customerSelectedSearchCompany;
+        set
+        {
+            if (_customerSelectedSearchCompany == value) return;
+            _customerSelectedSearchCompany = value;
+            OnPropertyChanged();
+            IsCustomerSearchSiteEnabled = value != null;
+            CustomerSearchSiteSuggestions.Clear();
+            CustomerSelectedSearchSite = null;
+            if (value != null) _ = LoadCustomerSearchSitesAsync();
+        }
+    }
+
+    private bool _isCustomerSearchSiteEnabled;
+    public bool IsCustomerSearchSiteEnabled
+    {
+        get => _isCustomerSearchSiteEnabled;
+        set { if (_isCustomerSearchSiteEnabled == value) return; _isCustomerSearchSiteEnabled = value; OnPropertyChanged(); }
+    }
+
+    private ObservableCollection<SiteLookupDto> _customerSearchSiteSuggestions = new();
+    public ObservableCollection<SiteLookupDto> CustomerSearchSiteSuggestions
+    {
+        get => _customerSearchSiteSuggestions;
+        set { _customerSearchSiteSuggestions = value; OnPropertyChanged(); }
+    }
+
+    private string _customerSearchSiteIdText = string.Empty;
+    public string CustomerSearchSiteIdText
+    {
+        get => _customerSearchSiteIdText;
+        set { _customerSearchSiteIdText = value; OnPropertyChanged(); }
+    }
+
+    private SiteLookupDto? _customerSelectedSearchSite;
+    public SiteLookupDto? CustomerSelectedSearchSite
+    {
+        get => _customerSelectedSearchSite;
+        set
+        {
+            if (_customerSelectedSearchSite == value) return;
+            _customerSelectedSearchSite = value;
+            OnPropertyChanged();
+            CustomerSearchSiteIdText = value?.SiteId.ToString() ?? string.Empty;
+        }
+    }
+
+    // --- Buyer Search Selections ---
+    private ObservableCollection<CompanyLookupDto> _buyerSearchCompanySuggestions = new();
+    public ObservableCollection<CompanyLookupDto> BuyerSearchCompanySuggestions
+    {
+        get => _buyerSearchCompanySuggestions;
+        set { _buyerSearchCompanySuggestions = value; OnPropertyChanged(); }
+    }
+
+    private CompanyLookupDto? _buyerSelectedSearchCompany;
+    public CompanyLookupDto? BuyerSelectedSearchCompany
+    {
+        get => _buyerSelectedSearchCompany;
+        set
+        {
+            if (_buyerSelectedSearchCompany == value) return;
+            _buyerSelectedSearchCompany = value;
+            OnPropertyChanged();
+            IsBuyerSearchSiteEnabled = value != null;
+            BuyerSearchSiteSuggestions.Clear();
+            BuyerSelectedSearchSite = null;
+            if (value != null) _ = LoadBuyerSearchSitesAsync();
+        }
+    }
+
+    private bool _isBuyerSearchSiteEnabled;
+    public bool IsBuyerSearchSiteEnabled
+    {
+        get => _isBuyerSearchSiteEnabled;
+        set { if (_isBuyerSearchSiteEnabled == value) return; _isBuyerSearchSiteEnabled = value; OnPropertyChanged(); }
+    }
+
+    private ObservableCollection<SiteLookupDto> _buyerSearchSiteSuggestions = new();
+    public ObservableCollection<SiteLookupDto> BuyerSearchSiteSuggestions
+    {
+        get => _buyerSearchSiteSuggestions;
+        set { _buyerSearchSiteSuggestions = value; OnPropertyChanged(); }
+    }
+
+    private string _buyerSearchSiteIdText = string.Empty;
+    public string BuyerSearchSiteIdText
+    {
+        get => _buyerSearchSiteIdText;
+        set { _buyerSearchSiteIdText = value; OnPropertyChanged(); }
+    }
+
+    private SiteLookupDto? _buyerSelectedSearchSite;
+    public SiteLookupDto? BuyerSelectedSearchSite
+    {
+        get => _buyerSelectedSearchSite;
+        set
+        {
+            if (_buyerSelectedSearchSite == value) return;
+            _buyerSelectedSearchSite = value;
+            OnPropertyChanged();
+            BuyerSearchSiteIdText = value?.SiteId.ToString() ?? string.Empty;
         }
     }
 
@@ -641,8 +895,7 @@ public partial class MainWindowViewModel
 
                 SelectedNewSite = null;
                 NewSiteSuggestions.Clear();
-                OnPropertyChanged(nameof(CanCreateBuyer));
-                (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+                NotifyFormStateChanged();
 
                 // Load sites for the selected company
                 _ = LoadNewSitesForSelectedCompanyAsync();
@@ -652,14 +905,7 @@ public partial class MainWindowViewModel
                 NewCompanyName = null;
                 NewSiteSuggestions.Clear();
                 SelectedNewSite = null;
-
-                OnPropertyChanged(nameof(CanCreateCustomer));
-                OnPropertyChanged(nameof(CanUpdateCustomer));
-                OnPropertyChanged(nameof(CanCreateBuyer));
-                OnPropertyChanged(nameof(CanUpdateBuyer));
-
-                (UpdateCustomerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
-                (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
+                NotifyFormStateChanged();
             }
         }
     }
@@ -687,12 +933,7 @@ public partial class MainWindowViewModel
 
             _selectedNewSite = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(CanCreateCustomer));
-            OnPropertyChanged(nameof(CanUpdateCustomer));
-            OnPropertyChanged(nameof(CanCreateBuyer));
-            OnPropertyChanged(nameof(CanUpdateBuyer));
-            (UpdateBuyerCommand as IAsyncRelayCommand)?.NotifyCanExecuteChanged();
-
+            NotifyFormStateChanged();
             UpdateNewLocationFromSelectedSite();
         }
     }
@@ -759,16 +1000,18 @@ public partial class MainWindowViewModel
         }
     }
 
-    private ProvinceDto? _searchProvince;
-
-    public ProvinceDto? SearchProvince
+    private ProvinceDto? _customerSearchProvince;
+    public ProvinceDto? CustomerSearchProvince
     {
-        get => _searchProvince;
-        set
-        {
-            _searchProvince = value;
-            OnPropertyChanged();
-        }
+        get => _customerSearchProvince;
+        set { _customerSearchProvince = value; OnPropertyChanged(); }
+    }
+
+    private ProvinceDto? _buyerSearchProvince;
+    public ProvinceDto? BuyerSearchProvince
+    {
+        get => _buyerSearchProvince;
+        set { _buyerSearchProvince = value; OnPropertyChanged(); }
     }
 
     // 🔹 NEW: search-only provinces (includes "ALL")
@@ -821,16 +1064,18 @@ public partial class MainWindowViewModel
         }
     }
 
-    private CountryDto? _searchCountry;
-
-    public CountryDto? SearchCountry
+    private CountryDto? _customerSearchCountry;
+    public CountryDto? CustomerSearchCountry
     {
-        get => _searchCountry;
-        set
-        {
-            _searchCountry = value;
-            OnPropertyChanged();
-        }
+        get => _customerSearchCountry;
+        set { _customerSearchCountry = value; OnPropertyChanged(); }
+    }
+
+    private CountryDto? _buyerSearchCountry;
+    public CountryDto? BuyerSearchCountry
+    {
+        get => _buyerSearchCountry;
+        set { _buyerSearchCountry = value; OnPropertyChanged(); }
     }
 
     // 🔹 NEW: search-only countries (includes "ALL")
@@ -855,6 +1100,18 @@ public partial class MainWindowViewModel
         {
             if (_customerSiteAddressSummary == value) return;
             _customerSiteAddressSummary = value ?? string.Empty;
+            OnPropertyChanged();
+        }
+    }
+
+    private string _buyerSiteAddressSummary = string.Empty;
+    public string BuyerSiteAddressSummary
+    {
+        get => _buyerSiteAddressSummary;
+        private set
+        {
+            if (_buyerSiteAddressSummary == value) return;
+            _buyerSiteAddressSummary = value ?? string.Empty;
             OnPropertyChanged();
         }
     }
@@ -899,8 +1156,10 @@ public partial class MainWindowViewModel
         OnPropertyChanged(nameof(NewCountry));
 
         // Search → ALL (meaning "no country filter")
-        SearchCountry = allCountry;
-        OnPropertyChanged(nameof(SearchCountry));
+        CustomerSearchCountry = allCountry;
+        BuyerSearchCountry = allCountry;
+        OnPropertyChanged(nameof(CustomerSearchCountry));
+        OnPropertyChanged(nameof(BuyerSearchCountry));
     }
 
     public async Task LoadProvincesAsync()
@@ -940,7 +1199,9 @@ public partial class MainWindowViewModel
         }
 
         // 🔹 Default search → ALL (meaning "no province filter")
-        SearchProvince = allProvince;
-        OnPropertyChanged(nameof(SearchProvince));
+        CustomerSearchProvince = allProvince;
+        BuyerSearchProvince = allProvince;
+        OnPropertyChanged(nameof(CustomerSearchProvince));
+        OnPropertyChanged(nameof(BuyerSearchProvince));
     }
 }

@@ -2,8 +2,8 @@ namespace MetalLink.Shared.Customers;
 
 public sealed class CustomerDocumentDto
 {
-    public long CustomerDocumentId { get; set; }
-    public long CustomerId { get; set; }
+    public int CustomerDocumentId { get; set; }
+    public int CustomerId { get; set; }
 
     public string DocumentType { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;

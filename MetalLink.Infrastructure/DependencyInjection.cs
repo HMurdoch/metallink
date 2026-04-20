@@ -40,8 +40,12 @@ public static class DependencyInjection
         services.AddScoped<ICompanyRepository, CompanyRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IPriceRepository, PriceRepository>();
+        services.AddScoped<IProductPriceListRepository, ProductPriceListRepository>();
+        services.AddScoped<IProductPriceListProductPriceRepository, ProductPriceListProductPriceRepository>();
         services.AddScoped<ITicketReceivingRepository, TicketReceivingRepository>();
         services.AddScoped<ITicketSendingRepository, TicketSendingRepository>();
+        services.AddScoped<IStockLevelRepository, StockLevelRepository>();
+        services.AddScoped<IStockMovementRepository, StockMovementRepository>();
 
         // Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();

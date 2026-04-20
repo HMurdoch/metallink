@@ -7,11 +7,11 @@ namespace MetalLink.Application.Interfaces;
 
 public interface IStockMovementReceivingRepository
 {
-    Task<StockMovementReceiving?> GetByIdAsync(long stockMovementReceivingId);
-    Task<IEnumerable<StockMovementReceiving>> GetByTicketReceivingIdAsync(long ticketReceivingId);
+    Task<StockMovementReceiving?> GetByIdAsync(int stockMovementReceivingId);
+    Task<IEnumerable<StockMovementReceiving>> GetByTicketReceivingIdAsync(int ticketReceivingId);
     Task<IEnumerable<StockMovementReceiving>> SearchAsync(
-        long? siteId = null,
-        long? productId = null,
+        int? siteId = null,
+        int? productId = null,
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
         int pageNumber = 1,

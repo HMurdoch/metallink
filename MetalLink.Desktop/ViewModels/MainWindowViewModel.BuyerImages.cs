@@ -14,11 +14,11 @@ public partial class MainWindowViewModel
         SelectedSignatureImage = null;
         SelectedFingerprintImage = null;
 
-        IdCardImage = null;
-        DriverLicenseImage = null;
-        PhotoImage = null;
-        SignatureImage = null;
-        FingerprintImage = null;
+        SelectedIdCardImage = null;
+        SelectedDriverLicenseImage = null;
+        SelectedPhotoImage = null;
+        SelectedSignatureImage = null;
+        SelectedFingerprintImage = null;
 
         if (buyer == null)
             return;

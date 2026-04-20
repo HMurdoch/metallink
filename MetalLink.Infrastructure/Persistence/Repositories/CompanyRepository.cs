@@ -32,12 +32,13 @@ public sealed class CompanyRepository : ICompanyRepository
     }
 
     public async Task<IReadOnlyList<Site>> LookupSitesForCompanyAsync(
-        long companyId,
+        int companyId,
         string? term,
         CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Sites
             .Include(s => s.Province)
+            .Include(s => s.DocumentPath)
             .Where(s => s.CompanyId == companyId);
 
         if (!string.IsNullOrWhiteSpace(term))

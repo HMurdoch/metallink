@@ -53,7 +53,7 @@ public sealed class CustomerService
         response.EnsureSuccessStatusCode();
     }
 
-    public async Task SoftDeleteCustomerAsync(
+    public async Task DeleteCustomerAsync(
         long customerId,
         CancellationToken cancellationToken = default)
     {

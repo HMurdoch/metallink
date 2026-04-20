@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:MetalLink.Desktop.ViewModels"
+             x:Class="MetalLink.Desktop.Views.PriceRowTooltipView">
+
+  <StackPanel Spacing="3" MinWidth="300" MaxWidth="500" Margin="8,5">
+
+    <!-- Stock on hand header -->
+    <TextBlock Text="{Binding StockSummaryLine}"
+               FontWeight="SemiBold" FontSize="12" />
+
+    <!-- Price list value lines – only visible when that price list is active and price > 0 -->
+    <TextBlock Text="{Binding StockValueLine1}"
+               IsVisible="{Binding IsStockValueLine1Visible}"
+               Foreground="#90CAF9" FontSize="11" />
+    <TextBlock Text="{Binding StockValueLine2}"
+               IsVisible="{Binding IsStockValueLine2Visible}"
+               Foreground="#90CAF9" FontSize="11" />
+    <TextBlock Text="{Binding StockValueLine3}"
+               IsVisible="{Binding IsStockValueLine3Visible}"
+               Foreground="#90CAF9" FontSize="11" />
+    <TextBlock Text="{Binding StockValueLine4}"
+               IsVisible="{Binding IsStockValueLine4Visible}"
+               Foreground="#90CAF9" FontSize="11" />
+
+    <Border Height="1" Background="#40FFFFFF" Margin="0,4,0,2" />
+
+    <!-- Recent transactions -->
+    <TextBlock Text="Recent transactions:" FontSize="10" Foreground="#9E9E9E" />
+
+    <ItemsControl ItemsSource="{Binding RecentTransactions}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Grid ColumnDefinitions="18,52,*,Auto" Margin="0,1">
+            <!-- Arrow -->
+            <TextBlock Grid.Column="0"
+                       Text="{Binding Arrow}"
+                       Foreground="{Binding ArrowBrush}"
+                       FontWeight="Bold" FontSize="12"
+                       VerticalAlignment="Center" />
+            <!-- BUY / SELL label -->
+            <TextBlock Grid.Column="1"
+                       Text="{Binding TypeLabel}"
+                       Foreground="{Binding ArrowBrush}"
+                       FontSize="10" FontWeight="SemiBold"
+                       VerticalAlignment="Center" />
+            <!-- kg @ price -->
+            <TextBlock Grid.Column="2"
+                       Text="{Binding QuantitySummary}"
+                       FontSize="10" Foreground="#CCCCCC"
+                       VerticalAlignment="Center" />
+            <!-- Date -->
+            <TextBlock Grid.Column="3"
+                       Text="{Binding DateLabel}"
+                       FontSize="10" Foreground="#9E9E9E"
+                       Margin="12,0,0,0"
+                       VerticalAlignment="Center" />
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <TextBlock Text="No recent transactions."
+               FontSize="10" Foreground="#666666"
+               IsVisible="{Binding HasNoTransactions}" />
+
+  </StackPanel>
+</UserControl>
