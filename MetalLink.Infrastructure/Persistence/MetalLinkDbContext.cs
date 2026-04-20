@@ -377,6 +377,7 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.CustomerId).HasColumnName("customer_id").IsRequired();
         e.Property(x => x.CustomerName).HasColumnName("customer_name").HasMaxLength(255).IsRequired();
         e.Property(x => x.Notes).HasColumnName("notes");
+        e.Property(x => x.ProductPriceListId).HasColumnName("product_price_list_id");
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         e.Property(x => x.MovementDate).HasColumnName("movement_date").HasDefaultValueSql("now()");
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
@@ -386,6 +387,7 @@ public class MetalLinkDbContext : DbContext
         e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
         e.HasOne(x => x.TicketReceiving).WithMany(x => x.StockMovements).HasForeignKey(x => x.TicketReceivingId);
         e.HasOne(x => x.TicketReceivingLine).WithMany().HasForeignKey(x => x.TicketReceivingLineId);
+        e.HasOne(x => x.ProductPriceList).WithMany().HasForeignKey(x => x.ProductPriceListId);
     }
 
     private static void ConfigureStockMovementSending(ModelBuilder modelBuilder)
@@ -406,6 +408,7 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.BuyerId).HasColumnName("buyer_id").IsRequired();
         e.Property(x => x.BuyerName).HasColumnName("buyer_name").HasMaxLength(255).IsRequired();
         e.Property(x => x.Notes).HasColumnName("notes");
+        e.Property(x => x.ProductPriceListId).HasColumnName("product_price_list_id");
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         e.Property(x => x.MovementDate).HasColumnName("movement_date").HasDefaultValueSql("now()");
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
@@ -415,6 +418,7 @@ public class MetalLinkDbContext : DbContext
         e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
         e.HasOne(x => x.TicketSending).WithMany().HasForeignKey(x => x.TicketSendingId);
         e.HasOne(x => x.TicketSendingLine).WithMany().HasForeignKey(x => x.TicketSendingLineId);
+        e.HasOne(x => x.ProductPriceList).WithMany().HasForeignKey(x => x.ProductPriceListId);
     }
 
     private static void ConfigureProducts(ModelBuilder modelBuilder)
@@ -610,6 +614,7 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.UnitPricePerKg).HasColumnName("unit_price_per_kg").IsRequired();
         e.Property(x => x.Tare).HasColumnName("tare").HasDefaultValue(0m);
         e.Property(x => x.Notes).HasColumnName("notes");
+        e.Property(x => x.ProductPriceListId).HasColumnName("product_price_list_id");
         e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
@@ -618,6 +623,7 @@ public class MetalLinkDbContext : DbContext
         e.HasOne(x => x.TicketReceiving).WithMany(x => x.Lines).HasForeignKey(x => x.ReceivingTicketId);
         e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
         e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
+        e.HasOne<ProductPriceList>().WithMany().HasForeignKey(x => x.ProductPriceListId);
     }
 
     private static void ConfigureSendingTickets(ModelBuilder modelBuilder)
@@ -686,6 +692,7 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.UnitPricePerKg).HasColumnName("unit_price_per_kg").IsRequired();
         e.Property(x => x.Tare).HasColumnName("tare").HasDefaultValue(0m);
         e.Property(x => x.Notes).HasColumnName("notes");
+        e.Property(x => x.ProductPriceListId).HasColumnName("product_price_list_id");
         e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
@@ -694,6 +701,7 @@ public class MetalLinkDbContext : DbContext
         e.HasOne(x => x.TicketSending).WithMany(x => x.Lines).HasForeignKey(x => x.TicketSendingId);
         e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
         e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
+        e.HasOne<ProductPriceList>().WithMany().HasForeignKey(x => x.ProductPriceListId);
     }
 
 }

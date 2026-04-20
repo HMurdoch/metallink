@@ -40,6 +40,10 @@ public class StockMovementReceiving
     public int CustomerId { get; private set; }
     public string CustomerName { get; private set; } = string.Empty;
 
+    // Price list that was active when this movement was recorded
+    public int? ProductPriceListId { get; set; }
+    public ProductPriceList? ProductPriceList { get; set; }
+
     // Audit
     public bool IsActive { get; private set; } = true;
     public DateTimeOffset MovementDate { get; private set; } = DateTimeOffset.UtcNow;
