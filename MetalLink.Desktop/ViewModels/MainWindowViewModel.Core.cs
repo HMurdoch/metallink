@@ -47,6 +47,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     private readonly AppearanceService _appearanceService;
 
     partial void InitializePriceListsCommands();
+    partial void InitializePricesCommands();
 
     // Navigation
     public ObservableCollection<NavItemViewModel> NavItems { get; } = new();
@@ -212,7 +213,10 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             SelectedPriceListEntityType = "Customer";
             await SearchPriceListsAsync();
         });
-        ShowPricesCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Prices);
+        ShowPricesCommand = new AsyncRelayCommand(async () => {
+            CurrentSection = EnumMainSection.Prices;
+            await InitializePricesAsync();
+        });
         ShowTicketsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.TicketsReceiving);
         ShowTicketsReceivingCommand = new RelayCommand(() =>
         {
@@ -347,6 +351,7 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
 
         InitializeCompanyAndSiteCommands();
         InitializeProductsCommands();
+        InitializePricesCommands();
         BuildNavItems();
     }
 
