@@ -1,6 +1,12 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MetalLink.Infrastructure.Persistence;
+using MetalLink.Shared.Prices;
 using MetalLink.Shared.Products;
 using MetalLink.Domain.Entities;
 using MetalLink.Api.Extensions;
@@ -209,5 +215,83 @@ public class ProductsController : ControllerBase
 
         await _db.SaveChangesAsync(ct);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Returns stock-on-hand (from stock_levels) and last 10 transactions (from stock_movements)
+    /// per product for tooltip display. POST body: array of product IDs.
+    /// </summary>
+    [HttpPost("stock-tooltips")]
+    public async Task<ActionResult<Dictionary<int, ProductPriceTooltipDto>>> GetStockTooltips(
+        [FromBody] int[] productIds,
+        CancellationToken ct)
+    {
+        if (productIds == null || productIds.Length == 0)
+            return Ok(new Dictionary<int, ProductPriceTooltipDto>());
+
+        // Stock on hand: read directly from stock_levels table (the authoritative SOH store)
+        var stockLevelParam = new Npgsql.NpgsqlParameter("pIds", productIds);
+        var stockLevelRows = await _db.Database.SqlQueryRaw<StockLevelRow>(@"
+            SELECT product_id AS ""ProductId"", weight_kg AS ""WeightKg""
+            FROM metal_link.stock_levels
+            WHERE is_active = true AND product_id = ANY(@pIds)",
+            stockLevelParam)
+            .ToListAsync(ct);
+
+        var stockByProduct = stockLevelRows.ToDictionary(r => r.ProductId, r => r.WeightKg);
+
+        // Recent transactions from stock_movements (buy_weight_kg = received, sell_weight_kg = sent)
+        var movementParam = new Npgsql.NpgsqlParameter("pIds", productIds);
+        var movementRows = await _db.Database.SqlQueryRaw<StockMovementRow>(@"
+            SELECT product_id AS ""ProductId"",
+                   created_time AS ""CreatedTime"",
+                   buy_weight_kg AS ""BuyWeightKg"",
+                   sell_weight_kg AS ""SellWeightKg""
+            FROM metal_link.stock_movements
+            WHERE is_active = true AND product_id = ANY(@pIds)
+            ORDER BY created_time DESC",
+            movementParam)
+            .ToListAsync(ct);
+
+        var result = new Dictionary<int, ProductPriceTooltipDto>();
+        foreach (var productId in productIds)
+        {
+            var transactions = movementRows
+                .Where(m => m.ProductId == productId)
+                .Take(10)
+                .Select(m =>
+                {
+                    var net = m.BuyWeightKg - m.SellWeightKg;
+                    return new PriceTooltipTransactionDto
+                    {
+                        IsBuy = net >= 0,
+                        Date = m.CreatedTime,
+                        QuantityKg = Math.Abs(net)
+                    };
+                })
+                .ToList();
+
+            result[productId] = new ProductPriceTooltipDto
+            {
+                StockOnHandKg = stockByProduct.GetValueOrDefault(productId, 0m),
+                LastTransactions = transactions
+            };
+        }
+
+        return Ok(result);
+    }
+
+    private sealed class StockLevelRow
+    {
+        public int ProductId { get; set; }
+        public decimal WeightKg { get; set; }
+    }
+
+    private sealed class StockMovementRow
+    {
+        public int ProductId { get; set; }
+        public DateTimeOffset CreatedTime { get; set; }
+        public decimal BuyWeightKg { get; set; }
+        public decimal SellWeightKg { get; set; }
     }
 }
