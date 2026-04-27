@@ -46,6 +46,15 @@ public class PriceLookupService
         return 0;
     }
 
+    public async Task<int?> GetProductPriceListProductPriceIdAsync(
+        int productId,
+        int priceListId,
+        CancellationToken ct = default)
+    {
+        var priceListPrice = await _priceListPriceRepository.GetByProductAndListAsync(productId, priceListId, ct);
+        return priceListPrice?.ProductPriceListProductPriceId;
+    }
+
     /// <summary>
     /// Validates that a price code is valid (A, B, or C)
     /// </summary>

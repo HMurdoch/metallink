@@ -6,12 +6,13 @@ namespace MetalLink.Application.Interfaces;
 public interface IStockLevelRepository
 {
     /// <summary>
-    /// Returns current stock level (kg) for product. If no row exists, creates one with 0 kg.
+    /// Returns current stock level (kg) for a product / price-list combination.
+    /// If no row exists, creates one with 0 kg.
     /// </summary>
-    Task<decimal> GetOrCreateWeightKgAsync(int productId, int createdByOperatorId, CancellationToken ct = default);
+    Task<decimal> GetOrCreateWeightKgAsync(int productId, int? productPriceListProductPriceId, int createdByOperatorId, CancellationToken ct = default);
 
     /// <summary>
-    /// Updates stock level (kg) for product (row must exist).
+    /// Applies a delta to the stock level for a product / price-list combination.
     /// </summary>
-    Task UpdateWeightKgAsync(int productId, decimal newWeightKg, CancellationToken ct = default);
+    Task UpdateWeightKgAsync(int productId, int? productPriceListProductPriceId, decimal deltaWeightKg, int createdByOperatorId, CancellationToken ct = default);
 }

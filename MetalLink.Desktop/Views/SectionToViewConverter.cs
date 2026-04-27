@@ -44,13 +44,15 @@ public class SectionToViewConverter : IValueConverter
                 EnumMainSection.Products => new ProductsView(),
                 EnumMainSection.PriceLists => new PriceListsView(),
                 EnumMainSection.Prices => new PricesView(),
-                EnumMainSection.TicketsReceiving => new TicketsReceivingView(),
-                EnumMainSection.TicketsSending => new TicketsSendingView(),
+                EnumMainSection.TicketsReceiving => new ReceivingTicketsView(),
+                EnumMainSection.TicketsSending => new SendingTicketsView(),
                 EnumMainSection.Documents => new DocumentsView(),
                 EnumMainSection.Camera => new CameraView(),
                 EnumMainSection.Reports => new ReportsView(),
                 EnumMainSection.StockLevels => new StockLevelsView(),
+                EnumMainSection.PriceListStockLevels => new PriceListStockLevelsView(),
                 EnumMainSection.StockMovement => new StockMovementView(),
+                EnumMainSection.PriceListStockMovements => new PriceListStockMovementsView(),
                 EnumMainSection.Settings => new SettingsView(),
                 _ => null
             };

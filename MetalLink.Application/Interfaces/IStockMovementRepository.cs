@@ -10,9 +10,14 @@ public interface IStockMovementRepository
         decimal baseWeightKg,
         decimal buyWeightKg,
         decimal sellWeightKg,
+        decimal unitPricePerKg,
         int createdByOperatorId,
         string notes,
-        decimal unitPricePerKg = 0m,
         int? productPriceListId = null,
+        int? productPriceListProductPriceId = null,
+        int? receivingTicketId = null,
+        int? receivingTicketLineId = null,
+        int? sendingTicketId = null,
+        int? sendingTicketLineId = null,
         CancellationToken ct = default);
 }

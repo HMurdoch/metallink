@@ -615,6 +615,7 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.Tare).HasColumnName("tare").HasDefaultValue(0m);
         e.Property(x => x.Notes).HasColumnName("notes");
         e.Property(x => x.ProductPriceListId).HasColumnName("product_price_list_id");
+        e.Property(x => x.ProductPriceListProductPriceId).HasColumnName("product_price_list_product_price_id");
         e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
@@ -624,6 +625,7 @@ public class MetalLinkDbContext : DbContext
         e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
         e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
         e.HasOne<ProductPriceList>().WithMany().HasForeignKey(x => x.ProductPriceListId);
+        e.HasOne(x => x.ProductPriceListProductPrice).WithMany().HasForeignKey(x => x.ProductPriceListProductPriceId);
     }
 
     private static void ConfigureSendingTickets(ModelBuilder modelBuilder)
@@ -693,6 +695,7 @@ public class MetalLinkDbContext : DbContext
         e.Property(x => x.Tare).HasColumnName("tare").HasDefaultValue(0m);
         e.Property(x => x.Notes).HasColumnName("notes");
         e.Property(x => x.ProductPriceListId).HasColumnName("product_price_list_id");
+        e.Property(x => x.ProductPriceListProductPriceId).HasColumnName("product_price_list_product_price_id");
         e.Property(x => x.CreatedByOperatorId).HasColumnName("created_by_operator_id").IsRequired();
         e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         e.Property(x => x.CreatedTime).HasColumnName("created_time").HasDefaultValueSql("now()");
@@ -702,6 +705,7 @@ public class MetalLinkDbContext : DbContext
         e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
         e.HasOne(x => x.CreatedByOperator).WithMany().HasForeignKey(x => x.CreatedByOperatorId);
         e.HasOne<ProductPriceList>().WithMany().HasForeignKey(x => x.ProductPriceListId);
+        e.HasOne(x => x.ProductPriceListProductPrice).WithMany().HasForeignKey(x => x.ProductPriceListProductPriceId);
     }
 
 }

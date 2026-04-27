@@ -32,6 +32,13 @@ public class TicketReceivingLine
     /// </summary>
     public int? ProductPriceListId { get; set; }
 
+    /// <summary>
+    /// The exact pricing row that determined the unit price for this line.
+    /// Nullable because legacy rows may not yet have this linkage.
+    /// </summary>
+    public int? ProductPriceListProductPriceId { get; set; }
+    public ProductPriceListProductPrice? ProductPriceListProductPrice { get; set; }
+
     public bool IsActive { get; private set; } = true;
     public DateTimeOffset CreatedTime { get; private set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedTime { get; private set; } = DateTimeOffset.UtcNow;

@@ -28,6 +28,7 @@ public class TicketSendingRepository : ITicketSendingRepository
             .Include(t => t.TicketType)
             .Include(t => t.Lines)
                 .ThenInclude(l => l.Product)
+                    .ThenInclude(p => p.ProductGroup)
             .Include(t => t.Lines)
                 .ThenInclude(l => l.CreatedByOperator)
             .FirstOrDefaultAsync(t => t.TicketSendingId == ticketSendingId && t.IsActive);
@@ -41,6 +42,7 @@ public class TicketSendingRepository : ITicketSendingRepository
             .Include(t => t.TicketType)
             .Include(t => t.Lines)
                 .ThenInclude(l => l.Product)
+                    .ThenInclude(p => p.ProductGroup)
             .Include(t => t.Lines)
                 .ThenInclude(l => l.CreatedByOperator)
             .FirstOrDefaultAsync(t => t.TicketNumber == ticketNumber && t.IsActive);

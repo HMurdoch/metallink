@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using MetalLink.Application.Interfaces;
 using MetalLink.Application.Services;
 using MetalLink.Api.Extensions;
@@ -362,18 +364,23 @@ public class TicketsSendingController : ControllerBase
         // Stock update + movement log (Sale Deleted)
         var operatorId = (int)User.GetOperatorId();
 
-        var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(line.ProductId, operatorId, ct);
+        var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(line.ProductId, line.ProductPriceListProductPriceId, operatorId, ct);
+
         await _stockMovementRepo.AddAsync(
             productId: line.ProductId,
             baseWeightKg: baseWeight,
             buyWeightKg: line.NetWeightKg,
             sellWeightKg: 0m,
+            unitPricePerKg: line.UnitPricePerKg,
             createdByOperatorId: operatorId,
             notes: $"Sale Deleted - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
-            unitPricePerKg: line.UnitPricePerKg,
-            productPriceListId: line.ProductPriceListId ?? ticket.Buyer?.ProductPriceListId,
+            productPriceListId: line.ProductPriceListId,
+            productPriceListProductPriceId: line.ProductPriceListProductPriceId,
+            sendingTicketId: ticket.TicketSendingId,
+            sendingTicketLineId: line.TicketSendingLineId,
             ct: ct);
-        await _stockLevelRepo.UpdateWeightKgAsync(line.ProductId, baseWeight + line.NetWeightKg, ct);
+
+        await _stockLevelRepo.UpdateWeightKgAsync(line.ProductId, line.ProductPriceListProductPriceId, line.NetWeightKg, operatorId, ct);
 
         // Ticket state transitions and header net-weight tracking
         // If the last active line is deleted, revert ticket back to Header-only state.
@@ -433,22 +440,31 @@ public class TicketsSendingController : ControllerBase
                 secondWeightKg: sw
             );
             line.ProductPriceListId = ticket.Buyer?.ProductPriceListId;
+            if (ticket.Buyer?.ProductPriceListId is int priceListId)
+            {
+                line.ProductPriceListProductPriceId = await _priceLookupService.GetProductPriceListProductPriceIdAsync(dto.ProductId, priceListId, ct);
+            }
 
             ticket.AddLine(line);
 
             // Stock update + movement log (Sale)
-            var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(dto.ProductId, operatorId, ct);
+            var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(dto.ProductId, line.ProductPriceListProductPriceId, operatorId, ct);
+
             await _stockMovementRepo.AddAsync(
                 productId: dto.ProductId,
                 baseWeightKg: baseWeight,
                 buyWeightKg: 0m,
                 sellWeightKg: line.NetWeightKg,
+                unitPricePerKg: line.UnitPricePerKg,
                 createdByOperatorId: operatorId,
                 notes: $"Sale - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
-                unitPricePerKg: unitPrice,
-                productPriceListId: ticket.Buyer?.ProductPriceListId,
+                productPriceListId: line.ProductPriceListId,
+                productPriceListProductPriceId: line.ProductPriceListProductPriceId,
+                sendingTicketId: ticket.TicketSendingId,
+                sendingTicketLineId: line.TicketSendingLineId == 0 ? null : line.TicketSendingLineId,
                 ct: ct);
-            await _stockLevelRepo.UpdateWeightKgAsync(dto.ProductId, baseWeight - line.NetWeightKg, ct);
+
+            await _stockLevelRepo.UpdateWeightKgAsync(dto.ProductId, line.ProductPriceListProductPriceId, -line.NetWeightKg, operatorId, ct);
 
             // Ticket state transitions and header net-weight tracking
             var activeLinesAfterAdd = ticket.Lines?.Where(l => l.IsActive).ToList() ?? new List<TicketSendingLine>();
@@ -468,22 +484,31 @@ public class TicketsSendingController : ControllerBase
                 notes: dto.Notes
             );
             line.ProductPriceListId = ticket.Buyer?.ProductPriceListId;
+            if (ticket.Buyer?.ProductPriceListId is int priceListId)
+            {
+                line.ProductPriceListProductPriceId = await _priceLookupService.GetProductPriceListProductPriceIdAsync(dto.ProductId, priceListId, ct);
+            }
 
             ticket.AddLine(line);
 
             // Stock update + movement log (Sale)
-            var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(dto.ProductId, operatorId, ct);
+            var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(dto.ProductId, line.ProductPriceListProductPriceId, operatorId, ct);
+
             await _stockMovementRepo.AddAsync(
                 productId: dto.ProductId,
                 baseWeightKg: baseWeight,
                 buyWeightKg: 0m,
                 sellWeightKg: line.NetWeightKg,
+                unitPricePerKg: line.UnitPricePerKg,
                 createdByOperatorId: operatorId,
                 notes: $"Sale - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
-                unitPricePerKg: unitPrice,
-                productPriceListId: ticket.Buyer?.ProductPriceListId,
+                productPriceListId: line.ProductPriceListId,
+                productPriceListProductPriceId: line.ProductPriceListProductPriceId,
+                sendingTicketId: ticket.TicketSendingId,
+                sendingTicketLineId: line.TicketSendingLineId == 0 ? null : line.TicketSendingLineId,
                 ct: ct);
-            await _stockLevelRepo.UpdateWeightKgAsync(dto.ProductId, baseWeight - line.NetWeightKg, ct);
+
+            await _stockLevelRepo.UpdateWeightKgAsync(dto.ProductId, line.ProductPriceListProductPriceId, -line.NetWeightKg, operatorId, ct);
         }
         await _ticketSendingRepo.UpdateAsync(ticket);
         await _unitOfWork.SaveChangesAsync(ct);

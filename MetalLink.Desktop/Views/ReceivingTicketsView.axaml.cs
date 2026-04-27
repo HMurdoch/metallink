@@ -2,17 +2,17 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
-using MetalLink.Desktop.ViewModels.Sending;
+using MetalLink.Desktop.ViewModels.Receiving;
 using System;
 
 namespace MetalLink.Desktop.Views;
 
-public partial class TicketsSendingView : UserControl
+public partial class ReceivingTicketsView : UserControl
 {
     private ScrollViewer? _scrollViewer;
     private Border? _addProductLinesSection;
 
-    public TicketsSendingView()
+    public ReceivingTicketsView()
     {
         InitializeComponent();
         this.AttachedToVisualTree += OnAttachedToVisualTree;
@@ -44,15 +44,15 @@ public partial class TicketsSendingView : UserControl
 
     private async void TareTextBox_LostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        if (DataContext is not MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel vm) return;
+        if (DataContext is not MetalLink.Desktop.ViewModels.Receiving.TicketsReceivingViewModel vm) return;
         if (sender is not TextBox tb) return;
-        if (tb.DataContext is not MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel.SendingLineRow row) return;
+        if (tb.DataContext is not MetalLink.Desktop.ViewModels.Receiving.TicketsReceivingViewModel.ReceivingLineRow row) return;
 
         if (!decimal.TryParse(tb.Text?.Replace(',', '.').Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var tare))
             return;
 
         if (!row.IsEditable) return;
-        await vm.UpdateLastLineTareAsync(row.TicketSendingLineId, tare);
+        await vm.UpdateLastLineTareAsync(row.ReceivingTicketLineId, tare);
     }
 
     private void TareTextBox_GotFocus(object? sender, Avalonia.Input.GotFocusEventArgs e)
@@ -65,7 +65,7 @@ public partial class TicketsSendingView : UserControl
         }
     }
 
-    private void SendingTicketsGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private void ReceivingTicketsGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         // Prevent automatic scrolling when selecting different rows
         // This avoids the annoying "jump" behavior when clicking on different tickets
@@ -74,49 +74,49 @@ public partial class TicketsSendingView : UserControl
 
     private void ToggleSearchTickets(object? sender, PointerPressedEventArgs e)
     {
-        if (DataContext is TicketsSendingViewModel vm) {
+        if (DataContext is TicketsReceivingViewModel vm) {
             vm.IsSearchExpanded = !vm.IsSearchExpanded;
-            Console.WriteLine($"[DEBUG] TicketsSendingView: Toggled SearchTickets to {vm.IsSearchExpanded}");
+            Console.WriteLine($"[DEBUG] TicketsReceivingView: Toggled SearchTickets to {vm.IsSearchExpanded}");
         }
     }
 
     private void ToggleTicketResults(object? sender, PointerPressedEventArgs e)
     {
-        if (DataContext is TicketsSendingViewModel vm) {
+        if (DataContext is TicketsReceivingViewModel vm) {
             vm.IsResultsExpanded = !vm.IsResultsExpanded;
-            Console.WriteLine($"[DEBUG] TicketsSendingView: Toggled TicketResults to {vm.IsResultsExpanded}");
+            Console.WriteLine($"[DEBUG] TicketsReceivingView: Toggled TicketResults to {vm.IsResultsExpanded}");
         }
     }
 
     private void ToggleTicketLines(object? sender, PointerPressedEventArgs e)
     {
-        if (DataContext is TicketsSendingViewModel vm) {
+        if (DataContext is TicketsReceivingViewModel vm) {
             vm.IsLinesExpanded = !vm.IsLinesExpanded;
-            Console.WriteLine($"[DEBUG] TicketsSendingView: Toggled TicketLines to {vm.IsLinesExpanded}");
+            Console.WriteLine($"[DEBUG] TicketsReceivingView: Toggled TicketLines to {vm.IsLinesExpanded}");
         }
     }
 
     private void ToggleCreateTicket(object? sender, PointerPressedEventArgs e)
     {
-        if (DataContext is TicketsSendingViewModel vm) {
+        if (DataContext is TicketsReceivingViewModel vm) {
             vm.IsCreateExpanded = !vm.IsCreateExpanded;
-            Console.WriteLine($"[DEBUG] TicketsSendingView: Toggled CreateTicket to {vm.IsCreateExpanded}");
+            Console.WriteLine($"[DEBUG] TicketsReceivingView: Toggled CreateTicket to {vm.IsCreateExpanded}");
         }
     }
 
     private void ToggleScaleMeasurement(object? sender, PointerPressedEventArgs e)
     {
-        if (DataContext is TicketsSendingViewModel vm) {
+        if (DataContext is TicketsReceivingViewModel vm) {
             vm.IsScaleExpanded = !vm.IsScaleExpanded;
-            Console.WriteLine($"[DEBUG] TicketsSendingView: Toggled ScaleMeasurement to {vm.IsScaleExpanded}");
+            Console.WriteLine($"[DEBUG] TicketsReceivingView: Toggled ScaleMeasurement to {vm.IsScaleExpanded}");
         }
     }
 
     private void ToggleAddProductLines(object? sender, PointerPressedEventArgs e)
     {
-        if (DataContext is TicketsSendingViewModel vm) {
+        if (DataContext is TicketsReceivingViewModel vm) {
             vm.IsAddLinesExpanded = !vm.IsAddLinesExpanded;
-            Console.WriteLine($"[DEBUG] TicketsSendingView: Toggled AddProductLines to {vm.IsAddLinesExpanded}");
+            Console.WriteLine($"[DEBUG] TicketsReceivingView: Toggled AddProductLines to {vm.IsAddLinesExpanded}");
         }
     }
 

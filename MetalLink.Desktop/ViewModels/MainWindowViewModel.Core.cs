@@ -68,6 +68,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public ICommand ShowStockLevelsCommand { get; }
     public ICommand ShowStockMovementCommand { get; }
     public ICommand ShowStockMovementForProductCommand { get; }
+    public ICommand ShowPriceListStockLevelsCommand { get; }
+    public ICommand ShowPriceListStockMovementsCommand { get; }
     public ICommand ShowSettingsCommand { get; }
 
     // Logic ViewModels
@@ -75,6 +77,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
     public MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel Sending { get; }
     public StockLevelsViewModel StockLevels { get; }
     public StockMovementViewModel StockMovement { get; }
+    public PriceListStockLevelsViewModel PriceListStockLevels { get; }
+    public PriceListStockMovementsViewModel PriceListStockMovements { get; }
     public PaginationViewModel PaginationViewModel { get; } = new();
 
     // Core Commands
@@ -162,6 +166,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         Sending = new MetalLink.Desktop.ViewModels.Sending.TicketsSendingViewModel(_ticketSendingService, new CompanyAndSiteService(_apiClient, _authState), _scaleService, new ProductsService(_apiClient, _authState));
         StockLevels = new StockLevelsViewModel(_apiClient);
         StockMovement = new StockMovementViewModel(_apiClient);
+        PriceListStockLevels = new PriceListStockLevelsViewModel(_apiClient);
+        PriceListStockMovements = new PriceListStockMovementsViewModel(_apiClient);
 
         ToggleNavCommand = new RelayCommand(() => IsNavCollapsed = !IsNavCollapsed);
         ShowDashboardCommand = new RelayCommand(() => { 
@@ -249,6 +255,14 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
             StockMovement.SelectedProduct = null;
             StockMovement.SetInitialProductId(productId);
             await StockMovement.RefreshAsync();
+        });
+        ShowPriceListStockLevelsCommand = new AsyncRelayCommand(async () => {
+            CurrentSection = EnumMainSection.PriceListStockLevels;
+            await PriceListStockLevels.RefreshAsync();
+        });
+        ShowPriceListStockMovementsCommand = new AsyncRelayCommand(async () => {
+            CurrentSection = EnumMainSection.PriceListStockMovements;
+            await PriceListStockMovements.RefreshAsync();
         });
         ShowSettingsCommand = new RelayCommand(() => CurrentSection = EnumMainSection.Settings);
 
@@ -371,6 +385,8 @@ public partial class MainWindowViewModel : ObservableObject, INotifyPropertyChan
         NavItems.Add(new NavItemViewModel { Title = "Ticket Sending", IconKey = "Upload", Command = ShowTicketsSendingCommand });
         NavItems.Add(new NavItemViewModel { Title = "Stock Levels", IconKey = "Assessment", Command = ShowStockLevelsCommand });
         NavItems.Add(new NavItemViewModel { Title = "Stock Movement", IconKey = "History", Command = ShowStockMovementCommand });
+        NavItems.Add(new NavItemViewModel { Title = "Price List Stock Distribution", IconKey = "Assessment", Command = ShowPriceListStockLevelsCommand, IsIndented = true });
+        NavItems.Add(new NavItemViewModel { Title = "Price List Stock Movements", IconKey = "History", Command = ShowPriceListStockMovementsCommand, IsIndented = true });
         NavItems.Add(new NavItemViewModel { Title = "Reports", IconKey = "Analytics", Command = ShowReportsCommand });
         NavItems.Add(new NavItemViewModel { Title = "Documents", IconKey = "DocumentScanner", Command = ShowDocumentsCommand });
         NavItems.Add(new NavItemViewModel { Title = "Camera", IconKey = "Camera", Command = ShowCameraCommand });

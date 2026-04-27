@@ -195,6 +195,34 @@ public class ProductsController : ControllerBase
         product.MustDeclare = dto.MustDeclare;
         product.UpdatedTime = DateTimeOffset.UtcNow;
 
+        // Handle stock_levels for price lists when starring/unstarring
+        if (dto.StarredProduct && !product.StarredProduct)
+        {
+            // Product is being starred - create stock_levels for all active price lists
+            await _db.Database.ExecuteSqlInterpolatedAsync($@"
+                INSERT INTO metal_link.stock_levels (product_id, product_price_list_product_price_id, weight_kg, created_by_operator_id, is_active, created_time, updated_time)
+                SELECT {productId}, pplpp.product_price_list_product_price_id, 0, {(int)User.GetOperatorId()}, true, now(), now()
+                FROM metal_link.product_price_list_product_prices pplpp
+                JOIN metal_link.product_price_lists ppl ON ppl.product_price_list_id = pplpp.product_price_list_id
+                WHERE pplpp.product_id = {productId} AND ppl.is_active = true AND pplpp.is_active = true
+                  AND NOT EXISTS (
+                      SELECT 1 FROM metal_link.stock_levels sl
+                      WHERE sl.product_id = {productId}
+                        AND sl.product_price_list_product_price_id = pplpp.product_price_list_product_price_id
+                        AND sl.is_active = true
+                  );
+            ", ct);
+        }
+        else if (!dto.StarredProduct && product.StarredProduct)
+        {
+            // Product is being unstarred - deactivate stock_levels
+            await _db.Database.ExecuteSqlInterpolatedAsync($@"
+                UPDATE metal_link.stock_levels
+                SET is_active = false, updated_time = now()
+                WHERE product_id = {productId} AND is_active = true;
+            ", ct);
+        }
+
         await _db.SaveChangesAsync(ct);
         return NoContent();
     }

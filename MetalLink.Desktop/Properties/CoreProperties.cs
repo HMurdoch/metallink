@@ -133,6 +133,8 @@ public partial class MainWindowViewModel
     public bool IsPricesSectionVisible => CurrentSection == EnumMainSection.Prices;
     public bool IsStockLevelsSectionVisible => CurrentSection == EnumMainSection.StockLevels;
     public bool IsStockMovementSectionVisible => CurrentSection == EnumMainSection.StockMovement;
+    public bool IsPriceListStockLevelsSectionVisible => CurrentSection == EnumMainSection.PriceListStockLevels;
+    public bool IsPriceListStockMovementsSectionVisible => CurrentSection == EnumMainSection.PriceListStockMovements;
     public bool IsReportsSectionVisible => CurrentSection == EnumMainSection.Reports;
     public bool IsSettingsSectionVisible => CurrentSection == EnumMainSection.Settings;
 

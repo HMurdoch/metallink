@@ -1,53 +1,11 @@
 <UserControl
-    x:Class="MetalLink.Desktop.Views.TicketsSendingView"
-    xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    DataContext="{Binding Sending}"
-    xmlns:local="using:MetalLink.Desktop.Views"
-    xmlns:Primitives="clr-namespace:Avalonia.Controls.Primitives;assembly=Avalonia.Controls.DataGrid">
-
-  <UserControl.Resources>
-    <ResourceDictionary>
-      <!-- Custom DataGridRow template with shimmer overlay (selected row emphasis) -->
-      <ControlTheme x:Key="ShimmerDataGridRowTheme" TargetType="DataGridRow">
-      <Setter Property="Template">
-        <ControlTemplate>
-          <Grid>
-            <!-- Base row background -->
-            <Border x:Name="RowBackground"
-                    Background="{TemplateBinding Background}"
-                    BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding BorderThickness}" />
-
-            <!-- Shimmer overlay (animated when selected) -->
-            <Border x:Name="Shimmer"
-                    Opacity="0"
-                    IsHitTestVisible="False">
-              <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                  <GradientStop Color="#00FFFFFF" Offset="0" />
-                  <GradientStop Color="#33FFFFFF" Offset="0.45" />
-                  <GradientStop Color="#66B0E0FF" Offset="0.50" />
-                  <GradientStop Color="#33FFFFFF" Offset="0.55" />
-                  <GradientStop Color="#00FFFFFF" Offset="1" />
-                </LinearGradientBrush>
-              </Border.Background>
-              <Border.RenderTransform>
-                <TranslateTransform X="-400" />
-              </Border.RenderTransform>
-            </Border>
-
-            <!-- Cells presenter -->
-            <Primitives:DataGridCellsPresenter />
-          </Grid>
-        </ControlTemplate>
-      </Setter>
-    </ControlTheme>
-    </ResourceDictionary>
-  </UserControl.Resources>
+  x:Class="MetalLink.Desktop.Views.ReceivingTicketsView"
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  DataContext="{Binding Receiving}"
+  xmlns:local="using:MetalLink.Desktop.Views">
 
   <UserControl.Styles>
-
     <!-- Default textbox border + font to match Customers view -->
     <Style Selector="TextBox">
       <Setter Property="BorderBrush" Value="#444a55" />
@@ -93,68 +51,26 @@
       <Setter Property="FontWeight" Value="Bold" />
     </Style>
 
-    <!-- Animate the actual row background presenter (template Border) for the tickets grid -->
-    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow /template/ Border">
+    <Style Selector="DataGridRow">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="Transitions">
-        <Transitions>
-          <BrushTransition Property="Background" Duration="0:0:0.45" />
-          <DoubleTransition Property="Opacity" Duration="0:0:0.45" />
-        </Transitions>
+        <Setter.Value>
+          <Transitions>
+            <BrushTransition Property="Background" Duration="0:0:0.12" />
+          </Transitions>
+        </Setter.Value>
       </Setter>
     </Style>
 
-    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow:pointerover /template/ Border">
+    <Style Selector="DataGridRow:pointerover">
       <Setter Property="Background" Value="#20FFFFFF" />
-      <Setter Property="Opacity" Value="1" />
     </Style>
 
-    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow:selected /template/ Border">
-      <!-- Selected row emphasis -->
-      <Setter Property="Background" Value="#334155" />
+    <Style Selector="DataGridRow:selected">
+      <Setter Property="Background" Value="#303B82F6" />
     </Style>
 
-    <!-- Animate the selected row background so it visibly "breathes" -->
-    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow:selected">
-      <Setter Property="Foreground" Value="White" />
-    </Style>
-
-    <!-- Keep selection solid; animated effects are unreliable with current DataGrid template -->
-    <!-- Use our shimmer row theme for the tickets grid -->
-    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow">
-      <Setter Property="Theme" Value="{StaticResource ShimmerDataGridRowTheme}" />
-    </Style>
-
-    <!-- Selected row base color -->
-    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow:selected">
-      <Setter Property="Background" Value="#334155" />
-    </Style>
-
-    <!-- Shimmer animation when selected -->
-    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow:selected /template/ Border#Shimmer">
-      <Setter Property="Opacity" Value="0.75" />
-      <Style.Animations>
-        <Animation Duration="0:0:2.6" IterationCount="Infinite">
-          <KeyFrame Cue="0%">
-            <Setter Property="RenderTransform">
-              <TranslateTransform X="-400" />
-            </Setter>
-          </KeyFrame>
-          <KeyFrame Cue="100%">
-            <Setter Property="RenderTransform">
-              <TranslateTransform X="400" />
-            </Setter>
-          </KeyFrame>
-        </Animation>
-      </Style.Animations>
-    </Style>
-
-    <!-- Non-selected: shimmer hidden -->
-    <Style Selector="DataGrid#SendingTicketsGrid /template/ DataGridRow:not(:selected) /template/ Border#Shimmer">
-      <Setter Property="Opacity" Value="0" />
-    </Style>
-
-    <!-- Row action buttons (for Delete in Sending lines grid) -->
+    <!-- Row action buttons (for Delete in Receiving lines grid) -->
     <Style Selector="Button.row-action">
       <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
       <Setter Property="Background" Value="#30333A" />
@@ -201,7 +117,7 @@
   </UserControl.Styles>
 
   <UserControl.Resources>
-    <DataTemplate x:Key="SendingProductLookupTemplate">
+    <DataTemplate x:Key="ReceivingProductLookupTemplate">
       <TextBlock Text="{Binding ProductName}" />
     </DataTemplate>
   </UserControl.Resources>
@@ -215,7 +131,7 @@
                 Padding="12,8"
                 CornerRadius="4"
                 Margin="16,16,16,8">
-          <Image Source="avares://MetalLink.Desktop/Assets/sending_heading.png"
+          <Image Source="avares://MetalLink.Desktop/Assets/receiving_heading.png"
                  Height="40"
                  HorizontalAlignment="Left"
                  Stretch="Uniform" />
@@ -240,7 +156,7 @@
             </Grid>
 
             <StackPanel x:Name="SearchTicketsContent" Spacing="8" IsVisible="{Binding IsSearchExpanded}">
-            <CheckBox Content="New Buyer?" IsChecked="{Binding IsNewBuyerOnly}" />
+              <CheckBox Content="New Customer?" IsChecked="{Binding IsNewCustomerOnly}" />
 
             <Grid Margin="0,8,0,0">
               <Grid.ColumnDefinitions>
@@ -255,27 +171,24 @@
                 <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
-              <!-- Row 0: Buyer ID / ID Number -->
               <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
-                <TextBlock Text="Buyer ID" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchSendingTicketBuyerIdText}" />
+                <TextBlock Text="Customer ID" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchReceivingTicketCustomerIdText}" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
                 <TextBlock Text="ID Number" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchSendingTicketIdNumberText}" />
+                <TextBox Text="{Binding SearchReceivingTicketIdNumberText}" />
               </StackPanel>
 
-              <!-- Row 1: First / Last name -->
               <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2">
                 <TextBlock Text="First Name" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchSendingTicketFirstNameText}" />
+                <TextBox Text="{Binding SearchReceivingTicketFirstNameText}" />
               </StackPanel>
               <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Last Name" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchSendingTicketLastNameText}" />
+                <TextBox Text="{Binding SearchReceivingTicketLastNameText}" />
               </StackPanel>
 
-              <!-- Row 2: Company (Letter + Dropdown in single column) / Account Number -->
               <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2">
                 <TextBlock Text="Company" Foreground="#c0c4cf" />
                 <Grid>
@@ -285,11 +198,11 @@
                   </Grid.ColumnDefinitions>
                   <ComboBox Grid.Column="0"
                             ItemsSource="{Binding CompanyLetterFilters}"
-                            SelectedItem="{Binding SearchTicketCompanyLetter}"
+                            SelectedItem="{Binding SelectedCompanyLetter, Mode=TwoWay}"
                             Margin="0,0,4,0" />
                   <ComboBox Grid.Column="1"
                             ItemsSource="{Binding SearchCompanySuggestions}"
-                            SelectedItem="{Binding SelectedSearchCompany}">
+                            SelectedItem="{Binding SelectedSearchCompany, Mode=TwoWay}">
                     <ComboBox.ItemTemplate>
                       <DataTemplate>
                         <TextBlock Text="{Binding CompanyName}" />
@@ -298,18 +211,13 @@
                   </ComboBox>
                 </Grid>
               </StackPanel>
-              <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
-                <TextBlock Text="Account Number" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchSendingTicketAccountNumberText}" />
-              </StackPanel>
 
-              <!-- Row 3: Site / Ticket Number -->
-              <StackPanel Grid.Row="3" Grid.Column="0" Spacing="2">
+              <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Site" Foreground="#c0c4cf" />
                 <ComboBox
-                    ItemsSource="{Binding SearchTicketSiteSuggestions}"
-                    SelectedItem="{Binding SelectedSearchSite}"
-                    HorizontalAlignment="Stretch">
+                  ItemsSource="{Binding SearchSiteSuggestions}"
+                  SelectedItem="{Binding SelectedSearchSite, Mode=TwoWay}"
+                  HorizontalAlignment="Stretch">
                   <ComboBox.ItemTemplate>
                     <DataTemplate>
                       <TextBlock Text="{Binding SiteName}" />
@@ -317,12 +225,33 @@
                   </ComboBox.ItemTemplate>
                 </ComboBox>
               </StackPanel>
+
+              <StackPanel Grid.Row="3" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Account Number" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding SearchReceivingTicketAccountNumberText}" />
+              </StackPanel>
+
               <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Ticket Number" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SearchSendingTicketNumberText}" />
+                <TextBox Text="{Binding SearchReceivingTicketNumberText}" />
               </StackPanel>
 
               <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2">
+                <TextBlock Text="Ticket Type" Foreground="#c0c4cf" />
+                <ComboBox
+                  ItemsSource="{Binding SearchTicketTypeOptions}"
+                  SelectedItem="{Binding SelectedSearchReceivingTicketTypeOption}"
+                  HorizontalAlignment="Left"
+                  Width="200">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding Display}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+
+              <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Product Group" Foreground="#c0c4cf" />
                 <ComboBox
                   ItemsSource="{Binding ProductGroups}"
@@ -335,6 +264,7 @@
                   </ComboBox.ItemTemplate>
                 </ComboBox>
               </StackPanel>
+
             </Grid>
 
             <!-- Search buttons -->
@@ -343,16 +273,16 @@
                         Spacing="8"
                         Margin="0,8,0,0">
               <Button
-                  Width="100"
-                  Content="Clear"
-                  Command="{Binding ClearSendingTicketSearchCommand}" />
+                Width="100"
+                Content="Clear"
+                Command="{Binding ClearReceivingTicketSearchCommand}" />
               <Button
-                  Classes="primary"
-                  Width="100"
-                  Content="Search"
-                  Command="{Binding SearchSendingTicketsCommand}" />
+                Classes="primary"
+                Width="100"
+                Content="Search"
+                Command="{Binding SearchReceivingTicketsCommand}" />
             </StackPanel>
-            </StackPanel>
+          </StackPanel>
           </StackPanel>
         </Border>
 
@@ -365,53 +295,56 @@
 
           <Border Grid.Column="0" Background="{DynamicResource Brush.PanelBackground}" Padding="12" CornerRadius="4">
             <StackPanel Spacing="8">
-            <Grid x:Name="TicketResultsHeader" Background="Transparent" PointerPressed="ToggleTicketResults">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-              </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" x:Name="TicketResultsArrow" 
-                         Text="{Binding IsResultsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
-                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
-              <TextBlock Grid.Column="1" Text="Ticket results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
-            </Grid>
+              <Grid x:Name="TicketResultsHeader" Background="Transparent" PointerPressed="ToggleTicketResults">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="TicketResultsArrow" 
+                           Text="{Binding IsResultsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                           Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="Ticket Results" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+              </Grid>
 
-            <StackPanel x:Name="TicketResultsContent" Spacing="8" IsVisible="{Binding IsResultsExpanded}">
-            <DataGrid x:Name="SendingTicketsGrid"
-                AutoGenerateColumns="False"
-                ItemsSource="{Binding SendingTicketSearchResults}"
-                SelectedItem="{Binding SelectedSendingTicket, Mode=TwoWay}"
-                SelectionChanged="SendingTicketsGrid_SelectionChanged">
-              <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding TicketId}" Width="80" IsReadOnly="True" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
-                <DataGridTextColumn Header="Ticket #" Binding="{Binding TicketNumber}" Width="140" IsReadOnly="True" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
-                <DataGridTextColumn Header="Buyer ID" Binding="{Binding BuyerId}" Width="100" IsReadOnly="True" />
-                <DataGridTextColumn Header="First Name" Binding="{Binding FirstName}" Width="120" IsReadOnly="True" />
-                <DataGridTextColumn Header="Last Name" Binding="{Binding LastName}" Width="120" IsReadOnly="True" />
-                <DataGridTextColumn Header="Account #" Binding="{Binding AccountNumber}" Width="100" IsReadOnly="True" />
-                <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" Width="180" IsReadOnly="True" />
-                <DataGridTextColumn Header="Site" Binding="{Binding SiteName}" Width="180" IsReadOnly="True" />
-                <DataGridTextColumn Header="Group" Binding="{Binding ProductGroupName}" Width="150" IsReadOnly="True" />
-                <DataGridTextColumn Header="Net KG" Binding="{Binding NetWeightKg, StringFormat='{}{0:N2}'}" Width="100" IsReadOnly="True" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
-                <DataGridTextColumn Header="Created" Binding="{Binding CreatedTime, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" IsReadOnly="True" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
-                <DataGridTemplateColumn Header="Status" Width="100" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                  <DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate>
-                      <Ellipse Width="16"
-                               Height="16"
-                               Fill="{Binding TicketStatus, Converter={x:Static local:TicketStatusColorConverter.Instance}}"
-                               VerticalAlignment="Center"
-                               HorizontalAlignment="Center" />
-                    </DataTemplate>
-                  </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-              </DataGrid.Columns>
-            </DataGrid>
-            </StackPanel>
+              <StackPanel x:Name="TicketResultsContent" Spacing="8" IsVisible="{Binding IsResultsExpanded}">
+                <DataGrid
+                  x:Name="ReceivingTicketsGrid"
+                      AutoGenerateColumns="False"
+                      ItemsSource="{Binding ReceivingTicketSearchResults}"
+                      SelectedItem="{Binding SelectedReceivingTicket, Mode=TwoWay}"
+                      SelectionChanged="ReceivingTicketsGrid_SelectionChanged">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="ID" Binding="{Binding TicketId}" Width="80" IsReadOnly="True" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                    <DataGridTextColumn Header="Ticket #" Binding="{Binding TicketNumber}" Width="140" IsReadOnly="True" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                    <DataGridTextColumn Header="Type" Binding="{Binding TicketType}" Width="100" IsReadOnly="True" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                    <DataGridTextColumn Header="Customer ID" Binding="{Binding CustomerId}" Width="100" IsReadOnly="True" />
+                    <DataGridTextColumn Header="First Name" Binding="{Binding FirstName}" Width="120" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Last Name" Binding="{Binding LastName}" Width="120" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Account #" Binding="{Binding AccountNumber}" Width="100" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" Width="180" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Site" Binding="{Binding SiteName}" Width="180" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Net Kg" Binding="{Binding NetWeightKg, StringFormat='{}{0:N2}'}"
+                                        Width="100" IsReadOnly="True" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                    <DataGridTextColumn Header="Created"
+                                        Binding="{Binding CreatedTime, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150"
+                                        IsReadOnly="True" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                    <DataGridTemplateColumn Header="Status" Width="100" IsVisible="{Binding DataContext.ShouldShowTicketColumns, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                      <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                          <Ellipse Width="16" Height="16"
+                                  Fill="{Binding TicketStatus, Converter={x:Static local:TicketStatusColorConverter.Instance}}"
+                                  VerticalAlignment="Center"
+                                  HorizontalAlignment="Center" />
+                        </DataTemplate>
+                      </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                  </DataGrid.Columns>
+                </DataGrid>
+              </StackPanel>
             </StackPanel>
           </Border>
 
-          <!-- Spacer column (used to make results 60% width in New Buyer mode) -->
+          <!-- Spacer column (used to make results 60% width in New Customer mode) -->
           <Border Grid.Column="1" Background="Transparent" />
         </Grid>
 
@@ -434,7 +367,7 @@
             </Grid>
 
             <StackPanel x:Name="TicketLinesContent" Spacing="12" IsVisible="{Binding IsLinesExpanded}">
-            
+
             <!-- Ticket Details Header -->
             <DockPanel>
               <TextBlock Text="Ticket Details"
@@ -450,8 +383,8 @@
                       HorizontalAlignment="Right" />
             </DockPanel>
 
-            <!-- Ticket Details Grid - Different layouts for Platform vs Weighbridge (match Receiving) -->
-            <Grid IsVisible="{Binding SelectedSendingTicketDetails, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <!-- Ticket Details Grid - Different layouts for Platform vs Weighbridge -->
+            <Grid IsVisible="{Binding SelectedReceivingTicketDetails, Converter={x:Static ObjectConverters.IsNotNull}}">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
@@ -466,69 +399,94 @@
                 <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
-              <!-- Row 0: Ticket Number and Buyer ID (both ticket types) -->
+              <!-- Row 0: Ticket Number and Customer ID (both ticket types) -->
               <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
                 <TextBlock Text="Ticket Number" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.TicketNumber}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.TicketNumber}" Foreground="#f5f5f5"
+                           FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
-                <TextBlock Text="Buyer ID" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.CustomerId, StringFormat='{}{0:D8}'}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="Customer ID" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.CustomerId, StringFormat='{}{0:D8}'}"
+                           Foreground="#f5f5f5" FontSize="11" />
+              </StackPanel>
+
+              <!-- PLATFORM TICKET (TicketTypeId=2) - Row 1: Notes -->
+              <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Spacing="2" Margin="0,8,0,0"
+                          IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=2}">
+                <TextBlock Text="Notes" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.Notes}" Foreground="#f5f5f5" FontSize="11" TextWrapping="Wrap" />
+              </StackPanel>
+
+              <!-- PLATFORM TICKET (TicketTypeId=2) - Row 2: Net Weight -->
+              <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2" Margin="0,8,0,0"
+                          IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=2}">
+                <TextBlock Text="Net Weight (kg)" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
+                <TextBlock Text="{Binding CalculatedNetWeightKg, StringFormat='{}{0:N2}'}"
+                           Foreground="#4a9eff"
+                           FontWeight="Bold"
+                           FontSize="13" />
               </StackPanel>
 
               <!-- WEIGHBRIDGE TICKET (TicketTypeId=1) - Row 1: Vehicle Registration / Trailer Registration -->
               <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2" Margin="0,8,0,0"
-                          IsVisible="{Binding SelectedSendingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
+                          IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
                 <TextBlock Text="Vehicle Registration" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.VehicleRegistration}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.VehicleRegistration}" Foreground="#f5f5f5"
+                           FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2" Margin="0,8,0,0"
-                          IsVisible="{Binding SelectedSendingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
+                          IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
                 <TextBlock Text="Trailer Registration" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.TrailerRegistration}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.TrailerRegistration}" Foreground="#f5f5f5"
+                           FontSize="11" />
               </StackPanel>
 
               <!-- WEIGHBRIDGE TICKET (TicketTypeId=1) - Row 2: Driver Name / OFM Weighbridge Ticket -->
               <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2" Margin="0,8,0,0"
-                          IsVisible="{Binding SelectedSendingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
+                          IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
                 <TextBlock Text="Driver Name" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.DriverName}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.DriverName}" Foreground="#f5f5f5"
+                           FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2" Margin="0,8,0,0"
-                          IsVisible="{Binding SelectedSendingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
+                          IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
                 <TextBlock Text="OFM Weighbridge Ticket" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.OfmWeighbridgeTicket}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.OfmWeighbridgeTicket}" Foreground="#f5f5f5"
+                           FontSize="11" />
               </StackPanel>
 
               <!-- WEIGHBRIDGE TICKET (TicketTypeId=1) - Row 3: Delivery Number / Foreign Ticket -->
               <StackPanel Grid.Row="3" Grid.Column="0" Spacing="2" Margin="0,8,0,0"
-                          IsVisible="{Binding SelectedSendingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
+                          IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
                 <TextBlock Text="Delivery Number" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.DeliveryNumber}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.DeliveryNumber}" Foreground="#f5f5f5"
+                           FontSize="11" />
               </StackPanel>
               <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2" Margin="0,8,0,0"
-                          IsVisible="{Binding SelectedSendingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
+                          IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
                 <TextBlock Text="Foreign Ticket" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.ForeignTicket}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.ForeignTicket}" Foreground="#f5f5f5"
+                           FontSize="11" />
               </StackPanel>
 
               <!-- WEIGHBRIDGE TICKET (TicketTypeId=1) - Row 4: CK Number -->
               <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2" Margin="0,8,0,0"
-                          IsVisible="{Binding SelectedSendingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
+                          IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
                 <TextBlock Text="CK Number" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.CkNumber}" Foreground="#f5f5f5" FontSize="11" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.CkNumber}" Foreground="#f5f5f5" FontSize="11" />
               </StackPanel>
 
               <!-- WEIGHBRIDGE TICKET (TicketTypeId=1) - Row 5: Notes -->
               <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Spacing="2" Margin="0,8,0,0"
-                          IsVisible="{Binding SelectedSendingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
+                          IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
                 <TextBlock Text="Notes" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
-                <TextBlock Text="{Binding SelectedSendingTicketDetails.Notes}" Foreground="#f5f5f5" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding SelectedReceivingTicketDetails.Notes}" Foreground="#f5f5f5" FontSize="11" TextWrapping="Wrap" />
               </StackPanel>
 
               <!-- WEIGHBRIDGE TICKET (TicketTypeId=1) - Row 6: Net Weight (in Blue) -->
               <StackPanel Grid.Row="6" Grid.Column="0" Spacing="2" Margin="0,8,0,0"
-                          IsVisible="{Binding SelectedSendingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
+                          IsVisible="{Binding SelectedReceivingTicketDetails.TicketTypeId, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=1}">
                 <TextBlock Text="Net Weight (kg)" Foreground="#c0c4cf" FontSize="13" FontWeight="Bold" />
                 <TextBlock Text="{Binding CalculatedNetWeightKg, StringFormat='{}{0:N2}'}"
                            Foreground="#4a9eff"
@@ -546,7 +504,7 @@
 
               <DataGrid
                 AutoGenerateColumns="False"
-                ItemsSource="{Binding SelectedSendingTicketLinesWithTotals}"
+                ItemsSource="{Binding SelectedReceivingTicketLinesWithTotals}"
                 HeadersVisibility="Column"
                 MaxHeight="250">
                 <DataGrid.Columns>
@@ -554,11 +512,16 @@
                   <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="300" />
                   <DataGridTextColumn Header="Weight (kg)" Binding="{Binding NetWeightKg, StringFormat='{}{0:N2}'}"
                                       Width="140" />
-                  <DataGridTextColumn Header="Tare (kg)" Binding="{Binding Tare, StringFormat='{}{0:N2}'}" Width="100" IsReadOnly="True" />
-                  <DataGridTextColumn Header="Unit Price /kg" Binding="{Binding UnitPricePerKg, StringFormat='{}{0:N2}'}" Width="140" />
-                  <DataGridTextColumn Header="Total (ex VAT)" Binding="{Binding LineTotal, StringFormat='{}{0:N2}'}" Width="140" />
-                  <DataGridTextColumn Header="VAT (15%)" Binding="{Binding VatAmount, StringFormat='{}{0:N2}'}" Width="140" />
-                  <DataGridTextColumn Header="Total (incl VAT)" Binding="{Binding TotalInclVat, StringFormat='{}{0:N2}'}" Width="140" />
+                  <DataGridTextColumn Header="Tare (kg)" Binding="{Binding Tare, StringFormat='{}{0:N2}'}"
+                                      Width="100" IsReadOnly="True" />
+                  <DataGridTextColumn Header="Unit Price /kg"
+                                      Binding="{Binding UnitPricePerKg, StringFormat='{}{0:N2}'}" Width="140" />
+                  <DataGridTextColumn Header="Total (ex VAT)" Binding="{Binding LineTotal, StringFormat='{}{0:N2}'}"
+                                      Width="140" />
+                  <DataGridTextColumn Header="VAT (15%)" Binding="{Binding VatAmount, StringFormat='{}{0:N2}'}"
+                                      Width="140" />
+                  <DataGridTextColumn Header="Total (incl VAT)"
+                                      Binding="{Binding TotalInclVat, StringFormat='{}{0:N2}'}" Width="140" />
                   <DataGridTemplateColumn Header="Actions" Width="100">
                     <DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
@@ -579,20 +542,23 @@
 
               <!-- Totals Summary (2 columns, 3 rows) -->
               <Grid ColumnDefinitions="160,90" RowDefinitions="Auto,Auto,Auto" Width="250" HorizontalAlignment="Left"
-                    Margin="0,8,0,0" IsVisible="{Binding SelectedSendingTicketLines.Count}">
-                <TextBlock Grid.Column="0" Grid.Row="0" Text="Total (ex VAT)" Foreground="#4a9eff" FontWeight="Bold" FontSize="13" />
+                    Margin="0,8,0,0" IsVisible="{Binding SelectedReceivingTicketLines.Count}">
+                <TextBlock Grid.Column="0" Grid.Row="0" Text="Total (ex VAT)" Foreground="#4a9eff" FontWeight="Bold"
+                           FontSize="13" />
                 <TextBlock Grid.Column="1" Grid.Row="0"
-                           Text="{Binding SelectedSendingTicketLinesTotalExVat, StringFormat='{}{0:N2}'}"
+                           Text="{Binding SelectedReceivingTicketLinesTotalExVat, StringFormat='{}{0:N2}'}"
                            Foreground="#4a9eff" FontWeight="Bold" FontSize="13" TextAlignment="Right" Margin="0,0,8,0" />
 
-                <TextBlock Grid.Column="0" Grid.Row="1" Text="VAT (15%)" Foreground="#4a9eff" FontWeight="Bold" FontSize="13" />
+                <TextBlock Grid.Column="0" Grid.Row="1" Text="VAT (15%)" Foreground="#4a9eff" FontWeight="Bold"
+                           FontSize="13" />
                 <TextBlock Grid.Column="1" Grid.Row="1"
-                           Text="{Binding SelectedSendingTicketLinesTotalVat, StringFormat='{}{0:N2}'}"
+                           Text="{Binding SelectedReceivingTicketLinesTotalVat, StringFormat='{}{0:N2}'}"
                            Foreground="#4a9eff" FontWeight="Bold" FontSize="13" TextAlignment="Right" Margin="0,0,8,0" />
 
-                <TextBlock Grid.Column="0" Grid.Row="2" Text="Total (incl VAT)" Foreground="#4a9eff" FontWeight="Bold" FontSize="13" />
+                <TextBlock Grid.Column="0" Grid.Row="2" Text="Total (incl VAT)" Foreground="#4a9eff" FontWeight="Bold"
+                           FontSize="13" />
                 <TextBlock Grid.Column="1" Grid.Row="2"
-                           Text="{Binding SelectedSendingTicketLinesTotalInclVat, StringFormat='{}{0:N2}'}"
+                           Text="{Binding SelectedReceivingTicketLinesTotalInclVat, StringFormat='{}{0:N2}'}"
                            Foreground="#4a9eff" FontWeight="Bold" FontSize="13" TextAlignment="Right" Margin="0,0,8,0" />
               </Grid>
 
@@ -601,106 +567,8 @@
                          Foreground="#c0c4cf"
                          FontStyle="Italic"
                          Margin="8"
-                         IsVisible="{Binding SelectedSendingTicketLines.Count, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=0}" />
+                         IsVisible="{Binding SelectedReceivingTicketLines.Count, Converter={x:Static local:NumberEqualsConverter.Instance}, ConverterParameter=0}" />
 
-              <!-- Edit Line Item Panel -->
-              <Border Background="{DynamicResource Brush.GlassPanel}"
-                      BorderBrush="{DynamicResource Brush.GlassBorder}"
-                      BorderThickness="1"
-                      Padding="12"
-                      CornerRadius="4"
-                      Margin="0,8,0,0"
-                      IsVisible="{Binding IsEditingTicketLine}">
-                <StackPanel Spacing="8">
-                  <TextBlock Text="Edit Line Item"
-                             Foreground="{DynamicResource Brush.TextPrimary}"
-                             FontSize="13"
-                             FontWeight="Bold" />
-                  
-                  <Grid>
-                    <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="*" />
-                      <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                      <RowDefinition Height="Auto" />
-                      <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-
-                    <!-- Product Group -->
-                    <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
-                      <TextBlock Text="Product Group" Foreground="#c0c4cf" />
-                      <ComboBox
-                        ItemsSource="{Binding ProductGroups}"
-                        SelectedItem="{Binding SelectedAddLineProductGroup}"
-                        HorizontalAlignment="Stretch">
-                        <ComboBox.ItemTemplate>
-                          <DataTemplate>
-                            <TextBlock Text="{Binding ProductGroupName}" />
-                          </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                      </ComboBox>
-                    </StackPanel>
-
-                    <!-- Product Search -->
-                    <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2" Margin="0,8,0,0">
-                      <TextBlock Text="Product Search" Foreground="#c0c4cf" />
-                      <TextBox Text="{Binding EditLineProductSearchText, UpdateSourceTrigger=PropertyChanged}" 
-                               Watermark="Search products..." />
-                    </StackPanel>
-
-                    <!-- Product Letter + Dropdown -->
-                    <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
-                      <TextBlock Text="Product" Foreground="#c0c4cf" />
-                      <Grid>
-                        <Grid.ColumnDefinitions>
-                          <ColumnDefinition Width="88" />
-                          <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <ComboBox Grid.Column="0"
-                                  ItemsSource="{Binding ProductLetterFilters}"
-                                  SelectedItem="{Binding EditLineSelectedProductLetter}"
-                                  Margin="0,0,4,0" />
-                        <ComboBox Grid.Column="1"
-                                  ItemsSource="{Binding EditLineProductSuggestions}"
-                                  SelectedItem="{Binding EditLineSelectedProduct}">
-                          <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                              <TextBlock Text="{Binding ProductName}" />
-                            </DataTemplate>
-                          </ComboBox.ItemTemplate>
-                        </ComboBox>
-                      </Grid>
-                    </StackPanel>
-
-                    <!-- Weight -->
-                    <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2" Margin="0,8,0,0">
-                      <TextBlock Text="Weight (kg)" Foreground="#c0c4cf" />
-                      <TextBox Text="{Binding EditLineWeightText}" 
-                               Watermark="Enter weight..." />
-                    </StackPanel>
-                  </Grid>
-
-                  <!-- Action Buttons -->
-                  <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,8,0,0">
-                    <Button Content="Cancel" 
- 
-                            Width="100" />
-                    <Button Content="Save Changes" 
- 
-                            Width="120" 
-                            Classes="primary" />
-                  </StackPanel>
-                </StackPanel>
-              </Border>
-
-              <!-- Totals Summary for Selected Ticket Lines -->
-              <StackPanel Orientation="Vertical"
-                          HorizontalAlignment="Right"
-                          Spacing="8"
-                          Margin="0,8,0,0"
-                          IsVisible="{Binding SelectedSendingTicketLines.Count}">
-              </StackPanel>
             </StackPanel>
           </StackPanel>
           </StackPanel>
@@ -747,10 +615,10 @@
                 <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
-              <!-- Row 0: Buyer ID / Ticket Number (auto-generated, read-only) -->
+              <!-- Row 0: Customer ID / Ticket Number (auto-generated, read-only) -->
               <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
-                <TextBlock Text="Buyer ID" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding TicketBuyerIdText}" IsReadOnly="True" />
+                <TextBlock Text="Customer ID" Foreground="#c0c4cf" />
+                <TextBox Text="{Binding TicketCustomerIdText}" IsReadOnly="True" />
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Ticket Number" Foreground="#c0c4cf" />
@@ -872,14 +740,14 @@
             <!-- Create Header Button (when state is C - creating new ticket) -->
             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,8,0,0"
                         IsVisible="{Binding CreateHeaderButtonVisible}">
-              <Button Content="Create Header" Command="{Binding CreateSendingTicketHeaderCommand}" Width="150"
+              <Button Content="Create Header" Command="{Binding CreateReceivingTicketHeaderCommand}" Width="150"
                       Classes="primary" HorizontalContentAlignment="Center" />
             </StackPanel>
 
             <!-- Save and Reset Button (when state is H or M - working on incomplete ticket) -->
             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,8,0,0"
                         IsVisible="{Binding SaveResetButtonVisible}">
-              <Button Content="Save &amp; Reset" Command="{Binding CreateSendingTicketHeaderCommand}" Width="150"
+              <Button Content="Save &amp; Reset" Command="{Binding SaveAndResetReceivingTicketCommand}" Width="150"
                       Classes="primary" HorizontalContentAlignment="Center" />
             </StackPanel>
 
@@ -892,7 +760,7 @@
                 <Button Content="Reset" Command="{Binding ResetPlatformWeightCommand}" />
               </StackPanel>
             </StackPanel>
-          </StackPanel>
+            </StackPanel>
           </StackPanel>
         </Border>
 
@@ -922,6 +790,10 @@
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
               <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -930,12 +802,25 @@
               </Grid.RowDefinitions>
 
               <!-- Row 0: Product Search / Product Letter + Dropdown -->
-              <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+              <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Spacing="2">
+                <TextBlock Text="Product Group" Foreground="#c0c4cf" />
+                <ComboBox
+                  ItemsSource="{Binding ProductGroups}"
+                  SelectedItem="{Binding SelectedAddLineProductGroup}"
+                  HorizontalAlignment="Stretch">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding ProductGroupName}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+              <StackPanel Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="Product Search" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SendingProductSearchText, UpdateSourceTrigger=PropertyChanged}"
+                <TextBox Text="{Binding ReceivingProductSearchText, UpdateSourceTrigger=PropertyChanged}"
                          Watermark="Search products..." />
               </StackPanel>
-              <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
+              <StackPanel Grid.Row="0" Grid.Column="4" Grid.ColumnSpan="2" Spacing="2">
                 <TextBlock Text="Product" Foreground="#c0c4cf" />
                 <Grid>
                   <Grid.ColumnDefinitions>
@@ -944,11 +829,11 @@
                   </Grid.ColumnDefinitions>
                   <ComboBox Grid.Column="0"
                             ItemsSource="{Binding ProductLetterFilters}"
-                            SelectedItem="{Binding SelectedSendingProductLetter}"
+                            SelectedItem="{Binding SelectedReceivingProductLetter}"
                             Margin="0,0,4,0" />
                   <ComboBox Grid.Column="1"
-                            ItemsSource="{Binding SendingProductSuggestions}"
-                            SelectedItem="{Binding SendingSelectedProduct}">
+                            ItemsSource="{Binding ReceivingProductSuggestions}"
+                            SelectedItem="{Binding ReceivingSelectedProduct}">
                     <ComboBox.ItemTemplate>
                       <DataTemplate>
                         <TextBlock Text="{Binding ProductName}" />
@@ -959,14 +844,14 @@
               </StackPanel>
 
               <!-- Row 1: Weight / Notes -->
-              <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2" Margin="0,8,0,0">
+              <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="Weight (kg)" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SendingWeightText}"
+                <TextBox Text="{Binding ReceivingWeightText}"
                          Watermark="Enter weight..." />
               </StackPanel>
-              <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2" Margin="0,8,0,0">
+              <StackPanel Grid.Row="1" Grid.Column="3" Grid.ColumnSpan="3" Spacing="2" Margin="0,8,0,0">
                 <TextBlock Text="Notes" Foreground="#c0c4cf" />
-                <TextBox Text="{Binding SendingLineNotes}"
+                <TextBox Text="{Binding ReceivingLineNotes}"
                          AcceptsReturn="True"
                          TextWrapping="Wrap"
                          Height="60" />
@@ -975,7 +860,7 @@
               <!-- Row 2: Add Line Button -->
               <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,12,0,0">
                 <Button Content="Add Line"
-                        Command="{Binding AddSendingLineToTicketCommand}"
+                        Command="{Binding AddReceivingLineToTicketCommand}"
                         IsEnabled="{Binding AddLineButtonEnabled}"
                         HorizontalAlignment="Left"
                         Width="150" />
@@ -992,7 +877,7 @@
             </StackPanel>
 
             <DataGrid AutoGenerateColumns="False"
-                      ItemsSource="{Binding SendingLinesWithTotals}"
+                      ItemsSource="{Binding ReceivingLinesWithTotals}"
                       HeadersVisibility="Column"
                       Margin="0,8,0,0"
                       Height="200">
@@ -1064,7 +949,7 @@
                           Padding="4,2"
                           FontSize="10"
                           Width="70"
-                          Command="{Binding DataContext.RemoveSendingLineCommand,
+                          Command="{Binding DataContext.RemoveReceivingLineCommand,
                                                 RelativeSource={RelativeSource AncestorType=UserControl}}"
                           CommandParameter="{Binding}"
                           IsEnabled="{Binding IsEditable}"
@@ -1078,30 +963,30 @@
 
             <!-- Totals Summary (2 columns, 3 rows) -->
             <Grid ColumnDefinitions="160,90" RowDefinitions="Auto,Auto,Auto" Width="250" HorizontalAlignment="Left"
-                  Margin="0,8,0,0" IsVisible="{Binding SendingLines.Count}">
+                  Margin="0,8,0,0" IsVisible="{Binding ReceivingLines.Count}">
               <TextBlock Grid.Column="0" Grid.Row="0" Text="Total (ex VAT)" Foreground="#4a9eff" FontWeight="Bold"
                          FontSize="13" />
               <TextBlock Grid.Column="1" Grid.Row="0"
-                         Text="{Binding SendingTotalExclVat, StringFormat='{}{0:N2}'}" Foreground="#4a9eff"
+                         Text="{Binding ReceivingTotalExclVat, StringFormat='{}{0:N2}'}" Foreground="#4a9eff"
                          FontWeight="Bold" FontSize="13"
                          TextAlignment="Right" Margin="0,0,8,0" />
 
               <TextBlock Grid.Column="0" Grid.Row="1" Text="VAT (15%)" Foreground="#4a9eff" FontWeight="Bold"
                          FontSize="13" />
-              <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding SendingTotalVat, StringFormat='{}{0:N2}'}"
+              <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding ReceivingTotalVat, StringFormat='{}{0:N2}'}"
                          Foreground="#4a9eff" FontWeight="Bold" FontSize="13" TextAlignment="Right" Margin="0,0,8,0" />
 
               <TextBlock Grid.Column="0" Grid.Row="2" Text="Total (incl VAT)" Foreground="#4a9eff"
                          FontWeight="Bold" FontSize="13" />
               <TextBlock Grid.Column="1" Grid.Row="2"
-                         Text="{Binding SendingTotalInclVat, StringFormat='{}{0:N2}'}" Foreground="#4a9eff"
+                         Text="{Binding ReceivingTotalInclVat, StringFormat='{}{0:N2}'}" Foreground="#4a9eff"
                          FontWeight="Bold" FontSize="13"
                          TextAlignment="Right" Margin="0,0,8,0" />
             </Grid>
 
             <!-- Finalize Ticket Button -->
             <Button Content="Finalize Ticket"
-                    Command="{Binding FinalizeSendingTicketCommand}"
+                    Command="{Binding FinalizeReceivingTicketCommand}"
                     HorizontalAlignment="Left"
                     Width="150"
                     Margin="0,12,0,0"
@@ -1117,23 +1002,47 @@
       </DockPanel>
     </Border>
 
-    <!-- Notes Modal (match Receiving) -->
+    <!-- Notes Modal Popup -->
     <Panel IsVisible="{Binding IsNotesModalVisible}">
-    <Border Background="#80000000" />
-    <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1" Padding="16" CornerRadius="6"
-            Width="500" HorizontalAlignment="Center" VerticalAlignment="Center">
-      <StackPanel Spacing="12">
-        <TextBlock Text="Line Notes" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Brush.TextPrimary}" />
-        <TextBox Text="{Binding SelectedLineNotesContent}"
-                 AcceptsReturn="True"
-                 TextWrapping="Wrap"
-                 IsReadOnly="True"
-                 Height="200" />
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-          <Button Content="Close" Command="{Binding CloseLineNotesCommand}" Width="100" />
+      <Border Background="#00000080" />
+      <Border Background="{DynamicResource Brush.PanelBackground}"
+              BorderBrush="{DynamicResource Brush.GlassBorder}"
+              BorderThickness="1"
+              CornerRadius="8"
+              Padding="24"
+              Width="600"
+              MaxHeight="500"
+              VerticalAlignment="Center"
+              HorizontalAlignment="Center">
+        <StackPanel Spacing="16">
+          <!-- Modal Header -->
+          <TextBlock Text="Line Item Notes"
+                     Foreground="{DynamicResource Brush.TextPrimary}"
+                     FontSize="16"
+                     FontWeight="Bold" />
+
+          <!-- Notes Content -->
+          <TextBox Text="{Binding SelectedLineNotesContent}"
+                   IsReadOnly="True"
+                   AcceptsReturn="True"
+                   TextWrapping="Wrap"
+                   Height="300"
+                   Background="{DynamicResource Brush.GlassPanel}"
+                   Foreground="#f5f5f5"
+                   BorderBrush="{DynamicResource Brush.GlassBorder}" />
+
+          <!-- Close Button -->
+          <StackPanel Orientation="Horizontal" 
+                      HorizontalAlignment="Right"
+                      Spacing="8">
+            <Button Content="Close"
+                    Command="{Binding CloseLineNotesCommand}"
+                    Width="100"
+                    Classes="primary" />
+          </StackPanel>
         </StackPanel>
-      </StackPanel>
-    </Border>
+      </Border>
     </Panel>
   </Grid>
 </UserControl>
+

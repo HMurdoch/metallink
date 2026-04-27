@@ -22,17 +22,22 @@ public sealed class StockMovementRepository : IStockMovementRepository
         decimal baseWeightKg,
         decimal buyWeightKg,
         decimal sellWeightKg,
+        decimal unitPricePerKg,
         int createdByOperatorId,
         string notes,
-        decimal unitPricePerKg = 0m,
         int? productPriceListId = null,
+        int? productPriceListProductPriceId = null,
+        int? receivingTicketId = null,
+        int? receivingTicketLineId = null,
+        int? sendingTicketId = null,
+        int? sendingTicketLineId = null,
         CancellationToken ct = default)
     {
         return _db.Database.ExecuteSqlInterpolatedAsync($@"
             INSERT INTO metal_link.stock_movements
-                (product_id, base_weight_kg, buy_weight_kg, sell_weight_kg, unit_price_per_kg, product_price_list_id, created_by_operator_id, notes, is_active)
+                (product_id, base_weight_kg, buy_weight_kg, sell_weight_kg, product_price_list_id, product_price_list_product_price_id, receiving_ticket_id, receiving_ticket_line_id, sending_ticket_id, sending_ticket_line_id, created_by_operator_id, notes, is_active)
             VALUES
-                ({productId}, {baseWeightKg}, {buyWeightKg}, {sellWeightKg}, {unitPricePerKg}, {productPriceListId}, {createdByOperatorId}, {notes}, true);
+                ({productId}, {baseWeightKg}, {buyWeightKg}, {sellWeightKg}, {productPriceListId}, {productPriceListProductPriceId}, {receivingTicketId}, {receivingTicketLineId}, {sendingTicketId}, {sendingTicketLineId}, {createdByOperatorId}, {notes}, true);
         ", ct);
     }
 }

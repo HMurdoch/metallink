@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using MetalLink.Application.Interfaces;
 using MetalLink.Application.Services;
 using MetalLink.Api.Extensions;
@@ -309,6 +311,10 @@ public class TicketsReceivingController : ControllerBase
             tare: dto.Tare
         );
         line.ProductPriceListId = ticket.Customer?.ProductPriceListId;
+        if (ticket.Customer?.ProductPriceListId is int priceListId)
+        {
+            line.ProductPriceListProductPriceId = await _priceLookupService.GetProductPriceListProductPriceIdAsync(dto.ProductId, priceListId, ct);
+        }
         
         Console.WriteLine($"[API ADD LINE] Line created: FW={line.FirstWeightKg}, SW={line.SecondWeightKg}, NetWeight={line.NetWeightKg}");
 
@@ -322,18 +328,23 @@ public class TicketsReceivingController : ControllerBase
         ticket.UpdateWeights(null, null, activeLinesAfterAdd.Sum(l => l.NetWeightKg));
 
         // Stock update + movement log (Purchase)
-        var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(dto.ProductId, operatorId, ct);
+        var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(dto.ProductId, line.ProductPriceListProductPriceId, operatorId, ct);
+
         await _stockMovementRepo.AddAsync(
             productId: dto.ProductId,
             baseWeightKg: baseWeight,
             buyWeightKg: line.NetWeightKg,
             sellWeightKg: 0m,
+            unitPricePerKg: line.UnitPricePerKg,
             createdByOperatorId: operatorId,
             notes: $"Purchase - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
-            unitPricePerKg: unitPrice,
-            productPriceListId: ticket.Customer?.ProductPriceListId,
+            productPriceListId: line.ProductPriceListId,
+            productPriceListProductPriceId: line.ProductPriceListProductPriceId,
+            receivingTicketId: ticket.TicketReceivingId,
+            receivingTicketLineId: line.ReceivingTicketLineId == 0 ? null : line.ReceivingTicketLineId,
             ct: ct);
-        await _stockLevelRepo.UpdateWeightKgAsync(dto.ProductId, baseWeight + line.NetWeightKg, ct);
+
+        await _stockLevelRepo.UpdateWeightKgAsync(dto.ProductId, line.ProductPriceListProductPriceId, line.NetWeightKg, operatorId, ct);
 
         await _ticketReceivingRepo.UpdateAsync(ticket);
         await _unitOfWork.SaveChangesAsync(ct);
@@ -496,18 +507,23 @@ public class TicketsReceivingController : ControllerBase
         // Stock update + movement log (Purchase Deleted)
         var operatorId = (int)User.GetOperatorId();
 
-        var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(line.ProductId, operatorId, ct);
+        var baseWeight = await _stockLevelRepo.GetOrCreateWeightKgAsync(line.ProductId, line.ProductPriceListProductPriceId, operatorId, ct);
+
         await _stockMovementRepo.AddAsync(
             productId: line.ProductId,
             baseWeightKg: baseWeight,
             buyWeightKg: 0m,
             sellWeightKg: line.NetWeightKg,
+            unitPricePerKg: line.UnitPricePerKg,
             createdByOperatorId: operatorId,
             notes: $"Purchase Deleted - KGs: {ticket.TicketNumber} | {line.NetWeightKg:0.00}",
-            unitPricePerKg: line.UnitPricePerKg,
-            productPriceListId: line.ProductPriceListId ?? ticket.Customer?.ProductPriceListId,
+            productPriceListId: line.ProductPriceListId,
+            productPriceListProductPriceId: line.ProductPriceListProductPriceId,
+            receivingTicketId: ticket.TicketReceivingId,
+            receivingTicketLineId: line.ReceivingTicketLineId,
             ct: ct);
-        await _stockLevelRepo.UpdateWeightKgAsync(line.ProductId, baseWeight - line.NetWeightKg, ct);
+
+        await _stockLevelRepo.UpdateWeightKgAsync(line.ProductId, line.ProductPriceListProductPriceId, -line.NetWeightKg, operatorId, ct);
 
         // Ticket state transitions and header net-weight tracking
         var activeLinesAfterDelete = ticket.Lines?.Where(l => l.IsActive).ToList() ?? new List<TicketReceivingLine>();

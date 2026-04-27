@@ -16,5 +16,7 @@ public enum EnumMainSection
     Reports,
     StockLevels,
     StockMovement,
+    PriceListStockLevels,
+    PriceListStockMovements,
     Settings
 }

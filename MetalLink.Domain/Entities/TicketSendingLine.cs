@@ -28,6 +28,13 @@ public class TicketSendingLine
     /// </summary>
     public int? ProductPriceListId { get; set; }
 
+    /// <summary>
+    /// The exact pricing row that determined the unit price for this line.
+    /// Nullable because legacy rows may not yet have this linkage.
+    /// </summary>
+    public int? ProductPriceListProductPriceId { get; set; }
+    public ProductPriceListProductPrice? ProductPriceListProductPrice { get; set; }
+
     public int CreatedByOperatorId { get; private set; }
     public Operator CreatedByOperator { get; set; } = null!;
 
