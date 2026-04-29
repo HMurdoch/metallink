@@ -86,10 +86,17 @@ public sealed class TicketsSendingViewModel : ViewModelBase
             OnPropertyChanged(nameof(CreatingTicketTotalWeight));
         };
 
+        Pagination.PageChanged += async (_, _) => 
+        {
+            await SearchSendingTicketsAsync();
+            OnPropertyChanged(nameof(PaginationStatusText));
+        };
+
         // Basic letter filters to satisfy XAML bindings.
         CompanyLetterFilters.Add("ALL");
         for (var c = 'A'; c <= 'Z'; c++) CompanyLetterFilters.Add(c.ToString());
 
+        _ = InitializeAsync();
         _ = LoadProductLettersAsync();
     }
 
@@ -98,6 +105,21 @@ public sealed class TicketsSendingViewModel : ViewModelBase
     // ============================================================
 
     public ObservableCollection<TicketSendingSearchResultDto> SendingTicketSearchResults { get; } = new();
+
+    public PaginationViewModel Pagination { get; } = new();
+
+    public string PaginationStatusText
+    {
+        get
+        {
+            if (Pagination.TotalRecords == 0)
+                return "No tickets found";
+
+            var start = Pagination.GetSkip() + 1;
+            var end = Math.Min(Pagination.GetSkip() + Pagination.GetTake(), Pagination.TotalRecords);
+            return $"Showing {start}-{end} of {Pagination.TotalRecords}";
+        }
+    }
 
     private long _sendingDetailsLoadVersion;
 
@@ -203,20 +225,24 @@ public sealed class TicketsSendingViewModel : ViewModelBase
                 IdNumber = string.IsNullOrWhiteSpace(SearchSendingTicketIdNumberText) ? null : SearchSendingTicketIdNumberText.Trim(),
                 AccountNumber = long.TryParse(SearchSendingTicketAccountNumberText, out var acc) ? acc : null,
                 SearchTerm = string.IsNullOrWhiteSpace(SearchSendingTicketNumberText) ? null : SearchSendingTicketNumberText.Trim(),
-                PageNumber = 1,
-                PageSize = 50
+                SortBy = "ticket_number",
+                SortDirection = "desc",
+                PageNumber = Pagination.CurrentPage,
+                PageSize = Pagination.PageSize
             };
 
-            var results = await _ticketSendingService.SearchTicketsSendingAsync(req);
+            var (results, totalCount) = await _ticketSendingService.SearchTicketsSendingAsync(req);
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 SendingTicketSearchResults.Clear();
                 foreach (var r in results) SendingTicketSearchResults.Add(r);
+                Pagination.SetTotalRecords(totalCount);
                 SelectedSendingTicket = SendingTicketSearchResults.FirstOrDefault();
                 SelectedSendingTicketDetails = null;
                 SelectedSendingTicketLines.Clear();
                 OnPropertyChanged(nameof(ShouldShowTicketDetails));
+                OnPropertyChanged(nameof(PaginationStatusText));
 
                 // Auto expand result panels and collapse search
                 IsSearchExpanded = true;
@@ -227,7 +253,7 @@ public sealed class TicketsSendingViewModel : ViewModelBase
                 IsAddLinesExpanded = true;
             });
 
-            StatusMessage = $"Loaded {SendingTicketSearchResults.Count} sending ticket(s).";
+            StatusMessage = $"Loaded {SendingTicketSearchResults.Count} of {totalCount} sending ticket(s).";
         }
         finally
         {

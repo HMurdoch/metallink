@@ -22,6 +22,7 @@ public class PriceListStockLevelsController : ControllerBase
         [FromQuery] string? entityType = "Customer",
         [FromQuery] int[]? selectedPriceListIds = null,
         [FromQuery] int? productGroupId = null,
+        [FromQuery] int? productId = null,
         [FromQuery] string? searchTerm = null,
         [FromQuery] string? letter = null,
         [FromQuery] int skip = 0,
@@ -38,7 +39,7 @@ public class PriceListStockLevelsController : ControllerBase
                 sl.product_price_list_product_price_id,
                 sl.weight_kg,
                 p.product_code,
-                p.isri_product_name as product_name,
+                COALESCE(p.starred_product_alias, p.isri_product_name) as product_name,
                 p.product_group_id,
                 ppl.product_price_list_id,
                 ppl.product_price_list_name,
@@ -63,17 +64,25 @@ public class PriceListStockLevelsController : ControllerBase
             query = query.Where(sl => sl.ProductGroupId == productGroupId.Value);
         }
 
+        if (productId.HasValue && productId.Value > 0)
+        {
+            query = query.Where(sl => sl.ProductId == productId.Value);
+        }
+
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             var term = searchTerm.ToLower();
             query = query.Where(sl => 
-                sl.ProductName.ToLower().Contains(term) || 
+                sl.ProductName.ToLower().Replace("* ", "").Contains(term) || 
                 sl.ProductCode.ToLower().Contains(term));
         }
 
         if (!string.IsNullOrWhiteSpace(letter) && letter != "ALL")
         {
-            query = query.Where(sl => sl.ProductName.StartsWith(letter));
+            query = query.Where(sl => 
+                sl.ProductName.StartsWith("* ") 
+                    ? sl.ProductName.Substring(2, 1).ToUpper() == letter.ToUpper()
+                    : sl.ProductName.StartsWith(letter, StringComparison.OrdinalIgnoreCase));
         }
 
         // Group by product to calculate totals
@@ -89,7 +98,7 @@ public class PriceListStockLevelsController : ControllerBase
                           };
 
         var results = await groupedQuery
-            .OrderBy(x => x.ProductName)
+            .OrderBy(x => x.ProductName.StartsWith("* ") ? x.ProductName.Substring(2) : x.ProductName)
             .Skip(skip)
             .Take(take)
             .ToListAsync(ct);

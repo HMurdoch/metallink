@@ -50,17 +50,17 @@ public sealed class TicketSendingService
     /// <summary>
     /// Search for sending tickets
     /// </summary>
-    public async Task<IReadOnlyList<TicketSendingSearchResultDto>> SearchTicketsSendingAsync(
+    public async Task<(IReadOnlyList<TicketSendingSearchResultDto> Items, int TotalCount)> SearchTicketsSendingAsync(
         TicketSendingSearchRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        var result = await _apiClient.PostAsync<TicketSendingSearchRequestDto, TicketSendingSearchResultDto[]>(
+        var result = await _apiClient.PostAsync<TicketSendingSearchRequestDto, PagedResult<TicketSendingSearchResultDto>>(
             "api/tickets-sending/search",
             request,
             cancellationToken
         );
 
-        return result ?? Array.Empty<TicketSendingSearchResultDto>();
+        return (result?.Items ?? Array.Empty<TicketSendingSearchResultDto>(), result?.TotalCount ?? 0);
     }
 
     /// <summary>
@@ -302,5 +302,11 @@ public sealed class TicketSendingService
         {
             return string.Empty;
         }
+    }
+
+    public class PagedResult<T>
+    {
+        public IReadOnlyList<T> Items { get; set; } = Array.Empty<T>();
+        public int TotalCount { get; set; }
     }
 }

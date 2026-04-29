@@ -44,7 +44,7 @@ public class PriceListStockMovementsController : ControllerBase
                 sm.ticket_line_id,
                 sm.notes,
                 p.product_code,
-                p.isri_product_name as product_name,
+                COALESCE(p.starred_product_alias, p.isri_product_name) as product_name,
                 ppl.product_price_list_id,
                 ppl.product_price_list_name,
                 pplpp.price,

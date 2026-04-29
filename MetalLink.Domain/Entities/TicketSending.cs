@@ -18,7 +18,7 @@ public class TicketSending
     public int TicketTypeId { get; private set; }
     public TicketType TicketType { get; set; } = null!;
 
-    public int InvoiceNumber { get; private set; }
+    public int? InvoiceNumber { get; private set; }
 
     public string TicketNumber { get; private set; } = string.Empty;
 

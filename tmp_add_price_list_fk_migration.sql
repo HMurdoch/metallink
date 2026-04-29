@@ -31,14 +31,71 @@ ALTER TABLE metal_link.stock_movements
 ALTER TABLE metal_link.stock_movements
     ADD COLUMN IF NOT EXISTS unit_price_per_kg NUMERIC(18,4) NOT NULL DEFAULT 0;
 
--- Re-create FK (drop first for idempotency)
 ALTER TABLE metal_link.stock_movements
-    DROP CONSTRAINT IF EXISTS fk_stock_movements_price_list;
+    ADD COLUMN IF NOT EXISTS product_price_list_product_price_id INTEGER;
 
+ALTER TABLE metal_link.stock_movements
+    ADD COLUMN IF NOT EXISTS receiving_ticket_id INTEGER;
+
+ALTER TABLE metal_link.stock_movements
+    ADD COLUMN IF NOT EXISTS receiving_ticket_line_id INTEGER;
+
+ALTER TABLE metal_link.stock_movements
+    ADD COLUMN IF NOT EXISTS sending_ticket_id INTEGER;
+
+ALTER TABLE metal_link.stock_movements
+    ADD COLUMN IF NOT EXISTS sending_ticket_line_id INTEGER;
+
+-- Re-create FK (drop first for idempotency)
 ALTER TABLE metal_link.stock_movements
     ADD CONSTRAINT fk_stock_movements_price_list
     FOREIGN KEY (product_price_list_id)
     REFERENCES metal_link.product_price_lists(product_price_list_id)
+    ON DELETE SET NULL;
+
+ALTER TABLE metal_link.stock_movements
+    DROP CONSTRAINT IF EXISTS fk_stock_movements_price_list_product_price;
+
+ALTER TABLE metal_link.stock_movements
+    ADD CONSTRAINT fk_stock_movements_price_list_product_price
+    FOREIGN KEY (product_price_list_product_price_id)
+    REFERENCES metal_link.product_price_list_product_prices(product_price_list_product_price_id)
+    ON DELETE SET NULL;
+
+ALTER TABLE metal_link.stock_movements
+    DROP CONSTRAINT IF EXISTS fk_stock_movements_receiving_ticket;
+
+ALTER TABLE metal_link.stock_movements
+    ADD CONSTRAINT fk_stock_movements_receiving_ticket
+    FOREIGN KEY (receiving_ticket_id)
+    REFERENCES metal_link.receiving_tickets(receiving_ticket_id)
+    ON DELETE SET NULL;
+
+ALTER TABLE metal_link.stock_movements
+    DROP CONSTRAINT IF EXISTS fk_stock_movements_receiving_ticket_line;
+
+ALTER TABLE metal_link.stock_movements
+    ADD CONSTRAINT fk_stock_movements_receiving_ticket_line
+    FOREIGN KEY (receiving_ticket_line_id)
+    REFERENCES metal_link.receiving_ticket_lines(receiving_ticket_line_id)
+    ON DELETE SET NULL;
+
+ALTER TABLE metal_link.stock_movements
+    DROP CONSTRAINT IF EXISTS fk_stock_movements_sending_ticket;
+
+ALTER TABLE metal_link.stock_movements
+    ADD CONSTRAINT fk_stock_movements_sending_ticket
+    FOREIGN KEY (sending_ticket_id)
+    REFERENCES metal_link.sending_tickets(sending_ticket_id)
+    ON DELETE SET NULL;
+
+ALTER TABLE metal_link.stock_movements
+    DROP CONSTRAINT IF EXISTS fk_stock_movements_sending_ticket_line;
+
+ALTER TABLE metal_link.stock_movements
+    ADD CONSTRAINT fk_stock_movements_sending_ticket_line
+    FOREIGN KEY (sending_ticket_line_id)
+    REFERENCES metal_link.sending_ticket_lines(sending_ticket_line_id)
     ON DELETE SET NULL;
 
 -- Backfill: buy movements → first Customer (C) price list
@@ -123,12 +180,21 @@ ALTER TABLE metal_link.receiving_ticket_lines
     ADD COLUMN IF NOT EXISTS product_price_list_id INTEGER;
 
 ALTER TABLE metal_link.receiving_ticket_lines
-    DROP CONSTRAINT IF EXISTS fk_recv_ticket_lines_price_list;
+    ADD COLUMN IF NOT EXISTS product_price_list_product_price_id INTEGER;
 
 ALTER TABLE metal_link.receiving_ticket_lines
     ADD CONSTRAINT fk_recv_ticket_lines_price_list
     FOREIGN KEY (product_price_list_id)
     REFERENCES metal_link.product_price_lists(product_price_list_id)
+    ON DELETE SET NULL;
+
+ALTER TABLE metal_link.receiving_ticket_lines
+    DROP CONSTRAINT IF EXISTS fk_recv_ticket_lines_price_list_product_price;
+
+ALTER TABLE metal_link.receiving_ticket_lines
+    ADD CONSTRAINT fk_recv_ticket_lines_price_list_product_price
+    FOREIGN KEY (product_price_list_product_price_id)
+    REFERENCES metal_link.product_price_list_product_prices(product_price_list_product_price_id)
     ON DELETE SET NULL;
 
 -- Backfill → first Customer price list
@@ -150,12 +216,21 @@ ALTER TABLE metal_link.sending_ticket_lines
     ADD COLUMN IF NOT EXISTS product_price_list_id INTEGER;
 
 ALTER TABLE metal_link.sending_ticket_lines
-    DROP CONSTRAINT IF EXISTS fk_send_ticket_lines_price_list;
+    ADD COLUMN IF NOT EXISTS product_price_list_product_price_id INTEGER;
 
 ALTER TABLE metal_link.sending_ticket_lines
     ADD CONSTRAINT fk_send_ticket_lines_price_list
     FOREIGN KEY (product_price_list_id)
     REFERENCES metal_link.product_price_lists(product_price_list_id)
+    ON DELETE SET NULL;
+
+ALTER TABLE metal_link.sending_ticket_lines
+    DROP CONSTRAINT IF EXISTS fk_send_ticket_lines_price_list_product_price;
+
+ALTER TABLE metal_link.sending_ticket_lines
+    ADD CONSTRAINT fk_send_ticket_lines_price_list_product_price
+    FOREIGN KEY (product_price_list_product_price_id)
+    REFERENCES metal_link.product_price_list_product_prices(product_price_list_product_price_id)
     ON DELETE SET NULL;
 
 -- Backfill → first Buyer price list

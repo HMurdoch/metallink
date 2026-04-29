@@ -505,19 +505,24 @@ public sealed class StockMovementViewModel : ViewModelBase
                 url += $"&letter={Uri.EscapeDataString(letter)}";
 
             var results = await _api.GetAsync<StockLevelLookupDto[]>(url, ct) ?? Array.Empty<StockLevelLookupDto>();
-            Console.WriteLine($"[DEBUG] StockMovementViewModel: RefreshAsync returned {results.Length} products from {url}.");
-            foreach(var r in results.Take(3)) {
+            var distinctResults = results
+                .GroupBy(r => r.ProductId)
+                .Select(g => g.First())
+                .ToArray();
+
+            Console.WriteLine($"[DEBUG] StockMovementViewModel: RefreshAsync returned {results.Length} products from {url}, reduced to {distinctResults.Length} unique products.");
+            foreach(var r in distinctResults.Take(3)) {
                 Console.WriteLine($"  - Product: {r.ProductName}, Code: {r.ProductCode}");
             }
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                Console.WriteLine($"[DEBUG] StockMovementViewModel: Dispatching UI update. Results count: {results.Length}");
+                Console.WriteLine($"[DEBUG] StockMovementViewModel: Dispatching UI update. Results count: {distinctResults.Length}");
                 // Ensure results and chart are expanded on load/refresh
                 IsChartExpanded = true;
                 IsResultsExpanded = true;
 
-                ProductSuggestions = new ObservableCollection<StockLevelLookupDto>(results);
+                ProductSuggestions = new ObservableCollection<StockLevelLookupDto>(distinctResults);
                 Console.WriteLine($"[DEBUG] StockMovementViewModel: Updated ProductSuggestions with {ProductSuggestions.Count} items.");
 
                 // If we were navigated from Stock Levels, preselect the product once suggestions load.

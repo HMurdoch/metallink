@@ -44,6 +44,8 @@ public class TicketReceivingSearchRequestDto
     public string? TicketType { get; set; }
     public DateTimeOffset? StartDate { get; set; }
     public DateTimeOffset? EndDate { get; set; }
+    public string? SortBy { get; set; } = "ticket_number";
+    public string? SortDirection { get; set; } = "desc";
     public int PageNumber { get; set; } = 1;
-    public int PageSize { get; set; } = 50;
+    public int PageSize { get; set; } = 20;
 }

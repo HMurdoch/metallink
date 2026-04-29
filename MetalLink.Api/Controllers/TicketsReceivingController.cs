@@ -69,7 +69,7 @@ public class TicketsReceivingController : ControllerBase
     }
 
     [HttpPost("search")]
-    public async Task<ActionResult<List<TicketReceivingSearchResultDto>>> SearchTicketsReceiving([FromBody] TicketReceivingSearchRequestDto request)
+    public async Task<ActionResult<object>> SearchTicketsReceiving([FromBody] TicketReceivingSearchRequestDto request)
     {
         if (request.NewCustomerOnly)
         {
@@ -114,8 +114,26 @@ public class TicketsReceivingController : ControllerBase
             ticketType: request.TicketType,
             startDate: request.StartDate,
             endDate: request.EndDate,
+            sortBy: request.SortBy,
+            sortDirection: request.SortDirection,
             pageNumber: request.PageNumber,
             pageSize: request.PageSize
+        );
+
+        var totalCount = await _ticketReceivingRepo.GetCountAsync(
+            searchTerm: request.SearchTerm,
+            companyId: request.CompanyId,
+            siteId: request.SiteId,
+            customerId: request.CustomerId,
+            firstName: request.FirstName,
+            lastName: request.LastName,
+            idNumber: request.IdNumber,
+            accountNumber: request.AccountNumber,
+            productId: request.ProductId,
+            productGroupId: request.ProductGroupId,
+            ticketType: request.TicketType,
+            startDate: request.StartDate,
+            endDate: request.EndDate
         );
 
         var results = new List<TicketReceivingSearchResultDto>();
@@ -142,7 +160,7 @@ public class TicketsReceivingController : ControllerBase
             await _unitOfWork.SaveChangesAsync();
         }
         
-        return Ok(results);
+        return Ok(new { Items = results, TotalCount = totalCount });
     }
 
     [HttpGet("last-ticket-number/{prefix}")]
@@ -568,6 +586,8 @@ public class TicketsReceivingController : ControllerBase
 
     private Task<TicketReceivingSearchResultDto> MapToSearchResultDtoAsync(TicketReceiving ticket)
     {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8603 // Possible null reference return.
         var accountNumber = ticket.Customer?.AccountNumber?.ToString("D8");
         
         var result = new TicketReceivingSearchResultDto
@@ -589,6 +609,8 @@ public class TicketsReceivingController : ControllerBase
         };
 
         return Task.FromResult(result);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+#pragma warning restore CS8603 // Possible null reference return.
     }
 }
 

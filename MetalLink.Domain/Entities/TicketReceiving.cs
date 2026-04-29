@@ -31,7 +31,7 @@ public class TicketReceiving
     public char TicketState { get; set; } = 'C';
 
     // Invoice tracking
-    public int InvoiceNumber { get; private set; }
+    public int? InvoiceNumber { get; private set; }
 
     // Vehicle & driver information
     public string? VehicleRegistration { get; private set; }

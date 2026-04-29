@@ -30,6 +30,9 @@ public partial class PriceListStockLevelsViewModel : ViewModelBase
     private bool _isFilterExpanded = true;
     public bool IsFilterExpanded { get => _isFilterExpanded; set => SetProperty(ref _isFilterExpanded, value); }
 
+    private bool _isPriceListExpanded = true;
+    public bool IsPriceListExpanded { get => _isPriceListExpanded; set => SetProperty(ref _isPriceListExpanded, value); }
+
     private bool _isChartExpanded = true;
     public bool IsChartExpanded { get => _isChartExpanded; set => SetProperty(ref _isChartExpanded, value); }
 
@@ -40,6 +43,18 @@ public partial class PriceListStockLevelsViewModel : ViewModelBase
 
     public ObservableCollection<string> ProductLetterFilters { get; } = new();
     public ObservableCollection<ProductGroupDto> ProductGroups { get; } = new();
+    public ObservableCollection<ProductLookupDto> Products { get; } = new();
+
+    private ProductLookupDto? _selectedProduct;
+    public ProductLookupDto? SelectedProduct
+    {
+        get => _selectedProduct;
+        set
+        {
+            if (SetProperty(ref _selectedProduct, value))
+                _ = RefreshAsync();
+        }
+    }
 
     private ProductGroupDto? _selectedProductGroup;
     public ProductGroupDto? SelectedProductGroup
@@ -48,7 +63,10 @@ public partial class PriceListStockLevelsViewModel : ViewModelBase
         set
         {
             if (SetProperty(ref _selectedProductGroup, value))
+            {
+                _ = LoadProductsAsync();
                 _ = RefreshAsync();
+            }
         }
     }
 
@@ -125,11 +143,12 @@ public partial class PriceListStockLevelsViewModel : ViewModelBase
 
     public IReadOnlyList<MetalLink.Desktop.Views.Controls.BarChart3DControl.BarItem> ChartItems
         => StockLevels
-            .Select(r => new MetalLink.Desktop.Views.Controls.BarChart3DControl.BarItem(
-                r.ProductId,
-                r.ProductName,
-                (double)r.TotalWeightKg,
-                CreateBrush(r.ProductId)))
+            .GroupBy(r => new { r.ProductId, r.ProductName })
+            .Select(g => new MetalLink.Desktop.Views.Controls.BarChart3DControl.BarItem(
+                g.Key.ProductId,
+                g.Key.ProductName,
+                (double)g.Sum(r => r.TotalWeightKg),
+                CreateBrush(g.Key.ProductId)))
             .ToList();
 
     private Avalonia.Media.IBrush CreateBrush(int productId)
@@ -147,8 +166,14 @@ public partial class PriceListStockLevelsViewModel : ViewModelBase
     public ICommand PreviousPageCommand { get; }
     public ICommand NextPageCommand { get; }
     public ICommand ApplyFiltersCommand { get; }
+    public ICommand ClearProductCommand { get; }
 
     private CancellationTokenSource? _cts;
+
+    public PriceListStockLevelsViewModel()
+    {
+        // Design-time constructor
+    }
 
     public PriceListStockLevelsViewModel(ApiClient api)
     {
@@ -167,6 +192,7 @@ public partial class PriceListStockLevelsViewModel : ViewModelBase
         PreviousPageCommand = new RelayCommand(PreviousPage, () => PriceListPagination.CanGoPrevious);
         NextPageCommand = new RelayCommand(NextPage, () => PriceListPagination.CanGoNext);
         ApplyFiltersCommand = new RelayCommand(ApplyFilters);
+        ClearProductCommand = new RelayCommand(ClearProduct);
 
         _ = InitializeAsync();
     }
@@ -188,8 +214,37 @@ public partial class PriceListStockLevelsViewModel : ViewModelBase
             for (char c = 'A'; c <= 'Z'; c++)
                 ProductLetterFilters.Add(c.ToString());
 
+            await LoadProductsAsync();
             await LoadPriceListsAsync();
             await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            // Handle error
+        }
+    }
+
+    private async Task LoadProductsAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var queryParams = new List<string> { "includeNonStarred=false", "skip=0", "take=100" };
+            if (SelectedProductGroup?.ProductGroupId > 0)
+                queryParams.Add($"groupId={SelectedProductGroup.ProductGroupId}");
+            if (!string.IsNullOrWhiteSpace(ProductSearchText))
+                queryParams.Add($"term={Uri.EscapeDataString(ProductSearchText)}");
+            if (!string.IsNullOrWhiteSpace(SelectedProductLetter) && SelectedProductLetter != "ALL")
+                queryParams.Add($"letter={Uri.EscapeDataString(SelectedProductLetter)}");
+
+            var path = "api/products/lookup?" + string.Join("&", queryParams);
+            var result = await _api.GetAsync<ProductsService.PagedResult<ProductLookupDto>>(path, ct);
+
+            Products.Clear();
+            if (result?.Items != null)
+            {
+                foreach (var item in result.Items)
+                    Products.Add(item);
+            }
         }
         catch (Exception ex)
         {
@@ -228,6 +283,8 @@ public partial class PriceListStockLevelsViewModel : ViewModelBase
 
         try
         {
+            await LoadProductsAsync(ct);
+
             var selectedPriceListIds = PriceLists.Where(x => x.IsSelected).Select(x => x.ProductPriceListId).ToArray();
             var stockLevels = await _api.GetPriceListStockLevelsAsync(
                 SelectedEntityType == "Customer" ? 'C' : 'B',
@@ -235,6 +292,7 @@ public partial class PriceListStockLevelsViewModel : ViewModelBase
                 SelectedProductGroup?.ProductGroupId > 0 ? SelectedProductGroup.ProductGroupId : null,
                 string.IsNullOrWhiteSpace(ProductSearchText) ? null : ProductSearchText,
                 SelectedProductLetter,
+                SelectedProduct?.ProductId,
                 PriceListPagination.GetSkip(),
                 PriceListPagination.GetTake(),
                 ct);
@@ -287,6 +345,12 @@ public partial class PriceListStockLevelsViewModel : ViewModelBase
             PriceListPagination.NextPageCommand.Execute(null);
             _ = RefreshAsync();
         }
+    }
+
+    private void ClearProduct()
+    {
+        SelectedProduct = null;
+        ProductSearchText = string.Empty;
     }
 
     private sealed class RelayCommand : ICommand

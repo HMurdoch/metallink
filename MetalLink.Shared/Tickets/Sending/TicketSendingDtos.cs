@@ -13,7 +13,7 @@ public class TicketSendingDto
     public string TicketTypeName { get; set; } = string.Empty;
     
     public string TicketNumber { get; set; } = string.Empty;
-    public int InvoiceNumber { get; set; }
+    public int? InvoiceNumber { get; set; }
 
     public char TicketState { get; set; } // H=Header, M=Multi line, C=Complete
     
@@ -68,7 +68,7 @@ public class CreateTicketSendingDto
     public int BuyerId { get; set; }
     public int TicketTypeId { get; set; }
     public string TicketNumber { get; set; } = string.Empty;
-    public int InvoiceNumber { get; set; }
+    public int? InvoiceNumber { get; set; }
 
     // Ticket state: 'H' = Header only, 'M' = Multi-weight, 'C' = Complete
     public char TicketState { get; set; } = 'H';

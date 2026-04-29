@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="MetalLink.Application/MetalLink.Application.csproj" />
+    <ProjectReference Include="MetalLink.Domain/MetalLink.Domain.csproj" />
+    <ProjectReference Include="MetalLink.Infrastructure/MetalLink.Infrastructure.csproj" />
+    <ProjectReference Include="MetalLink.Shared/MetalLink.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

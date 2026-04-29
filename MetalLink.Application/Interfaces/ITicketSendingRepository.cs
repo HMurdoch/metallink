@@ -24,8 +24,10 @@ public interface ITicketSendingRepository
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
         string? deliveryStatus = null,
+        string? sortBy = "created_time",
+        string? sortDirection = "desc",
         int pageNumber = 1,
-        int pageSize = 50);
+        int pageSize = 20);
     Task<long> GetCountAsync(
         string? searchTerm = null,
         int? companyId = null,
@@ -36,6 +38,8 @@ public interface ITicketSendingRepository
         string? idNumber = null,
         long? accountNumber = null,
         int? productId = null,
+        int? productGroupId = null,
+        string? ticketType = null,
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
         string? deliveryStatus = null);

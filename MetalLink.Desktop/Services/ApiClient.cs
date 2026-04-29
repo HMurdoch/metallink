@@ -167,6 +167,7 @@ public sealed class ApiClient
         int? productGroupId = null,
         string? searchTerm = null,
         string? letter = null,
+        int? productId = null,
         int skip = 0,
         int take = 50,
         CancellationToken ct = default)
@@ -180,6 +181,7 @@ public sealed class ApiClient
             productGroupId,
             searchTerm,
             letter,
+            productId,
             skip,
             take
         };

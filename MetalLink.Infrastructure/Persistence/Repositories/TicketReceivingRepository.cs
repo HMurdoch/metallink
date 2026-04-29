@@ -63,8 +63,10 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
         string? deliveryStatus = null,
+        string? sortBy = "created_time",
+        string? sortDirection = "desc",
         int pageNumber = 1,
-        int pageSize = 50)
+        int pageSize = 20)
     {
         var query = _context.Set<TicketReceiving>()
             .Include(t => t.Customer)
@@ -121,8 +123,18 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         if (endDate.HasValue)
             query = query.Where(t => t.CreatedTime <= endDate.Value);
 
-        return await query
-            .OrderByDescending(t => t.CreatedTime)
+        var orderedQuery = sortBy?.ToLower() switch
+        {
+            "ticket_number" => sortDirection?.ToLower() == "asc" 
+                ? query.OrderBy(t => t.TicketNumber)
+                : query.OrderByDescending(t => t.TicketNumber),
+            "created_time" => sortDirection?.ToLower() == "asc"
+                ? query.OrderBy(t => t.CreatedTime)
+                : query.OrderByDescending(t => t.CreatedTime),
+            _ => query.OrderByDescending(t => t.CreatedTime)
+        };
+
+        return await orderedQuery
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -138,6 +150,8 @@ public class TicketReceivingRepository : ITicketReceivingRepository
         string? idNumber = null,
         long? accountNumber = null,
         int? productId = null,
+        int? productGroupId = null,
+        string? ticketType = null,
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
         string? deliveryStatus = null)
@@ -153,6 +167,12 @@ public class TicketReceivingRepository : ITicketReceivingRepository
                 (t.VehicleRegistration != null && t.VehicleRegistration.Contains(searchTerm)));
         }
 
+        if (companyId.HasValue)
+            query = query.Where(t => t.Customer != null && t.Customer.CompanyId == companyId.Value);
+
+        if (siteId.HasValue)
+            query = query.Where(t => t.Customer != null && t.Customer.SiteId == siteId.Value);
+
         if (customerId.HasValue)
             query = query.Where(t => t.CustomerId == customerId.Value);
 
@@ -167,6 +187,15 @@ public class TicketReceivingRepository : ITicketReceivingRepository
 
         if (accountNumber.HasValue)
             query = query.Where(t => t.Customer != null && t.Customer.AccountNumber == accountNumber.Value);
+
+        if (productId.HasValue)
+            query = query.Where(t => t.Lines.Any(l => l.ProductId == productId.Value));
+
+        if (productGroupId.HasValue)
+            query = query.Where(t => t.Lines.Any(l => l.Product != null && l.Product.ProductGroupId == productGroupId.Value));
+
+        if (!string.IsNullOrWhiteSpace(ticketType))
+            query = query.Where(t => t.TicketType != null && t.TicketType.TicketTypeName.ToLower() == ticketType.ToLower());
 
         if (startDate.HasValue)
             query = query.Where(t => t.CreatedTime >= startDate.Value);

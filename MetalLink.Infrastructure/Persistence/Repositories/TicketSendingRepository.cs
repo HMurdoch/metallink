@@ -63,8 +63,10 @@ public class TicketSendingRepository : ITicketSendingRepository
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
         string? deliveryStatus = null,
+        string? sortBy = "created_time",
+        string? sortDirection = "desc",
         int pageNumber = 1,
-        int pageSize = 50)
+        int pageSize = 20)
     {
         var query = _context.Set<TicketSending>()
             .Include(t => t.Buyer)
@@ -124,8 +126,18 @@ public class TicketSendingRepository : ITicketSendingRepository
         if (endDate.HasValue)
             query = query.Where(t => t.CreatedTime <= endDate.Value);
 
-        return await query
-            .OrderByDescending(t => t.CreatedTime)
+        var orderedQuery = sortBy?.ToLower() switch
+        {
+            "ticket_number" => sortDirection?.ToLower() == "asc" 
+                ? query.OrderBy(t => t.TicketNumber)
+                : query.OrderByDescending(t => t.TicketNumber),
+            "created_time" => sortDirection?.ToLower() == "asc"
+                ? query.OrderBy(t => t.CreatedTime)
+                : query.OrderByDescending(t => t.CreatedTime),
+            _ => query.OrderByDescending(t => t.CreatedTime)
+        };
+
+        return await orderedQuery
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -141,6 +153,8 @@ public class TicketSendingRepository : ITicketSendingRepository
         string? idNumber = null,
         long? accountNumber = null,
         int? productId = null,
+        int? productGroupId = null,
+        string? ticketType = null,
         DateTimeOffset? startDate = null,
         DateTimeOffset? endDate = null,
         string? deliveryStatus = null)
@@ -156,6 +170,12 @@ public class TicketSendingRepository : ITicketSendingRepository
                 (t.Buyer.LastName != null && t.Buyer.LastName.Contains(searchTerm)) ||
                 (t.VehicleRegistration != null && t.VehicleRegistration.Contains(searchTerm)));
         }
+
+        if (companyId.HasValue)
+            query = query.Where(t => t.Buyer != null && t.Buyer.CompanyId == companyId.Value);
+
+        if (siteId.HasValue)
+            query = query.Where(t => t.Buyer != null && t.Buyer.SiteId == siteId.Value);
 
         if (buyerId.HasValue)
             query = query.Where(t => t.BuyerId == buyerId.Value);
@@ -174,6 +194,12 @@ public class TicketSendingRepository : ITicketSendingRepository
 
         if (productId.HasValue)
             query = query.Where(t => t.Lines.Any(l => l.ProductId == productId.Value));
+
+        if (productGroupId.HasValue)
+            query = query.Where(t => t.Lines.Any(l => l.Product != null && l.Product.ProductGroupId == productGroupId.Value));
+
+        if (!string.IsNullOrWhiteSpace(ticketType))
+            query = query.Where(t => t.TicketType != null && t.TicketType.TicketTypeName.ToLower() == ticketType.ToLower());
 
         if (startDate.HasValue)
             query = query.Where(t => t.CreatedTime >= startDate.Value);

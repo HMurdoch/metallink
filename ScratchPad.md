@@ -171,3 +171,36 @@ That's why I didn't come today, why I had to beg for an Uber ... 3 times, you ha
 
 Something to just stop her now and she even knows about my LBD so cruel Heidi said nothing not even the reason my Mom says everything every single thing I do to feeding kids from broken homes how the fuck, I'm not their problem 
 
+
+Do you understand how products -> product lists -> pricing works? We finished the systems, Products and Price Lists. Please build the Prices System for me, the top section will be a panel/section for Price List Selection, at the top is Entity Type, then there are 4 drop down lists below, they contain a list of Price Lists (for Customer/Buyer depending on Entity Type) the operator can select up to 4 price lists to add to the results say we have 5 price lists for Customer Price List A, Customer Price List B, Customer Price List C, Customer Price List D, Customer Price List E -> if you select Customer Price List B for the first dropdown, the Product Prices Datagrid (below) has a column added with the prices (the prices are editable in the datagrid and update the value in the DB, when changed), the remaining 3 drop downs only contain non selected price lists so: Customer Price List A, Customer Price List C, Customer Price List D, Customer Price List E, below that a panel or section for  Product Filters like the Products system. And below that the Product Prices (for all starred_products = true) datagrid columns: HTS Code, ISRRI CodeAlias (or if Alias is null the ISRI Name Groupand then prices column1 will become visible when selected from the first price list dropdown, then the secon column of prices will appear for the second selected price list, and so forth for the 3rd and 4th optional priceslists to edit.)
+
+
+Please fix the 2 x Price Lists systems (Price List Stock Levels && Price List Stock Movements)... they are the same as Stock Levels and Stock Movements but instead of Stock Levels for a range of products. Price List Stock Levels is for 1 product and lines/records for each price list level. Stock Movements again isn't per product it's per Price List, so 1 product with lines for each price list.
+
+Both are like Stock Levels and Stock Movements but underneath product filter/search criteria there is another panel with a datagrid (first column tick boxes) of all price lists for the selected product.
+
+Currently for these 2 x Price Lists systems at the moment there are no panels or sections. There is no background panels, just the brushed metal application background. Please use the base system Stock Levels -> Price List Stock Levels and Stock Movement -> Price List Stock Movements and add the price list datagrid section under Search/Filter Criteria.
+
+Under Receiving and Sending the Product Group dropdown is empty for Filter/Search.
+
+We are going to do a stock clear and reseed with fresh data.
+
+Please mark all records in the following as is_active = false: receiving_ticket_lines, sending_ticket_lines, stock_levels, stock_movements.
+
+Once they've been soft deleted, in those 4 tables please create seed data for the last 3 months and 3 months in the future. The ones from today and in to the future, please mark is_active = false (as time passes I'll write a script to make them is_active = true;)
+
+Here are the parameters: Create purchases and sales in all 4 tables. Approximately 10 to 14 line items per ticket. Approximately 60 to 80 purchases a day (Mon -> Fri). Approximately 4 to 10 sales a day (Mon -> Fri).
+
+Tickets have between 4 and 18 line items.
+
+Select random weights. Purchases (platform/weighbridge tickets): Between 10kg and 800kg for Platform tickets and between 200kg and 4000kg's for weighbridge. For Sales: between 200kg and 4000kg's for weighbridge
+
+So for that period you're going to create purchase and sales tickets (INSERT into receiving_tickets & sending_tickets), then create the line items as instructed for each ticket (INSERT into receiving_ticket_lines, sending_ticket_lines, adjust/map stock_levels and stock_movements tables)
+
+This will give us base data to work with for 3 months past and 3 months in the future.
+
+
+
+-------------------
+
+Information regarding Ticket Numbers. - Ticket Numbers are auto generated with the following prefix (please fix the records you seeded): RPL- Receiving Platform, RWB- Receiving Weighbridge, SPL- Sending Platform, SWB- Sending Weighbridge. The format is Prefix followed by 8 padded digits i.e.: RPL-00000008 then RPL-00000009 then RPL-00000010, etc.

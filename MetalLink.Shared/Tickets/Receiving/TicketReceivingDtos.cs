@@ -13,7 +13,7 @@ public class TicketReceivingDto
     public string TicketTypeName { get; set; } = string.Empty;
     
     public string TicketNumber { get; set; } = string.Empty;
-    public int InvoiceNumber { get; set; }
+    public int? InvoiceNumber { get; set; }
     
     public decimal NetWeightKg { get; set; }
     
@@ -66,7 +66,7 @@ public class CreateTicketReceivingDto
     public int CustomerId { get; set; }
     public int TicketTypeId { get; set; }
     public string TicketNumber { get; set; } = string.Empty;
-    public int InvoiceNumber { get; set; }
+    public int? InvoiceNumber { get; set; }
     
     public decimal NetWeightKg { get; set; }
     

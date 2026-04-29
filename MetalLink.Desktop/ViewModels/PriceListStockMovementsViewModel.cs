@@ -2,9 +2,12 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetalLink.Desktop.Services;
 using MetalLink.Shared.Stock;
+using MetalLink.Shared.Products;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MetalLink.Desktop.ViewModels;
@@ -60,13 +63,101 @@ public partial class PriceListStockMovementsViewModel : ViewModelBase
     [ObservableProperty]
     private int _totalItems;
 
+    // New properties for UI
+    [ObservableProperty]
+    private bool _isProductFilterExpanded = true;
+
+    [ObservableProperty]
+    private bool _isPriceListExpanded = true;
+
+    [ObservableProperty]
+    private bool _isDateFilterExpanded = true;
+
+    [ObservableProperty]
+    private bool _isResultsExpanded = true;
+
+    [ObservableProperty]
+    private ObservableCollection<ProductGroupDto> _productGroups = new();
+
+    [ObservableProperty]
+    private ObservableCollection<string> _productLetterFilters = new();
+
+    [ObservableProperty]
+    private ProductGroupDto? _selectedProductGroup;
+
+    [ObservableProperty]
+    private ObservableCollection<ProductLookupDto> _products = new();
+
+    [ObservableProperty]
+    private ProductLookupDto? _selectedProduct;
+
+    [ObservableProperty]
+    private string _productSearchText = string.Empty;
+
+    [ObservableProperty]
+    private string _selectedProductLetter = "ALL";
+
     private readonly ApiClient _apiClient;
 
     public PriceListStockMovementsViewModel(ApiClient apiClient)
     {
         _apiClient = apiClient;
-        LoadPriceLists();
-        LoadData();
+        InitializeAsync();
+    }
+
+    private async Task InitializeAsync()
+    {
+        try
+        {
+            var groups = await _apiClient.GetAsync<List<ProductGroupDto>>("api/products/groups");
+            ProductGroups.Clear();
+            ProductGroups.Add(new ProductGroupDto { ProductGroupId = 0, ProductGroupName = "All Groups" });
+            foreach (var group in groups)
+                ProductGroups.Add(group);
+
+            SelectedProductGroup = ProductGroups.First();
+
+            ProductLetterFilters.Clear();
+            ProductLetterFilters.Add("ALL");
+            for (char c = 'A'; c <= 'Z'; c++)
+                ProductLetterFilters.Add(c.ToString());
+
+            await LoadProductsAsync();
+            LoadPriceLists();
+            LoadData();
+        }
+        catch (Exception ex)
+        {
+            // Handle error
+        }
+    }
+
+    private async Task LoadProductsAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var queryParams = new List<string> { "includeNonStarred=false", "skip=0", "take=100" };
+            if (SelectedProductGroup?.ProductGroupId > 0)
+                queryParams.Add($"groupId={SelectedProductGroup.ProductGroupId}");
+            if (!string.IsNullOrWhiteSpace(ProductSearchText))
+                queryParams.Add($"term={Uri.EscapeDataString(ProductSearchText)}");
+            if (!string.IsNullOrWhiteSpace(SelectedProductLetter) && SelectedProductLetter != "ALL")
+                queryParams.Add($"letter={Uri.EscapeDataString(SelectedProductLetter)}");
+
+            var path = "api/products/lookup?" + string.Join("&", queryParams);
+            var result = await _apiClient.GetAsync<ProductsService.PagedResult<ProductLookupDto>>(path, ct);
+
+            Products.Clear();
+            if (result?.Items != null)
+            {
+                foreach (var item in result.Items)
+                    Products.Add(item);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle error
+        }
     }
 
     public string CurrentPageInfo => $"Page {CurrentPage} of {(TotalItems + PageSize - 1) / PageSize}";
@@ -103,7 +194,7 @@ public partial class PriceListStockMovementsViewModel : ViewModelBase
                 selectedIds,
                 FromDate?.DateTime,
                 ToDate?.DateTime,
-                null,
+                SelectedProduct?.ProductId,
                 SelectedMovementType,
                 (CurrentPage - 1) * PageSize,
                 PageSize);
@@ -138,9 +229,31 @@ public partial class PriceListStockMovementsViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void ApplyFilters()
+    private void ClearProductCommand()
     {
-        CurrentPage = 1;
+        SelectedProductGroup = ProductGroups.First();
+        ProductSearchText = string.Empty;
+        SelectedProductLetter = "ALL";
+        SelectedProduct = null;
+        LoadProductsAsync();
+        LoadData();
+    }
+
+    partial void OnSelectedProductGroupChanged(ProductGroupDto? value)
+    {
+        _ = LoadProductsAsync();
+        LoadData();
+    }
+
+    partial void OnProductSearchTextChanged(string value)
+    {
+        _ = LoadProductsAsync();
+        LoadData();
+    }
+
+    partial void OnSelectedProductLetterChanged(string value)
+    {
+        _ = LoadProductsAsync();
         LoadData();
     }
 

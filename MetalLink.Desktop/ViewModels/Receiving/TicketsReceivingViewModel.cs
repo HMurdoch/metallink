@@ -51,6 +51,7 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
         SaveAndResetReceivingTicketCommand = new AsyncCommand(SaveAndResetReceivingTicketAsync);
         FinalizeReceivingTicketCommand = new AsyncCommand(FinalizeReceivingTicketAsync);
 
+        _ = InitializeAsync();
         _ = LoadProductLettersAsync();
 
         // Keep totals in sync when the selected ticket's line collection changes
@@ -65,6 +66,12 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
             OnPropertyChanged(nameof(ReceivingTotalInclVat));
             OnPropertyChanged(nameof(ReceivingLinesWithTotals));
             OnPropertyChanged(nameof(CreatingTicketTotalWeight));
+        };
+
+        Pagination.PageChanged += async (_, _) => 
+        {
+            await SearchReceivingTicketsAsync();
+            OnPropertyChanged(nameof(PaginationStatusText));
         };
 
         AddReceivingLineToTicketCommand = new AsyncCommand(AddReceivingLineAsync);
@@ -294,6 +301,21 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
 
     public ObservableCollection<TicketReceivingSearchResultDto> ReceivingTicketSearchResults { get; } = new();
 
+    public PaginationViewModel Pagination { get; } = new();
+
+    public string PaginationStatusText
+    {
+        get
+        {
+            if (Pagination.TotalRecords == 0)
+                return "No tickets found";
+
+            var start = Pagination.GetSkip() + 1;
+            var end = Math.Min(Pagination.GetSkip() + Pagination.GetTake(), Pagination.TotalRecords);
+            return $"Showing {start}-{end} of {Pagination.TotalRecords}";
+        }
+    }
+
     private long _receivingDetailsLoadVersion;
 
     private TicketReceivingSearchResultDto? _selectedReceivingTicket;
@@ -420,20 +442,24 @@ public sealed class TicketsReceivingViewModel : ViewModelBase
                 IdNumber = string.IsNullOrWhiteSpace(SearchReceivingTicketIdNumberText) ? null : SearchReceivingTicketIdNumberText.Trim(),
                 AccountNumber = long.TryParse(SearchReceivingTicketAccountNumberText, out var acc) ? acc : null,
                 SearchTerm = string.IsNullOrWhiteSpace(SearchReceivingTicketNumberText) ? null : SearchReceivingTicketNumberText.Trim(),
-                PageNumber = 1,
-                PageSize = 50
+                SortBy = "ticket_number",
+                SortDirection = "desc",
+                PageNumber = Pagination.CurrentPage,
+                PageSize = Pagination.PageSize
             };
 
-            var results = await _ticketReceivingService.SearchTicketsReceivingAsync(req);
+            var (results, totalCount) = await _ticketReceivingService.SearchTicketsReceivingAsync(req);
 
             ReceivingTicketSearchResults.Clear();
             foreach (var r in results) ReceivingTicketSearchResults.Add(r);
+            Pagination.SetTotalRecords(totalCount);
 
             SelectedReceivingTicket = ReceivingTicketSearchResults.FirstOrDefault();
             SelectedReceivingTicketDetails = null;
             SelectedReceivingTicketLines.Clear();
             OnPropertyChanged(nameof(ShouldShowTicketDetails));
-            StatusMessage = $"Loaded {ReceivingTicketSearchResults.Count} receiving ticket(s).";
+            OnPropertyChanged(nameof(PaginationStatusText));
+            StatusMessage = $"Loaded {ReceivingTicketSearchResults.Count} of {totalCount} receiving ticket(s).";
 
             // Auto expand result panels and collapse search
             IsSearchExpanded = true;

@@ -57,7 +57,7 @@ public class TicketsSendingController : ControllerBase
     }
 
     [HttpPost("search")]
-    public async Task<ActionResult<List<TicketSendingSearchResultDto>>> SearchTicketsSending([FromBody] TicketSendingSearchRequestDto request)
+    public async Task<ActionResult<object>> SearchTicketsSending([FromBody] TicketSendingSearchRequestDto request)
 
     {
         if (request.NewBuyerOnly)
@@ -103,8 +103,26 @@ public class TicketsSendingController : ControllerBase
             ticketType: request.TicketType,
             startDate: request.StartDate,
             endDate: request.EndDate,
+            sortBy: request.SortBy,
+            sortDirection: request.SortDirection,
             pageNumber: request.PageNumber,
             pageSize: request.PageSize
+        );
+
+        var totalCount = await _ticketSendingRepo.GetCountAsync(
+            searchTerm: request.SearchTerm,
+            companyId: request.CompanyId,
+            siteId: request.SiteId,
+            buyerId: request.BuyerId,
+            firstName: request.FirstName,
+            lastName: request.LastName,
+            idNumber: request.IdNumber,
+            accountNumber: request.AccountNumber,
+            productId: request.ProductId,
+            productGroupId: request.ProductGroupId,
+            ticketType: request.TicketType,
+            startDate: request.StartDate,
+            endDate: request.EndDate
         );
 
         var results = new List<TicketSendingSearchResultDto>();
@@ -113,7 +131,7 @@ public class TicketsSendingController : ControllerBase
             results.Add(await MapToSearchResultDtoAsync(ticket));
         }
         
-        return Ok(results);
+        return Ok(new { Items = results, TotalCount = totalCount });
     }
 
     [HttpGet("last-ticket-number/{prefix}")]

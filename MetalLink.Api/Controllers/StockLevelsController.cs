@@ -53,7 +53,7 @@ public sealed class StockLevelsController : ControllerBase
                 p.isri_product_code AS ""ProductCode"",
                 p.q_key             AS ""QKey"",
                 COALESCE(p.starred_product_alias, p.isri_product_name) AS ""ProductName"",
-                COALESCE(sl.weight_kg, 0) AS ""WeightKg""
+                COALESCE(SUM(sl.weight_kg), 0) AS ""WeightKg""
             FROM metal_link.products p
             LEFT JOIN metal_link.stock_levels sl
                 ON sl.product_id = p.product_id AND sl.is_active = true
@@ -62,6 +62,7 @@ public sealed class StockLevelsController : ControllerBase
               AND (@groupId::int IS NULL OR @groupId::int = 0 OR p.product_group_id = @groupId::int)
               AND (@like::text IS NULL OR (p.isri_product_name ILIKE @like::text OR p.isri_product_code ILIKE @like::text OR p.starred_product_alias ILIKE @like::text OR p.q_key ILIKE @like::text))
               AND (@letter::text IS NULL OR LEFT(COALESCE(p.starred_product_alias, p.isri_product_name), 1) = @letter::text)
+            GROUP BY p.product_id, p.isri_product_code, p.q_key, COALESCE(p.starred_product_alias, p.isri_product_name)
             ORDER BY ""ProductName""
             LIMIT @take::int;
         ";

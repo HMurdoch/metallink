@@ -53,17 +53,17 @@ public sealed class TicketReceivingService
     /// <summary>
     /// Search for receiving tickets
     /// </summary>
-    public async Task<IReadOnlyList<TicketReceivingSearchResultDto>> SearchTicketsReceivingAsync(
+    public async Task<(IReadOnlyList<TicketReceivingSearchResultDto> Items, int TotalCount)> SearchTicketsReceivingAsync(
         TicketReceivingSearchRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        var result = await _apiClient.PostAsync<TicketReceivingSearchRequestDto, TicketReceivingSearchResultDto[]>(
+        var result = await _apiClient.PostAsync<TicketReceivingSearchRequestDto, PagedResult<TicketReceivingSearchResultDto>>(
             "api/tickets-receiving/search",
             request,
             cancellationToken
         );
 
-        return result ?? Array.Empty<TicketReceivingSearchResultDto>();
+        return (result?.Items ?? Array.Empty<TicketReceivingSearchResultDto>(), result?.TotalCount ?? 0);
     }
 
     /// <summary>
@@ -347,5 +347,11 @@ public sealed class TicketReceivingService
             Console.WriteLine($"[DEBUG UpdateTicketState] Stack trace: {ex.StackTrace}");
             return false;
         }
+    }
+
+    public class PagedResult<T>
+    {
+        public IReadOnlyList<T> Items { get; set; } = Array.Empty<T>();
+        public int TotalCount { get; set; }
     }
 }

@@ -340,6 +340,17 @@
                     </DataGridTemplateColumn>
                   </DataGrid.Columns>
                 </DataGrid>
+
+                <StackPanel Spacing="6" Margin="0,10,0,0">
+                  <TextBlock Text="{Binding PaginationStatusText}" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.TextMuted}" FontSize="11" />
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
+                    <Button Content="Prev" Command="{Binding Pagination.PreviousPageCommand}" IsEnabled="{Binding Pagination.CanGoPrevious}" Padding="4,2" FontSize="11"/>
+                    <TextBlock Text="{Binding Pagination.CurrentPage}" VerticalAlignment="Center" FontSize="11"/>
+                    <TextBlock Text="/" VerticalAlignment="Center" FontSize="11"/>
+                    <TextBlock Text="{Binding Pagination.TotalPages}" VerticalAlignment="Center" FontSize="11"/>
+                    <Button Content="Next" Command="{Binding Pagination.NextPageCommand}" IsEnabled="{Binding Pagination.CanGoNext}" Padding="4,2" FontSize="11"/>
+                  </StackPanel>
+                </StackPanel>
               </StackPanel>
             </StackPanel>
           </Border>

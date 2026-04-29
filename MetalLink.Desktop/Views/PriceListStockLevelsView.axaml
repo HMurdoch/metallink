@@ -10,46 +10,154 @@
     <vm:PriceListStockLevelsViewModel />
   </Design.DataContext>
 
-  <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
-    <!-- Header -->
-    <TextBlock Grid.Row="0" Text="Price List Stock Distribution" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" />
+  <Grid RowDefinitions="Auto,*">
+    <!-- Sticky Header Panel -->
+    <Border Grid.Row="0" 
+            Background="{DynamicResource Brush.PanelBackground}"
+            Padding="12,8"
+            CornerRadius="4"
+            Margin="16,16,16,8"
+            ZIndex="100">
+      <Image Source="avares://MetalLink.Desktop/Assets/stock_levels_heading.png"
+             Height="40"
+             HorizontalAlignment="Left"
+             Stretch="Uniform" />
+    </Border>
+    
+    <!-- Scrollable Content -->
+    <ScrollViewer Grid.Row="1" Padding="16,8,16,10">
+      <StackPanel Spacing="14" Margin="0,0,0,80">
 
-    <!-- Entity Type Selection -->
-    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
-      <TextBlock Text="Entity Type:" VerticalAlignment="Center" Margin="0,0,10,0" />
-      <ComboBox ItemsSource="{Binding EntityTypes}" SelectedItem="{Binding SelectedEntityType}" Width="150" />
-    </StackPanel>
+        <!-- Entity Type Selection -->
+        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+                CornerRadius="10" Padding="12">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Entity Type" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            <ComboBox ItemsSource="{Binding EntityTypes}" SelectedItem="{Binding SelectedEntityType}" Width="150" />
+          </StackPanel>
+        </Border>
 
-    <!-- Price List Selection -->
-    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,20">
-      <TextBlock Text="Price Lists:" VerticalAlignment="Center" Margin="0,0,10,0" />
-      <ListBox ItemsSource="{Binding PriceLists}" SelectionMode="Multiple" Width="300" Height="100">
-        <ListBox.ItemTemplate>
-          <DataTemplate>
-            <CheckBox Content="{Binding ProductPriceListName}" IsChecked="{Binding IsSelected, Mode=TwoWay}" />
-          </DataTemplate>
-        </ListBox.ItemTemplate>
-      </ListBox>
-      <Button Content="Select All" Command="{Binding SelectAllPriceListsCommand}" Margin="10,0,0,0" />
-      <Button Content="Clear All" Command="{Binding ClearAllPriceListsCommand}" Margin="10,0,0,0" />
-    </StackPanel>
+        <!-- Product Filter -->
+        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+                CornerRadius="10" Padding="12">
+          <StackPanel Spacing="8">
+            <Grid PointerPressed="ToggleFilter" Cursor="Hand">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" 
+                         Text="{Binding IsFilterExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Product Filters" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
+            <Grid ColumnDefinitions="*,*,*,Auto" ColumnSpacing="12" IsVisible="{Binding IsFilterExpanded}">
+              <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Text="Product Group" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                <ComboBox ItemsSource="{Binding ProductGroups}" SelectedItem="{Binding SelectedProductGroup}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding ProductGroupName}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
 
-    <!-- Data Grid -->
-    <DataGrid Grid.Row="3" ItemsSource="{Binding StockLevels}" AutoGenerateColumns="False" IsReadOnly="True">
-      <DataGrid.Columns>
-        <DataGridTextColumn Header="Product Code" Binding="{Binding ProductCode}" Width="120" />
-        <DataGridTextColumn Header="Product Name" Binding="{Binding ProductName}" Width="*" />
-        <DataGridTextColumn Header="Price List" Binding="{Binding PriceListName}" Width="150" />
-        <DataGridTextColumn Header="Weight (kg)" Binding="{Binding WeightKg, StringFormat=N2}" Width="100" />
-        <DataGridTextColumn Header="Total Weight (kg)" Binding="{Binding TotalWeightKg, StringFormat=N2}" Width="120" />
-      </DataGrid.Columns>
-    </DataGrid>
+              <StackPanel Grid.Column="1" Spacing="4">
+                <TextBlock Text="Product Search" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                <TextBox Watermark="Search name or code..."
+                         Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
 
-    <!-- Pagination -->
-    <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
-      <Button Content="Previous" Command="{Binding PreviousPageCommand}" IsEnabled="{Binding CanGoPrevious}" />
-      <TextBlock Text="{Binding CurrentPageInfo}" VerticalAlignment="Center" Margin="20,0" />
-      <Button Content="Next" Command="{Binding NextPageCommand}" IsEnabled="{Binding CanGoNext}" />
-    </StackPanel>
+              <StackPanel Grid.Column="2" Spacing="4">
+                <TextBlock Text="First Letter" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                <ComboBox ItemsSource="{Binding ProductLetterFilters}"
+                          SelectedItem="{Binding SelectedProductLetter}" />
+              </StackPanel>
+
+              <Button Grid.Column="3" Content="Clear" Command="{Binding ClearProductCommand}" VerticalAlignment="Bottom" />
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <!-- Product Selection -->
+        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+                CornerRadius="10" Padding="12">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Products" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            <DataGrid ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}" AutoGenerateColumns="False" Height="260" IsReadOnly="True">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Code" Binding="{Binding ProductCode}" Width="100" />
+                <DataGridTextColumn Header="Name" Binding="{Binding ProductName}" Width="*" />
+                <DataGridTextColumn Header="Group" Binding="{Binding ProductGroupName}" Width="150" />
+              </DataGrid.Columns>
+            </DataGrid>
+            <TextBlock Text="Select a product to load its price list levels." Foreground="{DynamicResource Brush.TextMuted}" FontSize="11" />
+          </StackPanel>
+        </Border>
+
+        <!-- Price List Selection -->
+        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+                CornerRadius="10" Padding="12">
+          <StackPanel Spacing="8">
+            <Grid PointerPressed="TogglePriceList" Cursor="Hand">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" 
+                         Text="{Binding IsPriceListExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Price List Selection" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
+            <StackPanel Spacing="8" IsVisible="{Binding IsPriceListExpanded}">
+              <DataGrid ItemsSource="{Binding PriceLists}" AutoGenerateColumns="False" IsReadOnly="False" Height="200">
+                <DataGrid.Columns>
+                  <DataGridCheckBoxColumn Header="Select" Binding="{Binding IsSelected, Mode=TwoWay}" Width="80" />
+                  <DataGridTextColumn Header="Price List Name" Binding="{Binding ProductPriceListName}" Width="*" />
+                </DataGrid.Columns>
+              </DataGrid>
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button Content="Select All" Command="{Binding SelectAllPriceListsCommand}" />
+                <Button Content="Clear All" Command="{Binding ClearAllPriceListsCommand}" />
+              </StackPanel>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- Data Grid -->
+        <Border Background="{DynamicResource Brush.GlassPanel}" BorderBrush="{DynamicResource Brush.GlassBorder}" BorderThickness="1"
+                CornerRadius="10" Padding="12">
+          <StackPanel Spacing="8">
+            <Grid PointerPressed="ToggleResults" Cursor="Hand">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" 
+                         Text="{Binding IsResultsExpanded, Converter={StaticResource SectionToViewConverter}, ConverterParameter='arrow'}" 
+                         Foreground="{DynamicResource Brush.TextPrimary}" FontSize="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Stock Levels" Foreground="{DynamicResource Brush.TextPrimary}" FontWeight="Bold" />
+            </Grid>
+            <DataGrid ItemsSource="{Binding StockLevels}" AutoGenerateColumns="False" IsReadOnly="True" IsVisible="{Binding IsResultsExpanded}">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Product Code" Binding="{Binding ProductCode}" Width="120" />
+                <DataGridTextColumn Header="Product Name" Binding="{Binding ProductName}" Width="*" />
+                <DataGridTextColumn Header="Price List" Binding="{Binding PriceListName}" Width="150" />
+                <DataGridTextColumn Header="Weight (kg)" Binding="{Binding WeightKg, StringFormat=N2}" Width="100" />
+                <DataGridTextColumn Header="Total Weight (kg)" Binding="{Binding TotalWeightKg, StringFormat=N2}" Width="120" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </StackPanel>
+        </Border>
+
+        <!-- Pagination -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0" IsVisible="{Binding IsResultsExpanded}">
+          <Button Content="Previous" Command="{Binding PreviousPageCommand}" IsEnabled="{Binding CanGoPrevious}" />
+          <TextBlock Text="{Binding CurrentPageInfo}" VerticalAlignment="Center" Margin="20,0" />
+          <Button Content="Next" Command="{Binding NextPageCommand}" IsEnabled="{Binding CanGoNext}" />
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
   </Grid>
 </UserControl>
