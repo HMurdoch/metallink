@@ -111,17 +111,46 @@ app.Use(async (context, next) =>
     await next();
 });
 
-using (var scope = app.Services.CreateScope())
+// Initialize database with retry logic for container startup
+var maxRetries = 10;
+var delayMs = 1000; // Start with 1 second delay
+var attempt = 0;
+
+while (attempt < maxRetries)
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<MetalLinkDbContext>();
+    try
+    {
+        using (var scope = app.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<MetalLinkDbContext>();
 
-    // Apply pending migrations
-    await dbContext.Database.MigrateAsync();
+            // Apply pending migrations
+            await dbContext.Database.MigrateAsync();
 
-    // Ensure Postgres identity/serial sequences are aligned with existing data.
-    // Without this, inserts can fail after a DB restore/import with:
-    // 23505 duplicate key value violates unique constraint "..._pkey".
-    await PostgresSequenceSynchronizer.SyncAllIdentitySequencesAsync(dbContext);
+            // Ensure Postgres identity/serial sequences are aligned with existing data.
+            // Without this, inserts can fail after a DB restore/import with:
+            // 23505 duplicate key value violates unique constraint "..._pkey".
+            await PostgresSequenceSynchronizer.SyncAllIdentitySequencesAsync(dbContext);
+            
+            Console.WriteLine("✓ Database initialization successful.");
+            break;
+        }
+    }
+    catch (Exception ex)
+    {
+        attempt++;
+        if (attempt >= maxRetries)
+        {
+            Console.WriteLine($"✗ Database initialization failed after {maxRetries} attempts.");
+            throw;
+        }
+        
+        Console.WriteLine($"⚠ Database initialization attempt {attempt}/{maxRetries} failed: {ex.Message}");
+        Console.WriteLine($"  Retrying in {delayMs}ms...");
+        
+        await Task.Delay(delayMs);
+        delayMs = Math.Min(delayMs * 2, 30000); // Exponential backoff, max 30 seconds
+    }
 }
 
 // Swagger
