@@ -1,0 +1,8 @@
+[phases.install]
+cmds = ["dotnet restore MetalLink.sln"]
+
+[phases.build]
+cmds = ["dotnet publish MetalLink.Api/MetalLink.Api.csproj --no-restore -c Release -o out"]
+
+[start]
+cmd = "./out/MetalLink.Api"

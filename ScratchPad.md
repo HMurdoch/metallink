@@ -204,3 +204,25 @@ This will give us base data to work with for 3 months past and 3 months in the f
 -------------------
 
 Information regarding Ticket Numbers. - Ticket Numbers are auto generated with the following prefix (please fix the records you seeded): RPL- Receiving Platform, RWB- Receiving Weighbridge, SPL- Sending Platform, SWB- Sending Weighbridge. The format is Prefix followed by 8 padded digits i.e.: RPL-00000008 then RPL-00000009 then RPL-00000010, etc.
+
+
+
+# Create users and databases
+docker exec -it 91bd8522cc64 psql -U postgres -c "CREATE ROLE metallink_admin WITH LOGIN PASSWORD 'P@$$w0rd!';"
+docker exec -it 91bd8522cc64 psql -U postgres -c "CREATE DATABASE metal_link_dev;"
+docker exec -it 91bd8522cc64 psql -U postgres -c "CREATE DATABASE metal_link_sandbox;"
+docker exec -it 91bd8522cc64 psql -U postgres -c "CREATE DATABASE metal_link_sandbox_base;"
+docker exec -it 91bd8522cc64 psql -U postgres -c "CREATE DATABASE metal_link_beta;"
+
+# Restore dump to each database
+for db in metal_link_dev metal_link_sandbox metal_link_sandbox_base metal_link_beta; do
+  docker exec -it 91bd8522cc64 pg_restore -U postgres -d $db /root/20260429_1_metal_link_dev.dump
+done
+
+CREATE ROLE metallink WITH LOGIN PASSWORD 'P@$$w0rd!';
+CREATE ROLE metallink_admin WITH LOGIN PASSWORD 'P@$$w0rd!';
+
+ALTER ROLE metallink CREATEDB;
+ALTER ROLE metallink_admin CREATEDB;
+
+e944432467e3960afb9661877585c251d96598c9
