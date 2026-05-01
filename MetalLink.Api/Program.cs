@@ -28,10 +28,8 @@ if (!string.IsNullOrWhiteSpace(httpPorts) && int.TryParse(httpPorts.Split(',')[0
     kestrelPort = parsedPort;
 }
 
-builder.WebHost.ConfigureKestrel(options =>
-{
-    options.ListenAnyIP(kestrelPort);
-});
+var hostUrl = $"http://0.0.0.0:{kestrelPort}";
+builder.WebHost.UseUrls(hostUrl);
 
 builder.Services.AddSwaggerGen(c =>
 {
