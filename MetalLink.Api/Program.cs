@@ -21,16 +21,6 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-var httpPorts = Environment.GetEnvironmentVariable("HTTP_PORTS");
-var kestrelPort = 8080;
-if (!string.IsNullOrWhiteSpace(httpPorts) && int.TryParse(httpPorts.Split(',')[0], out var parsedPort))
-{
-    kestrelPort = parsedPort;
-}
-
-var hostUrl = $"http://0.0.0.0:{kestrelPort}";
-builder.WebHost.UseUrls(hostUrl);
-
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
