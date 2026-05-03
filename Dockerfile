@@ -10,16 +10,22 @@ COPY ["MetalLink.Shared/MetalLink.Shared.csproj", "MetalLink.Shared/"]
 
 RUN dotnet restore "MetalLink.Api/MetalLink.Api.csproj"
 
-# Copy the rest of the source code and publish
+# Copy everything else
 COPY . .
 WORKDIR /src/MetalLink.Api
+
 RUN dotnet publish "MetalLink.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+# Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
+
 COPY --from=build /app/publish .
 
-ENV ASPNETCORE_URLS=http://0.0.0.0:8080
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV TZ=Africa/Johannesburg
+
 EXPOSE 8080
+
 ENTRYPOINT ["dotnet", "MetalLink.Api.dll"]
