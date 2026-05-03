@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: metallink-api
+    restart: unless-stopped
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: postgres://metallink_admin:9x!Kp2#LmZ7q@A@postgres:5432/metal_link_dev
+
+    networks:
+      - metallink
+
+    labels:
+      - "traefik.enable=true"
+
+      # api.metallink.online
+      - "traefik.http.routers.api.rule=Host(`api.metallink.online`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+
+      # haymaker.metallink.online
+      - "traefik.http.routers.haymaker.rule=Host(`haymaker.metallink.online`)"
+      - "traefik.http.routers.haymaker.entrypoints=websecure"
+      - "traefik.http.routers.haymaker.tls.certresolver=letsencrypt"
+
+      - "traefik.http.services.api.loadbalancer.server.port=8080"
+
+networks:
+  metallink:
