@@ -7,6 +7,7 @@ using MetalLink.Infrastructure.Persistence;
 using MetalLink.Infrastructure.Persistence.Repositories;
 using MetalLink.Infrastructure.Security;
 using MetalLink.Infrastructure.Storage;
+using Npgsql;
 
 namespace MetalLink.Infrastructure;
 
@@ -17,6 +18,19 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("MetalLinkDatabase");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            var databaseUrl = configuration["DATABASE_URL"];
+            if (!string.IsNullOrWhiteSpace(databaseUrl))
+            {
+                connectionString = ConvertDatabaseUrlToConnectionString(databaseUrl);
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException("Database connection string is not configured.");
+        }
 
         services.AddDbContext<MetalLinkDbContext>(options =>
         {
@@ -64,5 +78,24 @@ public static class DependencyInjection
         services.AddSingleton<IFileStorage, S3FileStorage>();
 
         return services;
+    }
+
+    private static string ConvertDatabaseUrlToConnectionString(string databaseUrl)
+    {
+        var uri = new Uri(databaseUrl);
+        var userInfo = uri.UserInfo.Split(':', 2);
+
+        var builder = new NpgsqlConnectionStringBuilder
+        {
+            Host = uri.Host,
+            Port = uri.Port > 0 ? uri.Port : 5432,
+            Username = Uri.UnescapeDataString(userInfo[0]),
+            Password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty,
+            Database = uri.AbsolutePath.TrimStart('/'),
+            SslMode = SslMode.Require,
+            TrustServerCertificate = true
+        };
+
+        return builder.ToString();
     }
 }

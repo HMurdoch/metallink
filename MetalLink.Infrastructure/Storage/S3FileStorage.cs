@@ -21,18 +21,24 @@ public sealed class S3FileStorage : IFileStorage, IDisposable
             {
                 ServiceURL = _options.ServiceUrl,
                 ForcePathStyle = true,
-                UseHttp = true  // Use HTTP instead of HTTPS for local MinIO
+                UseHttp = _options.ServiceUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
             };
 
-            // For your MinIO service we'll reuse the same credentials
-            // you set in the systemd service: admin / Admin1234!
-            _s3Client = new AmazonS3Client("admin", "Admin1234!", config);
+            var accessKey = _options.AccessKey ?? "admin";
+            var secretKey = _options.SecretKey ?? "Admin1234!";
+            _s3Client = new AmazonS3Client(accessKey, secretKey, config);
         }
         else
         {
-            // Real AWS S3 – use IAM roles or AWS creds
             var region = RegionEndpoint.GetBySystemName(_options.Region);
-            _s3Client = new AmazonS3Client(region);
+            if (!string.IsNullOrWhiteSpace(_options.AccessKey) && !string.IsNullOrWhiteSpace(_options.SecretKey))
+            {
+                _s3Client = new AmazonS3Client(_options.AccessKey, _options.SecretKey, region);
+            }
+            else
+            {
+                _s3Client = new AmazonS3Client(region);
+            }
         }
     }
 
